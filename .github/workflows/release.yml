@@ -1,4 +1,5 @@
-# Tag a commit v0.1, v0.2, ... and the APK is attached to a GitHub Release.
+# Attaches the APK to a GitHub Release, whether the release was made by pushing
+# a v* tag or by pressing "Create a new release" in the web UI.
 #
 # Releases exist here because workflow ARTIFACTS require a signed-in GitHub
 # account to download, while release assets do not - so this is the one that
@@ -14,6 +15,15 @@ name: release
 on:
   push:
     tags: ['v*']
+  release:
+    types: [published]
+
+# Creating a release from the web UI fires BOTH of the above - it pushes the tag
+# and publishes the release - so two runs can start for the same tag. Queue them
+# instead of cancelling, and the publish step below is idempotent either way.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
 
 permissions:
   contents: write
@@ -49,12 +59,12 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$GITHUB_REF_NAME" dist/*.apk \
-            --title "$GITHUB_REF_NAME" \
+          TAG="$GITHUB_REF_NAME"
+          # The release may already exist - that is the normal case when it was
+          # made with the web UI's "Create a new release" button, which is why
+          # this creates only when missing rather than unconditionally.
+          gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" \
+            --title "$TAG" \
             --generate-notes \
-            --notes-file - <<'NOTES'
-          Debug build, signed with the standard Android debug key — installable
-          for trying it out, not a Play Store build.
-
-          Requires Android 15 (API 35) or newer.
-          NOTES
+            --notes "Debug build, signed with the standard Android debug key - installable for trying it out, not a Play Store build. Requires Android 15 (API 35) or newer."
+          gh release upload "$TAG" dist/*.apk --clobber

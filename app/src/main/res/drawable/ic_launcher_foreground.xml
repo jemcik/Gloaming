@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The crescent, ringed by the window arc - the dial's own span, so the icon
+     and the home screen tell the same story.
+
+     THE CRESCENT: an outer circle with a nearly-equal circle offset across its
+     edge, so the overlap is bitten out.
+     The clip-path is load-bearing. evenOdd fills whatever lies inside exactly
+     ONE subpath, and the bite circle sticks out past the outer one - so without
+     the clip, that overhang is filled too and the horns close into a ring. That
+     shipped once and looked like a doughnut on the launcher.
+     R is 21dp of the 108dp canvas because the launcher keeps only the central
+     72dp and scales it up; artwork drawn to the full canvas comes out cropped.
+     The gradient is INSIDE the rotated group, so it runs along the crescent's
+     own axis - dawn at the upper horn, night at the lower.
+
+     THE ARC: the window, drawn round the moon at radius 31.1 with a 113 degree
+     gap centred on the bottom. The gap is the point - it is what makes this a
+     span, with a start and an end, rather than a ring. Round caps, and a hair
+     under 3dp, because it has to stay a hairline against a 42dp moon.
+     Outer extent is 31.1 + 1.5 = 32.6dp of radius, just inside the 33dp safe
+     circle a launcher mask may crop to. There is no room to make it thicker
+     without moving it inward.
+
+     WHY THE GROUP IS ROTATED 90.95: a sweep gradient runs 0..1 over 0..360 and
+     so has a seam at 0 degrees, but the arc spans 147.6 through 360 to 34.3 and
+     would cross it - the ramp would jump from dawn back to night mid-stroke.
+     The group carries the path AND its gradient, so rotating both by 90.95 puts
+     the arc at 56.65..303.35 in local coordinates and drops the seam into the
+     gap, where nothing is drawn. The offsets below are those local angles over
+     360, with the ends anchored flat outside them. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <group android:rotation="-32" android:pivotX="54" android:pivotY="54">
+        <clip-path android:pathData="M33.00,54.00 a21.00,21.00 0 1,0 42.00,0 a21.00,21.00 0 1,0 -42.00,0 Z" />
+        <path android:fillType="evenOdd" android:pathData="M33.00,54.00 a21.00,21.00 0 1,0 42.00,0 a21.00,21.00 0 1,0 -42.00,0 Z M42.66,50.22 a19.74,19.74 0 1,0 39.48,0 a19.74,19.74 0 1,0 -39.48,0 Z">
+            <aapt:attr name="android:fillColor">
+                <gradient android:type="linear"
+                    android:startX="54" android:startY="75.00"
+                    android:endX="54"   android:endY="33.00">
+                    <item android:offset="0.00" android:color="#FF2F4260" />
+                    <item android:offset="0.42" android:color="#FF4E6480" />
+                    <item android:offset="0.76" android:color="#FFB2622D" />
+                    <item android:offset="1.00" android:color="#FFF6A06B" />
+                </gradient>
+            </aapt:attr>
+        </path>
+    </group>
+    <group android:rotation="90.95" android:pivotX="54" android:pivotY="54">
+        <path
+            android:pathData="M71.10,79.98 A31.1,31.1 0 0 1 30.57,74.45 A31.1,31.1 0 0 1 30.57,33.55 A31.1,31.1 0 0 1 71.10,28.02"
+            android:strokeWidth="3.0" android:strokeLineCap="round" android:fillColor="#00000000">
+            <aapt:attr name="android:strokeColor">
+                <gradient android:type="sweep" android:centerX="54" android:centerY="54">
+                    <item android:offset="0.0000" android:color="#FF2F4260" />
+                    <item android:offset="0.1574" android:color="#FF2F4260" />
+                    <item android:offset="0.4452" android:color="#FF4E6480" />
+                    <item android:offset="0.6782" android:color="#FFB2622D" />
+                    <item android:offset="0.8426" android:color="#FFF6A06B" />
+                    <item android:offset="1.0000" android:color="#FFF6A06B" />
+                </gradient>
+            </aapt:attr>
+        </path>
+    </group>
+</vector>

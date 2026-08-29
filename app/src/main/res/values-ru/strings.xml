@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- ============ Home: the master card ============ -->
+    <string name="bedtime_mode">Режим сна</string>
+    <string name="bedtime_off">Выключен</string>
+    <string name="state_on_now">Включен</string>
+    <string name="state_on_until">Включен до %1$s</string>
+    <string name="state_starts_in">Через %1$s</string>
+    <string name="state_nothing_scheduled">Нет расписания</string>
+    <string name="badge_once">Один раз</string>
+
+    <!-- Durations. Hours and minutes are separate so a language with more than
+         two plural forms can inflect each one. -->
+    <plurals name="dur_minutes">
+        <item quantity="one">%d мин</item>
+        <item quantity="few">%d мин</item>
+        <item quantity="many">%d мин</item>
+        <item quantity="other">%d мин</item>
+    </plurals>
+    <plurals name="dur_hours">
+        <item quantity="one">%d ч</item>
+        <item quantity="few">%d ч</item>
+        <item quantity="many">%d ч</item>
+        <item quantity="other">%d ч</item>
+    </plurals>
+    <string name="dur_hours_minutes">%1$s %2$s</string>
+    <!-- The dial centre. Seven glyphs is the worst case ("11h 59m") and the
+         numeral is 36sp: keep this compact or it will not clear the centre well. -->
+    <string name="dur_compact">%1$dч %2$02dм</string>
+
+    <!-- ============ Home: permissions ============ -->
+    <plurals name="permissions_to_go">
+        <item quantity="one">Осталось %d разрешение</item>
+        <item quantity="few">Осталось %d разрешения</item>
+        <item quantity="many">Осталось %d разрешений</item>
+        <item quantity="other">Осталось %d разрешений</item>
+    </plurals>
+    <string name="perm_dnd_title">Доступ к «Не беспокоить»</string>
+    <string name="perm_dnd_why">Позволяет Gloaming отключать звук уведомлений, пока вы спите</string>
+    <string name="perm_alarms_title">Будильники и напоминания</string>
+    <string name="perm_alarms_why">Позволяет запускать режим сна точно в заданное время</string>
+    <string name="perm_allow">Разрешить</string>
+    <string name="perm_allowed">Разрешено</string>
+
+    <!-- ============ Home: the window ============ -->
+    <!-- Overlines, uppercased in code. Keep short: they sit above the times. -->
+    <string name="label_bedtime">режим сна</string>
+    <string name="label_started">начало</string>
+    <string name="label_wake_up">пробуждение</string>
+    <string name="dial_sleep_window">время сна</string>
+    <string name="dial_until">до %1$s</string>
+    <string name="dial_until_bedtime">до режима сна</string>
+
+    <!-- ============ Home: which nights ============ -->
+    <string name="section_which_nights">в какие дни</string>
+    <!-- BUDGET: these four share one row, 311dp wide, and at 14sp English fills
+         it with 17dp of slack between chips. Longer than ~11 characters each and
+         the row overflows - see the day-row note in CLAUDE.md. -->
+    <string name="preset_every_night">Всегда</string>
+    <string name="preset_weekdays">Будни</string>
+    <string name="preset_weekends">Выходные</string>
+    <string name="preset_once">Разово</string>
+    <string name="days_start_evening_before">Режим сна начинается накануне вечером.</string>
+
+    <!-- ============ Home: what can wake you ============ -->
+    <string name="section_what_can_wake_you">что может вас разбудить</string>
+    <string name="dnd_title">Не беспокоить</string>
+    <string name="dnd_subtitle">Звонки, сообщения и сигналы без звука</string>
+    <string name="dnd_nothing_silenced">Звук не отключен</string>
+
+    <!-- ============ Home: how the screen looks ============ -->
+    <string name="section_how_the_screen_looks">как выглядит экран</string>
+    <!-- BUDGET: chip labels, two per row at 14sp. -->
+    <string name="fx_grayscale">Оттенки серого</string>
+    <string name="fx_dim">Затемнение обоев</string>
+    <string name="fx_dark">Темная тема</string>
+    <string name="fx_ambient">Скрыть постоянное отображение</string>
+    <plurals name="fx_handled_by_phone">
+        <item quantity="one">%1$s настраивается в телефоне, а не в Gloaming.</item>
+        <item quantity="few">%1$s настраиваются в телефоне, а не в Gloaming.</item>
+        <item quantity="many">%1$s настраиваются в телефоне, а не в Gloaming.</item>
+        <item quantity="other">%1$s настраиваются в телефоне, а не в Gloaming.</item>
+    </plurals>
+    <string name="fx_always_on_lives_in">Постоянный экран находится в %1$s.</string>
+
+    <!-- ============ Home: end-bedtime dialog ============ -->
+    <string name="end_bedtime_title">Завершить режим сна?</string>
+    <string name="end_bedtime_body">Режим «Не беспокоить» и эффекты экрана будут сразу отключены. Завтрашняя ночь пройдет по расписанию.</string>
+    <string name="end_now">Завершить</string>
+    <string name="keep_going">Продолжить</string>
+    <string name="action_set">Задать</string>
+    <string name="action_cancel">Отмена</string>
+
+    <!-- ============ What gets through ============ -->
+    <string name="action_back">Назад</string>
+    <string name="what_gets_through">Что пропускается</string>
+    <string name="allow_lead">%1$s Все остальное подождет до %2$s.</string>
+    <string name="section_people">люди</string>
+    <string name="section_everything_else">все остальное</string>
+    <string name="section_right_now">прямо сейчас</string>
+    <string name="row_calls">Звонки</string>
+    <string name="row_messages">Сообщения</string>
+    <string name="row_conversations">Разговоры</string>
+    <string name="row_repeat_callers">Повторные звонки</string>
+    <string name="row_repeat_callers_on">Дважды за 15 минут</string>
+    <string name="row_reminders">Напоминания</string>
+    <string name="row_events">События календаря</string>
+    <string name="row_media">Звуки медиа</string>
+    <string name="row_media_on">Звук в видео и играх остается включенным</string>
+    <string name="row_alarms">Будильники и таймеры</string>
+    <string name="row_alarms_why">Остаются включенными, чтобы будильник смог вас разбудить</string>
+    <string name="allowed_tonight">Разрешено сегодня</string>
+    <string name="blocked_tonight">Заблокировано сегодня</string>
+
+    <string name="filter_all">Режим «Не беспокоить» выключен. Пропускается все.</string>
+    <string name="filter_priority">Режим «Не беспокоить» включен. Все, чего нет в списке выше, блокируется.</string>
+    <string name="filter_alarms">Пропускаются только будильники.</string>
+    <string name="filter_none">Включена полная тишина — блокируется даже список выше.</string>
+    <string name="filter_unknown">Телефон не сообщил о текущих настройках.</string>
+
+    <string name="sheet_who_can_call">Кто может звонить</string>
+    <string name="sheet_who_can_message">Кто может писать</string>
+    <string name="people_anyone">Все</string>
+    <string name="people_contacts">Ваши контакты</string>
+    <string name="people_starred">Избранные контакты</string>
+    <string name="people_none">Никто</string>
+    <string name="conv_all">Все разговоры</string>
+    <string name="conv_priority">Только приоритетные разговоры</string>
+    <string name="conv_sheet_blocked">Заблокировано</string>
+    <string name="conv_sheet_priority">Только приоритетные</string>
+    <string name="conv_sheet_all">Все</string>
+
+    <!-- Items that appear INSIDE a sentence, so they carry their own case and
+         grammar. Never build these by lowercasing a title: a language with cases
+         needs a different form here, not a different capital. -->
+    <string name="item_alarms">будильники</string>
+    <string name="item_calls">звонки</string>
+    <string name="item_calls_from_contacts">звонки от ваших контактов</string>
+    <string name="item_calls_from_starred">звонки от избранных контактов</string>
+    <string name="item_messages">сообщения</string>
+    <string name="item_conversations">разговоры</string>
+    <string name="item_repeat_callers">повторные звонки</string>
+    <string name="item_reminders">напоминания</string>
+    <string name="item_events">события календаря</string>
+    <string name="item_media">медиа</string>
+    <plurals name="item_and_more">
+        <item quantity="one">еще %d</item>
+        <item quantity="few">еще %d</item>
+        <item quantity="many">еще %d</item>
+        <item quantity="other">еще %d</item>
+    </plurals>
+    <string name="summary_only">только %1$s</string>
+    <string name="sentence_can_get_through">%1$s пропускаются.</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Настройки</string>
+    <string name="section_appearance">внешний вид</string>
+    <string name="theme_system">Как в системе</string>
+    <string name="theme_light">Светлая</string>
+    <string name="theme_dark">Темная</string>
+    <string name="section_language">язык</string>
+    <string name="settings_language">Язык приложения</string>
+    <string name="settings_language_why">Открывает системные настройки языка</string>
+    <string name="section_about">о приложении</string>
+    <string name="settings_version">Версия %1$s</string>
+    <string name="settings_about_body">Gloaming включает режим «Не беспокоить» и эффекты экрана на одно окно за ночь, используя точные будильники, чтобы срабатывать, даже когда приложение закрыто.</string>
+</resources>

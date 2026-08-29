@@ -1,0 +1,21 @@
+build/
+.gradle/
+local.properties
+.idea/
+*.iml
+.kotlin/
+
+# Secrets: the Gemini key for the translation pipeline
+.env.local
+
+# Signing material. Listed before any exists, because a key committed once is
+# a key that has to be rotated - rewriting history does not un-publish it.
+*.jks
+*.keystore
+keystore.properties
+*.p12
+*.pepk
+
+# Release output
+*.apk
+*.aab

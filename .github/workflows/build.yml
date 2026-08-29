@@ -1,0 +1,71 @@
+# Everything the pre-push hook checks, plus the APK, on every branch and PR.
+#
+# Two JDKs are in play and it is worth knowing why. gradle-daemon-jvm.properties
+# pins the DAEMON to 25 and carries foojay URLs, so Gradle downloads that itself;
+# the unit tests are pinned to 21 in app/build.gradle.kts because Robolectric's
+# bytecode instrumentation cannot read Java 25 class files. So this only has to
+# install 21 - Gradle finds it via JAVA_HOME and fetches 25 on its own.
+name: build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: android-actions/setup-android@v3
+
+      # compileSdk 37 - note AGP 9 names platforms with a minor version, so this
+      # is "android-37.0" and not "android-37".
+      - name: Install the compile SDK
+        run: sdkmanager --install "platforms;android-37.0"
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Tests
+        run: ./gradlew test
+
+      - name: Lint
+        run: ./gradlew lint
+
+      - name: Translations
+        run: |
+          for L in ru uk; do
+            python3 tools/check_translation.py "app/src/main/res/values-$L/strings.xml" "$L"
+          done
+
+      - name: Build debug APK
+        run: ./gradlew assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: gloaming-debug-apk
+          path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+
+      - name: Upload reports when something fails
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reports
+          path: app/build/reports/
+          if-no-files-found: ignore

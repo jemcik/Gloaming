@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- ============ Home: the master card ============ -->
+    <string name="bedtime_mode">Режим сну</string>
+    <string name="bedtime_off">Вимкнено</string>
+    <string name="state_on_now">Увімкнено</string>
+    <string name="state_on_until">Увімкнено до %1$s</string>
+    <string name="state_starts_in">Через %1$s</string>
+    <string name="state_nothing_scheduled">Нічого не заплановано</string>
+    <string name="badge_once">Один раз</string>
+
+    <!-- Durations. Hours and minutes are separate so a language with more than
+         two plural forms can inflect each one. -->
+    <plurals name="dur_minutes">
+        <item quantity="one">%d хв</item>
+        <item quantity="few">%d хв</item>
+        <item quantity="many">%d хв</item>
+        <item quantity="other">%d хв</item>
+    </plurals>
+    <plurals name="dur_hours">
+        <item quantity="one">%d год</item>
+        <item quantity="few">%d год</item>
+        <item quantity="many">%d год</item>
+        <item quantity="other">%d год</item>
+    </plurals>
+    <string name="dur_hours_minutes">%1$s %2$s</string>
+    <!-- The dial centre. Seven glyphs is the worst case ("11h 59m") and the
+         numeral is 36sp: keep this compact or it will not clear the centre well. -->
+    <string name="dur_compact">%1$dг %2$02dхв</string>
+
+    <!-- ============ Home: permissions ============ -->
+    <plurals name="permissions_to_go">
+        <item quantity="one">Залишився %d дозвіл</item>
+        <item quantity="few">Залишилося %d дозволи</item>
+        <item quantity="many">Залишилося %d дозволів</item>
+        <item quantity="other">Залишилося %d дозволів</item>
+    </plurals>
+    <string name="perm_dnd_title">Доступ до «Не турбувати»</string>
+    <string name="perm_dnd_why">Дозволяє Gloaming вимикати звук сповіщень, поки ви спите</string>
+    <string name="perm_alarms_title">Будильники та нагадування</string>
+    <string name="perm_alarms_why">Дозволяє режиму сну починатися точно в заданий час</string>
+    <string name="perm_allow">Дозволити</string>
+    <string name="perm_allowed">Дозволено</string>
+
+    <!-- ============ Home: the window ============ -->
+    <!-- Overlines, uppercased in code. Keep short: they sit above the times. -->
+    <string name="label_bedtime">режим сну</string>
+    <string name="label_started">початок</string>
+    <string name="label_wake_up">пробудження</string>
+    <string name="dial_sleep_window">вікно сну</string>
+    <string name="dial_until">до %1$s</string>
+    <string name="dial_until_bedtime">до режиму сну</string>
+
+    <!-- ============ Home: which nights ============ -->
+    <string name="section_which_nights">в які ночі</string>
+    <!-- BUDGET: these four share one row, 311dp wide, and at 14sp English fills
+         it with 17dp of slack between chips. Longer than ~11 characters each and
+         the row overflows - see the day-row note in CLAUDE.md. -->
+    <string name="preset_every_night">Завжди</string>
+    <string name="preset_weekdays">Будні</string>
+    <string name="preset_weekends">Вихідні</string>
+    <string name="preset_once">Разово</string>
+    <string name="days_start_evening_before">Режим сну починається напередодні ввечері.</string>
+
+    <!-- ============ Home: what can wake you ============ -->
+    <string name="section_what_can_wake_you">що може вас розбудити</string>
+    <string name="dnd_title">Не турбувати</string>
+    <string name="dnd_subtitle">Дзвінки, повідомлення та сигнали залишаються без звуку</string>
+    <string name="dnd_nothing_silenced">Звук не вимикається</string>
+
+    <!-- ============ Home: how the screen looks ============ -->
+    <string name="section_how_the_screen_looks">вигляд екрана</string>
+    <!-- BUDGET: chip labels, two per row at 14sp. -->
+    <string name="fx_grayscale">Відтінки сірого</string>
+    <string name="fx_dim">Затемнення шпалер</string>
+    <string name="fx_dark">Темна тема</string>
+    <string name="fx_ambient">Сховати «Завжди на дисплеї»</string>
+    <plurals name="fx_handled_by_phone">
+        <item quantity="one">Функція %1$s керується телефоном, а не Gloaming.</item>
+        <item quantity="few">Функції %1$s керуються телефоном, а не Gloaming.</item>
+        <item quantity="many">Функції %1$s керуються телефоном, а не Gloaming.</item>
+        <item quantity="other">Функції %1$s керуються телефоном, а не Gloaming.</item>
+    </plurals>
+    <string name="fx_always_on_lives_in">Постійний екран знаходиться в %1$s.</string>
+
+    <!-- ============ Home: end-bedtime dialog ============ -->
+    <string name="end_bedtime_title">Завершити режим сну зараз?</string>
+    <string name="end_bedtime_body">Режим «Не турбувати» та ефекти екрана вимкнуться негайно. Завтра вночі режим спрацює за розкладом.</string>
+    <string name="end_now">Завершити</string>
+    <string name="keep_going">Продовжити</string>
+    <string name="action_set">Установити</string>
+    <string name="action_cancel">Скасувати</string>
+
+    <!-- ============ What gets through ============ -->
+    <string name="action_back">Назад</string>
+    <string name="what_gets_through">Що пропускається</string>
+    <string name="allow_lead">%1$s Усе інше зачекає до %2$s.</string>
+    <string name="section_people">люди</string>
+    <string name="section_everything_else">усе інше</string>
+    <string name="section_right_now">зараз</string>
+    <string name="row_calls">Дзвінки</string>
+    <string name="row_messages">Повідомлення</string>
+    <string name="row_conversations">Розмови</string>
+    <string name="row_repeat_callers">Повторні дзвінки</string>
+    <string name="row_repeat_callers_on">Двічі протягом 15 хвилин</string>
+    <string name="row_reminders">Нагадування</string>
+    <string name="row_events">Події календаря</string>
+    <string name="row_media">Звуки медіа</string>
+    <string name="row_media_on">Відео та ігри залишаються зі звуком</string>
+    <string name="row_alarms">Будильники та таймери</string>
+    <string name="row_alarms_why">Увімкнено, щоб будильник міг вас розбудити</string>
+    <string name="allowed_tonight">Дозволено сьогодні</string>
+    <string name="blocked_tonight">Заблоковано сьогодні</string>
+
+    <string name="filter_all">Режим «Не турбувати» вимкнено. Усе пропускається.</string>
+    <string name="filter_priority">Режим «Не турбувати» увімкнено. Усе, чого немає в списку вище, блокується.</string>
+    <string name="filter_alarms">Пропускаються лише будильники.</string>
+    <string name="filter_none">Увімкнено повну тишу — блокується навіть список вище.</string>
+    <string name="filter_unknown">Ваш телефон не повідомив, що саме діє.</string>
+
+    <string name="sheet_who_can_call">Хто може телефонувати</string>
+    <string name="sheet_who_can_message">Хто може писати</string>
+    <string name="people_anyone">Усі</string>
+    <string name="people_contacts">Ваші контакти</string>
+    <string name="people_starred">Вибрані контакти</string>
+    <string name="people_none">Ніхто</string>
+    <string name="conv_all">Усі розмови</string>
+    <string name="conv_priority">Лише пріоритетні розмови</string>
+    <string name="conv_sheet_blocked">Заблоковано</string>
+    <string name="conv_sheet_priority">Лише пріоритетні</string>
+    <string name="conv_sheet_all">Усі</string>
+
+    <!-- Items that appear INSIDE a sentence, so they carry their own case and
+         grammar. Never build these by lowercasing a title: a language with cases
+         needs a different form here, not a different capital. -->
+    <string name="item_alarms">будильники</string>
+    <string name="item_calls">дзвінки</string>
+    <string name="item_calls_from_contacts">дзвінки від ваших контактів</string>
+    <string name="item_calls_from_starred">дзвінки від вибраних контактів</string>
+    <string name="item_messages">повідомлення</string>
+    <string name="item_conversations">розмови</string>
+    <string name="item_repeat_callers">повторні дзвінки</string>
+    <string name="item_reminders">нагадування</string>
+    <string name="item_events">події календаря</string>
+    <string name="item_media">медіа</string>
+    <plurals name="item_and_more">
+        <item quantity="one">ще %d</item>
+        <item quantity="few">ще %d</item>
+        <item quantity="many">ще %d</item>
+        <item quantity="other">ще %d</item>
+    </plurals>
+    <string name="summary_only">лише %1$s</string>
+    <string name="sentence_can_get_through">%1$s пропускаються.</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Налаштування</string>
+    <string name="section_appearance">вигляд</string>
+    <string name="theme_system">Як у системі</string>
+    <string name="theme_light">Завжди світла</string>
+    <string name="theme_dark">Завжди темна</string>
+    <string name="section_language">мова</string>
+    <string name="settings_language">Мова застосунку</string>
+    <string name="settings_language_why">Відкриває системні налаштування мови</string>
+    <string name="section_about">про застосунок</string>
+    <string name="settings_version">Версія %1$s</string>
+    <string name="settings_about_body">Gloaming планує режим «Не турбувати» та ефекти екрана на один період щоночі, використовуючи точні будильники, щоб спрацьовувати, навіть коли застосунок закрито.</string>
+</resources>

@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name" translatable="false">Gloaming</string>
+
+    <!-- ============ Home: the master card ============ -->
+    <string name="bedtime_mode">Bedtime mode</string>
+    <string name="bedtime_off">Off</string>
+    <string name="state_on_now">On now</string>
+    <!-- BUDGET-EACH 18 state_on_until state_starts_in
+         These share one line with the switch inside the master card - about
+         190dp - and the duration they carry can reach "11 hr 59 min". They are
+         capped at one line in code, so anything longer than this is not wrapped,
+         it is TRUNCATED. Measured: the Ukrainian "Почнеться через %1$s" needed
+         more than 190dp and wrapped, which made the card grow and shrink under
+         the finger dragging the dial. -->
+    <string name="state_on_until">On now, until %1$s</string>
+    <string name="state_starts_in">Starts in %1$s</string>
+    <string name="state_nothing_scheduled">Nothing scheduled</string>
+    <string name="badge_once">Once</string>
+
+    <!-- Durations. Hours and minutes are separate so a language with more than
+         two plural forms can inflect each one. -->
+    <plurals name="dur_minutes">
+        <item quantity="one">%d min</item>
+        <item quantity="other">%d min</item>
+    </plurals>
+    <plurals name="dur_hours">
+        <item quantity="one">%d hr</item>
+        <item quantity="other">%d hr</item>
+    </plurals>
+    <string name="dur_hours_minutes">%1$s %2$s</string>
+    <!-- The dial centre. Seven glyphs is the worst case ("11h 59m") and the
+         numeral is 36sp: keep this compact or it will not clear the centre well. -->
+    <string name="dur_compact">%1$dh %2$02dm</string>
+
+    <!-- ============ Home: permissions ============ -->
+    <plurals name="permissions_to_go">
+        <item quantity="one">One permission to go</item>
+        <item quantity="other">%d permissions to go</item>
+    </plurals>
+    <string name="perm_dnd_title">Do Not Disturb access</string>
+    <string name="perm_dnd_why">Lets Gloaming silence notifications while you sleep</string>
+    <string name="perm_alarms_title">Alarms and reminders</string>
+    <string name="perm_alarms_why">Lets bedtime start at the exact minute you set</string>
+    <string name="perm_allow">Allow</string>
+    <string name="perm_allowed">Allowed</string>
+
+    <!-- ============ Home: the window ============ -->
+    <!-- Overlines, uppercased in code. Keep short: they sit above the times. -->
+    <string name="label_bedtime">bedtime</string>
+    <string name="label_started">started</string>
+    <string name="label_wake_up">wake up</string>
+    <string name="dial_sleep_window">sleep window</string>
+    <string name="dial_until">until %1$s</string>
+    <string name="dial_until_bedtime">until bedtime</string>
+
+    <!-- ============ Home: which nights ============ -->
+    <string name="section_which_nights">which nights</string>
+    <!-- BUDGET 26 preset_every_night preset_weekdays preset_weekends preset_once
+         The four share one row: 311dp of content width, less 16dp of padding per
+         chip, leaves 247dp for text. Cyrillic runs about 8dp per character
+         against Latin's 7.2, so a character count flatters it - 26 is the honest
+         limit, and it is on the SUM, not on any one label. "Always" rather than
+         "Every night" is what bought the room: measured at 14sp, all three
+         languages now end at 327dp of the 335dp margin, on one row. -->
+    <string name="preset_every_night">Always</string>
+    <string name="preset_weekdays">Weekdays</string>
+    <string name="preset_weekends">Weekends</string>
+    <string name="preset_once">Once</string>
+    <string name="days_start_evening_before">Bedtime starts the evening before.</string>
+
+    <!-- ============ Home: what can wake you ============ -->
+    <string name="section_what_can_wake_you">what can wake you</string>
+    <string name="dnd_title">Do Not Disturb</string>
+    <string name="dnd_subtitle">Calls, messages and alerts stay quiet</string>
+    <string name="dnd_nothing_silenced">Nothing is being silenced</string>
+
+    <!-- ============ Home: how the screen looks ============ -->
+    <string name="section_how_the_screen_looks">how the screen looks</string>
+    <!-- No budget: these four sit one per row (see the Column in MainActivity),
+         so they can be as long as they need to be. Two-up only ever worked in
+         English - measured, no two Russian labels fit a 311dp row. -->
+    <string name="fx_grayscale">Grayscale</string>
+    <string name="fx_dim">Dim wallpaper</string>
+    <string name="fx_dark">Dark theme</string>
+    <string name="fx_ambient">Hide always-on</string>
+    <plurals name="fx_handled_by_phone">
+        <item quantity="one">%1$s is handled by your phone, not by Gloaming.</item>
+        <item quantity="other">%1$s are handled by your phone, not by Gloaming.</item>
+    </plurals>
+    <string name="fx_always_on_lives_in">Always-on lives in %1$s.</string>
+
+    <!-- ============ Home: end-bedtime dialog ============ -->
+    <string name="end_bedtime_title">End bedtime now?</string>
+    <string name="end_bedtime_body">Do Not Disturb and the screen effects stop straight away. Tomorrow night runs as scheduled.</string>
+    <string name="end_now">End now</string>
+    <string name="keep_going">Keep going</string>
+    <string name="action_set">Set</string>
+    <string name="action_cancel">Cancel</string>
+
+    <!-- ============ What gets through ============ -->
+    <string name="action_back">Back</string>
+    <string name="what_gets_through">What gets through</string>
+    <string name="allow_lead">%1$s Everything else waits until %2$s.</string>
+    <string name="section_people">people</string>
+    <string name="section_everything_else">everything else</string>
+    <string name="section_right_now">right now</string>
+    <string name="row_calls">Calls</string>
+    <string name="row_messages">Messages</string>
+    <string name="row_conversations">Conversations</string>
+    <string name="row_repeat_callers">Repeat callers</string>
+    <string name="row_repeat_callers_on">Twice within 15 minutes</string>
+    <string name="row_reminders">Reminders</string>
+    <string name="row_events">Calendar events</string>
+    <string name="row_media">Media sounds</string>
+    <string name="row_media_on">Video and games stay audible</string>
+    <string name="row_alarms">Alarms and timers</string>
+    <string name="row_alarms_why">Kept on so your alarm still wakes you</string>
+    <string name="allowed_tonight">Allowed tonight</string>
+    <string name="blocked_tonight">Blocked tonight</string>
+
+    <string name="filter_all">Do Not Disturb is off. Everything is getting through.</string>
+    <string name="filter_priority">Do Not Disturb is on. Anything not listed above is being held back.</string>
+    <string name="filter_alarms">Only alarms are getting through.</string>
+    <string name="filter_none">Total silence is on — even the list above is held back.</string>
+    <string name="filter_unknown">Your phone did not say what is in effect.</string>
+
+    <string name="sheet_who_can_call">Who can call</string>
+    <string name="sheet_who_can_message">Who can message</string>
+    <string name="people_anyone">Anyone</string>
+    <string name="people_contacts">Your contacts</string>
+    <string name="people_starred">Starred contacts</string>
+    <string name="people_none">No one</string>
+    <string name="conv_all">All conversations</string>
+    <string name="conv_priority">Priority conversations only</string>
+    <string name="conv_sheet_blocked">Blocked</string>
+    <string name="conv_sheet_priority">Priority only</string>
+    <string name="conv_sheet_all">All</string>
+
+    <!-- Items that appear INSIDE a sentence, so they carry their own case and
+         grammar. Never build these by lowercasing a title: a language with cases
+         needs a different form here, not a different capital. -->
+    <string name="item_alarms">alarms</string>
+    <string name="item_calls">calls</string>
+    <string name="item_calls_from_contacts">calls from your contacts</string>
+    <string name="item_calls_from_starred">calls from starred contacts</string>
+    <string name="item_messages">messages</string>
+    <string name="item_conversations">conversations</string>
+    <string name="item_repeat_callers">repeat callers</string>
+    <string name="item_reminders">reminders</string>
+    <string name="item_events">calendar events</string>
+    <string name="item_media">media</string>
+    <plurals name="item_and_more">
+        <item quantity="one">%d more</item>
+        <item quantity="other">%d more</item>
+    </plurals>
+    <string name="summary_only">%1$s only</string>
+    <string name="sentence_can_get_through">%1$s can get through.</string>
+
+    <!-- ============ Settings ============ -->
+    <string name="settings_title">Settings</string>
+    <string name="section_appearance">appearance</string>
+    <string name="theme_system">Follow the system</string>
+    <string name="theme_light">Always light</string>
+    <string name="theme_dark">Always dark</string>
+    <string name="section_language">language</string>
+    <string name="settings_language">App language</string>
+    <string name="settings_language_why">Opens the phone\'s own language picker</string>
+    <string name="section_about">about</string>
+    <string name="settings_version">Version %1$s</string>
+    <string name="settings_about_body">Gloaming schedules Do Not Disturb and the screen effects for one window a night, using exact alarms so it fires with the app closed.</string>
+</resources>

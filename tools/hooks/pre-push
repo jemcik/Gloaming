@@ -1,0 +1,20 @@
+#!/bin/bash
+# Everything that can be checked without a phone, before anything leaves here.
+#
+# Install once per clone:   git config core.hooksPath tools/hooks
+# Skip deliberately:        git push --no-verify
+set -e
+cd "$(git rev-parse --show-toplevel)"
+echo "pre-push: tests"
+./gradlew test -q
+echo "pre-push: lint"
+./gradlew lint -q
+R=app/build/reports/lint-results-debug.txt
+if [ -f "$R" ] && grep -q "Error:" "$R"; then
+    echo "pre-push: lint reported errors"; grep "Error:" "$R" | head -5; exit 1
+fi
+for L in ru uk; do
+    echo "pre-push: strings ($L)"
+    python3 tools/check_translation.py "app/src/main/res/values-$L/strings.xml" "$L"
+done
+echo "pre-push: ok"

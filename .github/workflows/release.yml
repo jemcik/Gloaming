@@ -1,0 +1,60 @@
+# Tag a commit v0.1, v0.2, ... and the APK is attached to a GitHub Release.
+#
+# Releases exist here because workflow ARTIFACTS require a signed-in GitHub
+# account to download, while release assets do not - so this is the one that
+# gives anybody a link they can tap on a phone.
+#
+# It publishes the DEBUG APK, signed with the standard debug key. That is fine
+# for handing builds to people to try, and is not suitable for Play: a release
+# build needs a real keystore, which would go in repository secrets and get
+# wired up here. Deliberately not done yet - see .gitignore, which already
+# refuses to commit signing material.
+name: release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Install the compile SDK
+        run: sdkmanager --install "platforms;android-37.0"
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Build debug APK
+        run: ./gradlew assembleDebug
+
+      - name: Name it after the tag
+        run: |
+          mkdir -p dist
+          cp app/build/outputs/apk/debug/app-debug.apk \
+             "dist/gloaming-${GITHUB_REF_NAME}-debug.apk"
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/*.apk \
+            --title "$GITHUB_REF_NAME" \
+            --generate-notes \
+            --notes-file - <<'NOTES'
+          Debug build, signed with the standard Android debug key — installable
+          for trying it out, not a Play Store build.
+
+          Requires Android 15 (API 35) or newer.
+          NOTES

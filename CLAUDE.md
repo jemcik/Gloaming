@@ -385,10 +385,20 @@ proportional, "20:05" is 86.9dp and "13:50" is 79.7dp - the same five characters
 every minute. With `fontFeatureSettings = "tnum"` both measure 92.0dp exactly.
 Both Baloo 2 and Figtree carry tnum; the feature was verified in the font tables
 before relying on it, because setting it on a font that lacks it is a silent
-no-op. It is applied to the roles that show a number which CHANGES while you look
-at it - the display family, bodyLarge/Medium and labelSmall - not to titles.
-Tabular digits are wider: the countdown grew from 128dp to 141dp, which still
-leaves about 25dp inside the ring on each side at the worst case.
+no-op. Tabular digits are wider: the countdown grew from 128dp to 141dp, which
+still leaves about 25dp inside the ring on each side at the worst case.
+
+**It belongs on the display family and nowhere else.** It was applied to
+bodyLarge/Medium and labelSmall too, on the reasoning that they also show a
+number which changes - and that was wrong twice over. labelSmall is the overline
+role and never renders a digit at all. bodyLarge is the prose role for the whole
+app, and there the padding is visible and pointless: pointless because the line
+is left-aligned, so a width change moves no other pixel, and visible because
+tabular padding widens the narrow glyphs most. Figtree goes further and swaps in
+a DIFFERENT "1" for tabular - 5.1dp of ink against 3.1dp proportional - so
+"Starts in 12 hr" read as "Starts in 1 2 hr". Reported as exactly that. The rule
+now: numerals get tnum, sentences do not. Removing it took the line from 111.7dp
+to 107.4dp and cost nothing, because nothing there was ever aligned to anything.
 
 The brief's **app bar with wordmark was built and then removed**, deliberately.
 It cost 66dp of the space above the fold - a 48dp row plus an 18dp gap - on every

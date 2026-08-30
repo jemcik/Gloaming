@@ -238,23 +238,21 @@ private val GloamType = Typography(
     // One body size, for prose and subtitles alike. Secondary text is separated
     // by colour (onSurfaceLow), which the screen already does everywhere, rather
     // than by a 1sp difference nobody can see.
+    //
+    // Deliberately NOT tabular. Tabular figures pad every digit to the width of
+    // the widest one, and Figtree's "1" is far narrower than the rest, so it
+    // ends up floating in an oversized slot - "Starts in 12 hr" read as
+    // "1 2 hr". That padding buys alignment, and alignment is worth having in a
+    // centred countdown that rewrites itself every minute. It is worth nothing
+    // in left-aligned prose, where a width change moves no other pixel. Numerals
+    // keep tnum; sentences do not.
     bodyLarge = TextStyle(
         fontFamily = Figtree, fontWeight = FontWeight(400),
         fontSize = 14.sp, lineHeight = 20.sp
-    ,
-        // Tabular figures. Without them "20:05" measures 86.9dp and "13:50"
-        // 79.7dp - the same five characters - so every minute shoves the
-        // countdown sideways. Both Baloo 2 and Figtree carry tnum.
-        fontFeatureSettings = "tnum"
     ),
     bodyMedium = TextStyle(
         fontFamily = Figtree, fontWeight = FontWeight(400),
         fontSize = 14.sp, lineHeight = 20.sp
-    ,
-        // Tabular figures. Without them "20:05" measures 86.9dp and "13:50"
-        // 79.7dp - the same five characters - so every minute shoves the
-        // countdown sideways. Both Baloo 2 and Figtree carry tnum.
-        fontFeatureSettings = "tnum"
     ),
     bodySmall = TextStyle(
         fontFamily = Figtree, fontWeight = FontWeight(400),
@@ -273,11 +271,6 @@ private val GloamType = Typography(
     labelSmall = TextStyle(
         fontFamily = Figtree, fontWeight = FontWeight(700),
         fontSize = 11.sp, lineHeight = 14.sp, letterSpacing = 1.2.sp
-    ,
-        // Tabular figures. Without them "20:05" measures 86.9dp and "13:50"
-        // 79.7dp - the same five characters - so every minute shoves the
-        // countdown sideways. Both Baloo 2 and Figtree carry tnum.
-        fontFeatureSettings = "tnum"
     )
 )
 

@@ -5,11 +5,22 @@
 # account to download, while release assets do not - so this is the one that
 # gives anybody a link they can tap on a phone.
 #
-# It publishes the DEBUG APK, signed with the standard debug key. That is fine
-# for handing builds to people to try, and is not suitable for Play: a release
-# build needs a real keystore, which would go in repository secrets and get
-# wired up here. Deliberately not done yet - see .gitignore, which already
-# refuses to commit signing material.
+# It publishes a RELEASE APK signed with a real keystore held in repository
+# secrets. It used to publish the debug APK, and that was broken in a way only
+# a second release could reveal: the runner generates a throwaway debug key per
+# run, so 0.1 and 0.2 went out under different certificates and Android refused
+# to install 0.2 over 0.1 - INSTALL_FAILED_UPDATE_INCOMPATIBLE, measured on the
+# phone. A correct versionCode is necessary and not sufficient; a STABLE signing
+# identity is the other half.
+#
+# Four secrets are required, and the job fails loudly rather than falling back
+# to a debug key if the first is missing:
+#   GLOAMING_KEYSTORE_BASE64    the .jks, base64-encoded
+#   GLOAMING_KEYSTORE_PASSWORD
+#   GLOAMING_KEY_ALIAS
+#   GLOAMING_KEY_PASSWORD
+# The keystore itself never enters the repo - see .gitignore, which has refused
+# signing material since before any existed.
 name: release
 
 on:
@@ -80,19 +91,55 @@ jobs:
           echo "CODE=$CODE" >> "$GITHUB_ENV"
           echo "$TAG -> versionName $VERSION, versionCode $CODE"
 
-      - name: Build debug APK
+      # Written to RUNNER_TEMP, not the workspace, so it cannot be picked up by
+      # anything that archives the checkout.
+      - name: Decode the signing keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.GLOAMING_KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "::error::GLOAMING_KEYSTORE_BASE64 is not set. Releases must be signed with a stable key or they cannot be installed over the previous version. See the header of this workflow."
+            exit 1
+          fi
+          printf '%s' "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/gloaming.jks"
+          echo "GLOAMING_KEYSTORE=$RUNNER_TEMP/gloaming.jks" >> "$GITHUB_ENV"
+
+      - name: Build the release APK
+        env:
+          GLOAMING_KEYSTORE_PASSWORD: ${{ secrets.GLOAMING_KEYSTORE_PASSWORD }}
+          GLOAMING_KEY_ALIAS: ${{ secrets.GLOAMING_KEY_ALIAS }}
+          GLOAMING_KEY_PASSWORD: ${{ secrets.GLOAMING_KEY_PASSWORD }}
         run: >
-          ./gradlew assembleDebug
+          ./gradlew assembleRelease
           -PgloamingVersionName="$VERSION"
           -PgloamingVersionCode="$CODE"
+
+      # The gate. An unsigned build is named app-release-unsigned.apk and
+      # apksigner refuses it, so a missing or wrong key stops the release here
+      # instead of publishing something nobody can upgrade to. The certificate
+      # digest is printed so a change of signing identity is visible in the log
+      # rather than discovered on a phone.
+      - name: Refuse to publish an APK that is not signed
+        run: |
+          APK=app/build/outputs/apk/release/app-release.apk
+          # An unsigned build is named app-release-UNSIGNED.apk, so the name
+          # alone catches a missing key. Globbing *.apk would happily pick that
+          # one up, and on a dirty tree could match both.
+          if [ ! -f "$APK" ]; then
+            echo "::error::$APK is missing. AGP writes app-release-unsigned.apk when no signing config is attached, so the keystore did not reach the build."
+            ls -la app/build/outputs/apk/release/ || true
+            exit 1
+          fi
+          APKSIGNER=$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -1)
+          "$APKSIGNER" verify --print-certs "$APK"
+          echo "APK=$APK" >> "$GITHUB_ENV"
 
       # Named from VERSION rather than the raw tag, so "0.2" and "v0.2" produce
       # the same asset name.
       - name: Name it after the version
         run: |
           mkdir -p dist
-          cp app/build/outputs/apk/debug/app-debug.apk \
-             "dist/gloaming-${VERSION}-debug.apk"
+          cp "$APK" "dist/gloaming-${VERSION}.apk"
 
       - name: Publish the release
         env:
@@ -105,5 +152,5 @@ jobs:
           gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" \
             --title "$TAG" \
             --generate-notes \
-            --notes "Debug build, signed with the standard Android debug key - installable for trying it out, not a Play Store build. Requires Android 15 (API 35) or newer."
+            --notes "Requires Android 15 (API 35) or newer. Signed with the project release key, so it installs over any earlier release of the same lineage."
           gh release upload "$TAG" dist/*.apk --clobber

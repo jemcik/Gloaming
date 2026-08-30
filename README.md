@@ -198,6 +198,24 @@ strings left in English, and rows that grew past the width they have to fit.
 
 Needs `GEMINI_API_KEY` in `.env.local`, which is git-ignored.
 
+## Releases
+
+Tag a version and CI does the rest:
+
+```bash
+gh release create 0.3 --target main --generate-notes --title 0.3
+```
+
+`v0.3` works too. The workflow derives `versionName` and `versionCode` from the
+tag, builds a signed release APK and attaches it to the GitHub Release — release
+assets are downloadable without a GitHub account, which workflow artifacts are
+not.
+
+Note that **0.1 and 0.2 cannot be upgraded from**. They were published as debug
+builds, and a CI runner generates a fresh debug key per run, so those two are
+signed by different throwaway certificates and Android will not install over
+them. If you have either, uninstall before installing anything newer.
+
 ## Licence
 
 Apache License 2.0 — see [LICENSE](LICENSE).

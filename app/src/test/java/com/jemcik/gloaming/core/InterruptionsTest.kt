@@ -96,7 +96,7 @@ class InterruptionsTest {
     @Test
     fun `the detail screen keeps three and counts the rest`() {
         val sentence = Interruptions.sentence(res, everything())
-        assertTrue(sentence, sentence.endsWith("can get through."))
+        assertTrue(sentence, sentence.endsWith("are allowed."))
         assertTrue(sentence, sentence.contains("5 more"))
         assertTrue(sentence, sentence.first().isUpperCase())
     }
@@ -146,8 +146,8 @@ class InterruptionsTest {
         val uk = Interruptions.sentence(res, everything())
         locale("en")
         val en = Interruptions.sentence(res, everything())
-        assertTrue(en, en.contains("can get through"))
-        assertFalse("ru should not be English: $ru", ru.contains("can get through"))
+        assertTrue(en, en.contains("are allowed"))
+        assertFalse("ru should not be English: $ru", ru.contains("are allowed"))
         assertFalse("uk should not be Russian: $uk", uk == ru)
     }
 

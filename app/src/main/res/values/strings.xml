@@ -6,13 +6,22 @@
     <string name="bedtime_mode">Bedtime mode</string>
     <string name="bedtime_off">Off</string>
     <string name="state_on_now">On now</string>
-    <!-- BUDGET-EACH 18 state_on_until state_starts_in
-         These share one line with the switch inside the master card - about
-         190dp - and the duration they carry can reach "11 hr 59 min". They are
-         capped at one line in code, so anything longer than this is not wrapped,
-         it is TRUNCATED. Measured: the Ukrainian "Почнеться через %1$s" needed
-         more than 190dp and wrapped, which made the card grow and shrink under
-         the finger dragging the dial. -->
+    <!-- BUDGET-EACH 22 state_on_until state_starts_in state_nothing_scheduled
+         These are the second line of the app bar's title, under "Bedtime mode".
+         Measured on a 359dp screen: the title column runs x147..878, which is
+         209dp, the actions starting at 878. Rendered widths there today are
+         138.6dp (en), 137.4 (ru) and 141.1 (uk), so about 59dp is spare at a
+         two-digit hour. The duration they carry is the dial centre's compact
+         form, "12h 45m", and on a single-day schedule it reaches three-digit
+         hours - "167h 30m" - because the next bedtime is then a week out.
+         Capped at one line in code, so anything past 209dp is not wrapped, it
+         is TRUNCATED.
+         The old budget was 190dp beside the switch inside the master card, and
+         the reason it was tight is worth keeping: the Ukrainian
+         "Почнеться через %1$s" exceeded it and wrapped, which made the card grow
+         and shrink under the finger dragging the dial. The card is gone and the
+         bar is a fixed height, so a wrap can no longer move the page - but it
+         would still truncate, which is why the cap stays. -->
     <string name="state_on_until">On now, until %1$s</string>
     <string name="state_starts_in">Starts in %1$s</string>
     <string name="state_nothing_scheduled">Nothing scheduled</string>
@@ -20,18 +29,14 @@
 
     <!-- Durations. Hours and minutes are separate so a language with more than
          two plural forms can inflect each one. -->
-    <plurals name="dur_minutes">
-        <item quantity="one">%d min</item>
-        <item quantity="other">%d min</item>
-    </plurals>
-    <plurals name="dur_hours">
-        <item quantity="one">%d hr</item>
-        <item quantity="other">%d hr</item>
-    </plurals>
-    <string name="dur_hours_minutes">%1$s %2$s</string>
     <!-- The dial centre. Seven glyphs is the worst case ("11h 59m") and the
          numeral is 36sp: keep this compact or it will not clear the centre well. -->
     <string name="dur_compact">%1$dh %2$02dm</string>
+    <string name="dur_minutes">%1$dm</string>
+    <string name="window_span">From %1$s %2$s to %3$s %4$s</string>
+    <string name="window_span_same_day">From %1$s to %2$s %3$s</string>
+    <string name="day_today">today</string>
+    <string name="day_tomorrow">tomorrow</string>
 
     <!-- ============ Home: permissions ============ -->
     <plurals name="permissions_to_go">
@@ -44,6 +49,9 @@
     <string name="perm_alarms_why">Lets bedtime start at the exact minute you set</string>
     <string name="perm_allow">Allow</string>
     <string name="perm_allowed">Allowed</string>
+    <string name="boot_missed_title">Your phone restarted without Gloaming</string>
+    <string name="boot_missed_row">Auto-launch</string>
+    <string name="boot_missed_why">Lets bedtime start again after a restart. Without it nothing was scheduled until you opened the app</string>
 
     <!-- ============ Home: the window ============ -->
     <!-- Overlines, uppercased in code. Keep short: they sit above the times. -->
@@ -54,9 +62,21 @@
     <string name="dial_until">until %1$s</string>
     <string name="dial_until_bedtime">until bedtime</string>
 
-    <!-- ============ Home: which nights ============ -->
-    <string name="section_which_nights">which nights</string>
-    <!-- BUDGET 26 preset_every_night preset_weekdays preset_weekends preset_once
+    <!-- ============ Home: which days ============ -->
+    <string name="section_which_days">which days</string>
+    <!-- A row's supporting line must not WRAP. Past one line the row becomes a
+         three-line ListItem, and M3 then top-aligns the trailing content, so the
+         switch stops being level with its own row. Reported as exactly that.
+
+         The width left for it depends on what is to its left, so the budgets
+         differ: ~171dp beside a bare icon, ~151dp where a switch also sits. Characters are only a proxy - Cyrillic is
+         wider, and a 24-character Ukrainian subtitle wrapped where a
+         25-character English one did not - so these are set for the widest
+         script, and were checked by RENDERING the app in Ukrainian, which is
+         where two of them were caught.
+         BUDGET-EACH 22 fx_grayscale_sub fx_dim_sub fx_dark_sub fx_ambient_sub settings_language_why
+         BUDGET-EACH 20 row_media_on row_repeat_callers_on state_allowed state_blocked -->
+    <!-- BUDGET 30 preset_every_night preset_weekdays preset_weekends
          The four share one row: 311dp of content width, less 16dp of padding per
          chip, leaves 247dp for text. Cyrillic runs about 8dp per character
          against Latin's 7.2, so a character count flatters it - 26 is the honest
@@ -66,17 +86,30 @@
     <string name="preset_every_night">Always</string>
     <string name="preset_weekdays">Weekdays</string>
     <string name="preset_weekends">Weekends</string>
-    <string name="preset_once">Once</string>
-    <string name="days_start_evening_before">Bedtime starts the evening before.</string>
+    <string name="repeat_title">Repeat</string>
+    <string name="repeat_sub_on">Runs on the days you choose</string>
+    <string name="days_runs_once">Runs once, then switches itself off</string>
+    <string name="days_start_day_before">Bedtime starts the day before.</string>
 
     <!-- ============ Home: what can wake you ============ -->
     <string name="section_what_can_wake_you">what can wake you</string>
     <string name="dnd_title">Do Not Disturb</string>
-    <string name="dnd_subtitle">Calls, messages and alerts stay quiet</string>
     <string name="dnd_nothing_silenced">Nothing is being silenced</string>
 
+    <!-- The last line of both cards on Home, whenever bedtime is not actually
+         running. Every switch above them is a PLAN - written to prefs on the
+         tap and applied when the window opens - and with bedtime off, turning
+         Do Not Disturb "on" silences nothing tonight while looking exactly like
+         a switch that would. No budget: these wrap inside a full-width card. -->
+    <string name="note_off">Bedtime is off, so none of this is in effect.</string>
+    <string name="note_until">None of this is in effect until %1$s %2$s.</string>
+    <string name="note_unscheduled">Nothing is scheduled, so none of this is in effect.</string>
+
     <!-- ============ Home: how the screen looks ============ -->
+    <!-- Two tenses of one label. "how the screen LOOKS" is a claim about now,
+         and it is false whenever the window is not running. -->
     <string name="section_how_the_screen_looks">how the screen looks</string>
+    <string name="section_how_the_screen_will_look">how the screen will look</string>
     <!-- No budget: these four sit one per row (see the Column in MainActivity),
          so they can be as long as they need to be. Two-up only ever worked in
          English - measured, no two Russian labels fit a 311dp row. -->
@@ -84,15 +117,15 @@
     <string name="fx_dim">Dim wallpaper</string>
     <string name="fx_dark">Dark theme</string>
     <string name="fx_ambient">Hide always-on</string>
-    <plurals name="fx_handled_by_phone">
-        <item quantity="one">%1$s is handled by your phone, not by Gloaming.</item>
-        <item quantity="other">%1$s are handled by your phone, not by Gloaming.</item>
-    </plurals>
-    <string name="fx_always_on_lives_in">Always-on lives in %1$s.</string>
+    <string name="fx_grayscale_sub">The screen goes grey</string>
+    <string name="fx_dim_sub">The wallpaper darkens</string>
+    <string name="fx_dark_sub">At the next unlock</string>
+    <string name="fx_ambient_sub">The screen stays dark</string>
 
     <!-- ============ Home: end-bedtime dialog ============ -->
     <string name="end_bedtime_title">End bedtime now?</string>
-    <string name="end_bedtime_body">Do Not Disturb and the screen effects stop straight away. Tomorrow night runs as scheduled.</string>
+    <string name="end_bedtime_body_once">Do Not Disturb and the screen effects stop straight away. Nothing else is scheduled.</string>
+    <string name="end_bedtime_body">Do Not Disturb and the screen effects stop straight away. The next one runs as scheduled.</string>
     <string name="end_now">End now</string>
     <string name="keep_going">Keep going</string>
     <string name="action_set">Set</string>
@@ -100,29 +133,28 @@
 
     <!-- ============ What gets through ============ -->
     <string name="action_back">Back</string>
-    <string name="what_gets_through">What gets through</string>
+    <string name="what_is_allowed">What is allowed</string>
     <string name="allow_lead">%1$s Everything else waits until %2$s.</string>
     <string name="section_people">people</string>
     <string name="section_everything_else">everything else</string>
-    <string name="section_right_now">right now</string>
     <string name="row_calls">Calls</string>
     <string name="row_messages">Messages</string>
     <string name="row_conversations">Conversations</string>
     <string name="row_repeat_callers">Repeat callers</string>
-    <string name="row_repeat_callers_on">Twice within 15 minutes</string>
+    <string name="row_repeat_callers_on">Twice in 15 minutes</string>
     <string name="row_reminders">Reminders</string>
     <string name="row_events">Calendar events</string>
     <string name="row_media">Media sounds</string>
-    <string name="row_media_on">Video and games stay audible</string>
+    <string name="row_media_on">Still audible</string>
     <string name="row_alarms">Alarms and timers</string>
     <string name="row_alarms_why">Kept on so your alarm still wakes you</string>
-    <string name="allowed_tonight">Allowed tonight</string>
-    <string name="blocked_tonight">Blocked tonight</string>
+    <string name="state_allowed">Allowed</string>
+    <string name="state_blocked">Blocked</string>
 
-    <string name="filter_all">Do Not Disturb is off. Everything is getting through.</string>
-    <string name="filter_priority">Do Not Disturb is on. Anything not listed above is being held back.</string>
-    <string name="filter_alarms">Only alarms are getting through.</string>
-    <string name="filter_none">Total silence is on — even the list above is held back.</string>
+    <string name="filter_all">Do Not Disturb is off. Everything is allowed.</string>
+    <string name="filter_priority">Do Not Disturb is on. Anything you have not allowed is being held back.</string>
+    <string name="filter_alarms">Only alarms are allowed.</string>
+    <string name="filter_none">Total silence is on — even what you allowed is held back.</string>
     <string name="filter_unknown">Your phone did not say what is in effect.</string>
 
     <string name="sheet_who_can_call">Who can call</string>
@@ -136,6 +168,9 @@
     <string name="conv_sheet_blocked">Blocked</string>
     <string name="conv_sheet_priority">Priority only</string>
     <string name="conv_sheet_all">All</string>
+    <string name="conv_sheet_why">Android groups chats from your messaging apps as conversations. Any of them can be made priority by long-pressing its notification.</string>
+    <string name="people_sheet_why">Starred contacts are the ones you have starred in your Contacts app — open a contact and tap the star.</string>
+    <string name="action_starred_contacts">See who is starred</string>
 
     <!-- Items that appear INSIDE a sentence, so they carry their own case and
          grammar. Never build these by lowercasing a title: a language with cases
@@ -155,7 +190,7 @@
         <item quantity="other">%d more</item>
     </plurals>
     <string name="summary_only">%1$s only</string>
-    <string name="sentence_can_get_through">%1$s can get through.</string>
+    <string name="sentence_allowed">%1$s are allowed.</string>
 
     <!-- ============ Settings ============ -->
     <string name="settings_title">Settings</string>
@@ -165,7 +200,7 @@
     <string name="theme_dark">Always dark</string>
     <string name="section_language">language</string>
     <string name="settings_language">App language</string>
-    <string name="settings_language_why">Opens the phone\'s own language picker</string>
+    <string name="settings_language_why">Opens system settings</string>
     <string name="section_about">about</string>
     <string name="settings_version">Version %1$s</string>
     <string name="settings_about_body">Gloaming schedules Do Not Disturb and the screen effects for one window a night, using exact alarms so it fires with the app closed.</string>

@@ -93,6 +93,9 @@ fun BedtimeDial(
     end: LocalTime,
     now: LocalTime,
     running: Boolean,
+    // The track is a container like the cards, and it sits on the same page, so
+    // it takes the same animated colour rather than deepening on its own clock.
+    track: Color,
     enabled: Boolean,
     centreValue: String,
     centreLabel: String,
@@ -237,7 +240,7 @@ fun BedtimeDial(
 
             // track ring - butt caps
             drawArc(
-                color = g.raise, startAngle = 0f, sweepAngle = 360f, useCenter = false,
+                color = track, startAngle = 0f, sweepAngle = 360f, useCenter = false,
                 topLeft = boxTopLeft, size = boxSize,
                 style = Stroke(width = stroke, cap = StrokeCap.Butt)
             )
@@ -355,16 +358,25 @@ fun BedtimeDial(
             )
             // A tappable numeral with no affordance is a secret. Two dots are
             // the quietest thing that says "there is more here".
-            if (tappable) {
-                Spacer(Modifier.height(8.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                    repeat(centreCount) { i ->
-                        Box(
-                            Modifier
-                                .size(4.dp)
-                                .clip(CircleShape)
-                                .background(if (i == centreIndex) g.onSurfaceMid else g.line)
-                        )
+            //
+            // The SPACE for them is always taken, whether they are drawn or
+            // not. This column is centred in the dial, so adding 12dp of dots
+            // to it moved the numeral up by 6 - measured, 1136 to 1115 - and
+            // toggling the master switch made the time jump on the spot.
+            // Reported as exactly that. The reading it shows may change; where
+            // it sits should not.
+            Spacer(Modifier.height(8.dp))
+            Box(Modifier.height(4.dp), contentAlignment = Alignment.Center) {
+                if (tappable) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                        repeat(centreCount) { i ->
+                            Box(
+                                Modifier
+                                    .size(4.dp)
+                                    .clip(CircleShape)
+                                    .background(if (i == centreIndex) g.onSurfaceMid else g.line)
+                            )
+                        }
                     }
                 }
             }

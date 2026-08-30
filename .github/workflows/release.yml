@@ -1,5 +1,5 @@
 # Attaches the APK to a GitHub Release, whether the release was made by pushing
-# a v* tag or by pressing "Create a new release" in the web UI.
+# a version tag or by pressing "Create a new release" in the web UI.
 #
 # Releases exist here because workflow ARTIFACTS require a signed-in GitHub
 # account to download, while release assets do not - so this is the one that
@@ -14,7 +14,12 @@ name: release
 
 on:
   push:
-    tags: ['v*']
+    # BOTH styles, deliberately. This listened only for 'v*' while the repo's
+    # own first tag was "0.1", so the tag path had never once fired - 0.1
+    # shipped through the `release: published` event below, and pushing a bare
+    # "0.2" would have done nothing at all. Rather than pick a convention and
+    # silently ignore the other, both work.
+    tags: ['v[0-9]*', '[0-9]*']
   release:
     types: [published]
 
@@ -46,14 +51,48 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v6
 
-      - name: Build debug APK
-        run: ./gradlew assembleDebug
+      # The version has to come from the TAG, not from build.gradle.kts, and the
+      # reason is not cosmetic. Both values were hardcoded there, so every
+      # release shipped versionCode 1 - and Android refuses to install an APK
+      # whose versionCode is not HIGHER than the installed one. 0.1 installed
+      # fine; 0.2 would have failed with "app not installed" for every person
+      # who already had it. A release that upgrades nobody.
+      #
+      # MAJOR*10000 + MINOR*100 + PATCH keeps it monotonic with room to spare,
+      # and starts above the 1 already published: 0.1 -> 100, 0.2 -> 200,
+      # 1.0 -> 10000. Two digits per field, so 0.1.1 is 101 and not ambiguous.
+      - name: Read the version out of the tag
+        # Explicitly bash: this reads BASH_REMATCH, which zsh does not set (it
+        # uses $match), so the same lines silently derive versionCode 0 there.
+        shell: bash
+        run: |
+          TAG="$GITHUB_REF_NAME"
+          VERSION="${TAG#v}"
+          if [[ ! "$VERSION" =~ ^([0-9]+)\.([0-9]+)(\.([0-9]+))?$ ]]; then
+            echo "::error::Tag '$TAG' is not MAJOR.MINOR[.PATCH], so no versionCode can be derived from it. Tag as 0.2, v0.2, 0.2.1 or v0.2.1."
+            exit 1
+          fi
+          MAJOR="${BASH_REMATCH[1]}"
+          MINOR="${BASH_REMATCH[2]}"
+          PATCH="${BASH_REMATCH[4]:-0}"
+          CODE=$(( MAJOR * 10000 + MINOR * 100 + PATCH ))
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "CODE=$CODE" >> "$GITHUB_ENV"
+          echo "$TAG -> versionName $VERSION, versionCode $CODE"
 
-      - name: Name it after the tag
+      - name: Build debug APK
+        run: >
+          ./gradlew assembleDebug
+          -PgloamingVersionName="$VERSION"
+          -PgloamingVersionCode="$CODE"
+
+      # Named from VERSION rather than the raw tag, so "0.2" and "v0.2" produce
+      # the same asset name.
+      - name: Name it after the version
         run: |
           mkdir -p dist
           cp app/build/outputs/apk/debug/app-debug.apk \
-             "dist/gloaming-${GITHUB_REF_NAME}-debug.apk"
+             "dist/gloaming-${VERSION}-debug.apk"
 
       - name: Publish the release
         env:

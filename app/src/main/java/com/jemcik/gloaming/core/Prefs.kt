@@ -52,7 +52,17 @@ class Prefs(ctx: Context) {
         get() = sp.getLong("activeDay", NO_DAY)
         set(v) = sp.edit { putLong("activeDay", v) }
 
+    /**
+     * The boot the last handled BOOT_COMPLETED belonged to; [NO_BOOT] when we
+     * have never handled one. See [BootWatch] - a mismatch means the phone
+     * restarted and the broadcast never reached us.
+     */
+    var bootStamp: Long
+        get() = sp.getLong("bootStamp", NO_BOOT)
+        set(v) = sp.edit { putLong("bootStamp", v) }
+
     companion object {
+        const val NO_BOOT = Long.MIN_VALUE
         const val NO_DAY = Long.MIN_VALUE
         const val THEME_SYSTEM = 0
         const val THEME_LIGHT = 1
@@ -110,24 +120,22 @@ class Prefs(ctx: Context) {
         get() = sp.getBoolean("fxDarkTheme", false)
         set(v) = sp.edit { putBoolean("fxDarkTheme", v) }
 
-    /** 0 = not yet observed, 1 = the system applied it, 2 = the system ignored it. */
-    var darkThemeSupport: Int
-        get() = sp.getInt("darkThemeSupport", 0)
-        set(v) = sp.edit { putInt("darkThemeSupport", v) }
 
-    /** Build fingerprint the verdict was reached on; an OS update invalidates it. */
-    var darkProbeFingerprint: String?
-        get() = sp.getString("darkProbeFp", null)
-        set(v) = sp.edit { putString("darkProbeFp", v) }
 
-    /** Was the system already dark when bedtime started? Then the probe proves nothing. */
-    var darkProbeBaseline: Boolean
-        get() = sp.getBoolean("darkProbeBaseline", false)
-        set(v) = sp.edit { putBoolean("darkProbeBaseline", v) }
 
     var fxHideAmbient: Boolean
         get() = sp.getBoolean("fxHideAmbient", false)
         set(v) = sp.edit { putBoolean("fxHideAmbient", v) }
+
+    /**
+     * The vendor always-on values as they were before we switched them off, as
+     * `key=value|key=value`; null when the keys are not ours. So END restores
+     * what the user had rather than a guess, and a restore that fails is retried
+     * instead of forgotten with the display still off. See [AmbientControl].
+     */
+    var ambientSaved: String?
+        get() = sp.getString("ambientSaved", null)
+        set(v) = sp.edit { putString("ambientSaved", v) }
 
     // --- who can interrupt, mapped onto ZenPolicy ---
     // ZenPolicy.PEOPLE_TYPE_*: 1 anyone, 2 contacts, 3 starred, 4 none

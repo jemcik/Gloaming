@@ -30,9 +30,14 @@ off. Verified overnight 28–29 Aug with no battery whitelist and standby bucket
                              works backwards to the evening that reaches it
     core/ZenController.kt    owns the AutomaticZenRule: policy + device effects
     core/BedtimeReceiver.kt  START / END / BOOT_COMPLETED / MY_PACKAGE_REPLACED
-    core/Clock.kt            clock times in the phone's own 12/24 format
+    core/AmbientControl.kt   the vendor's own always-on keys, behind an adb-only
+                         permission; inert and hidden without it
+core/Clock.kt            clock times in the phone's own 12/24 format
     core/Prefs.kt            SharedPreferences
     core/Journal.kt          on-device log; read it over adb, see Build
+    ui/Rows.kt               the app's one list row, on M3's ListItem:
+                             SwitchRow / LinkRow / StaticRow / ActionRow /
+                             RadioRow. Six hand-rolled rows used to disagree
     ui/BedtimeDial.kt        24-hour dial, draggable handles, sweep gradient
     ui/SettingsScreen.kt     theme mode, a link to the system language picker
     ui/Theme.kt              Dusk/Dawn tokens, Baloo 2 + Figtree type scale,
@@ -51,7 +56,7 @@ MagicOS accepts these API values and silently ignores them:
 |---|---|---|
 | grayscale | yes | **yes** |
 | dimWallpaper | yes | **yes** |
-| nightMode | yes | no |
+| nightMode | yes | **yes** - but only once the screen turns off |
 | suppressAmbientDisplay | yes | no |
 | rule icon in status bar | yes | no (confirmed by swapping to a square) |
 
@@ -111,20 +116,210 @@ because `syncRule` forces a push while `!isEnabled && p.enabled`. `MainActivity`
 reconciles on ON_RESUME too, since before this the app only repaired on a COLD
 start: resuming it did not, so a rule deleted at 20:00 cost the whole night.
 
-System dark mode cannot be set by any app on any Android device:
-`MODIFY_DAY_NIGHT_MODE` is `signature|privileged|role`; `pm grant` refuses it.
-Writing `Settings.Secure.ui_night_mode` succeeds but the service ignores it.
+System dark mode is **device-dependent, not impossible** - the earlier claim
+here that no app can set it on any device was wrong, and was corrected by
+reading UiModeManagerService rather than the docs. It gates both `setNightMode`
+and `setCustomNightModeStart/End` like this:
 
-Honor's AOD settings screen is unreachable — `com.hihonor.aod/.ui.AODSettingsActivity`
-requires `WRITE_SECURE_SETTINGS`, `Settings$HomeAndUnlockSettingsActivity` needs
-`HW_SIGNATURE_OR_SYSTEM`, `LauncherModeSettingsActivity` is not exported.
+    if (isNightModeLocked() && checkCallingOrSelfPermission(
+            MODIFY_DAY_NIGHT_MODE) != PERMISSION_GRANTED) { return }
+
+so the permission is needed ONLY when the device locks night mode, and
+`mNightModeLocked = res.getBoolean(config_lockDayNightMode)` is a per-build
+boolean. Neither call carries `@RequiresPermission` in the public API;
+`setNightModeCustomType`, right beside them, does. On a phone that does not lock
+it, an app can set the system's own dark-theme schedule with NO permission - and
+that would beat the zen device effect, because the system would then do the
+switching and it would keep working with this app dead.
+
+AOSP defaults the boolean to `true`, so most phones will refuse. A `NightModeControl`
+object read it - `Resources.getSystem().getIdentifier("config_lockDayNightMode", ...)`,
+no permission, no side effects - and wrote one line to the journal. Measured on both
+phones and both lock it: `config_lockDayNightMode=true` on the OnePlus running
+LineageOS 23.2 and on the Honor Magic8 Pro running MagicOS 10, each agreeing
+with that device's own `dumpsys uimode` `mNightModeLocked=true`. So the door is
+shut on the two phones this app has ever run on - but by their choice, not by
+Android's. **That object is deleted** (`b72ff93`): it answered a question about a
+mechanism the zen effect does not use, and nothing read its answer. Re-read this
+paragraph before rebuilding it - the finding is the value, not the code.
+
+Deliberately NOT built on the back of this: the feature it would enable. There
+is no phone here on which it could be tested, and shipping an untestable path
+into the one part of the app that runs unattended overnight is not a trade worth
+making. The probe costs a resource lookup and a journal line; the feature can be
+written the day a device answers `false`.
+
+What IS closed on every device: `MODIFY_DAY_NIGHT_MODE` cannot be granted at all
+- `pm grant` returns "managed by role" even over adb. And writing
+`Settings.Secure.ui_night_mode` or the `dark_theme_custom_*` keys directly does
+nothing even holding `WRITE_SECURE_SETTINGS` (which an app CAN be granted over
+adb, tested): the service reads those keys at init and on `ACTION_SETTING_RESTORED`
+only, with no `ContentObserver` on them, so a raw write is never noticed.
+
+**Ambient suppression is ignored on the Honor — and establishing that took
+three witnesses that turned out to measure nothing.** The old claim in
+`AmbientCapability`, "there is no way to observe this the way night mode can be
+observed", was half right in a way that matters: the platform's *request* is
+observable, the vendor's *response* is not.
+
+`dumpsys power` prints `AmbientDisplaySuppressionController` with
+`ambientDisplaySuppressed` and `mSuppressionTokens`, so whether the platform
+asked is easy. Whether Honor obeyed is the hard half, and these all read
+IDENTICALLY with AOD switched on and switched off, measured 30 Aug 2026 against
+ground truth set from Honor's own Settings:
+
+| Proposed witness | AOD on | AOD off |
+|---|---|---|
+| `mWakefulness` | Dozing | Dozing |
+| `Display State` / `mScreenState` | DOZE | DOZE |
+| `aod_doze_state` | 1 | 1 |
+| `AOD#` layers in `SurfaceFlinger --list` | present | present |
+| AOD window holds focus (`mCurrentFocus`) | yes | yes |
+| that layer's `frame=` counter over 70 s | static at 4 | static |
+| `adb exec-out screencap` while dozing | all black, max=0 | all black, max=0 |
+
+Every one would have "confirmed" whatever it was pointed at. The screencap is
+the sharpest warning: the doze layer is not captured at all, the same blind spot
+that keeps `screencap` from seeing the colour transform.
+
+**The witness that works is a tap and a pair of eyes.** This phone's AOD is
+tap-to-show (`aod_display_type=2`, `aod_touch_time=5`), so the passive screen is
+dark either way; tapping the sleeping screen shows the clock. Validated with a
+negative control, which is the step that makes it evidence: with AOD off in
+Settings, a tap shows nothing. So the indicator can go negative.
+
+Against that witness: with `cmd power suppress-ambient-display` armed — the
+platform's OWN lever, the one `DefaultDeviceEffectsApplier` pulls,
+`ambientDisplaySuppressed=true` — a tap shows the clock exactly as it does with
+the token released. The platform records the suppression and `com.hihonor.aod`
+ignores it.
+
+**But Honor's AOD IS controllable, by four Secure keys written together.**
+Toggling it in Settings moves `aod_display_type` 2 to 0, `aod_switch` 1 to 0,
+`aod_touch_time` 5 to 0 and `fingerprint_touch_time` 5 to 0. Writing
+`aod_switch=0` ALONE changes nothing — which is why an earlier attempt here
+concluded the keys were inert mirrors, the same way the eye-comfort keys are.
+They are not: writing all four back from adb restored AOD, confirmed by tap.
+`aod_display_type` is the one that matters.
+
+That is a real lever, and it is gated: these are `Settings.Secure`, so a writer
+needs `WRITE_SECURE_SETTINGS`, which is signature|privileged and cannot be held
+by an ordinary install. It IS grantable over adb. So scheduling AOD off at
+bedtime is possible on this phone only as an opt-in path for a user willing to
+run one adb command. Not built — see Outstanding.
+
+The permissive branch of `AmbientCapability` remains unverified: where
+`doze_always_on` exists we return true and ship a live switch on the strength of
+that key alone. The OnePlus has never been checked. Note that checking it needs
+the tap-and-look protocol above, not the dumpsys fields — those measure nothing.
+
+**So the always-on row is now three-state, and one of the states is absent.**
+Where the zen effect works, it is a switch backed by the rule. Where it does not
+but `AmbientControl` can write the vendor's keys, it is a switch backed by those.
+Where neither is true the row is NOT DRAWN - no chevron, no footnote, no
+"handled by your phone". It used to be a door to Display settings plus a sentence
+naming the rest of the walk, and on Honor that door opens onto a screen that
+cannot reach always-on at all. A control that neither toggles anything nor opens
+the right screen is only noise, so it goes, and the card ends after Dark theme.
+`AmbientSettings` is deleted with it, along with `fx_ambient_sub_unsupported` and
+`fx_always_on_lives_in`.
+
+The vendor route is opt-in and cannot be reached by accident:
+
+    adb shell pm grant com.jemcik.gloaming android.permission.WRITE_SECURE_SETTINGS
+
+Verified end to end on the Honor 30 Aug 2026. Without the grant the section shows
+three rows and no footnote; with it the row appears, and toggling it mid-window
+moved all four keys to 0 and back, with `ambientSaved` holding the prior values
+and the journal recording both directions. The order matters and is deliberate:
+the prior values are written to prefs BEFORE the first key is touched, so a write
+that fails halfway still has something to restore from; and `ambientSaved` is
+cleared only on a successful restore, so a failure is retried rather than
+forgotten with the display left off. The hook is at the top of
+`ZenController.setActive`, which every path funnels through - alarms, boot, the
+UI, reconcile - so a phone that dies mid-window restores the display when it
+comes back, with no case of its own.
+
+Two things it deliberately does not solve: uninstalling mid-window leaves
+always-on off, since nothing of ours runs again; and if you change always-on in
+Settings while a window is running, the restore at the end overwrites it.
+
+Honor's AOD settings screen is unreachable, and the schedule route is shut too —
+read from `HnAOD.apk`'s own manifest rather than by trial:
+`com.hihonor.aod/.ui.AODSettingsActivity` is `exported=true` but carries
+`android:permission="android.permission.WRITE_SECURE_SETTINGS"`;
+`.AODSettingsActivityAlias` is exported and carries
+`hihonor.android.permission.HW_SIGNATURE_OR_SYSTEM`; and `.CommonReceiver`,
+which handles `com.hihonor.aod.action.START_ALARM_ACTION` / `END_ALARM_ACTION`
+and so is how Honor schedules its own AOD, is `exported=false`. Also
+`Settings$HomeAndUnlockSettingsActivity` needs `HW_SIGNATURE_OR_SYSTEM` and
+`LauncherModeSettingsActivity` is not exported.
+
+**MagicOS withholds `ACTION_BOOT_COMPLETED`, and that is the worst bug found
+here.** With the app set to "Manage automatically" in Settings > Apps > App
+launch, the broadcast never arrives. Measured 30 Aug 2026 across four reboots,
+each waited out to five minutes: journal unchanged, and NO alarms at all. The app
+sat armed, showing the right times, with nothing behind them until it was next
+opened. It is the same shape as the Wellbeing bug this app exists to route
+around - a trigger the vendor quietly declines to deliver - and it is invisible.
+Setting that app to auto-launch delivered `BOOT_COMPLETED` 32 s after boot.
+
+**Battery optimisation is NOT the mechanism**, tested twice: once added over adb,
+once granted from Honor's own Settings screen, exempt and surviving the reboot in
+standby bucket 5. The broadcast still never came. Diffing every Settings
+namespace across that toggle showed Honor writes exactly one thing - the AOSP
+`deviceidle` whitelist entry - so unlike the AOD keys there was no vendor state
+hiding behind the UI.
+
+`BootWatch` detects it WITHOUT asking which phone this is. A vendor test would
+fire on every Honor whether or not anything was wrong, could never tell whether
+the user acted on it - the setting lives inside `com.hihonor.systemmanager` and
+is not readable - and would miss every other vendor doing the same under another
+name. So it measures the symptom: `BedtimeReceiver` records which boot it
+handled, the app compares that against the boot it is running on, and a mismatch
+means the phone restarted with the broadcast withheld. The notice clears itself
+once a boot is handled, which is the only confirmation available when the setting
+cannot be read. Confirmed both ways on the Honor - the notice appears with
+auto-launch off and is gone after a boot that reached us.
+
+The door is named as a COMPONENT, not by action, and that is deliberate: two
+activities answer `hihonor.intent.action.HSM_STARTUPAPP_MANAGER`, and
+`.appcontrol.activity.StartupAppControlActivity` is gated behind
+`com.hihonor.permission.external_app_settings.USE_COMPONENT`, so resolving the
+action lands on Honor's chooser where one of the two choices simply fails.
+`.startupmgr.ui.StartupNormalAppListActivity` is exported with no permission
+attribute - read from `HnSystemManager.apk` - and opens App launch directly. It
+needs a `<queries><package>` entry or package visibility hides it.
 
 Blue-light filter is not in `ZenDeviceEffects` on any device. Honor's
 `eye_comfort_*` keys READ via `Settings.System` but are registered in
 `sSystemMovedToSecure`, so writes fail with "You cannot keep your settings in
 the secure settings" even with `WRITE_SETTINGS` granted.
 
-Detection: `DarkCapability` measures (throwaway rule, 2.5 s, observe).
+Night mode's deferral is the whole story, and it cost a subsystem to learn.
+`DefaultDeviceEffectsApplier.updateOrScheduleNightMode` applies the theme
+IMMEDIATELY only when the rule was activated manually, or during init, or when
+the screen is off, or the device is locked - otherwise it registers a
+screen-off receiver and waits, because "Changing the theme can be disruptive for
+the user (Activities are likely recreated, may lose some state)". Only nightMode
+is deferred; grayscale, dimWallpaper and suppressAmbientDisplay apply at once.
+
+`DarkCapability` used to probe this with a throwaway rule for 2.5 s, from the
+app, screen on, unlocked - which is exactly the case that always defers. It
+could therefore only ever return UNSUPPORTED, on any device, and did: both
+phones were recorded as ignoring night mode when neither does. Measured on the
+Honor 30 Aug 2026: rule active with `deviceEffects=[grayscale, dimWallpaper,
+nightMode]`, screen ON gives `mAttentionModeThemeOverlay=1000` and
+`mComputedNightMode=false`; press power and it is `1001` and `true`, and stays
+dark on waking. The probe is deleted. Dark theme is a plain toggle, and the
+screen says "Dark theme applies when the screen turns off", because a control
+that does nothing while you watch it looks broken - which is how this was
+reported.
+
+Note this is a DIFFERENT mechanism from `UiModeManager.setNightMode`: the zen
+effect calls `setAttentionModeThemeOverlay`, which is not gated by
+`config_lockDayNightMode`. The Honor locks night mode and the overlay applies
+anyway.
 `AmbientCapability` infers from one verified key — do not add keys without
 confirming on real hardware.
 
@@ -133,9 +328,35 @@ confirming on real hardware.
 - **Logcat is encrypted** for third-party apps on MagicOS — entries come back as
   `(HKS)...(HKE)`. Hence `Journal.kt`. Never swallow an exception; three bugs
   hid behind `runCatching { }` with no logging.
+- **`run-as` can READ this app's data but not write it.** Not a MagicOS trait,
+  though it was found there: measured again 30 Aug 2026 on a OnePlus running
+  LineageOS 23.2 and the write is refused identically, so treat it as how
+  Android behaves rather than as something a vendor did. `cat
+  shared_prefs/gloaming.xml`
+  works and `cat > shared_prefs/gloaming.xml` fails with `Read-only file
+  system`. Reading is unaffected, which is why the journal probe works and
+  `check.sh` works — both only read. The consequence is that a setting cannot
+  be corrected from the host: it has to go through the UI, with `adb shell
+  input tap` against a `uiautomator dump`, matching rows by their TEXT rather
+  than by coordinates, and re-reading the prefs afterwards to confirm what
+  actually changed. Note the first failure looks like a different bug —
+  `sh -c 'cat > shared_prefs/...'` reports `No such file or directory`, because
+  the inner shell does not inherit `run-as`'s working directory; switching to
+  an absolute path is what surfaces the real `Permission denied` /
+  `Read-only file system`.
 - **`clip(RoundedCornerShape(n))` on a short container eats content.** A 28 dp
   radius cut off labels; a 12 dp radius trimmed ~12 dp off each end of a 1 dp
   rule. Don't clip anything under ~40 dp tall whose child touches the edge.
+  It caught the Repeat row too, and that one is worth knowing because the clip
+  was added for an unrelated reason: the row is the only switch row with no card
+  behind it, so its ripple arrived as a bare rectangle across the content width,
+  and clipping to `CORNER` to round that off promptly bit the corners off
+  "Repeat" and its subtitle. The ripple is `indication = null` there now. The
+  press is still acknowledged - the row's interaction source reaches the switch,
+  so the thumb grows to 28 dp under the finger, measured - which is where a
+  switch's feedback belongs anyway. Two lessons, not one: a ripple with nothing
+  to clip it is a design problem, and reaching for `clip` to solve it is how you
+  turn one problem into two.
 - **Compose state goes stale**, in three separate ways. The receiver writes
   prefs while the app is backgrounded, so the screen re-reads everything on
   `ON_RESUME`. `now` goes stale with the screen simply left open — the
@@ -217,6 +438,46 @@ confirming on real hardware.
   tall, which is the largest this width allows without bleeding past the screen
   margin — 44.4 x 48 rather than 40 x 40. Google Clock ships the same
   compromise. Do not "fix" this by shrinking the gaps; there are none left.
+- **Starred contacts are SHOWN by the contacts app, not by us.** Asked for as
+  "display my starred contacts", and the app has never held READ_CONTACTS - see
+  the test-alert note. It does not need to:
+  `com.android.contacts.action.LIST_STARRED` (the deprecated
+  `ContactsContract.Intents.UI.LIST_STARRED_ACTION`) opens the contacts app's own
+  starred screen, and launching an activity needs no permission. Verified from
+  inside the app rather than over adb, which would have proved nothing: the tap
+  lands in `com.google.android.contacts` showing "3 starred contacts". The system
+  list is also authoritative and current, where a copy of ours would go stale the
+  moment a star was added elsewhere.
+  **It is not a Google-Contacts action, which was checked and not assumed.** The
+  action is AOSP's, so vendor forks inherit it: Honor's own contacts app declares
+  `com.android.contacts.action.LIST_STARRED` on
+  `com.android.contacts.activities.PeopleActivity` inside a `com.hihonor.*`
+  package. Verified by disabling Google Contacts, enabling Honor's, and tapping
+  the row - it lands on Honor's "Favourites" screen with the same contacts, and
+  both packages were put back afterwards. On the first pass this looked
+  Google-only, because the phone's own contacts app happened to be disabled and
+  so resolved to nothing; the resolver told the truth about the phone and not
+  about the platform.
+  Note vendors name it differently - Honor says Favourites where Android says
+  starred - so our copy names the STAR, which is the thing you tap either way.
+  A `<queries><intent>` entry is required or `resolveActivity` returns null and
+  the row hides on a phone where it would have worked. It IS resolved rather than
+  assumed, and hidden where it does not resolve - a door onto nothing is the
+  always-on row's mistake.
+  The sheets also open FULLY expanded now. M3's default is partial with a drag
+  for the rest, and with the explanation and this link added the last row fell
+  below that height and could not be tapped. Found by tapping it and going
+  nowhere, which is the only way that shows up.
+
+- **"Conversations" needs explaining and the sheet is where, not a tooltip.**
+  It is an Android 11 notion that Android itself barely explains - reported by
+  someone with ten years on the platform who did not know what it was. The
+  explanation sits under the title in the choice sheet, because a tooltip on
+  Android is a LONG-PRESS, and a person who does not know what a thing is will
+  not long-press it to find out. The sheet is where the choice is made, so it is
+  where the sentence gets read. `ChoiceSheet` takes an optional `why`; only this
+  one passes it, and the other two sheets are self-explanatory without it.
+
 - **A trailing lambda binds to the LAST parameter, and Compose will happily
   run it as content.** `AllowRow(kind, title, subtitle, locked, onClick,
   trailing)` called as `AllowRow(...) { editing = "conv" }` binds the lambda to
@@ -237,19 +498,311 @@ confirming on real hardware.
   pushed unless it changed. `setActive(force = true)` exists for alarms and
   boot, which must assert regardless — and boot clears the signature, or a rule
   edited from Settings would never be repaired.
+- **The effects are ROWS now, not chips.** The chips were already one per line -
+  no two Russian labels fit a 311dp row, the closest pair missing by 9dp - so
+  they were full-width elements shaped like pills with dead space to the right
+  of each. Their explanations had nowhere to live and collected at the foot of
+  the section, two sentences away from the controls they described. As rows
+  (icon, name, supporting line, switch) each carries its own, the dead space
+  holds the switch, and the section is the same shape as "What can wake you"
+  above it. Subtitles have about 185dp - measured - which is roughly 27
+  characters; three of the first drafts wrapped and were shortened. The one
+  thing still written as a footnote is the Always On Display path, and it earns
+  it: Honor locks every route to that screen, so the row's chevron can only
+  reach Display settings and the app has to say where to walk the rest.
+
+- **The effect chips told TalkBack nothing, and two of them were not chips.**
+  They were a hand-rolled `Surface(onClick)`, so read off the device all four
+  came back `checkable=false checked=false` - on-or-off existed only as a fill
+  colour, and a blind user could not find out whether greyscale was on. The day
+  circles have declared `Role.Checkbox` since they were written, so this was
+  inconsistent with the app before it was inconsistent with M3. They are
+  `FilterChip` now, with shape, colours, height and leading icon all passed, so
+  the semantics changed and the appearance did not.
+  The second half matters more. Two of the six call sites never toggled
+  anything: when a phone ignores night mode or ambient suppression, that chip
+  calls `startActivity` and LEAVES for the system screen - while looking
+  identical to the ones beside it that flip a setting, and announcing, like
+  them, as an untyped button. Those are `AssistChip` now, which declares
+  `Role.Button`, and they are outlined rather than filled so the eye is told the
+  same thing: not a state, a door. Measured after: the two toggles report
+  `checkable=true checked=true`, the two doors report `checkable=false`.
+  Worth noting an objection that was wrong: `FilterChip` was rejected once over
+  its elevation. Every flat elevation token is `Level0` except hover, which a
+  touchscreen never raises.
+
+  **This has now happened three times, which makes it a pattern rather than a
+  slip.** The day circles declared `Role.Checkbox` from the start; the effect
+  chips did not; and the choice sheets did not either - every option came back
+  `checkable=false selected=false`, so which one was chosen existed ONLY as a
+  fill colour and a check mark. They are `Modifier.selectable(role =
+  Role.RadioButton)` in a `selectableGroup()` now, measured after: all four
+  report `checkable=true` and the chosen one `checked=true`. The rule to apply
+  when building any new control: if state is visible, it must be in the
+  semantics, and the way to find out is to read it off the device rather than
+  the source.
+
+- **The "right now" readout is the last line of the "What can wake you" card,
+  and only while bedtime runs.** It is
+  the one thing on any screen that is not the app's own belief: everything else
+  reports what we ASKED for, this reports what the phone ANSWERED
+  (`getCurrentInterruptionFilter`), which is the entire premise of this app - a
+  vendor can accept a request and quietly ignore it. It used to sit at the foot
+  of the allowlist, which was the wrong place twice over. Configuring during the
+  day it printed "Do Not Disturb is off. Everything is getting through."
+  directly beneath rows just set to Blocked, read - reasonably - as the settings
+  not working. And it was on a screen about a FUTURE window while reporting NOW.
+  Gated on `runningNow`, it can only be read when there is something to verify.
+  It sits INSIDE the card rather than in a section of its own, because that is
+  the card which asks for Do Not Disturb and this is the evidence it happened -
+  and it puts the worst case where it cannot be missed: the switch reading ON,
+  with a line directly beneath it saying the phone reports everything getting
+  through. A section of its own cost a `SectionRule` and a label for one
+  sentence, and separated the claim from its evidence.
+  Note what the move broke, because it is the same fault a third time: the copy
+  said "anything not listed ABOVE", which was true at the foot of the allowlist
+  and false anywhere else. Text that points at its neighbours travels badly.
+  When the phone says everything is getting through while Do Not Disturb was
+  asked for, the line is drawn in `cta` rather than `onSurfaceLow` - that is the
+  failure the app exists to catch, so it does not whisper it in the same ink as
+  good news.
+
+- **Every switch on Home is a PLAN, and for months nothing said so.** Reported
+  as the sharpest version: with the master switch OFF, the Do Not Disturb switch
+  and the four effect switches are fully live, so a person turns Do Not Disturb
+  "on" and reasonably expects to be left alone tonight. They are not inert -
+  each tap is written to prefs and reaches the phone when the window opens - so
+  they are not "unavailable" in the sense every guideline is about. They are a
+  plan that looks like a state.
+  The obvious import is Google's own settings dependency pattern - parent switch
+  disables the dependent controls - and it is wrong HERE for two reasons.
+  `Prefs.enabled` defaults to FALSE, so a fresh install opens with the switch
+  off and disabling the rest would mean a new user can configure nothing until
+  they arm a schedule they have not set up yet. And M3 disabled content is ~38%
+  opacity and explicitly exempt from contrast minimums, which undoes the work
+  that took `onSurfaceLow` from 4.30:1 to 6.4:1 for an app read in a dark room -
+  and disabled controls are not focusable, so TalkBack loses them entirely.
+  So: nothing is disabled, and `planNote` says the truth at the foot of each
+  card instead, in the slot the "right now" readout already established. It is
+  a `NoticeStrip` - full width, no inset, `notice` behind `onSurface` - because
+  the first attempt at "make it noticeable" was to colour the TEXT, and that is
+  measured shut: `cta` as ink is 2.49:1 on a card in Dawn and `lampOff` is
+  3.80:1, both under the 4.5:1 body minimum and under even the 3:1 large-text
+  exemption. The cream cannot carry an accent hue as text - the WAKE UP finding
+  a second time. The attention has to come from AREA, and the band is pitched at
+  the same 1.23:1 / 1.40:1 the cards already have against the page, so it reads
+  as page -> card -> notice rather than as an error state. See `notice` in
+  Theme.kt for the rest of the numbers. Three
+  readings, because the reason differs and a person can act on the difference -
+  switched off, armed and waiting, and armed with nothing to run. It is drawn
+  only when NOT running: while the window is live the Do Not Disturb card has
+  the phone's own answer to show there instead, and the effects card has the
+  screen in front of you.
+  Note the half that was NOT reported and is the same fault: armed but before
+  the window opens, the master switch is GREEN and still nothing is silenced.
+  Any fix that only handled "off" would have left that standing.
+  `section_how_the_screen_looks` has a second, future-tense form for the same
+  reason - "how the screen LOOKS" is a claim about now, and it is false whenever
+  the window is not running, which is most of the time anyone reads it.
+
+- **A clock time with no day word reads as TODAY, and that has now cost two
+  fixes.** The window sentence was the first. The plan note was the second,
+  reported within minutes of shipping: the app bar said "Starts in 35h 20m" over
+  a note saying "None of this is in effect until 12:00 PM", which are both true
+  and read as a contradiction. `dayWord` is lifted out of `windowSentence` and
+  shared now, so the two cannot disagree on one screen - and the next thing that
+  prints a time has one obvious function to call.
+
+- **The Do Not Disturb row has no supporting line, and that is the fix rather
+  than the omission.** It used to assert what gets silenced - "Calls, messages
+  and alerts stay quiet", later shortened to "Calls and alerts are quiet" - while
+  the row DIRECTLY BELOW it reported the truth dynamically: "Alarms, calls, and
+  2 more". Allow calls from starred contacts and the card contradicted itself,
+  one line apart. Reported as exactly that. Any static sentence there can only
+  duplicate the dynamic one or disagree with it, so there is none: the row is a
+  one-line `ListItem` at 56dp. It is also now immune to the wrapping trap below,
+  since a row with no supporting text cannot become a three-line one.
+
+- **An M3 `ListItem` centres its trailing content on a two-line item and
+  TOP-ALIGNS it on a three-line one**, and that is not configurable - the layout
+  hard-codes `y = if (isThreeLine) topPadding else CenterVertically.align(...)`.
+  So a supporting line long enough to WRAP silently moves the switch off its own
+  row's centre: Do Not Disturb's sat 56px high, Media sounds' 35px. Reported as
+  "the toggle is not vertically aligned", which is exactly what it was.
+  Always-centring was considered and rejected: it would mean abandoning
+  `ListItem` for a hand-rolled row that copies M3's metrics, to deviate from M3
+  on the one line we had just adopted it for. The fix is to keep rows at two
+  lines instead, which is what a list item's supporting text is for. That is
+  enforced rather than eyeballed: an allowlist row has ~151dp beside a 44dp
+  avatar and a switch, about 24 characters, and `BUDGET-EACH 24` in
+  `values/strings.xml` makes `check_translation.py` fail a string that would push
+  a row back to three lines.
+  The Alarms row stays three lines deliberately - it carries no trailing content,
+  so nothing can be misaligned, and its sentence is the point of the row.
+
+- **Settings was the last screen still doing everything its own way**, and it
+  had three left edges: section labels and prose at 24dp, the language row at
+  40, the theme radios at 80. The cause was a workaround. Its rows were bare
+  `ListItem`s rather than cards, so the screen padded 8dp and added 16 back onto
+  every non-row element to line the two up - a compensation that had to be
+  remembered at each call site, and was not: ABOUT, its body and the version
+  line never got it. The rows live in cards now, like every list in the app,
+  which puts the ListItem's own 16dp INSIDE the card and lets the screen use the
+  usual 24dp. Measured after: 24dp for labels and prose, 80dp for every row.
+  `BackRow` is deleted with it - both detail screens carry Back as a `TopAppBar`
+  navigation icon, and it had no call sites left.
+  `Section(rule = false)` exists for the first block on a screen: there is
+  nothing above to divide it from, and a rule directly under the app bar's own
+  edge is just a second line.
+
+- **The translation checker never measured English.** Budgets are declared in
+  `values/strings.xml` and enforced against the file being translated, so the one
+  language nobody checked was the one the numbers were written in: "When the
+  screen turns off" sat 3 characters over its own limit and passed every run. The
+  source is measured now too, and the check was confirmed by making an English
+  string too long and watching it fail - a check that has never been seen to fire
+  is not yet a check.
+
+- **`RadioRow` is the one row in the app that is NOT a `ListItem`, deliberately.**
+  A ListItem's height comes from tokens by line count - 56dp for one line - and
+  Compose M3 offers no density parameter, so three theme options in a card were
+  three 56dp boxes around three 20dp radio buttons. The rows were already flush;
+  all the air was inside them. Reported as too much vertical separation.
+  It is a `Row` at `heightIn(min = 48.dp)` now, which is Android's touch minimum
+  and so as tight as a row of this kind may be. Note the leading `Box(24.dp)`
+  around the button: `RadioButton` otherwise claims its own 48dp interactive size
+  and pushes the label 24dp right of every other row on the screen. Measured
+  after: 48.0dp rows, labels still at 80dp with everything else.
+
+- **A duration under an hour drops the hour, rather than printing "0h".** Both
+  places that show one - the dial centre and the app bar's status line - go
+  through `span()`, so it is one change. The minutes stay zero-padded WHEN there
+  is an hour ("5h 05m"), so the countdown does not change width every ten
+  minutes, and unpadded when there is not ("5m"), where there is no column to
+  hold. It also buys width on the line that needs it most: the status line is
+  capped at one line and TRUNCATES rather than wraps.
+
+- **`bodySmall` is a label role, not a paragraph role, and its leading was set
+  for a paragraph.** 14sp on 20sp is a ratio of 1.43 - looser than M3's own
+  bodySmall, which is 12/16 at 1.33 - and every one of its four call sites is a
+  short supporting line: a row's subtitle, the two captions under the day row,
+  the right-now readout. When one of those wrapped, which in Russian and
+  Ukrainian they do, the two lines read as separate sentences with a gap rather
+  than one sentence running on. Reported as exactly that. It is 18sp now; prose
+  is `bodyLarge` and keeps 20. Measured: a two-line subtitle went 36.9dp to
+  34.9dp.
+
+- **Four hand-built sections, four different rhythms.** A section is a rule, a
+  name and the block it introduces, and each of the four was assembled by hand
+  at its call site - so the gap between the LABEL and its content came out as
+  `TIGHT` under "which days", 18dp under "what can wake you", `TIGHT` again
+  under "how the screen looks", and something else again on the allowlist.
+  Nothing chose those numbers: they were whatever the enclosing `Column`'s
+  `Arrangement` happened to be, which differed because some sections wrapped
+  their content in an inner Column and some did not. Reported, fairly, as
+  "really ugly, this must be unified".
+  `ui/Section.kt` states the rhythm once and the call sites cannot disagree:
+  GROUP above the rule, GROUP below it, GROUP between the name and what it
+  names - "what can wake you"'s spacing, chosen by eye against the other three -
+  and `TIGHT` only for gaps WITHIN a block. Measured after: 18.0dp under every
+  label on both screens.
+  Note the gap ABOVE the rule is deliberately the PARENT's: a Column's
+  arrangement adds it whether the section wants it or not, so adding one inside
+  as well simply doubled it. Both screens' columns are `spacedBy(GROUP)` for
+  that reason, and `GROUP`/`TIGHT` live in `Section.kt` rather than being
+  redeclared privately per file.
+
+- **One row, six implementations.** `AllowRow`, `EffectRow`, two rows written
+  inline on Home, `LinkRow` and `PermissionRow` were the same conceptual thing
+  and agreed about nothing: leading element, trailing element, subtitle style,
+  container, and the "go here" affordance, which existed at 22dp, at 24dp, and
+  as a literal `›` sized by borrowing `titleLarge`. They are all `ui/Rows.kt`
+  now, on M3's `ListItem`.
+  Two things are passed in rather than inherited from M3, deliberately.
+  TYPOGRAPHY: `ListItem` defaults to BodyLarge headline and BodyMedium
+  supporting; this app's scale puts row titles at `titleMedium` and reading text
+  at `bodySmall`, which is measured (see the four-sizes note), so slot content is
+  ours. CONTAINER: M3 list items sit on `surface`, these sit inside the app's
+  `raise` cards, so the container is transparent and the card shows through.
+  What DOES come from M3 is the metrics, and they moved: rows measured 64.0dp on
+  two lines against the spec's 72, and 84.0dp on three against 88. Both are on
+  spec now, measured on the device.
+  Note the one screen where this needed care. Settings has no cards, so its bare
+  `ListItem`s bring their own 16dp start padding - which stacked with the
+  screen's 24dp and put the radio buttons 16dp right of their own section
+  labels. The screen pads 8dp now and the non-row elements carry the other 16,
+  so list text and subheaders share one inset, which is where M3 puts them.
+  Still hand-rolled and deliberately so: the **Repeat** row, which has no card
+  behind it and therefore no ripple (`indication = null`) - see the clip note
+  above for why that matters.
+
 - **Do not hand-draw icons.** Three rounds went into a phone handset built
   from arcs and capsules; it read as the letter C, then a horseshoe, then a
   limp hook. Icon geometry is craft and it is already done: the path data lives
   in `google/material-design-icons`, and `res/drawable/ic_*.xml` are the real
   Google paths, fetched and checked in. Tint at the call site so they follow
   row state. No dependency, ~90 lines of Canvas deleted.
+- **`Prefs.ruleId` is the app's only handle on its rule, and losing it strands
+  the rule.** "Clear storage", or any restore that drops prefs, leaves the
+  system holding a rule we can no longer name: enabled, listed on the phone's
+  own Do Not Disturb screen as a second "Gloaming", and unreachable forever. The
+  Honor was holding two. `ZenController.sweepOrphans` removes any rule we own
+  whose id is not the tracked one, and runs both where an orphan is born (right
+  after `addAutomaticZenRule`) and in `reconcile`, above the enabled check -
+  a stray rule is just as visible while the app is switched off.
+  `ic_dnd` and `ic_allowlist` were added the same way (`do_not_disturb_on`
+  and `checklist`, Material Symbols Rounded) when "What can wake you" turned
+  out to be the only card whose rows had no leading icon: its text started
+  40dp from the screen edge where the card directly below started at 80,
+  which is a ragged left edge between two cards on one screen. All three are
+  at 80.0dp now, measured.
+
+- **`dumpsys notification` prints the live config AND a `Zen Log:` history, so
+  grepping the whole dump reports long-deleted rules as present.** This said the
+  orphan sweep had failed when it had worked. Any check of what rules exist has
+  to stop at the history: `sed '/Zen Log:/q'` first, then grep. The same shape as
+  the encrypted-logcat and the screencap traps - the tool answers a question next
+  to the one being asked.
+
+- **`removeAutomaticZenRule` returns whether it removed anything.** Wrapping it
+  in `runCatching { }.onSuccess { }` logs a plain `false` as a success, because
+  not throwing is not the same as doing the thing. The journal claimed a removal
+  that never happened. Log what the call ANSWERED. `setAutomaticZenRuleState`
+  and friends are worth the same suspicion.
+
+- **Neither obvious way to fake a withheld boot works.** `am force-stop` before
+  a reboot does not reproduce it - with auto-launch ON the Honor delivers
+  `BOOT_COMPLETED` to a stopped app anyway. Jumping the clock past the tolerance
+  does not either: the time change itself re-triggers the receiver, which
+  re-records the stamp and erases the mismatch being tested for. The only real
+  test is turning auto-launch off and rebooting. Both false starts looked like
+  the detection was broken when it was not.
+
+- **A witness that never moves is not evidence.** Chasing whether Honor honours
+  ambient suppression produced seven plausible readouts - wakefulness, display
+  state, `aod_doze_state`, SurfaceFlinger layers, window focus, the layer's frame
+  counter, and `screencap` - and every one of them read the same with AOD ON as
+  with AOD OFF. Any of them would have "confirmed" the first conclusion reached.
+  The fix is cheap and should come first: set the ground truth BOTH ways by hand
+  and check that the proposed witness actually differs, before using it to test
+  anything. The one that survived here was a human tapping the sleeping screen,
+  validated by a negative control. Related but distinct from the `DarkCapability`
+  error - that probe observed the right field at a time it could not have moved;
+  these observed fields that never move at all.
+
 - **Screenshots are not colour-accurate.** `adb exec-out screencap` on this
   device returns values a few units off the source hex, consistently in the
   same direction. Fine for comparing two captures, useless for verifying an
   exact colour — sample both and compare, never assert a hex from a capture.
 - **`veil` is invisible at 1 dp** despite being the hairline token by name. The
   stepped-time rules used `line` instead; those rules are gone, but the next
-  1 dp stroke will hit the same wall.
+  1 dp stroke will hit the same wall. It already did: the divider inside the Do
+  Not Disturb card was a hand-rolled `Box` filled with `veil`, measuring 1.02:1
+  on `raise` in both themes - not a faint edge, no edge. It is a
+  `HorizontalDivider` in `line` now, 1.38:1, matching `SectionRule` outside the
+  card. Note that swapping the component alone would not have fixed it: M3's
+  divider defaults to `outlineVariant`, which this app wires to `veil`, so it
+  would have drawn exactly the same invisible line with more ceremony.
 - **`Arc.night` barely registers on a dark ground.** 8.4:1 against Dawn's cream,
   1.8:1 against Dusk's surface, 1.6:1 as a fill on `raise`. A hairline looks
   like it starts halfway along; a filled block stops reading as a block. Hence
@@ -259,13 +812,47 @@ confirming on real hardware.
 ## Build
 
     ./tools/build.sh     debug APK, full log at /tmp/build.log
-    ./tools/deploy.sh    install on the attached device
+    ./tools/deploy.sh    install on the attached device. INSTALLS ONLY - it does
+                         not build, so a source or string change made since the
+                         last build goes on the phone as the OLD one, and the
+                         screenshot proving your fix shows the previous text
     ./tools/check.sh     what the PHONE thinks: zen state, the rule, our prefs,
                          the next alarms and the journal, side by side. Read-only.
     ./gradlew test       the scheduling core, on the JVM, in under a second
+    ./gradlew coverage   JaCoCo over the unit tests, HTML + XML under
+                         app/build/reports/jacoco/coverage
     ./gradlew lint       0 errors expected; the 5 warnings left are policy
     python3 tools/check_translation.py app/src/main/res/values-ru/strings.xml ru
     adb shell run-as com.jemcik.gloaming cat files/journal.log
+
+Releases are `.github/workflows/release.yml`: tag it, or press "Create a new
+release", and CI attaches `gloaming-<version>-debug.apk` to the release. Release
+ASSETS are downloadable without a GitHub account where workflow ARTIFACTS are
+not, which is the whole reason releases exist here rather than just CI builds.
+
+Two things about it were wrong until 31 Aug 2026 and are worth not
+reintroducing. It listened only for `v*` while this repo's own first tag is
+`0.1`, so the tag path had never once fired - 0.1 shipped through the
+`release: published` event and a bare `0.2` tag would have done nothing at all.
+Both styles match now. And `versionCode`/`versionName` were hardcoded in
+`app/build.gradle.kts`, so EVERY release would have shipped versionCode 1 -
+which is not cosmetic, because Android refuses to install an APK whose
+versionCode is not higher than the installed one. 0.2 would have failed with
+"app not installed" for everyone who already had 0.1: the release that upgrades
+nobody. CI derives both from the tag now and passes them as
+`-PgloamingVersionName` / `-PgloamingVersionCode`, with the hardcoded values
+left as the fallback for local builds. `MAJOR*10000 + MINOR*100 + PATCH` keeps
+it monotonic and starts above the 1 already published: 0.1 is 100, 0.1.1 is 101,
+1.0 is 10000.
+
+A tag that is not `MAJOR.MINOR[.PATCH]` now FAILS the release rather than
+publishing an APK whose version is a lie. That is a deliberate behaviour change:
+before, "nightly" would have published happily.
+
+The derivation reads `BASH_REMATCH`, so the step declares `shell: bash`. Testing
+it in the local shell first gave versionCode 0 for every tag, because zsh sets
+`$match` instead and the arithmetic silently used empty strings - the same class
+of trap as the witnesses that never move. Verified under real bash afterwards.
 
 A pre-push hook runs the tests, lint and both translation checkers. It is
 versioned in `tools/hooks/`, so a fresh clone has to opt in once:
@@ -289,12 +876,35 @@ zen calls would have caught it.
 
 ## Portability
 
+**Second device, 30 Aug 2026.** Everything below was an audit until a OnePlus
+CPH2653 running LineageOS 23.2 (Android 16, SDK 36) was attached. It installed
+and ran first time, with the phone in Ukrainian on a 12-hour clock - a
+combination this app had never rendered on hardware - and the times, the day
+row, the captions and the chips all came up correct.
+
+What the two phones AGREE on, which was not predictable:
+
+- `ZenDeviceEffects.setShouldUseNightMode` is not honoured on either. The
+  comment in `DarkCapability` claimed AOSP applies it; that was a guess and it
+  was wrong. Dark theme is a door on both, not a toggle.
+- `run-as` cannot write app data on either.
+
+What they DIFFER on, which is the case the design exists for:
+
+- Ambient suppression is supported on the OnePlus and not on the Honor. The
+  probe found it without being told, and the screen renders the difference by
+  itself: on the OnePlus the "hide always-on" chip is a live FilterChip, and the
+  "handled by your phone" sentence names one feature instead of two.
+- The always-on row rendered per device by itself, which is what the design is
+  for. (`AmbientSettings` is gone now - see the always-on note below.)
+
+
 Nothing vendor-specific executes unconditionally. Audited 29 Aug 2026, before
 trying the app on anything but the Honor:
 
-- `AmbientSettings.locationHint()` is the only `Build.MANUFACTURER` test. It
-  returns an Always On Display path for Honor/Huawei and null everywhere else,
-  and the caller draws nothing when it is null.
+- `AmbientControl.offValues()` is the only `Build.MANUFACTURER` test. It returns
+  Honor/Huawei's always-on keys and null everywhere else, and every caller stops
+  at null - so on any other phone the object does nothing at all.
 - `AmbientCapability.KNOWN_PARALLEL_AOD` is an EXCLUSION list, consulted only
   after the AOSP `doze_always_on` key turns out to be absent. An unknown device
   is treated as supported, so a vendor we have never seen gets a switch that
@@ -302,19 +912,23 @@ trying the app on anything but the Honor:
 - There is no eye-comfort code at all. `EyeComfort` was an empty object holding
   a comment, with six preferences nothing read; both are gone, and the finding
   it recorded is in "Vendor limitations" above, which is where it belongs.
-- There are no writes to `Settings.System` / `Secure` / `Global` anywhere. The
-  two reads are capability detection.
-- Whether dark theme works is MEASURED per device by `DarkCapability`, keyed to
-  `Build.FINGERPRINT` so an OS update reopens the question, and the "handled by
-  your phone" sentence is driven by that verdict rather than by a device list.
-  On a phone that honours night mode the chip is live and the sentence does not
-  appear.
+- There is exactly ONE write to `Settings.System` / `Secure` / `Global`, and it
+  cannot happen by accident: `AmbientControl` writes the vendor's own always-on
+  keys, and only when the app holds `WRITE_SECURE_SETTINGS`, which is
+  signature|privileged with no runtime prompt and can be granted only over adb.
+  `canControl` is false on every ordinary install, so the code is inert and the
+  row is not drawn. Everything else here is still read-only capability
+  detection.
+- Dark theme is offered on every device, because the platform applies it and
+  the vendor is not consulted - see the night-mode note above. It was gated on a
+  per-device probe until that probe turned out to be structurally incapable of
+  observing the thing it measured.
 
 Everything else naming a vendor is a comment.
 
-Worth knowing on ANY device: `DarkCapability.probe` creates and activates a
-throwaway zen rule for 2.5 s on first launch, so a "Do Not Disturb is on"
-notification flashes once. That is not vendor-specific.
+Worth knowing on ANY device: nothing flashes a "Do Not Disturb is on"
+notification at first launch any more. That was `DarkCapability.probe`
+activating a throwaway rule, and it is gone with the probe.
 
 ## Tests
 
@@ -336,6 +950,36 @@ Two things worth knowing before adding to them:
   marker on `insideWindow`, so an unarmed schedule still shows where you would
   be. `runningNow = enabled && insideWindow` applies the switch. A test asserting
   null there was written, failed, and turned out to be wrong about the app.
+
+`RowFitTest` answers "does the text fit, in every language?" by measuring rather
+than counting. The character budgets in `values/strings.xml` are a proxy and a
+poor one - Cyrillic is wider, so a 24-character Ukrainian subtitle wrapped where
+a 25-character English one did not, and three rows shipped misaligned because the
+app had only ever been LOOKED at in English. This renders Home and the allowlist
+in en, ru and uk and asserts no row reaches 88dp, M3's THREE-line height.
+
+The threshold is deliberately the three-line height and not the two-line one,
+and the distinction matters: what makes a ListItem three-line - and so
+top-aligns its trailing content - is a wrapped SUPPORTING line. A wrapped
+HEADLINE is a different thing. It lands at 74dp with the switch still centred,
+measured on the device, and "Hide always-on" has a long and correct name in
+Russian and Ukrainian that is worth two lines. At 72 the test failed both the
+same way, and acting on it cost real accuracy: the Russian title was shortened
+to «Скрыть часы» - "hide the clock" - which is wrong, because an always-on
+display can show an image or a signature and not a clock at all. Reported.
+
+Two things were needed to make it a measurement rather than a ritual, and both
+are worth knowing. It needs a WIDTH - `setQualifiers("+uk-w360dp-h800dp")` -
+because Robolectric's default screen is not a phone's. And it needs
+`@GraphicsMode(NATIVE)`: the default stubs text measurement, every glyph the same
+width, which had every row reporting an identical 86dp in all three languages.
+That number looked like data and was not. Validated by lengthening a Ukrainian
+string and watching it fail at 88dp, because a check that has never been seen to
+fire is not yet a check.
+
+It found one on its first real run: the Russian and Ukrainian titles for "Hide
+always-on" wrapped, at 74dp. That 74 had already appeared in a device measurement
+earlier the same day and been dismissed as a clipped row.
 
 `InterruptionsTest` runs under Robolectric, because the sentences are built out
 of resources and the point is the wording per locale. It found a real bug on its
@@ -359,6 +1003,17 @@ does not toggle an `AllowRow` under Robolectric, though it works on the
 which is also closer to what it means to assert (the ROW carries the action, the
 switch is only the indicator).
 
+**A test that reads the wall clock passes only in the hours it was written in.**
+`a window still to come does not claim today` built its window as
+`now.plusHours(3)` and asserted the sentence would NOT say "today" - which is
+only true between 21:00 and midnight, the one window where adding three hours
+lands on the next date. It ran green for weeks and failed the first time the
+suite was run after midnight, and the failure was in the assertion, not the app.
+A one-off three hours out is today at 09:00 and tomorrow at 23:00, and both are
+correct; what must hold at every hour is that the sentence names the day the
+window really begins on. That is what it checks now. Worth suspecting any test
+here that calls `LocalTime.now()` and then asserts a fixed answer.
+
 `PrefsMigrationTest` covers the one-shot `days` migration, which is the only
 code here that can corrupt data silently: it rewrites the user's schedule, it
 runs before any screen is drawn, and a mistake would simply make the nights wrong
@@ -368,6 +1023,30 @@ built in the receiver, on every screen and in `reconcile`, so that would walk th
 schedule forward a day at a time), shifting daytime windows that never needed it,
 shifting the wrong direction, and never setting the flag so a fresh install gets
 migrated later.
+
+Coverage, measured rather than asserted: **69% of instructions, 51% of
+branches**. The shape matters more than the number, and it is the shape this file
+predicts - what is well covered is what can be reasoned about without a phone
+(SectionKt 100%, RowsKt 95%, Interruptions 94%, GloamColors 93%, SettingsScreen
+92%, ThemeKt 88%, Clock 81%, Scheduler 80%, Prefs 77%, MainActivityKt 73%), and
+what is not is what talks to the platform (MainActivity 0% - the Activity
+itself; BedtimeReceiver 3% - system broadcasts; AmbientControl 21% -
+Settings.Secure writes; Journal 33%; BootWatch 33%; ZenController 44% - zen
+rules; BedtimeDial 40% - Canvas).
+
+The number went 70/52 to 69/51 while SEVEN tests were added, which is worth
+understanding rather than chasing: the plan note, `dayWord` and `NoticeStrip`
+are all covered, but they grew the denominator faster than they grew the
+covered half, and most of what they added lands in MainActivityKt, already the
+largest file here. A coverage percentage moves when the code moves, not only
+when the tests do.
+
+Two traps in getting that number, both of which produced a confident wrong
+answer first. `tmp/kotlin-classes` still held classes from the app's FORMER
+package name, so the report measured code that had indeed never run and said 0%.
+And Robolectric loads classes through its own sandbox classloader, which the
+JaCoCo agent does not see without `isIncludeNoLocationClasses` - without it only
+the plain-JVM tests counted and the report read 1%. Both look like answers.
 
 What they do NOT cover, and cannot: everything that depends on the vendor.
 Whether an exact alarm fires with the screen off, whether MagicOS applies
@@ -385,10 +1064,31 @@ proportional, "20:05" is 86.9dp and "13:50" is 79.7dp - the same five characters
 every minute. With `fontFeatureSettings = "tnum"` both measure 92.0dp exactly.
 Both Baloo 2 and Figtree carry tnum; the feature was verified in the font tables
 before relying on it, because setting it on a font that lacks it is a silent
-no-op. It is applied to the roles that show a number which CHANGES while you look
-at it - the display family, bodyLarge/Medium and labelSmall - not to titles.
-Tabular digits are wider: the countdown grew from 128dp to 141dp, which still
-leaves about 25dp inside the ring on each side at the worst case.
+no-op. Tabular digits are wider: the countdown grew from 128dp to 141dp, which
+still leaves about 25dp inside the ring on each side at the worst case.
+
+**It belongs on the display family and nowhere else.** It was applied to
+bodyLarge/Medium and labelSmall too, on the reasoning that they also show a
+number which changes - and that was wrong twice over. labelSmall is the overline
+role and never renders a digit at all. bodyLarge is the prose role for the whole
+app, and there the padding is visible and pointless: pointless because the line
+is left-aligned, so a width change moves no other pixel, and visible because
+tabular padding widens the narrow glyphs most. Figtree goes further and swaps in
+a DIFFERENT "1" for tabular - 5.1dp of ink against 3.1dp proportional - so
+"Starts in 12 hr" read as "Starts in 1 2 hr". Reported as exactly that. The rule
+now: numerals get tnum, sentences do not. Removing it took the line from 111.7dp
+to 107.4dp and cost nothing, because nothing there was ever aligned to anything.
+
+**Detail screens DO have a top app bar; Home does not, and that is not an
+inconsistency.** What was removed from Home was a wordmark bar costing 66dp
+above the fold to say which app this is - something the launcher icon already
+says. A detail screen's bar carries Back, which has to stay put: the allowlist's
+back affordance used to be a row INSIDE the scrolling column, so on a nine-row
+screen the only visible way out scrolled off the top. `InterruptionsScreen` uses
+a real `TopAppBar` with a navigation icon now, one constant `raise` for the same
+reason Home's bar is constant - M3's default goes transparent-to-`raise` the
+instant anything scrolls under it, which reads as a blink. Note `SettingsScreen`
+still uses the old `BackRow` and has not been looked at yet.
 
 The brief's **app bar with wordmark was built and then removed**, deliberately.
 It cost 66dp of the space above the fold - a 48dp row plus an 18dp gap - on every
@@ -413,6 +1113,25 @@ and a sun at the other, and a wallpaper-derived gradient says nothing about the
 time of day. The cost is that all twenty tokens carry measured decisions - see
 the contrast notes throughout this file - and a generated palette invalidates
 every one of them, differently on every phone.
+
+**Shizuku is rejected, 30 Aug 2026.** It is the standard way to grant an
+adb-only permission without a computer, and it would have made the always-on
+row reachable by tapping a button instead of typing a command. It cannot be
+bundled: the mechanism REQUIRES a process running as the shell user, obtainable
+only through adb pairing or root, so `dev.rikka.shizuku:api` is a client that
+does nothing unless the separate Shizuku app is installed, paired over Wireless
+debugging and running. It removes the computer, not the setup - the user still
+enables developer options and pairs. Requiring a second app to make this one work
+is not a trade worth making, and it would have been the first third-party
+dependency here. The adb command in the README stays the only route; it does not
+care whether adb ran from a laptop or from a terminal app on the phone, so
+anyone who wants that path already has it without our help.
+
+Bundling adb ourselves, LADB-style, was considered and is worse: it ships a
+native binary, implements the pairing flow, is fragile across versions, would be
+refused by Play, and STILL requires the user to enable Wireless debugging. Nobody
+escapes that step - it is the security boundary, and the same reason auto-launch
+cannot be switched on programmatically.
 
 Dropped on 29 Aug 2026, deliberately, not forgotten:
 
@@ -450,7 +1169,16 @@ Disturb changes from the quick settings tile while the screen is open.
   out of DND until the wake alarm, and carried a separate running-only status
   pill that said nothing the row does not.
 - Selection-as-a-fill has its own `selectFill` / `onSelect` tokens — day
-  toggles, effect chips, allowlist avatars, the switch track. `stateOn` has to
+  toggles, effect chips, the switch track. The allowlist's leading avatars used
+  to be in that list and should not have been: they were filled with `selectFill`
+  identically whether the row was allowed or blocked, so a SELECTION colour was
+  carrying no state at all. They are bare 24dp leading icons now, which is what
+  the effects rows already used, so the two lists draw the same idea the same
+  way. **Single choice is
+  the exception and uses M3's `RadioButton`**: the allowlist sheets and the theme
+  picker in Settings both went that way, with no container fill and no trailing
+  check, because the radio already says what those said. Before that they were
+  two different hand-drawn circles for the same job. `stateOn` has to
   stay legible as text on the ground ("Allowed", the chosen row in a choice
   sheet), which forces it dark in Dawn, and at `#56633F` every selected day
   read as a hole punched in the screen. Dawn now fills with `#BDCB9F`; Dusk is
@@ -474,15 +1202,82 @@ Disturb changes from the quick settings tile while the screen is open.
   lamp carries no text, so at 10 dp it needs chroma instead of value contrast
   or it reads as a dark speck rather than a colour.
 - Dawn deepens while running rather than lifting. "Deeper" is not "brighter".
+  The three grounds are a LADDER - the more the app is doing, the deeper the
+  page - and Dawn was missing a rung. Dusk had it symmetric, running at
+  (-5,-6,-7) from `surface` and off at (+5,+5,+6); Dawn had the running half and
+  a `surfaceOff` IDENTICAL to `surface`, so switching the app off in the light
+  theme changed nothing on screen at all. Dawn's off is `#FAF0E1` now, mirroring
+  Dawn's own running delta, so both themes sit on the same three rungs.
+  It CROSSFADES over a second, and that is not decoration. It used to be painted
+  straight from the state, so dragging the dial across the "now" boundary
+  repainted the whole page and grew the bloom in a single frame, mid-drag - and
+  a state change that takes 0ms does not read as a state change, it reads as a
+  glitch. It was reported as "the background changes, what is that?", which is
+  what a change with no duration always gets asked. The bloom's alpha and the
+  CARDS animate on the same spec - a highlight or a container arriving instantly
+  on top of a colour that took a second is the same fault again, smaller.
+
+  The running state is also four times deeper than it was. Dawn's ground went
+  `#F0E4CF` to `#E6DCCB` and Dusk's `#0D1014` to `#0A0D11`, which in Dawn meant
+  the cards had to move too: the page there deepens TOWARDS `raise`, so leaving
+  it still would have closed the gap to 1.03:1 and dissolved every card on the
+  screen - the exact failure the palette was rebuilt to fix. Hence
+  `raiseRunning`, `#D4C8B2` in Dawn, which holds 1.217:1 - better than the 1.153
+  the cards had before. In Dusk the page deepens AWAY from the cards, so
+  `raiseRunning` is simply `raise` there and the separation improves for free,
+  1.469 to 1.500. Everything that draws a container on Home takes the animated
+  value: the bar, both cards, the effect chips and the dial's track.
 - Bedtime and Wake sit ABOVE the dial and share a top edge. The brief put them
   below it, stepped by 18 dp, reading as a passage. Below the dial they are
   under your hand for the whole drag, so the one thing you cannot see is the
   value you are setting. Once above it, the step just read as lopsided.
   Confirmed on hardware 29 Aug 2026: the hand no longer covers them.
-- The pair is set off by moon and sun glyphs on the labels plus one shallow
-  "crown" arc beneath, not by two per-column rules. Colour alone made the wake
+- **The window is also stated in words, under the dial.** Home served two
+  mindsets and missed one: spatial (the ring and its arc) and numeric (the two
+  numerals, the centre duration, "starts in 36m"). Nothing was verbal. The
+  sentence answers what a circle is worst at - WHICH morning - since a window
+  crossing midnight is only obvious on a clock face to someone who already reads
+  clock faces, and it is the only part of that block a screen reader can make
+  anything of.
+  It asks `liveWindowEnd` with **`enabled = true` regardless of the switch**, and
+  falls back to `nextStart`. Asking with the real switch was wrong in a way that
+  only appears at night: OFF at 23:34, inside a 6:55 PM window, a ONE-OFF returns
+  null - `liveWindowEnd` treats a one-off as running only while the switch is on
+  - so it fell through and said "from 6:55 PM TOMORROW" while the dial above drew
+  the marker inside the arc. It was also a wrong PREDICTION, not merely an odd
+  phrasing: switch on at that moment and the one-off starts immediately.
+  A repeating schedule hides the bug completely, because there `liveWindowEnd`
+  answers whether the switch is on or not. The regression test therefore uses an
+  EMPTY day set; written with seven days it passed with the fix reverted, which
+  is how it was caught.
+  It is built from the actual window rather than from the two handles - so a one-off, a window five days
+  out and a window running now each name their own days and cannot drift from
+  what is scheduled. Day words are `today` / `tomorrow` and then the localised
+  weekday from `java.time`, because past a day "tomorrow" would be a lie by
+  omission.
+
+- The pair is set off by moon and sun glyphs on the labels alone, not by two
+  per-column rules and not by the shallow "crown" arc that used to sit beneath
+  them. That arc was drawn as the crown of the same circle it sat above, which
+  is a real idea and wrong on the screen: a few dp from the ring at a very
+  different radius, two curves nearly rhyme and do not, and it read as a
+  slightly wrong copy of the ring. Flattening it into a ruler was better - the
+  hour ticks make more sense on a straight baseline - but it was still a second
+  telling of what the dial already says, so it is gone. What it uniquely carried
+  was a COUNTABLE window length, in hour ticks; the centre readout says the same
+  thing as a number. Colour alone made the wake
   side something you had to learn; the glyphs are the marks already on the ring,
-  and they survive a dimmed screen and a colourblind reader. The crown also
+  and they survive a dimmed screen and a colourblind reader. **The WAKE UP word
+  itself is now the same ink as BEDTIME**, and only the sun stays warm. In
+  `Arc.dawn` that word measured 1.7:1 on the cream, against BEDTIME's 14:1 in the
+  same row - a tint rather than a shade. At 11sp it does not reach WCAG's
+  large-text exemption, and nothing warm enough to still read as dawn clears
+  4.5:1: `cta` reaches 3.0 and the best that passes is `#9E5426`, which arrives
+  as rust. So the warmth moved to the glyph, which needs only 3:1 because it is
+  not text. 5.5:1 in Dawn and 6.0:1 in Dusk now, and the two sides are finally
+  symmetric - grey word, own glyph, both ends. Changed in Dusk too, where
+  contrast was never the problem (8.8:1), because one rule in both themes beats
+  a rule that holds in one. The crown also
   works: one tick per whole hour makes the window countable at rest, and inside
   the window it splits spent from remaining with a marker at now — the same
   grammar the ring uses, so the arc between the moon and the sun reads as the
@@ -506,6 +1301,15 @@ Disturb changes from the quick settings tile while the screen is open.
   the numeral puts its corners into the ring, where they eat handle drags.
   Only horizontal movement is consumed, so a vertical drag over the centre
   still scrolls the screen.
+  **The dots' space is always reserved, even when they are not drawn.** The
+  column is centred in the dial, so 12dp of dots appearing moved the numeral up
+  by 6 - measured, top 1136 to 1115 - and toggling the master switch made the
+  time visibly jump on the spot. Note what the report was NOT about, because two
+  wrong fixes came before the right one: the READING changing is correct and has
+  to stay ("until bedtime" is offered only while armed, since a countdown to
+  something that will not happen is a lie). Offering it either way was tried and
+  rejected; crossfading the change was tried and was decoration over the wrong
+  diagnosis. The value may change; where it sits may not.
 - The day row is present in every state and can be emptied. It used to vanish
   once bedtime started, which reads as a bug, and the last selected day refused
   to be deselected — a buzz with no reason given. Both were guarding the
@@ -602,9 +1406,29 @@ Disturb changes from the quick settings tile while the screen is open.
   at 13sp, because the row is `SpaceBetween` and the gaps absorbed it — 24dp
   down to 17dp. There is no room left there. Any further growth of a chip
   label, or a longer word than "Every night", needs the padding cut first. There is not one `fontSize` or `fontWeight` override outside `Theme.kt`,
-  and it should stay that way; the one deliberate borrow is the allowlist's `›`,
-  which takes `titleLarge` for its size because there is no chevron drawable and
-  at label size it vanishes.
+  and it should stay that way. `ic_chevron.xml` is Google's own path, fetched
+  the same way `ic_check` was, so there is no `fontSize` or `fontWeight` override
+  left anywhere outside `Theme.kt`. Note this was claimed here once BEFORE it was
+  true: the drawable was added and the allowlist call site converted, while
+  Home's "What is allowed" row kept its literal `›` sized by borrowing
+  `titleLarge` for months afterwards. Converting one call site is not the same as
+  removing a pattern, and the note said the pattern was gone.
+- **Secondary text was thinnest exactly where it is read most: on a card.**
+  `onSurfaceLow` is the ink 24 of the app's text usages take - subtitles, the
+  master card's status line, the dial's centre label - and its worst ground is
+  not the page but `raise`. Measured: 4.54:1 in Dawn, which passes AA by 0.04,
+  and 4.30:1 in Dusk, which does not pass at all. Both are 6.4:1 or better now,
+  `#4C453B` on Dawn and `#ACB7C3` on Dusk, chosen from four candidates rendered
+  on the phone. Titles stay at 11.4:1 on the same ground so the hierarchy is
+  untouched - only the floor moved. Note the ladder if it needs revisiting:
+  each step of about 8 in luminance is worth roughly 0.7 of contrast on a card,
+  and the step past this one starts to flatten the difference between a title
+  and its subtitle, which matters in an app read in the dark.
+  It also fixed something not being looked for: the bedtime numeral is dimmed to
+  62% alpha once the window is running, and at the old ink that landed at 2.51:1
+  - below the 3:1 that large text needs. It is 3.05 now, which is passing but
+  barely, and is the number to watch if that alpha is ever tuned.
+
 - **`raise` carries every container in the app** — both home cards, the
   permission panel, both dialogs, the choice sheets, every allowlist row, every
   unselected chip, and the dial's own track — and it is wired into Material's

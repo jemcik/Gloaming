@@ -1,11 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <!-- User-granted (Alarms & reminders). Deliberately NOT USE_EXACT_ALARM:
          Play restricts that to alarm/timer/calendar apps and reviews it. -->
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
+    <!-- Not grantable at install and there is no runtime prompt for it: this is
+         signature|privileged, so only adb can grant it, and AmbientControl is
+         inert without it. Declared so a user who wants the vendor always-on
+         route can opt in with one command. See AmbientControl. -->
+    <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS"
+        tools:ignore="ProtectedPermissions" />
+
+    <!-- Without this, resolveActivity cannot see the vendor's auto-launch
+         screen at all and BootWatch would always fall back to app details. -->
+    <queries>
+        <package android:name="com.hihonor.systemmanager" />
+        <!-- So resolveActivity can SEE the contacts app's starred screen. We
+             never read contacts - launching an activity needs no permission -
+             but without this the resolve returns null and the row would hide
+             itself on a phone where it would have worked. -->
+        <intent>
+            <action android:name="com.android.contacts.action.LIST_STARRED" />
+        </intent>
+    </queries>
 
 
     <application

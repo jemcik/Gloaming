@@ -46,7 +46,7 @@ object Interruptions {
         when (v) {
             CONV_ANYONE -> R.string.conv_all
             CONV_IMPORTANT -> R.string.conv_priority
-            else -> R.string.blocked_tonight
+            else -> R.string.state_blocked
         }
     )
 
@@ -137,5 +137,5 @@ object Interruptions {
         // dropping it into the sentence puts a capital mid-sentence in any
         // language that does not open with the list - Russian's natural order
         // here is "Разрешены будильники...", which is what a candidate wrote.
-        capitalise(res, res.getString(R.string.sentence_can_get_through, trimmed(res, all, 3)))
+        capitalise(res, res.getString(R.string.sentence_allowed, trimmed(res, all, 3)))
 }

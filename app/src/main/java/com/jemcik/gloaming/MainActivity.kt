@@ -10,11 +10,20 @@ import androidx.activity.SystemBarStyle
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.clickable
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.ScrollState
@@ -24,7 +33,15 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.runtime.*
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -59,15 +76,28 @@ import com.jemcik.gloaming.ui.BedtimeDial
 import com.jemcik.gloaming.ui.GloamingTheme
 import com.jemcik.gloaming.ui.InterruptionsScreen
 import com.jemcik.gloaming.ui.Arc
+import com.jemcik.gloaming.ui.CARD_PAD
+import com.jemcik.gloaming.ui.CORNER
+import com.jemcik.gloaming.ui.GROUP
+import com.jemcik.gloaming.ui.Section
+import com.jemcik.gloaming.ui.TIGHT
 import com.jemcik.gloaming.ui.SectionLabel
 import com.jemcik.gloaming.ui.SettingsScreen
 import com.jemcik.gloaming.ui.SectionRule
 import com.jemcik.gloaming.ui.gloam
+import android.app.NotificationManager
+import androidx.annotation.DrawableRes
+import com.jemcik.gloaming.ui.GloamSwitch
+import com.jemcik.gloaming.ui.ActionRow
+import com.jemcik.gloaming.ui.LinkRow
+import com.jemcik.gloaming.ui.SwitchRow
 import com.jemcik.gloaming.ui.rememberHaptics
 import java.time.DayOfWeek
 import java.time.Duration
 import java.time.LocalDateTime
 import java.time.LocalTime
+import java.util.Locale
+import java.time.temporal.ChronoUnit
 import java.time.format.TextStyle
 import java.time.temporal.WeekFields
 import android.icu.text.ListFormatter
@@ -85,18 +115,19 @@ private val SIDE = 24.dp        // screen side padding
    one gap for everything meant the day row sat as close to "when bedtime is on"
    as the times sit to the dial, which belong together. Material's own order is
    whitespace, then dividers, then cards - this is the whitespace step. */
-private val GROUP = 18.dp       // between functional blocks, either side of a rule
-private val TIGHT = 10.dp       // within one
 /* The dial's canvas is 260dp but its ring stops at a 105dp radius, so it
    carries ~24dp of empty margin all round. Left alone that margin ADDS to
    whatever gap its neighbours ask for, and the block ends up looser inside
    than the gaps between blocks. Trimmed off the layout box only; the canvas
    still draws and still takes touches at full size. */
 private val DIAL_TRIM = 18.dp
-private val CARD_PAD = 16.dp
+private val CHIP_HEIGHT = 38.dp   // the effect chips' own height, kept from the Surface they were
+/* A second. The page changing state is not a control responding to a tap - it
+   is the room the app is describing, and it was reported as a blink at 0ms and
+   still read as quick at 450. */
+private const val GROUND_FADE = 1000
 private val CHIP_GUTTER = 7.dp
 private val DAY_SIZE = 40.dp
-private val CORNER = 28.dp      // card / master-switch corner
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -167,33 +198,6 @@ private const val SETTINGS = 2
  * row's own padding so the gear's box lines up with the content margin, the same
  * trick BackRow uses for its arrow.
  */
-@Composable
-private fun SettingsRow(onClick: () -> Unit) {
-    val g = gloam
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .offset(x = (-8).dp)
-            .clip(RoundedCornerShape(24.dp))
-            .clickable(onClick = onClick)
-            .heightIn(min = 48.dp)
-            .padding(horizontal = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(
-            painterResource(R.drawable.ic_settings),
-            contentDescription = null,
-            tint = g.onSurfaceLow,
-            modifier = Modifier.size(22.dp)
-        )
-        Spacer(Modifier.width(10.dp))
-        Text(
-            stringResource(R.string.settings_title),
-            style = MaterialTheme.typography.titleMedium, color = g.onSurfaceLow
-        )
-    }
-}
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Home(
@@ -208,6 +212,7 @@ fun Home(
     val locale = LocalLocale.current.platformLocale
     val prefs = remember { Prefs(ctx) }
     val g = gloam
+    val loc = LocalLocale.current.platformLocale
     val haptics = rememberHaptics()
 
     var enabled by remember { mutableStateOf(prefs.enabled) }
@@ -226,11 +231,18 @@ fun Home(
     var fxDim by remember { mutableStateOf(prefs.fxDimWallpaper) }
     var fxDark by remember { mutableStateOf(prefs.fxDarkTheme) }
     var fxAmbient by remember { mutableStateOf(prefs.fxHideAmbient) }
-    var darkSupport by remember { mutableIntStateOf(prefs.darkThemeSupport) }
-    var darkChecking by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
-    val ambientSupported = remember { AmbientCapability.isSupported(ctx) }
+    // Three states, not two. Either the zen effect works, or we can write the
+    // vendor's own always-on keys, or nothing the app can reach moves that
+    // display at all - and then the row is not drawn, because a control that
+    // neither toggles anything nor opens the right screen is only noise. Keyed
+    // on tick so an adb grant is picked up on the next resume.
+    // Not keyed on tick: this reads prefs and, on first run, writes them.
+    // Re-answering it every minute would be pointless and impure both.
+    var missedBoot by remember { mutableStateOf(BootWatch.missed(prefs)) }
+    val ambientZen = remember(tick) { AmbientCapability.isSupported(ctx) }
+    val ambientRow = remember(tick) { ambientZen || AmbientControl.canControl(ctx) }
     val dnd = ZenController.hasDndAccess(ctx)
     val exact = Scheduler.canScheduleExact(ctx)
     val ready = dnd && exact
@@ -245,20 +257,6 @@ fun Home(
         // pushed the rule twice for every tap.
         Scheduler.rescheduleAll(ctx, prefs)
         tick++
-    }
-
-    fun checkDarkSupport() {
-        if (darkChecking) return
-        darkChecking = true
-        scope.launch {
-            val v = DarkCapability.probe(ctx)
-            darkChecking = false
-            if (v != DarkCapability.UNKNOWN) {
-                prefs.darkThemeSupport = v
-                prefs.darkProbeFingerprint = SystemTheme.buildId()
-                darkSupport = v
-            }
-        }
     }
 
     val now = remember(tick) { LocalTime.now() }
@@ -303,7 +301,10 @@ fun Home(
                 fxDnd = prefs.fxDnd; fxGray = prefs.fxGrayscale
                 fxDim = prefs.fxDimWallpaper; fxDark = prefs.fxDarkTheme
                 fxAmbient = prefs.fxHideAmbient
-                darkSupport = prefs.darkThemeSupport
+                // Re-asked here so the notice clears itself the moment a boot is
+                // handled properly - which is the only confirmation available,
+                // since the vendor's own setting cannot be read.
+                missedBoot = BootWatch.missed(prefs)
                 tick++
             }
         }
@@ -312,51 +313,212 @@ fun Home(
     }
 
     LaunchedEffect(Unit) {
-        if (prefs.darkThemeSupport != 0 &&
-            prefs.darkProbeFingerprint != SystemTheme.buildId()
-        ) {
-            prefs.darkThemeSupport = 0; prefs.darkProbeFingerprint = null; darkSupport = 0
-        }
         if (prefs.enabled) { Scheduler.rescheduleAll(ctx, prefs); tick++ }
-        if (prefs.darkThemeSupport == 0 && !Scheduler.isActiveNow(prefs)) checkDarkSupport()
     }
 
-    val ground = when {
+    // Animated, not swapped. The page has three grounds and Dawn DEEPENS while
+    // bedtime runs rather than lifting, which is the right instinct - it makes
+    // the running state felt rather than read. But it was painted straight from
+    // the state, so dragging the dial across the "now" boundary repainted the
+    // whole screen and grew a bloom in ONE frame, mid-drag. A state change that
+    // takes 0ms does not read as a state change, it reads as a glitch, and it
+    // was reported as exactly that: "the background changes, what is that?".
+    //
+    // 450ms, which is slow for a control and about right for a room. It was
+    // also the only transition on this screen that was not animated - the day
+    // pickers collapse, the switch thumb grows, the bar reacts to scroll.
+    val groundTarget = when {
         runningNow -> g.surfaceRunning
         !enabled -> g.surfaceOff
         else -> g.surface
     }
+    val ground by animateColorAsState(
+        groundTarget,
+        animationSpec = tween(durationMillis = GROUND_FADE),
+        label = "ground"
+    )
+    // The cards travel with the page. In Dawn the running ground deepens
+    // TOWARDS them, so a page that moved alone would have swallowed them.
+    val card by animateColorAsState(
+        if (runningNow) g.raiseRunning else g.raise,
+        animationSpec = tween(durationMillis = GROUND_FADE),
+        label = "card"
+    )
+    // The bloom appears only while running, and it has to fade with the ground
+    // or the highlight would still arrive in a single frame on top of a colour
+    // that took 450ms. Its alpha carries that.
+    val bloomAlpha by animateFloatAsState(
+        if (runningNow) 1f else 0f,
+        animationSpec = tween(durationMillis = GROUND_FADE),
+        label = "bloom"
+    )
 
     Box(
         Modifier
             .fillMaxSize()
             .drawBehind {
                 drawRect(ground)
-                if (runningNow) {
+                if (bloomAlpha > 0f) {
                     drawRect(
                         Brush.radialGradient(
                             colors = listOf(g.bloom, ground),
                             center = Offset(size.width * 0.78f, size.height * 0.06f),
                             radius = size.height * 0.62f
-                        )
+                        ),
+                        alpha = bloomAlpha
                     )
                 }
             }
     ) {
+        // The master control lives in the bar, not in a card in the flow. It
+        // governs everything on the screen and the screen is 1.9 viewports tall
+        // - measured - so for about half the scroll range the one control that
+        // turns it all off was somewhere above.
+        //
+        // PINNED, and two lines, after trying MediumTopAppBar with
+        // exitUntilCollapsed. That version collapsed to 64dp when scrolled,
+        // which sounded like the thrifty choice and was not: a medium bar puts
+        // its actions on the top row and its title on the bottom one, so at
+        // rest it stood 136dp tall with a void above the words - 60dp MORE than
+        // this, in the state the screen is in when you open it. It bought that
+        // back only while scrolled, 12dp, and paid for it by dropping the
+        // status line at the halfway point of the collapse. Both were reported,
+        // and they were the same mistake seen from two sides.
+        //
+        // So: one row of content, always the same, always there. 76dp rather
+        // than the small bar's 64 because the title is two lines - the name and
+        // the state - which is the subtitle-shaped hole MediumFlexibleTopAppBar
+        // would fill if it were public in material3 1.4.0.
+        val bar = TopAppBarDefaults.pinnedScrollBehavior()
+        val status = remember(tick, enabled, runningNow, start, end, days) {
+            if (!enabled) res.getString(R.string.bedtime_off)
+            else if (runningNow) Scheduler.liveWindowEnd(prefs, start, end, days)
+                ?.let {
+                    res.getString(R.string.state_on_until, hhmm(ctx, it.hour, it.minute))
+                }
+                ?: res.getString(R.string.state_on_now)
+            else Scheduler.nextStart(start, end, days)?.let { n ->
+                val m = Duration.between(LocalDateTime.now(), n).toMinutes()
+                // The SAME formatter the dial centre uses, on the
+                // same quantity: its "until bedtime" reading is
+                // this duration too. They were "12h 47m" there and
+                // "12 hr" here, which reads as two numbers rather
+                // than one fact. Minutes were dropped past four
+                // hours on the argument that they are noise most of
+                // a day out - but the circle was showing them the
+                // whole time, so the argument only ever cost the
+                // agreement between the two.
+                res.getString(R.string.state_starts_in, span(res, m))
+            } ?: res.getString(R.string.state_nothing_scheduled)
+        }
+        Scaffold(
+            containerColor = Color.Transparent,
+            modifier = Modifier.nestedScroll(bar.nestedScrollConnection),
+            topBar = {
+                TopAppBar(
+                    scrollBehavior = bar,
+                    // 76dp rather than the small bar's 64, because the title is
+                    // two lines: the name and the state.
+                    expandedHeight = 76.dp,
+                    // The same colour whether scrolled or not, and that colour
+                    // is the page's own ground. M3's default is transparent at
+                    // rest and `raise` once anything has scrolled under it, which
+                    // is a step function: the band went #F2E9D9 to #E0D5BF - 21
+                    // units, full width - the instant a drag began, and read as a
+                    // blink. Reported as exactly that.
+                    //
+                    // The bar has to be OPAQUE, or content slides visibly under
+                    // the title. It does not have to CHANGE - and the two are
+                    // separate requirements that M3's default conflates.
+                    //
+                    // `raise`, the same fill every card on the screen uses, so
+                    // the bar reads as one of the app's containers rather than
+                    // as a piece of page that happens to be stuck. It also puts
+                    // the status line on the ground its ink was measured
+                    // against: onSurfaceLow was chosen at 6.52:1 on raise in
+                    // Dawn and 6.38:1 in Dusk, and both are theme tokens, so
+                    // this follows the theme without a second decision.
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = card,
+                        scrolledContainerColor = card,
+                        titleContentColor = g.onSurface
+                    ),
+                    title = {
+                        // The lamp sits OUTSIDE the text column. Inside the
+                        // title row it left the status starting at the lamp's
+                        // left edge while the title started after it - two lines
+                        // of one label, indented differently.
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                Modifier.size(14.dp).then(
+                                    when {
+                                        runningNow -> Modifier.clip(CircleShape).background(g.lampOn)
+                                        enabled -> Modifier.border(2.dp, g.lampOn, CircleShape)
+                                        else -> Modifier.clip(CircleShape).background(g.lampOff)
+                                    }
+                                )
+                            )
+                            Spacer(Modifier.width(12.dp))
+                            Column {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(stringResource(R.string.bedtime_mode))
+                                    if (Scheduler.isOneOff(days)) {
+                                        Spacer(Modifier.width(8.dp))
+                                        Text(
+                                            stringResource(R.string.badge_once),
+                                            style = MaterialTheme.typography.labelLarge,
+                                            color = g.onSurfaceLow
+                                        )
+                                    }
+                                }
+                                Text(
+                                    status,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = g.onSurfaceLow,
+                                    maxLines = 1, overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                        }
+                    },
+                    actions = {
+                        // No row to carry the gesture up here, so the switch is
+                        // its own target for the first time in this app.
+                        GloamSwitch(
+                            checked = enabled, enabled = ready,
+                            onCheckedChange = { setBedtime(it) }
+                        )
+                        IconButton(onClick = { haptics.open(); onOpenSettings() }) {
+                            Icon(
+                                painterResource(R.drawable.ic_settings),
+                                contentDescription = stringResource(R.string.settings_title),
+                                tint = g.onSurfaceLow
+                            )
+                        }
+                        Spacer(Modifier.width(4.dp))
+                    }
+                )
+            }
+        ) { inner ->
         Column(
             Modifier
                 .fillMaxSize()
                 .verticalScroll(scroll)
-                .windowInsetsPadding(WindowInsets.systemBars)
+                .padding(inner)
+                .windowInsetsPadding(WindowInsets.navigationBars)
                 .padding(horizontal = SIDE)
-                .padding(top = 8.dp, bottom = 32.dp),
+                // GROUP, not the old 8dp. The card that used to sit here was a
+                // block among blocks and took the list's own spacing; the bar
+                // replacing it is a fixed edge that content slides under, and
+                // 8dp put the BEDTIME and WAKE UP overlines 11dp from it -
+                // tighter than any deliberate gap on the screen.
+                .padding(top = GROUP, bottom = 32.dp),
             verticalArrangement = Arrangement.spacedBy(GROUP),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             if (!ready) {
                 val missing = listOf(dnd, exact).count { !it }
                 Surface(
-                    color = g.raise, shape = RoundedCornerShape(CORNER),
+                    color = card, shape = RoundedCornerShape(CORNER),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(
@@ -383,92 +545,29 @@ fun Home(
                 }
             }
 
-            Surface(
-                color = g.raise, shape = RoundedCornerShape(CORNER),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Row(
-                    Modifier
-                        // the row is the switch, as everywhere else in the app
-                        .toggleable(
-                            value = enabled,
-                            enabled = ready,
-                            role = Role.Switch,
-                            onValueChange = { setBedtime(it) }
-                        )
-                        .padding(horizontal = CARD_PAD, vertical = 15.dp),
-                    verticalAlignment = Alignment.CenterVertically
+            // Not a permission - nothing here can be granted, and the phone
+            // will not tell us whether it was fixed. It is a report that a
+            // restart went unhandled, which is invisible otherwise: the app
+            // stays armed, shows the right times, and has no alarms behind them.
+            if (missedBoot) {
+                Surface(
+                    color = card, shape = RoundedCornerShape(CORNER),
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    // Three states, not two. The switch beside it already says
-                    // on or off, so a lamp that repeated it earned nothing:
-                    // filled green while bedtime is actually running, a hollow
-                    // ring while it is armed but waiting, filled red when off.
-                    // Filled-vs-hollow already means live-vs-not here - it is
-                    // what the crown's marker does when the switch is off.
-                    Box(
-                        Modifier
-                            .size(14.dp)
-                            .then(
-                                when {
-                                    runningNow -> Modifier
-                                        .clip(CircleShape).background(g.lampOn)
-                                    enabled -> Modifier
-                                        .border(2.dp, g.lampOn, CircleShape)
-                                    else -> Modifier
-                                        .clip(CircleShape).background(g.lampOff)
-                                }
-                            )
-                    )
-                    Spacer(Modifier.width(12.dp))
-                    Column(Modifier.weight(1f).padding(end = 12.dp)) {
-                        // "Just once" belongs beside the title, not inside the
-                        // status: as a prefix it pushed "starts in 22 hr 7 min"
-                        // onto a second line. It shows whenever no days are
-                        // chosen, on or off, because it is what an empty day
-                        // row means.
-                        Row {
-                            Text(
-                                stringResource(R.string.bedtime_mode),
-                                style = MaterialTheme.typography.titleMedium,
-                                color = g.onSurface,
-                                modifier = Modifier.alignByBaseline()
-                            )
-                            if (Scheduler.isOneOff(days)) {
-                                Spacer(Modifier.width(8.dp))
-                                Text(
-                                    stringResource(R.string.badge_once),
-                                    style = MaterialTheme.typography.labelLarge,
-                                    color = g.onSurfaceLow,
-                                    modifier = Modifier.alignByBaseline()
-                                )
-                            }
-                        }
-                        val status = remember(tick, enabled, runningNow, start, end, days) {
-                            if (!enabled) res.getString(R.string.bedtime_off)
-                            else if (runningNow) Scheduler.liveWindowEnd(prefs, start, end, days)
-                                ?.let {
-                                    res.getString(R.string.state_on_until, hhmm(ctx, it.hour, it.minute))
-                                }
-                                ?: res.getString(R.string.state_on_now)
-                            else Scheduler.nextStart(start, end, days)?.let { n ->
-                                val m = Duration.between(LocalDateTime.now(), n).toMinutes()
-                                // Minutes are worth having when bedtime is close
-                                // and are noise when it is most of a day away -
-                                // and the minute ticker would churn those digits
-                                // all evening to say nothing.
-                                res.getString(R.string.state_starts_in, coarse(res, m))
-                            } ?: res.getString(R.string.state_nothing_scheduled)
-                        }
+                    Column(
+                        Modifier.padding(CARD_PAD),
+                        verticalArrangement = Arrangement.spacedBy(14.dp)
+                    ) {
                         Text(
-                            status,
-                            style = MaterialTheme.typography.bodyLarge, color = g.onSurfaceLow,
-                            // One line, always. This text changes on every drag
-                            // step, and a language where it wraps makes the card
-                            // grow and shrink under the finger that is dragging.
-                            maxLines = 1, overflow = TextOverflow.Ellipsis
+                            stringResource(R.string.boot_missed_title),
+                            style = MaterialTheme.typography.titleLarge, color = g.onSurface
                         )
+                        PermissionRow(
+                            stringResource(R.string.boot_missed_row),
+                            stringResource(R.string.boot_missed_why),
+                            granted = false
+                        ) { haptics.open(); BootWatch.openAutoStart(ctx) }
                     }
-                    Switch(checked = enabled, enabled = ready, onCheckedChange = null)
                 }
             }
 
@@ -509,9 +608,8 @@ fun Home(
                                 )
                             }
                             Spacer(Modifier.height(4.dp))
-                            Text(
-                                Clock.hhmm(ctx, start),
-                                style = MaterialTheme.typography.displaySmall,
+                            WindowTime(
+                                ctx, start,
                                 // dimmed once it is behind you, but never near-black
                                 color = if (runningNow) g.onSurfaceMid.copy(alpha = 0.62f)
                                 else g.onSurfaceMid
@@ -531,94 +629,28 @@ fun Home(
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text(
                                     stringResource(R.string.label_wake_up).uppercase(locale),
-                                    style = MaterialTheme.typography.labelSmall, color = Arc.dawn
+                                    // Same ink as BEDTIME. In Arc.dawn this word sat
+                                    // at 1.7:1 on the cream - measured, and against
+                                    // BEDTIME's 14:1 in the same row - which is not
+                                    // a shade, it is a tint. 11sp does not reach the
+                                    // large-text exemption, so nothing warm enough to
+                                    // still read as dawn could clear 4.5:1: the best
+                                    // was #9E5426, which arrives as rust. The warmth
+                                    // moves to the SUN instead, which needs only 3:1
+                                    // and is the mark the ring already uses. That is
+                                    // the reasoning the glyphs were added under -
+                                    // colour alone made the wake side something you
+                                    // had to learn - so this is that decision
+                                    // finished, not reversed. 5.5:1 now.
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = g.onSurfaceLow
                                 )
                                 Spacer(Modifier.width(7.dp))
                                 PhaseGlyph(moon = false, tint = Arc.dawn, ground = ground)
                             }
                             Spacer(Modifier.height(4.dp))
-                            Text(
-                                Clock.hhmm(ctx, end),
-                                style = MaterialTheme.typography.displaySmall,
-                                color = g.onSurfaceMid
-                            )
+                            WindowTime(ctx, end, color = g.onSurfaceMid)
 
-                        }
-                    }
-                    Spacer(Modifier.height(8.dp))
-                    // The top of the dial, drawn again: the pair rests on the crown
-                    // of the same circle it sits above. It also works - hour ticks
-                    // give the window a countable length, and inside the window it
-                    // splits spent from remaining with a marker at now, the same
-                    // grammar the ring uses. Unarmed, the marker goes hollow rather
-                    // than vanishing, so you can still see where you would be.
-                    val winSecs = ((end.toSecondOfDay() - start.toSecondOfDay() + 86400) % 86400)
-                    val spent = if (insideWindow && winSecs > 0) {
-                        val e = ((now.toSecondOfDay() - start.toSecondOfDay() + 86400) % 86400)
-                        (e.toFloat() / winSecs).coerceIn(0f, 1f)
-                    } else 0f
-                    Canvas(Modifier.fillMaxWidth().height(22.dp)) {
-                        val cx = size.width / 2f
-                        val baseY = size.height - 8.dp.toPx()   // where both ends land
-                        val rise = 10.dp.toPx()                 // apex above the ends
-                        val r = (cx * cx + rise * rise) / (2f * rise)
-                        val cy = baseY - rise + r
-                        val half = atan2(cx, r - rise) * 180f / PI.toFloat()
-                        val from = 270f - half
-                        val full = half * 2f
-                        val brush = Brush.horizontalGradient(*Arc.stopsOn(g.dark).toTypedArray())
-                        val box = Offset(cx - r, cy - r)
-                        val boxSize = Size(r * 2, r * 2)
-                        val stroke = Stroke(width = 1.7.dp.toPx(), cap = StrokeCap.Round)
-                        val armed = if (enabled) 1f else 0.55f
-                        fun on(f: Float): Offset {
-                            val a = (from + full * f) * PI.toFloat() / 180f
-                            return Offset(cx + r * cos(a), cy + r * sin(a))
-                        }
-
-                        drawArc(
-                            brush = brush, startAngle = from, sweepAngle = full, useCenter = false,
-                            topLeft = box, size = boxSize,
-                            alpha = if (insideWindow) 0.30f else armed, style = stroke
-                        )
-                        if (insideWindow && spent < 1f) drawArc(
-                            brush = brush,
-                            startAngle = from + full * spent, sweepAngle = full * (1f - spent),
-                            useCenter = false, topLeft = box, size = boxSize,
-                            alpha = armed, style = stroke
-                        )
-
-                        // one tick per hour, every two hours once a window runs
-                        // long enough that hourly marks would crowd into a smear
-                        val wholeHours = winSecs / 3600
-                        val tickStep = if (wholeHours > 12) 2 else 1
-                        for (h in tickStep..wholeHours step tickStep) {
-                            val f = (h * 3600f) / winSecs
-                            if (f >= 0.99f) continue
-                            val p = on(f)
-                            val ux = (cx - p.x) / r
-                            val uy = (cy - p.y) / r
-                            drawLine(
-                                color = g.onSurfaceLow.copy(alpha = 0.45f * armed),
-                                start = Offset(p.x + ux * 1.2.dp.toPx(), p.y + uy * 1.2.dp.toPx()),
-                                end = Offset(p.x + ux * 4.8.dp.toPx(), p.y + uy * 4.8.dp.toPx()),
-                                strokeWidth = 1.4.dp.toPx(), cap = StrokeCap.Round
-                            )
-                        }
-
-                        if (insideWindow) {
-                            // ringed in the ground so it reads above the line, the
-                            // same trick the dial plays with its handles
-                            val p = on(spent)
-                            drawCircle(ground, radius = 4.0.dp.toPx(), center = p)
-                            if (enabled) drawCircle(g.onSurface, radius = 2.6.dp.toPx(), center = p)
-                            // onSurfaceLow, not line: line is dim enough on Dusk
-                            // that the one mark saying "here" became the faintest
-                            // thing on screen. Ring vs disc already says unarmed.
-                            else drawCircle(
-                                g.onSurfaceLow, radius = 2.6.dp.toPx(), center = p,
-                                style = Stroke(width = 1.4.dp.toPx())
-                            )
                         }
                     }
                 }
@@ -644,6 +676,18 @@ fun Home(
                             // nextStart, not nextOccurrence: the latter returns null
                             // for a one-off, which silently dropped this reading and
                             // left the centre with nothing to cycle to.
+                            //
+                            // Only while armed, and it stays that way: "34m until
+                            // bedtime" under a switch reading Off is a countdown to
+                            // something that is not going to happen. Offering it either
+                            // way was tried and rejected for exactly that.
+                            //
+                            // Switching off therefore does drop this reading. What was
+                            // reported as the time JUMPING was not that - it was the
+                            // dots below it appearing, which lengthened the centre
+                            // column and moved the numeral 6dp. BedtimeDial reserves
+                            // their space now, so the value can change without the
+                            // numeral moving.
                             if (enabled) Scheduler.nextStart(start, end, days)?.let { n ->
                                 add(
                                     span(res, Duration.between(LocalDateTime.now(), n).toMinutes())
@@ -664,7 +708,8 @@ fun Home(
                         }
                     },
                     start = start, end = end, now = now,
-                    running = runningNow, enabled = enabled,
+                    running = runningNow,
+                    track = card, enabled = enabled,
                     centreValue = readings[centreIndex].first,
                     centreLabel = readings[centreIndex].second,
                     centreIndex = centreIndex, centreCount = readings.size,
@@ -677,20 +722,38 @@ fun Home(
                     onEndChange = { end = it },
                     onDragFinished = { commit() }
                 )
-            }
 
-            SectionRule()
+                // The window in words, under the dial. The dial says this
+                // spatially and the centre as a duration; neither answers which
+                // morning. See windowSentence.
+                windowSentence(ctx, prefs, start, end, days)?.let { line ->
+                    Spacer(Modifier.height(TIGHT))
+                    Text(
+                        line,
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = g.onSurfaceLow,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
 
             // Always present. Hiding it while running read as a bug, and the
             // reason it was hidden - that an edit could cut the night short -
             // is fixed at the source now. Emptying it is allowed too: it means
             // the window runs once and the app switches itself off, which the
             // "Just once" badge on the card names.
-            Column(
-                Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(TIGHT)
-            ) {
-                SectionLabel(stringResource(R.string.section_which_nights))
+            Section(stringResource(R.string.section_which_days)) {
+                // "which days", not "which nights". The window is a span on a
+                // 24-hour dial and can sit anywhere in the day - an afternoon
+                // nap is a legitimate use - so a label naming the time of day
+                // was describing one case of it. Neither platform names one
+                // either: Android's own schedule editor calls this row Repeat,
+                // and Apple's Sleep Schedule - which would have every excuse -
+                // heads its day circles DAYS ACTIVE.
+                // The Russian translation had already quietly said «в какие дни»
+                // rather than «ночи», so this brings the English into line with a
+                // correction a native speaker had made on their own, and fixes
+                // the Ukrainian, which had copied the English mistake.
                 // The days ARE the mornings now, so the presets are the plain
                 // calendar sets and mean exactly what they say.
                 val crossesMidnight = end.toSecondOfDay() <= start.toSecondOfDay()
@@ -703,44 +766,177 @@ fun Home(
                 // SpaceBetween, so the outer chips sit flush with the content
                 // margin like the day circles under them and the card above.
                 // Packed left they ended 75px short of the right edge.
-                FlowRow(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalArrangement = Arrangement.spacedBy(CHIP_GUTTER)
+                // A segmented button, not four chips. The presets are
+                // single-choice and they RULE the day row beneath them, but as
+                // loose pills they wore the same fill, the same round shape and
+                // the same selected treatment as the seven day circles - which
+                // says "these are peers" about two controls where one governs
+                // the other. M3 connects a segmented button into one container,
+                // which reads as "pick one of these" against seven separate
+                // things that read as "toggle any of these". Four options is
+                // inside the 2-5 the component is specified for.
+                // The switch, and beneath it what the switch governs - the
+                // same shape as the Do Not Disturb card, because it is the same
+                // relationship. "Does this repeat" is a different question from
+                // "which nights", it is answered FIRST, and it was previously a
+                // TextButton underneath both controls that answer the second -
+                // the lowest-emphasis component M3 has, carrying half the
+                // schedule's meaning, positioned after the thing it decides.
+                //
+                // It is a switch rather than a button because its label has to
+                // name a STATE. As a button it flipped to "Repeat every night"
+                // exactly when the schedule had stopped repeating, and between a
+                // segmented control and seven circles that both show state by
+                // fill, a bare word is read as state too. So it said the
+                // opposite of the truth in the one state it existed for.
+                //
+                // repeats is derived from days rather than stored: a one-off IS
+                // the empty set, and deriving it means deselecting the last day
+                // flips the switch by itself instead of leaving two sources of
+                // truth to disagree.
+                val repeats = days.isNotEmpty()
+                var savedDays by remember { mutableStateOf(DayOfWeek.entries.toSet()) }
+                val press = remember { MutableInteractionSource() }
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .toggleable(
+                            value = repeats,
+                            interactionSource = press,
+                            // No ripple on this row. It is the one switch row
+                            // with no card behind it, so the ripple had nothing
+                            // to be clipped by and arrived as a bare rectangle
+                            // across the content width; clipping it to the
+                            // container corner only traded that for a floating
+                            // lozenge. The press is not unacknowledged, though -
+                            // the interaction source above still reaches the
+                            // switch, so the thumb grows to 28dp under the
+                            // finger, which is where the feedback belongs.
+                            indication = null,
+                            role = Role.Switch,
+                            onValueChange = { on ->
+                                haptics.toggle(on)
+                                if (on) days = savedDays.ifEmpty { everyNight }
+                                else { savedDays = days; days = emptySet() }
+                                commit()
+                            }
+                        )
+                        .padding(vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    EffectChip(stringResource(R.string.preset_every_night), days == everyNight, compact = true) {
-                        haptics.select(); days = everyNight; commit()
+                    Column(Modifier.weight(1f).padding(end = 12.dp)) {
+                        Text(
+                            stringResource(R.string.repeat_title),
+                            style = MaterialTheme.typography.titleMedium,
+                            color = g.onSurface
+                        )
+                        Text(
+                            stringResource(
+                                if (repeats) R.string.repeat_sub_on
+                                else R.string.days_runs_once
+                            ),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = g.onSurfaceLow
+                        )
                     }
-                    EffectChip(stringResource(R.string.preset_weekdays), days == weekdays, compact = true) {
-                        haptics.select(); days = weekdays; commit()
+                    GloamSwitch(checked = repeats, interactionSource = press)
+                }
+                // Gone entirely when the schedule does not repeat, not dimmed.
+                // Dimming was the first answer, on the model of the allowlist row
+                // under the Do Not Disturb switch - but that row stays because it
+                // still HAS a value to show, greyed. These do not: a one-off IS
+                // the empty set, so the presets came up all unselected and the
+                // circles all hollow, which is not a dimmed state, it is a dimmed
+                // absence. The subtitle above already says the whole of it.
+                //
+                // Note this is not the case CLAUDE.md warns about. The day row
+                // vanishing once bedtime STARTED read as a bug because the
+                // schedule still existed and the screen had stopped admitting it.
+                // Here there is genuinely nothing to show, and the section is
+                // asking "which nights" of a schedule that has none.
+                //
+                // expandVertically rather than a bare if, or 110dp leaves in one
+                // frame and the whole page below it jumps.
+                AnimatedVisibility(
+                    visible = repeats,
+                    enter = fadeIn() + expandVertically(),
+                    exit = fadeOut() + shrinkVertically()
+                ) {
+                Column(
+                    Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(TIGHT)
+                ) {
+                    val presets = listOf(
+                        stringResource(R.string.preset_every_night) to everyNight,
+                        stringResource(R.string.preset_weekdays) to weekdays,
+                        stringResource(R.string.preset_weekends) to weekends
+                    )
+                    SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+                        presets.forEachIndexed { i, (label, set) ->
+                            SegmentedButton(
+                                selected = days == set,
+                                onClick = { haptics.select(); days = set; commit() },
+                                shape = SegmentedButtonDefaults.itemShape(i, presets.size),
+                            // M3 sizes a segmented button 40dp tall through
+                            // defaultMinSize and, unlike Surface, never calls
+                            // minimumInteractiveComponentSize - so Material's own
+                            // component ships under Android's 48dp touch minimum.
+                            // Measured at 40.3dp here before this line. The day
+                            // row already pays 48dp for the same reason, and a
+                            // row of presets directly above it should not be the
+                            // one control on the screen you have to aim at.
+                            modifier = Modifier.height(48.dp),
+                                colors = SegmentedButtonDefaults.colors(
+                                    activeContainerColor = g.selectFill,
+                                    activeContentColor = g.onSelect,
+                                    activeBorderColor = g.line,
+                                    inactiveContainerColor = Color.Transparent,
+                                    inactiveContentColor = g.onSurfaceMid,
+                                    inactiveBorderColor = g.line
+                                ),
+                                // No check mark. M3 puts one on the active segment,
+                                // but it costs about 26dp and "Weekdays" already
+                                // wants 66 of the 79 a third of the row leaves. The
+                                // fill says which one is chosen, and unlike the
+                                // check it says so from across the room.
+                                icon = {},
+                                label = {
+                                    Text(
+                                        label,
+                                        style = MaterialTheme.typography.labelLarge,
+                                        maxLines = 1
+                                    )
+                                }
+                            )
+                        }
                     }
-                    EffectChip(stringResource(R.string.preset_weekends), days == weekends, compact = true) {
-                        haptics.select(); days = weekends; commit()
-                    }
-                    // The one-off already has a name on the card; here it is
-                    // also the only one-tap way to clear the row.
-                    EffectChip(stringResource(R.string.preset_once), days.isEmpty(), compact = true) {
-                        haptics.select(); days = emptySet(); commit()
+                    DayRow(days) { d ->
+                        haptics.toggle(d !in days)
+                        days = if (d in days) days - d else days + d
+                        commit()
                     }
                 }
-                DayRow(days) { d ->
-                    haptics.toggle(d !in days)
-                    days = if (d in days) days - d else days + d
-                    commit()
                 }
-                // The chips are mornings; the window reaching a Saturday
-                // morning starts on Friday evening. Only worth saying when the
-                // two fall on different days.
-                if (crossesMidnight && days.isNotEmpty()) Text(
-                    stringResource(R.string.days_start_evening_before),
+                // The chips are mornings; a window reaching Saturday morning
+                // starts on Friday. Only worth saying when the two fall on
+                // different days.
+                //
+                // "the day before", not "the evening before". Crossing midnight
+                // does not mean starting in the evening: 12:30 to 08:30 is a
+                // twenty-hour window that crosses it and starts at midday, and
+                // 17:00 to 02:00 starts in the afternoon. Both translations
+                // already used a word that means the day before on its own -
+                // «накануне», «напередодні» - and had "evening" bolted on
+                // because the English said so, so both got shorter as well as
+                // truer.
+                if (crossesMidnight && repeats) Text(
+                    stringResource(R.string.days_start_day_before),
                     style = MaterialTheme.typography.bodySmall,
                     color = g.onSurfaceLow
                 )
             }
 
-            SectionRule()
-
-            SectionLabel(stringResource(R.string.section_what_can_wake_you))
+            Section(stringResource(R.string.section_what_can_wake_you)) {
             // Do Not Disturb is not a screen effect, it is a subsystem, and
             // this is its configuration. As a chip in the effects row it sat
             // apart from the screen that configures it - and turning it off
@@ -748,143 +944,180 @@ fun Home(
             // filter had become INTERRUPTION_FILTER_ALL. One card: the switch,
             // and beneath it what the switch governs.
             Surface(
-                color = g.raise, shape = RoundedCornerShape(CORNER),
+                color = card, shape = RoundedCornerShape(CORNER),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column {
-                    Row(
-                        Modifier
-                            .toggleable(
-                                value = fxDnd,
-                                role = Role.Switch,
-                                onValueChange = { fxDnd = it; haptics.toggle(it); commit() }
-                            )
-                            .padding(horizontal = CARD_PAD, vertical = 14.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(Modifier.weight(1f).padding(end = 12.dp)) {
-                            Text(
-                                stringResource(R.string.dnd_title),
-                                style = MaterialTheme.typography.titleMedium,
-                                color = g.onSurface
-                            )
-                            Text(
-                                stringResource(R.string.dnd_subtitle),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = g.onSurfaceLow
-                            )
-                        }
-                        Switch(checked = fxDnd, onCheckedChange = null)
-                    }
-                    Box(
-                        Modifier
-                            .padding(horizontal = CARD_PAD)
-                            .fillMaxWidth()
-                            .height(1.dp)
-                            .background(g.veil)
+                    // No supporting line, deliberately. Any sentence here makes
+                    // a claim about who gets through, and the row directly below
+                    // makes that claim properly and dynamically - "Alarms, calls,
+                    // and 2 more". A static one can only duplicate it or, as it
+                    // did, contradict it: "Calls and alerts are quiet" sat above
+                    // a row saying calls are allowed.
+                    SwitchRow(
+                        headline = stringResource(R.string.dnd_title),
+                        checked = fxDnd,
+                        // Every other row in the app carries a leading icon, so
+                        // these two started their text 40dp from the screen edge
+                        // where the card directly below started at 80 - a ragged
+                        // left edge between two cards on one screen.
+                        leading = { RowIcon(R.drawable.ic_dnd) },
+                        onCheckedChange = { fxDnd = it; haptics.toggle(it); commit() },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    // HorizontalDivider, and in `line` rather than `veil`.
+                    // M3's divider defaults to outlineVariant, which this app
+                    // wires to veil - and veil on raise measures 1.02:1, which
+                    // is not a faint edge, it is no edge. CLAUDE.md already
+                    // records that veil is invisible at 1dp; SectionRule learned
+                    // it and uses line, and this one instance had not. 1.38:1
+                    // now, the same as the rules between the blocks outside.
+                    HorizontalDivider(
+                        Modifier.padding(horizontal = CARD_PAD),
+                        color = g.line
                     )
                     val gets = remember(tick, fxDnd) {
                         Interruptions.shortSummary(res, Interruptions.allowed(res, prefs, short = true))
                     }
-                    Row(
-                        Modifier
+                    // The title matches the screen it opens: a link and its
+                    // destination naming themselves differently is how you
+                    // doubt you arrived.
+                    LinkRow(
+                        headline = stringResource(R.string.what_is_allowed),
+                        supporting =
+                            if (fxDnd) gets else stringResource(R.string.dnd_nothing_silenced),
+                        leading = { RowIcon(R.drawable.ic_allowlist) },
+                        onClick = { haptics.open(); onOpenInterruptions() },
+                        modifier = Modifier
                             .alpha(if (fxDnd) 1f else 0.45f)
-                            .fillMaxWidth()
-                            .clickable(enabled = fxDnd) { haptics.open(); onOpenInterruptions() }
-                            .padding(horizontal = CARD_PAD, vertical = 14.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(Modifier.weight(1f).padding(end = 12.dp)) {
-                            // Matches the title of the screen it opens: a
-                            // link and its destination naming themselves
-                            // differently is how you doubt you arrived.
-                            Text(
-                                stringResource(R.string.what_gets_through),
-                                style = MaterialTheme.typography.titleMedium,
-                                color = g.onSurface
-                            )
-                            Text(
-                                if (fxDnd) gets else stringResource(R.string.dnd_nothing_silenced),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = g.onSurfaceLow
-                            )
-                        }
-                        Text(
-                            "\u203A",
-                            style = MaterialTheme.typography.titleLarge, color = g.onSurfaceLow
+                            .fillMaxWidth(),
+                        enabled = fxDnd
+                    )
+                    // What the SYSTEM says is in effect, and only while bedtime
+                    // is actually running.
+                    //
+                    // It is the one thing on any screen that is not the app's
+                    // own belief. Everything else reports what we asked for;
+                    // this reports what the phone answered, which is the whole
+                    // premise here - a vendor can accept a request and quietly
+                    // ignore it.
+                    //
+                    // Inside this card rather than in a section of its own,
+                    // because this is the card that asks for Do Not Disturb and
+                    // this is the evidence it happened. It also puts the worst
+                    // case where it cannot be missed: the switch above reading
+                    // ON, and a line directly beneath it saying the phone
+                    // reports everything getting through.
+                    //
+                    // And when it is NOT running, the same slot says so. The
+                    // switches in this card are a PLAN - saved now, applied
+                    // when the window opens - and they look exactly like live
+                    // controls, so with bedtime off a person turns Do Not
+                    // Disturb "on" and reasonably expects to be left alone.
+                    // Reported as exactly that. The sentence goes here rather
+                    // than at the top of the screen because this is the card
+                    // that misleads; see planNote.
+                    if (runningNow) {
+                        val filter = remember(tick) { ZenController.currentFilter(ctx) }
+                        val ignored = fxDnd &&
+                            filter == NotificationManager.INTERRUPTION_FILTER_ALL
+                        HorizontalDivider(
+                            Modifier.padding(horizontal = CARD_PAD), color = g.line
                         )
-                    }
+                        Text(
+                            when (filter) {
+                                NotificationManager.INTERRUPTION_FILTER_ALL ->
+                                    R.string.filter_all
+                                NotificationManager.INTERRUPTION_FILTER_PRIORITY ->
+                                    R.string.filter_priority
+                                NotificationManager.INTERRUPTION_FILTER_ALARMS ->
+                                    R.string.filter_alarms
+                                NotificationManager.INTERRUPTION_FILTER_NONE ->
+                                    R.string.filter_none
+                                else -> R.string.filter_unknown
+                            }.let { stringResource(it) },
+                            style = MaterialTheme.typography.bodySmall,
+                            // cta when the phone disagrees with what we asked:
+                            // that is the failure this app exists to catch, so
+                            // it is not said in the same ink as good news.
+                            color = if (ignored) g.cta else g.onSurfaceLow,
+                            modifier = Modifier.padding(
+                                horizontal = CARD_PAD, vertical = 14.dp
+                            )
+                        )
+                    } else NoticeStrip(planNote(ctx, enabled, start, end, days, loc))
                 }
             }
 
-            SectionRule()
+            }
 
-            // Thirteen switch rows is what makes a screen read as Settings.
-            // The effects are a pill row: tap to arm.
-            Column(Modifier.fillMaxWidth()) {
-                SectionLabel(stringResource(R.string.section_how_the_screen_looks))
-                Spacer(Modifier.height(TIGHT))
-                // One per row. Two-up only ever worked in English: measured on
-                // the device, no two Russian labels fit a 311dp row - the closest
-                // pair misses by 9dp - so a flow row put one chip on each line
-                // anyway, and did it raggedly. Stacking them is the same result
-                // stated deliberately, and it reads the same in every language.
-                Column(verticalArrangement = Arrangement.spacedBy(CHIP_GUTTER)) {
-                    EffectChip(stringResource(R.string.fx_grayscale), fxGray, icon = Fx.Grayscale) {
-                        fxGray = !fxGray; haptics.toggle(fxGray); commit()
-                    }
-                    EffectChip(stringResource(R.string.fx_dim), fxDim, icon = Fx.Dim) {
-                        fxDim = !fxDim; haptics.toggle(fxDim); commit()
-                    }
-                    if (darkSupport == 2) {
-                        EffectChip(stringResource(R.string.fx_dark), false, muted = true, icon = Fx.Dark) {
-                            ctx.startActivity(Intent(Settings.ACTION_DISPLAY_SETTINGS))
+            // A card of rows, the same shape as "What can wake you" above it,
+            // because it is the same kind of thing: a list of switches with
+            // something to say about each.
+            //
+            // These were chips, and the chips were already one per row - no two
+            // Russian labels fit a 311dp line, the closest pair missing by 9dp -
+            // so they were full-width elements shaped like pills with dead space
+            // to the right of every one. The explanations had nowhere to go and
+            // collected at the foot of the section, two sentences away from the
+            // controls they described. Each row carries its own now, the dead
+            // space holds the switch, and the footnotes are gone.
+            // "how the screen LOOKS" is a claim about now, and it is false
+            // whenever the window is not running - which is most of the time
+            // anyone is reading it. The label follows the tense of the thing it
+            // names; the rows below are a plan until they are not.
+            Section(
+                stringResource(
+                    if (runningNow) R.string.section_how_the_screen_looks
+                    else R.string.section_how_the_screen_will_look
+                )
+            ) {
+                Surface(
+                    color = card, shape = RoundedCornerShape(CORNER),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column {
+                        EffectRow(
+                            Fx.Grayscale, stringResource(R.string.fx_grayscale),
+                            stringResource(R.string.fx_grayscale_sub), fxGray
+                        ) { fxGray = !fxGray; haptics.toggle(fxGray); commit() }
+                        HorizontalDivider(Modifier.padding(horizontal = CARD_PAD), color = g.line)
+                        EffectRow(
+                            Fx.Dim, stringResource(R.string.fx_dim),
+                            stringResource(R.string.fx_dim_sub), fxDim
+                        ) { fxDim = !fxDim; haptics.toggle(fxDim); commit() }
+                        HorizontalDivider(Modifier.padding(horizontal = CARD_PAD), color = g.line)
+                        // The one subtitle that is load-bearing rather than
+                        // descriptive: the platform defers the theme change until
+                        // the screen goes off, so tapping this while watching it
+                        // does nothing and looks broken without the sentence.
+                        EffectRow(
+                            Fx.Dark, stringResource(R.string.fx_dark),
+                            stringResource(R.string.fx_dark_sub), fxDark
+                        ) { fxDark = !fxDark; haptics.toggle(fxDark); commit() }
+                        // The divider belongs to the row, so it goes when the
+                        // row does - a card must not end on a rule.
+                        if (ambientRow) {
+                            HorizontalDivider(
+                                Modifier.padding(horizontal = CARD_PAD), color = g.line
+                            )
+                            EffectRow(
+                                Fx.Ambient, stringResource(R.string.fx_ambient),
+                                stringResource(R.string.fx_ambient_sub), fxAmbient
+                            ) { fxAmbient = !fxAmbient; haptics.toggle(fxAmbient); commit() }
                         }
-                    } else {
-                        EffectChip(stringResource(R.string.fx_dark), fxDark, icon = Fx.Dark) {
-                            fxDark = !fxDark; haptics.toggle(fxDark); commit()
-                        }
-                    }
-                    if (ambientSupported) {
-                        EffectChip(stringResource(R.string.fx_ambient), fxAmbient, icon = Fx.Ambient) {
-                            fxAmbient = !fxAmbient; haptics.toggle(fxAmbient); commit()
-                        }
-                    } else {
-                        EffectChip(stringResource(R.string.fx_ambient), false, muted = true, icon = Fx.Ambient) {
-                            AmbientSettings.open(ctx)
+                        // The same note as the Do Not Disturb card, in the same
+                        // slot, for the same reason. Absent while running,
+                        // where the effects ARE applied and the screen in front
+                        // of you is the evidence.
+                        if (!runningNow) {
+                            NoticeStrip(planNote(ctx, enabled, start, end, days, loc))
                         }
                     }
                 }
-                val unsupported = listOfNotNull(
-                    if (darkSupport == 2) stringResource(R.string.fx_dark) else null,
-                    if (!ambientSupported) stringResource(R.string.fx_ambient) else null
-                )
-                if (unsupported.isNotEmpty()) Text(
-                    pluralStringResource(
-                        R.plurals.fx_handled_by_phone, unsupported.size,
-                        ListFormatter.getInstance().format(unsupported)
-                    ),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = g.onSurfaceLow,
-                    modifier = Modifier.padding(top = 10.dp)
-                )
-                val hint = remember { AmbientSettings.locationHint() }
-                if (!ambientSupported && hint != null) Text(
-                    stringResource(R.string.fx_always_on_lives_in, hint),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = g.onSurfaceLow,
-                    modifier = Modifier.padding(top = 4.dp)
-                )
-            }
+                        }
 
-            SectionRule()
-
-            // Settings lives at the FOOT, not in a bar at the top. It is a place
-            // you go once - to set the theme or the language - and then never
-            // again, and a top bar charged 66dp of the space above the fold for
-            // it on every visit. Down here it is also easier to reach one-handed
-            // than the top-right corner is.
-            SettingsRow(onOpenSettings)
+        }
         }
     }
 
@@ -901,7 +1134,12 @@ fun Home(
             },
             text = {
                 Text(
-                    stringResource(R.string.end_bedtime_body),
+                    // A one-off has no next occurrence, so the reassuring half
+                    // of this sentence would be a promise the app cannot keep.
+                    stringResource(
+                        if (Scheduler.isOneOff(days)) R.string.end_bedtime_body_once
+                        else R.string.end_bedtime_body
+                    ),
                     style = MaterialTheme.typography.bodyLarge, color = g.onSurfaceLow
                 )
             },
@@ -955,31 +1193,211 @@ fun Home(
 }
 
 /** "3h 05m" from a whole number of minutes. */
+/**
+ * The window in plain language: "From 11:05 PM today to 7:15 AM tomorrow".
+ *
+ * The dial says this spatially and the centre says it as a duration. Neither
+ * answers the question a circle is worst at - WHICH morning - and a window that
+ * crosses midnight is only obvious on a clock face to someone who already reads
+ * clock faces. This is the same fact in the register the screen was missing, and
+ * it is the only part of the block a screen reader can make sense of at all.
+ *
+ * Built from the ACTUAL next or current window rather than from the two handles,
+ * so the day words cannot drift from what is scheduled: a one-off, a window five
+ * days out and a window running right now each name their own days.
+ */
+@Composable
+private fun windowSentence(
+    ctx: Context,
+    prefs: Prefs,
+    start: LocalTime,
+    end: LocalTime,
+    days: Set<DayOfWeek>
+): String? {
+    val res = ctx.resources
+    val locale = LocalLocale.current.platformLocale
+    val now = LocalDateTime.now()
+    // The window you are IN, or else the next one - and "in" is asked with
+    // enabled = true regardless of the switch, deliberately.
+    //
+    // Asking with the real switch was wrong in a way that only shows at night.
+    // Off, at 23:34, inside a 6:55 PM window, it fell through to nextStart and
+    // said "from 6:55 PM TOMORROW" - while the dial above it drew the marker
+    // inside the arc. Reported as exactly that. Worse, it was a wrong
+    // prediction rather than merely an odd one: switch on at 23:34 and bedtime
+    // begins immediately, because liveWindowEnd treats a one-off as running the
+    // moment the switch is on. The sentence would have promised tomorrow and
+    // the app would have started that second.
+    val endsAt = Scheduler.liveWindowEnd(
+        enabled = true, activeDay = prefs.activeDay,
+        start = start, end = end, days = days, from = now
+    )
+    val from = (endsAt?.minus(Scheduler.duration(start, end))
+        ?: Scheduler.nextStart(start, end, days, now)) ?: return null
+    val to = from.plus(Scheduler.duration(start, end))
+
+    fun day(at: LocalDateTime): String = dayWord(ctx, at, now, locale)
+    // One day word when both ends fall on it. "From 2:40 AM tomorrow to 8:40 AM
+    // tomorrow" is correct and says it twice.
+    return if (from.toLocalDate() == to.toLocalDate()) res.getString(
+        R.string.window_span_same_day,
+        hhmm(ctx, from.hour, from.minute), hhmm(ctx, to.hour, to.minute), day(to)
+    ) else res.getString(
+        R.string.window_span,
+        hhmm(ctx, from.hour, from.minute), day(from),
+        hhmm(ctx, to.hour, to.minute), day(to)
+    )
+}
+
+/**
+ * The last element of a card whose switches are not in effect: a warm strip
+ * carrying one sentence about the rows above it. Both cards on Home use it, so
+ * the two cannot drift.
+ */
+@Composable
+private fun NoticeStrip(text: String) {
+    val g = gloam
+    // Full width and no inset, so it is a STRIP rather than a padded paragraph -
+    // the area is what does the work here, since the accent hue cannot be
+    // carried as text on the cream (see `notice` in Theme.kt).
+    //
+    // No rule above it: the colour step IS the boundary, and a rule plus a
+    // colour change is two edges drawn for one. The bottom corners come free -
+    // the card is a Surface with a shape, and a Surface clips its content.
+    Box(Modifier.fillMaxWidth().background(g.notice)) {
+        Text(
+            text,
+            style = MaterialTheme.typography.bodySmall,
+            color = g.onSurface,
+            modifier = Modifier.padding(horizontal = CARD_PAD, vertical = 14.dp)
+        )
+    }
+}
+
+/**
+ * What to say at the foot of a card whose switches are not in effect.
+ *
+ * Every switch on Home is a PLAN. It is written to prefs the moment it is
+ * tapped and it reaches the phone when the window opens - so with bedtime off,
+ * turning Do Not Disturb "on" is a real and correct action that silences
+ * nothing tonight, and looks identical to one that would. Reported as exactly
+ * that, and it is the same fault while ARMED but not yet running, where the
+ * master switch is green and still nothing is being silenced.
+ *
+ * Three readings, because the reason differs and a person can act on the
+ * difference: switched off (turn it on), armed (wait, or it says when), and
+ * armed with nothing to run - a one-off already spent, or no days chosen.
+ */
+private fun planNote(
+    ctx: Context,
+    enabled: Boolean,
+    start: LocalTime,
+    end: LocalTime,
+    days: Set<DayOfWeek>,
+    locale: Locale
+): String {
+    if (!enabled) return ctx.getString(R.string.note_off)
+    val now = LocalDateTime.now()
+    val next = Scheduler.nextStart(start, end, days, now)
+        ?: return ctx.getString(R.string.note_unscheduled)
+    // The day word is not decoration. A clock time alone reads as TODAY, and
+    // the next window can be days out - reported as exactly that, with the bar
+    // saying "Starts in 35h 20m" over a note saying "until 12:00 PM". Same lie
+    // by omission the window sentence was fixed for, so it uses the same rule.
+    return ctx.getString(
+        R.string.note_until,
+        hhmm(ctx, next.hour, next.minute), dayWord(ctx, next, now, locale)
+    )
+}
+
+/**
+ * "today", "tomorrow", or the weekday - the app's one rule for naming the day
+ * something falls on, shared by the window sentence and the plan note so the
+ * two cannot disagree on the same screen.
+ *
+ * Past a day the relative words stop helping and start lying by omission -
+ * "tomorrow" for something five days out. The weekday is localised by
+ * java.time, so it needs no string of ours.
+ */
+private fun dayWord(
+    ctx: Context,
+    at: LocalDateTime,
+    now: LocalDateTime,
+    locale: Locale
+): String = when (ChronoUnit.DAYS.between(now.toLocalDate(), at.toLocalDate())) {
+    0L -> ctx.getString(R.string.day_today)
+    1L -> ctx.getString(R.string.day_tomorrow)
+    else -> at.dayOfWeek.getDisplayName(TextStyle.FULL_STANDALONE, locale)
+}
+
 /** Clock time. 24-hour throughout, which is what the dial is. */
 private fun hhmm(ctx: Context, h: Int, m: Int): String = Clock.hhmm(ctx, h, m)
 
-/** The dial centre's compact duration - "5h 20m". */
-private fun span(res: Resources, minutes: Long): String =
-    res.getString(R.string.dur_compact, minutes / 60, minutes % 60)
-
 /**
- * A duration for the status line, coarsened: minutes are worth having when
- * bedtime is close and are noise when it is most of a day away. Hours and
- * minutes are separate plurals, because a language can inflect them apart.
+ * One of the two window times, at the numeral size, with the day period set a
+ * step down beside it.
+ *
+ * The period is a separate Text on purpose. As one string "11:30 PM" overflows
+ * the 146.5dp column, and CLDR joins it with U+202F - a no-break space - so the
+ * line cannot break at the space and broke mid-token instead, to "11:30 P"/"M".
+ * At titleLarge the period costs about a third of what it did, which fits any
+ * hour rather than just the ones with a single digit. Both halves align on the
+ * BASELINE, not the box, or the small text would float.
+ *
+ * maxLines = 1 on the numerals is the backstop: if some locale still cannot
+ * fit, it must clip rather than reflow, because this block sits directly above
+ * the dial and anything that changes its height moves the whole page.
  */
-private fun coarse(res: Resources, m: Long): String {
-    val h = (m / 60).toInt()
-    val mins = (m % 60).toInt()
-    val hours = res.getQuantityString(R.plurals.dur_hours, h, h)
-    return when {
-        m < 60 -> res.getQuantityString(R.plurals.dur_minutes, mins, mins)
-        m < 240 -> res.getString(
-            R.string.dur_hours_minutes, hours,
-            res.getQuantityString(R.plurals.dur_minutes, mins, mins)
+@Composable
+private fun WindowTime(ctx: Context, t: java.time.LocalTime, color: Color) {
+    val r = Clock.reading(ctx, t)
+    if (r.period == null) {
+        Text(
+            r.time,
+            style = MaterialTheme.typography.displaySmall,
+            color = color,
+            maxLines = 1
         )
-        else -> hours
+        return
+    }
+    Row(verticalAlignment = Alignment.Bottom) {
+        val numerals = @Composable {
+            Text(
+                r.time,
+                style = MaterialTheme.typography.displaySmall,
+                color = color,
+                maxLines = 1,
+                modifier = Modifier.alignByBaseline()
+            )
+        }
+        val period = @Composable {
+            Text(
+                r.period,
+                style = MaterialTheme.typography.titleLarge,
+                color = color,
+                maxLines = 1,
+                modifier = Modifier.alignByBaseline()
+            )
+        }
+        if (r.periodFirst) { period(); Spacer(Modifier.width(5.dp)); numerals() }
+        else { numerals(); Spacer(Modifier.width(5.dp)); period() }
     }
 }
+
+/**
+ * The dial centre's compact duration - "5h 20m", or just "20m" under an hour.
+ *
+ * The hours half is dropped rather than shown as "0h", which said nothing and
+ * cost a third of the width of the longest thing this string has to fit: the app
+ * bar's status line, where it is capped at one line and truncates rather than
+ * wraps. The minutes stay zero-padded WITH an hour ("5h 05m") so the countdown
+ * does not change width every ten minutes, and unpadded without one ("5m"),
+ * where there is no column to hold.
+ */
+private fun span(res: Resources, minutes: Long): String =
+    if (minutes < 60) res.getString(R.string.dur_minutes, minutes)
+    else res.getString(R.string.dur_compact, minutes / 60, minutes % 60)
+
 
 
 
@@ -989,6 +1407,41 @@ private fun coarse(res: Resources, m: Long): String {
  * own fill to stay a crescent.
  */
 private enum class Fx { Grayscale, Dim, Dark, Ambient }
+
+/**
+ * One screen effect: what it is called, what it does, and its switch.
+ *
+ * The ROW carries the gesture and the Switch is only the indicator, the way
+ * every other switch in this app works - the switch is not a second target
+ * competing for the taps people aim most carefully. `checked = null` makes it a
+ * link row with a chevron instead, for an effect this phone will not apply.
+ */
+@Composable
+private fun EffectRow(
+    icon: Fx,
+    title: String,
+    subtitle: String,
+    checked: Boolean,
+    onClick: () -> Unit
+) {
+    SwitchRow(
+        headline = title, supporting = subtitle,
+        checked = checked, onCheckedChange = { onClick() },
+        modifier = Modifier.fillMaxWidth(),
+        leading = { FxIcon(icon) }
+    )
+}
+
+/** A list row's leading icon: LocalContentColor, and M3's 24dp. */
+@Composable
+private fun RowIcon(@DrawableRes id: Int) {
+    Icon(
+        painterResource(id),
+        contentDescription = null,
+        tint = LocalContentColor.current,
+        modifier = Modifier.size(24.dp)
+    )
+}
 
 @Composable
 private fun FxIcon(icon: Fx) {
@@ -1002,45 +1455,11 @@ private fun FxIcon(icon: Fx) {
             }
         ),
         contentDescription = null,
+        // LocalContentColor, so the row's leadingIconColor decides it, and 24dp,
+        // which is M3's size for a list item's leading icon. It was 16.
         tint = LocalContentColor.current,
-        modifier = Modifier.size(16.dp)
+        modifier = Modifier.size(24.dp)
     )
-}
-
-@Composable
-private fun EffectChip(
-    label: String,
-    on: Boolean,
-    icon: Fx? = null,
-    muted: Boolean = false,
-    // Four presets on one line need every dp: at the effect chips' 14dp of
-    // side padding they come to 355dp against 311dp of content width. 8dp
-    // fits them with the full "Every night" label intact. The effect chips
-    // below have room to spare and keep the roomier padding.
-    compact: Boolean = false,
-    onClick: () -> Unit
-) {
-    val g = gloam
-    Surface(
-        onClick = onClick,
-        shape = CircleShape,
-        color = if (on) g.selectFill else g.raise,
-        contentColor = if (on) g.onSelect else if (muted) g.onSurfaceLow else g.onSurfaceMid
-    ) {
-        Row(
-            Modifier.padding(
-                horizontal = if (compact) 8.dp else 14.dp,
-                vertical = 9.dp
-            ),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            if (icon != null) {
-                FxIcon(icon)
-                Spacer(Modifier.width(7.dp))
-            }
-            Text(label, style = MaterialTheme.typography.labelLarge)
-        }
-    }
 }
 
 @Composable
@@ -1111,30 +1530,27 @@ private fun DayRow(selected: Set<DayOfWeek>, onToggle: (DayOfWeek) -> Unit) {
 @Composable
 private fun PermissionRow(title: String, why: String, granted: Boolean, onRequest: () -> Unit) {
     val g = gloam
-    Row(
-        Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Column(Modifier.weight(1f).padding(end = 12.dp)) {
-            Text(title, style = MaterialTheme.typography.titleMedium, color = g.onSurface)
-            Text(why, style = MaterialTheme.typography.bodySmall, color = g.onSurfaceLow)
-        }
-        if (granted) {
-            Text(
+    ActionRow(
+        headline = title,
+        supporting = why,
+        trailing = {
+            if (granted) Text(
                 stringResource(R.string.perm_allowed),
                 style = MaterialTheme.typography.labelLarge, color = g.stateOn
-            )
-        } else {
-            Button(
+            ) else Button(
                 onClick = onRequest,
                 shape = CircleShape,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = g.cta, contentColor = g.surface
                 )
-            ) { Text(stringResource(R.string.perm_allow), style = MaterialTheme.typography.labelLarge) }
+            ) {
+                Text(
+                    stringResource(R.string.perm_allow),
+                    style = MaterialTheme.typography.labelLarge
+                )
+            }
         }
-    }
+    )
 }
 
 /* The handles' own marks, shrunk. Colour alone made the wake side learnable;

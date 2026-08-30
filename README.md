@@ -1,8 +1,27 @@
+<div align="center">
+
+<img src="docs/icon.png" width="112" alt="Gloaming">
+
 # Gloaming
 
-An Android bedtime app: one sleep window a night, with Do Not Disturb and the
-screen effects that go with it — driven by exact alarms, so it fires with the
-app closed.
+**A bedtime app for Android that keeps its own schedule.**
+
+One sleep window a night — Do Not Disturb and the screen effects that go with
+it — driven by exact alarms, so it fires with the app closed.
+
+[![License](https://img.shields.io/badge/license-Apache%202.0-blue)](LICENSE)
+[![Android](https://img.shields.io/badge/Android-15%2B%20(API%2035)-3DDC84)](#requirements)
+[![Kotlin](https://img.shields.io/badge/Kotlin-2.3.21-7F52FF)](https://kotlinlang.org)
+[![Compose](https://img.shields.io/badge/Jetpack%20Compose-Material%203-4285F4)](https://developer.android.com/jetpack/compose)
+[![Tests](https://img.shields.io/badge/tests-80-success)](#tests)
+
+<img src="docs/screenshots/home.png" width="19%" alt="Home">
+<img src="docs/screenshots/home-dark.png" width="19%" alt="Home, dark">
+<img src="docs/screenshots/effects.png" width="19%" alt="How the screen looks">
+<img src="docs/screenshots/allowed.png" width="19%" alt="What is allowed">
+<img src="docs/screenshots/settings.png" width="19%" alt="Settings">
+
+</div>
 
 ## Why it exists
 
@@ -39,18 +58,27 @@ doing it, or on any vendor doing it at all.
 
 - **A 24-hour dial.** One window, dragged at either end. It is a full day rather
   than a clock face because a 12-hour face cannot draw a window longer than
-  twelve hours; Apple's Sleep ring makes the same choice.
+  twelve hours; Apple's Sleep ring makes the same choice. Days are chosen as the
+  **mornings** you want the window to end on, so asking for the weekend means
+  Saturday and Sunday, not Friday night.
 - **Do Not Disturb**, with a per-night allowlist — who can call, who can
-  message, conversations, repeat callers, reminders, calendar events, media.
-  Alarms are always allowed and the app says so rather than pretending the
-  platform forbids silencing them.
+  message, conversations, repeat callers, reminders, calendar events, media. The
+  screen reports what the system says is actually in effect, rather than what the
+  app believes it asked for. Alarms are always allowed, and the app says that is
+  its own choice rather than pretending the platform forbids silencing them.
 - **Screen effects**, as far as your phone honours them: greyscale, wallpaper
-  dimming, night mode, ambient display. All four are standard
+  dimming, dark theme, always-on display. All four are standard
   `ZenDeviceEffects`, and a device will happily accept an effect it has no
-  intention of applying — so which ones actually take effect varies. The app
-  measures rather than assumes, and where an effect does nothing it says so
-  instead of offering a switch that lies.
-- **English, Russian and Ukrainian**, with a per-app language picker.
+  intention of applying — so which ones take effect varies. Where an effect does
+  nothing and nothing else can reach it, the control is not drawn at all rather
+  than offering a switch that lies.
+- **A boot watch.** Some vendors withhold `BOOT_COMPLETED` from apps their
+  launch manager has decided are unimportant, which leaves a bedtime app armed
+  with no alarms behind it. Gloaming compares the boot it handled against the
+  boot it is running on, says so when one goes unreported, and offers a button
+  to the screen that fixes it.
+- **English, Russian and Ukrainian**, with a per-app language picker, and clock
+  times in whichever 12- or 24-hour format the phone is set to.
 - **A journal.** The app keeps its own on-device log of every decision it makes
   overnight. Useful anywhere, and necessary on devices that encrypt logcat for
   third-party apps.
@@ -61,33 +89,73 @@ Nothing vendor-specific runs unconditionally, and no device is special-cased
 into working:
 
 - Capability is **measured at runtime, not looked up in a device list**. Whether
-  night mode is honoured is settled by a probe on first launch, keyed to
-  `Build.FINGERPRINT` so an OS update reopens the question. On a phone that
-  applies it, the switch is simply live.
-- The single `Build.MANUFACTURER` test in the codebase returns a settings
-  deep-link for Honor and Huawei and null everywhere else; the caller draws
-  nothing when it is null.
-- The one device list is an **exclusion** list, consulted only when the AOSP
-  key it would otherwise read is absent — so an unrecognised phone is treated as
+  always-on display can be suppressed is settled by reading the AOSP key the
+  effect acts on; where that key is present, the switch is simply live.
+- The single `Build.MANUFACTURER` test in the codebase returns Honor and
+  Huawei's own always-on keys and null everywhere else, and every caller stops
+  at null — so on any other phone that object does nothing at all.
+- The one device list is an **exclusion** list, consulted only when the AOSP key
+  it would otherwise read is absent — so an unrecognised phone is treated as
   capable rather than as broken.
-- There are no writes to `Settings.System`, `Secure` or `Global` anywhere. The
-  two reads are capability detection.
+- There is exactly one write to `Settings.System`, `Secure` or `Global` in the
+  whole app, it is the always-on route below, and it cannot happen by accident:
+  it needs a permission Android grants only over adb, so on an ordinary install
+  the code is inert and the control is not drawn.
 
-Worth knowing on any device: the night-mode probe creates and activates a
-throwaway zen rule for about 2.5 seconds on first launch, so a "Do Not Disturb
-is on" notification flashes once.
+Run on two phones so far: the Honor above, and a OnePlus CPH2653 on LineageOS
+23.2 (Android 16). The second one installed and ran first time, in Ukrainian on
+a 12-hour clock, with no device-specific work.
 
-Run so far on the Honor above. The design is device-independent by construction
-and audited to be so, but that is an audit, not a second phone — reports from
-other hardware are welcome.
+The two disagree about always-on display — the platform's request is honoured on
+the OnePlus and ignored by the Honor — and the app works that out by itself,
+showing a live switch on one and, on the other, nothing at all unless you take
+the optional route below. They agree that dark theme works, applied when the
+screen next turns off. Reports from other hardware are welcome.
 
 ## Requirements
 
 Android 15 (API 35) or newer — `ZenDeviceEffects` and `AutomaticZenRule.Builder`
 are API 35, and the app is built entirely around them.
 
-Two permissions, both user-granted: notification policy access (Do Not Disturb)
-and exact alarms.
+Two permissions, both user-granted from inside the app: notification policy
+access (Do Not Disturb) and exact alarms.
+
+### Honor, Huawei and other phones with an "app launch" manager
+
+Some vendors withhold `BOOT_COMPLETED` from apps their launch manager has
+decided are unimportant. Measured on an Honor Magic8 Pro: with Gloaming set to
+"Manage automatically", the app was never told the phone had restarted, so it sat
+armed with no alarms behind it until it was next opened — silently, all night.
+
+Fix it once, in **Settings ▸ Apps ▸ App launch ▸ Gloaming ▸ Manage manually**,
+with auto-launch on. Battery optimisation is a different setting and does not
+help; it was tested both ways.
+
+Gloaming notices this by itself and offers a button straight to the right
+screen. The notice clears once a boot arrives normally, and it never asks which
+phone you have, so it works on any vendor doing this.
+
+### Optional: always-on display on Honor and Huawei
+
+Some phones ship their own always-on display and ignore the platform's request
+to suppress it — measured on an Honor Magic8 Pro, where even the system's own
+lever is disregarded. On those phones the always-on row is not shown, because
+nothing the app can reach would move it.
+
+There is one route, and it needs a permission Android will not grant to an
+ordinary app. If you want it, connect the phone and run:
+
+```bash
+adb shell pm grant com.jemcik.gloaming android.permission.WRITE_SECURE_SETTINGS
+```
+
+The row then appears and bedtime switches the display off, restoring whatever
+you had when the window ends. The app records your previous values before it
+writes anything and restores them on END, on boot, and after a crash. Revoking
+the permission, or never granting it, leaves the whole path inert.
+
+Note the app cannot undo this if you uninstall it mid-window; switch bedtime off
+first, or turn always-on back on in Settings.
 
 ## Build
 
@@ -98,19 +166,23 @@ and exact alarms.
 
 ## Tests
 
-    ./gradlew test        46 tests, JVM only, about a second
+    ./gradlew test        80 tests, JVM only, about a second
+    ./gradlew coverage    JaCoCo HTML at app/build/reports/jacoco/coverage
 
 They cover the scheduling core (pure functions of times, days and an injected
 `now`), the sentence assembly in all three languages, the screen interactions,
-and the one-shot preferences migration — the only code here that could corrupt
-data without saying anything.
+the boot detection, and the one-shot preferences migration — the only code here
+that could corrupt data without saying anything. Some of them measure real text
+layout at each locale's own widths, because a row that fits in English and wraps
+in Ukrainian is a bug you cannot see from the source.
 
 What they cannot cover is everything that depends on the device: whether an
 exact alarm fires with the screen off, whether greyscale is really applied,
 whether `updateAutomaticZenRule` clears a rule's condition. That is what the
 journal and `tools/check.sh` are for.
 
-A pre-push hook runs the tests, lint and the translation checkers:
+A pre-push hook runs the tests, lint and the translation checkers. Opt in once
+per clone:
 
     git config core.hooksPath tools/hooks
 

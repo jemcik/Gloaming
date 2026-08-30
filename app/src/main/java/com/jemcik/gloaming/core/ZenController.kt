@@ -81,8 +81,12 @@ object ZenController {
     private const val COSMETIC = "\u2016"
 
     /** Everything buildRule reads that the rule ACTS on. */
-    private fun liveSignature(p: Prefs) = listOf(
-        p.fxDnd, p.fxGrayscale, p.fxDimWallpaper, p.fxDarkTheme, p.fxHideAmbient,
+    private fun liveSignature(ctx: Context, p: Prefs) = listOf(
+        p.fxDnd, p.fxGrayscale, p.fxDimWallpaper, p.fxDarkTheme,
+        // What the RULE carries, not the raw pref. Where the effect is not
+        // supported the pref moves and the rule does not, and signing the pref
+        // would push an identical rule - which blinks a live one for nothing.
+        p.fxHideAmbient && AmbientCapability.isSupported(ctx),
         p.allowCalls, p.allowMessages, p.allowConversations, p.allowRepeatCallers,
         p.allowAlarms, p.allowMedia, p.allowReminders, p.allowEvents
     ).joinToString("|")
@@ -94,8 +98,8 @@ object ZenController {
      * times only compose the "22:30 - 08:00" line the system shows on its own
      * settings screen - so a live rule does not get rewritten for it.
      */
-    private fun signature(p: Prefs) =
-        liveSignature(p) + COSMETIC + p.startTime + "-" + p.endTime
+    private fun signature(ctx: Context, p: Prefs) =
+        liveSignature(ctx, p) + COSMETIC + p.startTime + "-" + p.endTime
 
     /**
      * Creates the rule, or updates the existing one in place. Updating matters:
@@ -109,7 +113,7 @@ object ZenController {
     fun syncRule(ctx: Context, p: Prefs): String? {
         val n = nm(ctx)
         val existing = p.ruleId
-        val sig = signature(p)
+        val sig = signature(ctx, p)
         return try {
             val current = if (existing != null) n.getAutomaticZenRule(existing) else null
             if (current != null) {
@@ -137,7 +141,7 @@ object ZenController {
                         // running.
                         current != buildRule(ctx, p)
                     else if (ruleState(ctx, existing!!) == Condition.STATE_TRUE)
-                        was.substringBefore(COSMETIC) != liveSignature(p)
+                        was.substringBefore(COSMETIC) != liveSignature(ctx, p)
                     else was != sig
                 if (changed) {
                     n.updateAutomaticZenRule(existing, buildRule(ctx, p))
@@ -150,6 +154,9 @@ object ZenController {
                 n.addAutomaticZenRule(buildRule(ctx, p)).also {
                     p.ruleId = it
                     p.ruleSignature = sig
+                    // Creating is exactly when an orphan is born: prefs had no
+                    // id, so any rule already out there is now unreachable.
+                    sweepOrphans(ctx, p)
                 }
             }
         } catch (e: Exception) {
@@ -159,6 +166,42 @@ object ZenController {
     }
 
     fun ensureRule(ctx: Context, p: Prefs): String? = syncRule(ctx, p)
+
+    /**
+     * Delete rules we own but no longer track.
+     *
+     * [Prefs.ruleId] is the app's ONLY handle on its rule, so losing it strands
+     * the rule the system still holds - "Clear storage" does it, and so does any
+     * restore that drops prefs. The next launch creates a fresh rule and the old
+     * one stays behind: enabled, listed on the phone's own Do Not Disturb screen
+     * as a second "Gloaming", and unreachable by us forever. Measured on the
+     * Honor, which was holding two.
+     *
+     * getAutomaticZenRules only returns rules owned by the caller, so another
+     * app's rule cannot be reached from here. The conditionId is checked anyway:
+     * this is a vendor Android, and "the API returns exactly what it documents"
+     * has not been a safe assumption anywhere else in this file.
+     */
+    private fun sweepOrphans(ctx: Context, p: Prefs) {
+        val keep = p.ruleId ?: return
+        val n = nm(ctx)
+        val ours = runCatching { n.automaticZenRules }.getOrNull() ?: return
+        ours.filter { (id, rule) -> id != keep && rule.conditionId == CONDITION }
+            .keys.forEach { id ->
+                // removeAutomaticZenRule RETURNS whether it removed anything,
+                // so runCatching alone would report a plain `false` as success -
+                // which it did, and sent me looking for a removal that had not
+                // happened. Report what the call answered, not that it survived.
+                runCatching { n.removeAutomaticZenRule(id) }
+                    .onSuccess {
+                        Journal.write(
+                            ctx,
+                            (if (it) "removed orphaned rule " else "orphan refused removal ") + id
+                        )
+                    }
+                    .onFailure { Journal.write(ctx, "orphan sweep failed: " + it) }
+            }
+    }
 
     /**
      * The state the SYSTEM holds for our rule. STATE_UNKNOWN when it cannot be
@@ -192,6 +235,11 @@ object ZenController {
         active: Boolean,
         force: Boolean = false
     ): Boolean {
+        // The vendor route, on phones where the zen effect cannot work. Every
+        // path reaches this function - alarms, boot, the UI, reconcile - so it
+        // goes above the early return below, and a phone that died mid-window
+        // restores the display when it reboots without a case of its own.
+        AmbientControl.sync(ctx, p, active)
         val id = syncRule(ctx, p) ?: return false
         val want = if (active) Condition.STATE_TRUE else Condition.STATE_FALSE
         val label = if (active) "ON" else "OFF"
@@ -224,6 +272,9 @@ object ZenController {
      * spoofed one cannot talk us into anything.
      */
     fun reconcile(ctx: Context, p: Prefs) {
+        // Above the enabled check on purpose: an orphan is just as visible on
+        // the phone's Do Not Disturb screen while the app is switched off.
+        sweepOrphans(ctx, p)
         if (!p.enabled) return
         val id = p.ruleId
         val rule = id?.let { runCatching { nm(ctx).getAutomaticZenRule(it) }.getOrNull() }

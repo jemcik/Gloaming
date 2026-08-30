@@ -28,7 +28,20 @@ class BedtimeReceiver : BroadcastReceiver() {
             }
             Intent.ACTION_BOOT_COMPLETED,
             Intent.ACTION_MY_PACKAGE_REPLACED -> {
-                Journal.write(ctx, "boot/replace - rearming")
+                // Name which one. They are very different events and the
+                // shared line cost real time: a clock change re-delivered
+                // BOOT_COMPLETED mid-boot, and the journal could not say
+                // whether that was a boot, an upgrade, or a second copy of the
+                // same boot.
+                Journal.write(
+                    ctx,
+                    if (intent.action == Intent.ACTION_BOOT_COMPLETED) "boot - rearming"
+                    else "upgrade - rearming"
+                )
+                // Only a real boot, and only when it actually reached us: this
+                // is the whole evidence that the vendor is not withholding the
+                // broadcast. An app upgrade is not a boot and must not clear it.
+                if (intent.action == Intent.ACTION_BOOT_COMPLETED) BootWatch.record(p)
                 // syncRule skips identical rules, so nothing would ever repair
                 // one edited from Settings. Boot and upgrade force a push.
                 p.ruleSignature = null

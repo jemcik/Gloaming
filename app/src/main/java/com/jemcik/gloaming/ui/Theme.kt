@@ -1,6 +1,16 @@
 package com.jemcik.gloaming.ui
 
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.SwitchColors
+import androidx.compose.material3.SwitchDefaults
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Switch
+import androidx.compose.ui.Modifier
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.res.painterResource
+import androidx.compose.material3.Shapes
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
@@ -16,6 +26,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextGeometricTransform
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.jemcik.gloaming.R
 
@@ -44,15 +55,49 @@ val Figtree = FontFamily(figtree(400), figtree(600), figtree(700))
    "Dawn" is the light theme, inherited from Organic.                        */
 
 data class GloamColors(
-    val surface: Color,          // off & scheduled
-    val surfaceRunning: Color,   // while running
-    val surfaceOff: Color,       // when switched off
+    val surface: Color,          // armed and waiting
+    /* Three grounds, and they are a LADDER: the more the app is doing, the
+       deeper the page. Dusk had it symmetric - running is (-5,-6,-7) from
+       surface and off is (+5,+5,+6) - while Dawn had only the running half and
+       an `off` identical to `surface`, so switching the app off in the light
+       theme changed nothing at all. Dawn's off now mirrors Dawn's own running
+       delta, which puts both themes on the same three rungs. */
+    val surfaceRunning: Color,   // while running - deeper
+    val surfaceOff: Color,       // switched off - lifted
     val bloom: Color,            // radial highlight, running only
     val raise: Color,            // cards, dial track
+    /* Cards while bedtime runs. In Dawn the page deepens TOWARDS the cards, so
+       leaving them still would have closed the gap to 1.03:1 and dissolved
+       them - the exact failure this palette was rebuilt to fix. They deepen
+       with it instead, which keeps 1.217:1, slightly BETTER than the 1.153 they
+       had. In Dusk the page deepens AWAY from them, so there the same token is
+       simply `raise` and the separation improves for free: 1.469 to 1.500. */
+    val raiseRunning: Color,
+    /* The strip at the foot of a card whose switches are not in effect. It is a
+       RUNG, not an alert: `cta` at 24% over `raise`, which puts it 1.23:1 from
+       the card in Dawn and 1.40:1 in Dusk - the SAME separation `raise` itself
+       has from the page (1.22 / 1.40). So it reads as page -> card -> notice,
+       one more step on a ladder that already exists, rather than as an error.
+       Colouring the TEXT instead was measured first and fails: `cta` as ink is
+       2.49:1 on the card in Dawn and `lampOff` is 3.80:1, both under the 4.5:1
+       body minimum and under even the 3:1 large-text exemption. The cream
+       cannot carry an accent hue as text, which is the WAKE UP finding again.
+       Its ink is plain `onSurface` - 9.31:1 in Dawn, 8.17:1 in Dusk - so there
+       is deliberately no `onNotice`: a token identical to one beside it is
+       noise. The quiet `onSurfaceLow` was tried on it and passes at 5.30/4.55,
+       but in Dusk a cool grey on a warm band reads washed out. */
+    val notice: Color,
     val veil: Color,             // hairlines, ticks, off arc
     val line: Color,             // hollow handles, disabled
     val onSurface: Color,
     val onSurfaceMid: Color,
+    /* Secondary text, and the ink most of the app is written in - 24 usages
+       against onSurface's 13. Its worst case is not the page but a CARD, which
+       is a lighter ground in Dawn and a lighter one in Dusk, and it was 4.54:1
+       there in Dawn and 4.30:1 in Dusk - the second of those failing AA outright
+       and the first passing it by 0.04. Both now clear 6.3:1 on a card, which is
+       a margin rather than a rounding. The titles stay at 11.4:1 on the same
+       ground, so the hierarchy is unchanged; what moved is the floor. */
     val onSurfaceLow: Color,
     val stateOn: Color,          // armed, active - accent and TEXT
     val onState: Color,
@@ -67,6 +112,15 @@ data class GloamColors(
        leaves the control with no definition at all. */
     val switchTrack: Color,
     val switchThumb: Color,
+    /* The UNSELECTED thumb needs its own token for the same reason the track
+       did. M3 builds it from `outline` on `surfaceContainerHighest`, which here
+       are `line` on `veil` - the hairline colour on the hairline colour, since
+       both are deliberately quiet and `line` is literally what gets drawn ON
+       `veil` elsewhere. Measured 1.35:1 in Dawn and 1.34:1 in Dusk against the
+       3:1 a UI part has to reach; M3's own baseline manages 3.51. Borrowing a
+       darker `outline` was not an option: it also draws the segmented button's
+       border, the day circles' rings and the dial's dots, where quiet is right. */
+    val switchThumbOff: Color,
     /* The state light is NOT stateOn. A fill has to be dark in Dawn so onState
        reads on top of it; a lamp carries no text, so at 10dp it needs chroma
        rather than value contrast or it reads as a dark speck, not a colour. */
@@ -80,21 +134,24 @@ data class GloamColors(
 // Dusk
 private val Dusk = GloamColors(
     surface = Color(0xFF12161B),
-    surfaceRunning = Color(0xFF0D1014),
+    surfaceRunning = Color(0xFF0A0D11),
     surfaceOff = Color(0xFF171B21),
     bloom = Color(0xFF1E2530),
     raise = Color(0xFF29323D),
+    raiseRunning = Color(0xFF29323D),
+    notice = Color(0xFF534440),
     veil = Color(0xFF2B333D),
     line = Color(0xFF3C4551),
     onSurface = Color(0xFFEEF1F5),
     onSurfaceMid = Color(0xFFC3CAD3),
-    onSurfaceLow = Color(0xFF8996A3),
+    onSurfaceLow = Color(0xFFACB7C3),
     stateOn = Color(0xFFAEBF92),
     onState = Color(0xFF1B2114),
     selectFill = Color(0xFFAEBF92),
     onSelect = Color(0xFF1B2114),
     switchTrack = Color(0xFFAEBF92),
     switchThumb = Color(0xFF1B2114),
+    switchThumbOff = Color(0xFF7E8B9B),
     lampOn = Color(0xFFA9C98C),
     lampOff = Color(0xFFC98079),
     stateTint = Color(0xFF2B333D),
@@ -105,21 +162,24 @@ private val Dusk = GloamColors(
 // Dawn
 private val Dawn = GloamColors(
     surface = Color(0xFFF5EAD8),
-    surfaceRunning = Color(0xFFF0E4CF),
-    surfaceOff = Color(0xFFF5EAD8),
+    surfaceRunning = Color(0xFFE6DCCB),
+    surfaceOff = Color(0xFFFAF0E1),
     bloom = Color(0xFFF7EDDD),
     raise = Color(0xFFE2D5BD),
+    raiseRunning = Color(0xFFD4C8B2),
+    notice = Color(0xFFDBBD9D),
     veil = Color(0xFFDCD3C4),
     line = Color(0xFFC0B6A5),
     onSurface = Color(0xFF201E1D),
-    onSurfaceMid = Color(0xFF645C50),
-    onSurfaceLow = Color(0xFF645C50),
+    onSurfaceMid = Color(0xFF4C453B),
+    onSurfaceLow = Color(0xFF4C453B),
     stateOn = Color(0xFF56633F),
     onState = Color(0xFFF0FAE1),
     selectFill = Color(0xFFBDCB9F),
     onSelect = Color(0xFF2E3720),
-    switchTrack = Color(0xFF8FA36C),
+    switchTrack = Color(0xFF7F945A),
     switchThumb = Color(0xFFFBFDF6),
+    switchThumbOff = Color(0xFF7C7060),
     lampOn = Color(0xFF4E8B3C),
     lampOff = Color(0xFFB24632),
     stateTint = Color(0xFFE1EECC),
@@ -156,18 +216,15 @@ val LocalGloam = staticCompositionLocalOf { Dusk }
 val gloam: GloamColors
     @Composable @ReadOnlyComposable get() = LocalGloam.current
 
-private fun tracking(sp: Float) = sp.sp
-
-// FIVE sizes are visible in this app: 36 numerals, 19 titles, 16 row titles,
-// 14 body, 13 labels, 11 overlines.
+// FOUR sizes are visible in this app: 36 numerals, 19 titles, 16 row titles,
+// 14 for everything at reading size, 11 overlines. There is no 13 - the comment
+// here described one for a while after it had gone.
 //
-// The one tight step left is 14 against 13, and it is a WEIGHT boundary, not an
-// arbitrary split inside one register: everything at 14 is Figtree 400 prose,
-// everything at 13 is Figtree 600 on a chip or a button. Prose and chips are
-// rarely adjacent, and where they are, the weight carries it. What was wrong
+// 14 carries prose, subtitles, chips and buttons alike, split by WEIGHT rather
+// than by size: Figtree 400 for prose, 600 for chips and buttons. What was wrong
 // before was 36 against 34 in the same family and weight inches apart on one
 // screen, and body 14 against subtitles 13 - two sizes of the same 400-weight
-// prose, which is the split this scale no longer makes.
+// prose, a distinction nobody can see and everybody has to maintain.
 //
 // Every role is named, including the ones this app never writes itself.
 // An unset TextStyle falls back to Material's baseline - Roboto - exactly the
@@ -238,27 +295,31 @@ private val GloamType = Typography(
     // One body size, for prose and subtitles alike. Secondary text is separated
     // by colour (onSurfaceLow), which the screen already does everywhere, rather
     // than by a 1sp difference nobody can see.
+    //
+    // Deliberately NOT tabular. Tabular figures pad every digit to the width of
+    // the widest one, and Figtree's "1" is far narrower than the rest, so it
+    // ends up floating in an oversized slot - "Starts in 12 hr" read as
+    // "1 2 hr". That padding buys alignment, and alignment is worth having in a
+    // centred countdown that rewrites itself every minute. It is worth nothing
+    // in left-aligned prose, where a width change moves no other pixel. Numerals
+    // keep tnum; sentences do not.
     bodyLarge = TextStyle(
         fontFamily = Figtree, fontWeight = FontWeight(400),
         fontSize = 14.sp, lineHeight = 20.sp
-    ,
-        // Tabular figures. Without them "20:05" measures 86.9dp and "13:50"
-        // 79.7dp - the same five characters - so every minute shoves the
-        // countdown sideways. Both Baloo 2 and Figtree carry tnum.
-        fontFeatureSettings = "tnum"
     ),
     bodyMedium = TextStyle(
         fontFamily = Figtree, fontWeight = FontWeight(400),
         fontSize = 14.sp, lineHeight = 20.sp
-    ,
-        // Tabular figures. Without them "20:05" measures 86.9dp and "13:50"
-        // 79.7dp - the same five characters - so every minute shoves the
-        // countdown sideways. Both Baloo 2 and Figtree carry tnum.
-        fontFeatureSettings = "tnum"
     ),
+    // 18, not 20. bodySmall is the supporting line under a row title, the two
+    // captions beneath the day row, and the right-now readout - short labels,
+    // never a paragraph. At 20sp the ratio was 1.43, looser than M3's own
+    // bodySmall (12/16, 1.33), and a subtitle that wrapped read as two separate
+    // sentences with a gap between them rather than one that ran on. Prose is
+    // bodyLarge and keeps 20.
     bodySmall = TextStyle(
         fontFamily = Figtree, fontWeight = FontWeight(400),
-        fontSize = 14.sp, lineHeight = 20.sp
+        fontSize = 14.sp, lineHeight = 18.sp
     ),
     // Effect chip · day toggle
     labelLarge = TextStyle(
@@ -273,13 +334,113 @@ private val GloamType = Typography(
     labelSmall = TextStyle(
         fontFamily = Figtree, fontWeight = FontWeight(700),
         fontSize = 11.sp, lineHeight = 14.sp, letterSpacing = 1.2.sp
-    ,
-        // Tabular figures. Without them "20:05" measures 86.9dp and "13:50"
-        // 79.7dp - the same five characters - so every minute shoves the
-        // countdown sideways. Both Baloo 2 and Figtree carry tnum.
-        fontFeatureSettings = "tnum"
     )
 )
+
+/* ── Shape ─────────────────────────────────────────────────────────────────
+   Left unset, every M3 component that resolves a shape through the theme takes
+   Material's defaults - and they are square next to this app. The TimePicker is
+   what shows it: its hour and minute fields and its AM/PM selector read
+   ShapeKeyTokens.CornerSmall, 8dp by default, so distinctly boxy numerals sat
+   inside a 32dp dialog in an app whose containers are 28dp and whose chips are
+   circles. The same trap as the Typography and ColorScheme roles that were
+   never set, and recorded twice already: invisible until a component reaches
+   for a token nobody wrote, then wrong in a way that looks like another app.
+
+   The house scale is Material's shifted one step rounder, and every value is a
+   real M3 token rather than a number picked to taste:
+
+       role         ours   M3 default   what it reaches here
+       extraSmall     8         4        menus
+       small         16         8        the time picker's fields and AM/PM
+       medium        20        12        cards
+       large         28        16        - our own container corner
+       extraLarge    32        28        dialogs, sheets
+
+   16 for small was chosen on the phone against 8, 12 and 20: 8 and 12 keep
+   square shoulders, and 20 bends the AM/PM stack into a lozenge - very round
+   at top and bottom with a straight divider across its middle.                */
+private val GloamShapes = Shapes(
+    extraSmall = RoundedCornerShape(8.dp),
+    small = RoundedCornerShape(16.dp),
+    medium = RoundedCornerShape(20.dp),
+    large = RoundedCornerShape(28.dp),
+    extraLarge = RoundedCornerShape(32.dp)
+)
+
+/**
+ * Every switch in the app, in one place.
+ *
+ * The geometry was already M3's - measured on the phone at 52x32dp with a 24dp
+ * thumb, exactly the spec. What was not M3's was the CONTRAST between the parts.
+ * The unselected thumb sat at 1.35:1 on its own track and the selected one at
+ * 2.69:1 on its own, where M3's baseline reaches 3.51 and 6.44 and a UI part
+ * that must be identified needs 3. A switch whose thumb you cannot find is
+ * telling you nothing that its position alone does not.
+ *
+ * Dawn's track darkens from #8FA36C to #7F945A to buy that, which is a
+ * deliberate walk-back of the note in CLAUDE.md about a track needing less
+ * weight than a chip: it still does - #7F945A is nowhere near the chips' fill -
+ * but not at the price of an invisible thumb.
+ */
+@Composable
+fun gloamSwitchColors(): SwitchColors = SwitchDefaults.colors(
+    checkedTrackColor = gloam.switchTrack,
+    checkedThumbColor = gloam.switchThumb,
+    checkedBorderColor = Color.Transparent,
+    uncheckedTrackColor = gloam.veil,
+    uncheckedThumbColor = gloam.switchThumbOff,
+    uncheckedBorderColor = gloam.line,
+    // the check reads as the track's own green on the pale thumb
+    checkedIconColor = gloam.switchTrack,
+    disabledUncheckedTrackColor = gloam.veil,
+    disabledUncheckedThumbColor = gloam.line,
+    disabledUncheckedBorderColor = gloam.line
+)
+
+/**
+ * The app's switch. Wrapping M3's rather than calling it four times means the
+ * icon, the colours and the interaction source cannot drift apart.
+ *
+ * [interactionSource] is not optional decoration. Every switch here is driven by
+ * its ROW - onCheckedChange is null so the switch does not swallow taps meant
+ * for the row - and M3 grows the thumb from 24dp to 28dp while pressed by
+ * watching the interaction source it was given. Left unshared, the switch never
+ * hears the press and the thumb never moves, so the control felt inert under the
+ * finger even though it worked. Handing it the row's own source restores the
+ * gesture M3 specifies.
+ */
+@Composable
+fun GloamSwitch(
+    checked: Boolean,
+    enabled: Boolean = true,
+    interactionSource: MutableInteractionSource? = null,
+    // null everywhere a ROW carries the toggle, which is everywhere except the
+    // app bar - a bar has no row to hand the gesture to, so there the switch
+    // has to be its own target.
+    onCheckedChange: ((Boolean) -> Unit)? = null
+) {
+    Switch(
+        checked = checked,
+        onCheckedChange = onCheckedChange,
+        enabled = enabled,
+        interactionSource = interactionSource,
+        colors = gloamSwitchColors(),
+        // M3 offers the thumb an icon and it is worth taking: it states the ON
+        // state a second way, so the control does not rest on thumb POSITION
+        // alone - which is the one cue that survives neither a glance nor
+        // colour blindness. Only on the checked side; an icon on both is noise.
+        thumbContent = if (checked) {
+            {
+                Icon(
+                    painterResource(R.drawable.ic_check),
+                    contentDescription = null,
+                    modifier = Modifier.size(SwitchDefaults.IconSize)
+                )
+            }
+        } else null
+    )
+}
 
 @Composable
 fun GloamingTheme(dark: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
@@ -315,6 +476,11 @@ fun GloamingTheme(dark: Boolean = isSystemInDarkTheme(), content: @Composable ()
     )
 
     CompositionLocalProvider(LocalGloam provides g) {
-        MaterialTheme(colorScheme = scheme, typography = GloamType, content = content)
+        MaterialTheme(
+            colorScheme = scheme,
+            typography = GloamType,
+            shapes = GloamShapes,
+            content = content
+        )
     }
 }

@@ -1,20 +1,23 @@
 package com.jemcik.gloaming.ui
 
-import androidx.compose.foundation.background
+import android.content.Intent
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.selection.toggleable
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import android.app.NotificationManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -27,11 +30,8 @@ import com.jemcik.gloaming.R
 import com.jemcik.gloaming.core.Clock
 import com.jemcik.gloaming.core.Interruptions
 import com.jemcik.gloaming.core.Prefs
-import com.jemcik.gloaming.core.ZenController
 import java.time.LocalTime
 
-private val ROW_CORNER = 28.dp
-private val AVATAR = 44.dp
 
 /**
  * Underneath this is a DND policy editor - four enum fields and a couple of
@@ -55,7 +55,7 @@ private enum class Who { Call, Msg, Conv, Repeat, Bell, Cal, Media, Alarm }
  * shapes are the work, and they are already drawn.
  */
 @Composable
-private fun WhoIcon(kind: Who, tint: Color) {
+private fun WhoIcon(kind: Who) {
     Icon(
         painter = painterResource(
             when (kind) {
@@ -70,8 +70,13 @@ private fun WhoIcon(kind: Who, tint: Color) {
             }
         ),
         contentDescription = null,
-        tint = tint,
-        modifier = Modifier.size(22.dp)
+        // The row's leadingIconColor, and M3's 24dp for a leading icon. These
+        // used to be 22dp glyphs inside 44dp circles filled with selectFill -
+        // which is the SELECTION token, filled identically whether the row was
+        // allowed or blocked, so the green said nothing. Two lists on two
+        // screens drew the same idea two different ways.
+        tint = LocalContentColor.current,
+        modifier = Modifier.size(24.dp)
     )
 }
 
@@ -137,23 +142,54 @@ fun InterruptionsScreen(onBack: () -> Unit, onChanged: () -> Unit) {
         res, calls, messages, conversations, repeatCallers, reminders, events, media
     )
 
+    // A real top app bar, so Back stays put. It used to be a row INSIDE the
+    // scrolling column, which meant the only visible way out left the screen as
+    // soon as you scrolled - and this screen is nine rows long. The title moves
+    // up with it, which is where M3 puts a detail screen's title anyway.
+    //
+    // No scrollBehavior on purpose. The bar is one constant colour, for the same
+    // reason Home's is: M3 defaults to transparent at rest and `raise` once
+    // anything scrolls under, which is a step change that reads as a blink. A
+    // scroll behaviour here would have nothing left to drive.
+    Scaffold(
+        containerColor = g.surface,
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        stringResource(R.string.what_is_allowed),
+                        style = MaterialTheme.typography.titleLarge, color = g.onSurface
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(
+                            painterResource(R.drawable.ic_back),
+                            contentDescription = stringResource(R.string.action_back),
+                            tint = g.onSurface
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = g.raise,
+                    scrolledContainerColor = g.raise,
+                    titleContentColor = g.onSurface,
+                    navigationIconContentColor = g.onSurface
+                )
+            )
+        }
+    ) { inner ->
     Column(
         Modifier
             .fillMaxSize()
-            .background(g.surface)
+            .padding(inner)
             .verticalScroll(rememberScrollState())
-            .windowInsetsPadding(WindowInsets.systemBars)
-            .padding(horizontal = 24.dp)
+            .padding(horizontal = SCREEN_PAD)
             .padding(top = 8.dp, bottom = 40.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+        // The same arrangement as Home's column, so Section gets the same gap
+        // above its rule on both screens.
+        verticalArrangement = Arrangement.spacedBy(GROUP)
     ) {
-        BackRow(onBack)
-
-        Text(
-            stringResource(R.string.what_gets_through),
-            style = MaterialTheme.typography.titleLarge, color = g.onSurface
-        )
-
         Text(
             stringResource(
                 R.string.allow_lead,
@@ -163,76 +199,70 @@ fun InterruptionsScreen(onBack: () -> Unit, onChanged: () -> Unit) {
             style = MaterialTheme.typography.bodyLarge, color = g.onSurfaceLow
         )
 
-        Spacer(Modifier.height(8.dp))
-        SectionLabel(stringResource(R.string.section_people))
-
-        AllowRow(Who.Call, stringResource(R.string.row_calls), Interruptions.peopleLabel(res, calls)) {
-            haptics.open(); editing = "calls"
+        Section(stringResource(R.string.section_people)) {
+        AllowCard {
+            AllowRow(
+                Who.Call, stringResource(R.string.row_calls),
+                Interruptions.peopleLabel(res, calls)
+            ) { haptics.open(); editing = "calls" }
+            RowDivider()
+            AllowRow(
+                Who.Msg, stringResource(R.string.row_messages),
+                Interruptions.peopleLabel(res, messages)
+            ) { haptics.open(); editing = "messages" }
+            RowDivider()
+            AllowRow(
+                Who.Conv, stringResource(R.string.row_conversations),
+                Interruptions.convLabel(res, conversations)
+            ) { haptics.open(); editing = "conv" }
+            RowDivider()
+            AllowRow(
+                Who.Repeat, stringResource(R.string.row_repeat_callers),
+                stringResource(
+                    if (repeatCallers) R.string.row_repeat_callers_on else R.string.state_blocked
+                ),
+                checked = repeatCallers,
+                onCheckedChange = { haptics.toggle(it); repeatCallers = it; save() }
+            )
         }
-        AllowRow(Who.Msg, stringResource(R.string.row_messages), Interruptions.peopleLabel(res, messages)) {
-            haptics.open(); editing = "messages"
+
         }
-        AllowRow(
-            Who.Conv, stringResource(R.string.row_conversations),
-            Interruptions.convLabel(res, conversations)
-        ) {
-            haptics.open(); editing = "conv"
+
+        Section(stringResource(R.string.section_everything_else)) {
+        AllowCard {
+            AllowRow(
+                Who.Bell, stringResource(R.string.row_reminders),
+                stringResource(if (reminders) R.string.state_allowed else R.string.state_blocked),
+                checked = reminders,
+                onCheckedChange = { haptics.toggle(it); reminders = it; save() }
+            )
+            RowDivider()
+            AllowRow(
+                Who.Cal, stringResource(R.string.row_events),
+                stringResource(if (events) R.string.state_allowed else R.string.state_blocked),
+                checked = events,
+                onCheckedChange = { haptics.toggle(it); events = it; save() }
+            )
+            RowDivider()
+            AllowRow(
+                Who.Media, stringResource(R.string.row_media),
+                stringResource(if (media) R.string.row_media_on else R.string.state_blocked),
+                checked = media,
+                onCheckedChange = { haptics.toggle(it); media = it; save() }
+            )
+            RowDivider()
+            // Android will silence alarms if asked. We never ask: an app that
+            // can mute your morning alarm is a footgun, and the old copy blamed
+            // the platform for a decision that was ours.
+            // No checked and no onClick, so this falls to StaticRow: the row
+            // that states something and offers nothing to press.
+            AllowRow(
+                Who.Alarm, stringResource(R.string.row_alarms),
+                stringResource(R.string.row_alarms_why)
+            )
         }
-        AllowRow(
-            Who.Repeat, stringResource(R.string.row_repeat_callers),
-            stringResource(
-                if (repeatCallers) R.string.row_repeat_callers_on else R.string.blocked_tonight
-            ),
-            checked = repeatCallers,
-            onCheckedChange = { haptics.toggle(it); repeatCallers = it; save() }
-        )
-
-        Spacer(Modifier.height(18.dp))
-        SectionLabel(stringResource(R.string.section_everything_else))
-
-        AllowRow(
-            Who.Bell, stringResource(R.string.row_reminders),
-            stringResource(if (reminders) R.string.allowed_tonight else R.string.blocked_tonight),
-            checked = reminders,
-            onCheckedChange = { haptics.toggle(it); reminders = it; save() }
-        )
-        AllowRow(
-            Who.Cal, stringResource(R.string.row_events),
-            stringResource(if (events) R.string.allowed_tonight else R.string.blocked_tonight),
-            checked = events,
-            onCheckedChange = { haptics.toggle(it); events = it; save() }
-        )
-        AllowRow(
-            Who.Media, stringResource(R.string.row_media),
-            stringResource(if (media) R.string.row_media_on else R.string.blocked_tonight),
-            checked = media,
-            onCheckedChange = { haptics.toggle(it); media = it; save() }
-        )
-        // Android will silence alarms if asked. We never ask: an app that can
-        // mute your morning alarm is a footgun, and the old copy blamed the
-        // platform for a decision that was ours.
-        AllowRow(
-            Who.Alarm, stringResource(R.string.row_alarms),
-            stringResource(R.string.row_alarms_why),
-            locked = true
-        )
-
-        Spacer(Modifier.height(18.dp))
-        SectionLabel(stringResource(R.string.section_right_now))
-        // Asked of the system on arrival and on every return, rather than
-        // reported from what we last set: this app exists because the platform
-        // does not always do what it is asked.
-        val filter = remember(tick) { ZenController.currentFilter(ctx) }
-        Text(
-            when (filter) {
-                NotificationManager.INTERRUPTION_FILTER_ALL -> R.string.filter_all
-                NotificationManager.INTERRUPTION_FILTER_PRIORITY -> R.string.filter_priority
-                NotificationManager.INTERRUPTION_FILTER_ALARMS -> R.string.filter_alarms
-                NotificationManager.INTERRUPTION_FILTER_NONE -> R.string.filter_none
-                else -> R.string.filter_unknown
-            }.let { stringResource(it) },
-            style = MaterialTheme.typography.bodyLarge, color = g.onSurfaceLow
-        )
+        }
+    }
     }
 
     when (editing) {
@@ -244,6 +274,7 @@ fun InterruptionsScreen(onBack: () -> Unit, onChanged: () -> Unit) {
         }
         "conv" -> ChoiceSheet(
             title = stringResource(R.string.row_conversations),
+            why = stringResource(R.string.conv_sheet_why),
             options = listOf(
                 stringResource(R.string.conv_sheet_blocked) to Interruptions.CONV_NONE,
                 stringResource(R.string.conv_sheet_priority) to Interruptions.CONV_IMPORTANT,
@@ -256,10 +287,48 @@ fun InterruptionsScreen(onBack: () -> Unit, onChanged: () -> Unit) {
     }
 }
 
+/**
+ * The contacts app's own starred screen. Launching an activity needs no
+ * permission, which is the whole point: this app does not read contacts, and
+ * the system's list is authoritative and always current where a copy of ours
+ * would go stale the moment a star was added elsewhere.
+ *
+ * ContactsContract.Intents.UI.LIST_STARRED_ACTION by another name - the constant
+ * is deprecated, the action is still handled. Resolved rather than assumed, and
+ * the row is not drawn where it does not resolve: a door that opens onto nothing
+ * is the always-on row's mistake.
+ */
+private const val LIST_STARRED = "com.android.contacts.action.LIST_STARRED"
+
+@Composable
+private fun StarredLink() {
+    val ctx = LocalContext.current
+    val haptics = rememberHaptics()
+    val intent = remember { Intent(LIST_STARRED) }
+    val resolves = remember {
+        ctx.packageManager.resolveActivity(intent, 0) != null
+    }
+    if (!resolves) return
+    LinkRow(
+        headline = stringResource(R.string.action_starred_contacts),
+        leading = {
+            Icon(
+                painterResource(R.drawable.ic_star),
+                contentDescription = null,
+                tint = LocalContentColor.current,
+                modifier = Modifier.size(24.dp)
+            )
+        },
+        onClick = { haptics.open(); runCatching { ctx.startActivity(intent) } }
+    )
+}
+
 @Composable
 private fun PeopleSheet(title: String, selected: Int, onPick: (Int) -> Unit) {
     ChoiceSheet(
         title = title,
+        why = stringResource(R.string.people_sheet_why),
+        footer = { StarredLink() },
         options = listOf(
             stringResource(R.string.people_none) to Interruptions.PEOPLE_NONE,
             stringResource(R.string.people_starred) to Interruptions.PEOPLE_STARRED,
@@ -272,62 +341,58 @@ private fun PeopleSheet(title: String, selected: Int, onPick: (Int) -> Unit) {
     )
 }
 
+/**
+ * A card holding a group of rows, divided - the same shape as "What can wake
+ * you" on Home. Each row used to be its own little card, which made the screen a
+ * stack of eight rather than two groups, and said nothing about which rows
+ * belong together.
+ */
+@Composable
+private fun AllowCard(content: @Composable ColumnScope.() -> Unit) {
+    Surface(
+        color = gloam.raise,
+        shape = RoundedCornerShape(CORNER),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(content = content)
+    }
+}
+
+/** `line`, not `veil`: veil at 1dp on raise measures 1.02:1, which is no edge. */
+@Composable
+private fun RowDivider() {
+    HorizontalDivider(Modifier.padding(horizontal = CARD_PAD), color = gloam.line)
+}
+
+/**
+ * One row of a group. The card is the group's, not the row's, so this only
+ * fills the width - everything else is the shared [SwitchRow] / [LinkRow] /
+ * [StaticRow] the rest of the app uses.
+ */
 @Composable
 private fun AllowRow(
     kind: Who,
     title: String,
     subtitle: String,
-    locked: Boolean = false,
-    // A switch row takes checked/onCheckedChange rather than a trailing slot:
-    // the whole row is the target and the Switch is only the indicator, which
-    // is both what people expect and one semantics node instead of two, so
-    // TalkBack says "Reminders, switch, on" once.
     checked: Boolean? = null,
     onCheckedChange: ((Boolean) -> Unit)? = null,
     onClick: (() -> Unit)? = null
 ) {
-    val g = gloam
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(ROW_CORNER))
-            .background(g.raise)
-            .then(
-                when {
-                    checked != null && onCheckedChange != null -> Modifier.toggleable(
-                        value = checked,
-                        role = Role.Switch,
-                        onValueChange = onCheckedChange
-                    )
-                    onClick != null -> Modifier.clickable(onClick = onClick)
-                    else -> Modifier
-                }
-            )
-            .padding(horizontal = 16.dp, vertical = 14.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Box(
-            Modifier
-                .size(AVATAR)
-                .clip(CircleShape)
-                .background(if (locked) g.veil else g.selectFill),
-            contentAlignment = Alignment.Center
-        ) {
-            WhoIcon(kind, if (locked) g.onSurfaceLow else g.onSelect)
-        }
-        Spacer(Modifier.width(14.dp))
-        // weight(1f) so a long subtitle wraps instead of running under the switch
-        Column(Modifier.weight(1f).padding(end = 12.dp)) {
-            Text(title, style = MaterialTheme.typography.titleMedium, color = g.onSurface)
-            Text(subtitle, style = MaterialTheme.typography.bodySmall, color = g.onSurfaceLow)
-        }
-        // onCheckedChange = null: the row already handles the input, and a
-        // Switch that also handled it would swallow taps meant for the row.
-        if (checked != null) Switch(checked = checked, onCheckedChange = null)
-        else if (onClick != null) Text(
-            // A glyph, not a title: it borrows titleLarge for its SIZE, because
-            // there is no chevron drawable and at label size it disappears.
-            "›", style = MaterialTheme.typography.titleLarge, color = g.onSurfaceLow
+    val card = Modifier.fillMaxWidth()
+    val avatar: @Composable () -> Unit = { WhoIcon(kind) }
+    when {
+        checked != null && onCheckedChange != null -> SwitchRow(
+            headline = title, supporting = subtitle,
+            checked = checked, onCheckedChange = onCheckedChange,
+            modifier = card, leading = avatar
+        )
+        onClick != null -> LinkRow(
+            headline = title, supporting = subtitle,
+            onClick = onClick, modifier = card, leading = avatar
+        )
+        else -> StaticRow(
+            headline = title, supporting = subtitle,
+            modifier = card, leading = avatar
         )
     }
 }
@@ -338,6 +403,17 @@ private fun ChoiceSheet(
     title: String,
     options: List<Pair<String, Int>>,
     selected: Int,
+    // Shown under the title when the thing being chosen needs explaining at all.
+    // Only "Conversations" does: it is an Android 11 notion that Android itself
+    // barely explains, and a decade of using the phone does not teach it.
+    // Deliberately here rather than as a tooltip on the row - a tooltip is a
+    // long-press, and someone who does not know what a thing IS will not
+    // long-press it to find out. This sheet is where the choice is made, so it
+    // is where the explanation is read.
+    why: String? = null,
+    // After the options. The slot sits ahead of both lambdas so a trailing
+    // lambda at a call site cannot bind to it and be run as content.
+    footer: (@Composable () -> Unit)? = null,
     onPick: (Int) -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -346,42 +422,45 @@ private fun ChoiceSheet(
     val haptics = rememberHaptics()
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        containerColor = g.raise,
-        shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
+        // Fully expanded, not half. M3's default opens partially and lets you
+        // drag up for the rest, which suits a long sheet; these are short and
+        // every line is a choice. With the explanation and the starred link
+        // added, the last row fell below the partial height and could not be
+        // tapped at all - found by tapping it and going nowhere.
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        containerColor = g.raise
+        // Shape left to M3: BottomSheetDefaults.ExpandedShape is
+        // CornerExtraLargeTop, 28dp. It was overridden to 32 to match this app's
+        // dialogs, which is 4dp off the spec for no reason worth keeping.
     ) {
         Column(
-            Modifier.padding(horizontal = 24.dp).padding(bottom = 40.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
+            Modifier
+                .padding(bottom = 40.dp)
+                // One radio group, so TalkBack announces "2 of 4" rather than
+                // reading four unrelated rows.
+                .selectableGroup()
         ) {
-            Text(title, style = MaterialTheme.typography.titleLarge, color = g.onSurface)
-            Spacer(Modifier.height(8.dp))
+            Text(
+                title,
+                style = MaterialTheme.typography.titleLarge, color = g.onSurface,
+                // 16dp, so the title starts on ListItem's own edge below it.
+                modifier = Modifier.padding(horizontal = CARD_PAD).padding(bottom = 8.dp)
+            )
+            if (why != null) Text(
+                why,
+                style = MaterialTheme.typography.bodyLarge,
+                color = g.onSurfaceLow,
+                modifier = Modifier.padding(horizontal = CARD_PAD).padding(bottom = CARD_PAD)
+            )
             options.forEach { (label, value) ->
                 val on = value == selected
-                Row(
-                    Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(ROW_CORNER))
-                        // the chosen option is filled, like every other
-                        // selection in the app. It used to differ only by a
-                        // hue shift at 14sp, which is no distinction at all.
-                        .background(if (on) g.selectFill else Color.Transparent)
-                        .clickable { haptics.select(); onPick(value) }
-                        .padding(horizontal = 20.dp, vertical = 18.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        label,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = if (on) g.onSelect else g.onSurface,
-                        modifier = Modifier.weight(1f)
-                    )
-                    if (on) Text(
-                        "✓",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = g.onSelect
-                    )
-                }
+                RadioRow(
+                    label = label,
+                    selected = on,
+                    onSelect = { haptics.select(); onPick(value) }
+                )
             }
+            footer?.invoke()
         }
     }
 }

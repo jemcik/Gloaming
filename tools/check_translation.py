@@ -114,6 +114,22 @@ def main():
         if k.startswith("item_") and v.lstrip().lower().startswith(CONJ):
             problems.append(f"DOUBLE CONJUNCTION {k}: {v!r} - the list joiner adds one")
 
+    # The SOURCE is measured against its own budgets as well. It was not, and
+    # "When the screen turns off" sat 3 characters over its limit for months
+    # because the budgets only ever looked at the file being translated - the
+    # one language nobody was checking was the one the numbers were written in.
+    for kind, total, keys in budget:
+        if kind == "sum":
+            n = sum(len(es.get(k, "")) for k in keys)
+            if n > total:
+                problems.append(f"ROW TOO WIDE    (english) {n} chars vs {total} allowed")
+        else:
+            for k in keys:
+                n = len(es.get(k, ""))
+                if n > total:
+                    problems.append(
+                        f"TOO LONG        (english) {k}: {n} chars vs {total} allowed")
+
     for kind, total, keys in budget:
         if kind == "sum":
             n = sum(len(ts.get(k, "")) for k in keys)

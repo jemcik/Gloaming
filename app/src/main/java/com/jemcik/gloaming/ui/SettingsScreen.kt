@@ -1,5 +1,8 @@
 package com.jemcik.gloaming.ui
 
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
@@ -23,6 +26,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.jemcik.gloaming.R
+import com.jemcik.gloaming.ui.LinkRow
+import com.jemcik.gloaming.ui.RadioRow
 import com.jemcik.gloaming.core.Prefs
 
 /**
@@ -35,6 +40,7 @@ import com.jemcik.gloaming.core.Prefs
  * no 12/24-hour setting: the phone already has one and [com.jemcik.gloaming.core.Clock]
  * follows it.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(themeMode: Int, onThemeMode: (Int) -> Unit, onBack: () -> Unit) {
     val ctx = LocalContext.current
@@ -46,135 +52,118 @@ fun SettingsScreen(themeMode: Int, onThemeMode: (Int) -> Unit, onBack: () -> Uni
         }.getOrNull() ?: ""
     }
 
+    // The same top app bar as the allowlist, for the same reason: Back has to
+    // stay put. It was a row inside the scrolling column here too.
+    Scaffold(
+        containerColor = g.surface,
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        stringResource(R.string.settings_title),
+                        style = MaterialTheme.typography.titleLarge, color = g.onSurface
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(
+                            painterResource(R.drawable.ic_back),
+                            contentDescription = stringResource(R.string.action_back),
+                            tint = g.onSurface
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = g.raise,
+                    scrolledContainerColor = g.raise,
+                    titleContentColor = g.onSurface,
+                    navigationIconContentColor = g.onSurface
+                )
+            )
+        }
+    ) { inner ->
+    // 24dp like every other screen. It used to be 8, with 16 added back onto
+    // each non-row element, because bare ListItems bring their own 16dp start
+    // padding - and that compensation had to be remembered at every call site.
+    // It was not: ABOUT, its body and the version line were left at 8dp while
+    // everything above them sat at 24, so one screen had three left edges. The
+    // rows live in cards now, like every other list in the app, which puts the
+    // ListItem's own padding INSIDE the card where it belongs.
     Column(
         Modifier
             .fillMaxSize()
-            .background(g.surface)
+            .padding(inner)
             .verticalScroll(rememberScrollState())
-            .windowInsetsPadding(WindowInsets.systemBars)
-            .padding(horizontal = 24.dp)
+            .padding(horizontal = SCREEN_PAD)
             .padding(top = 8.dp, bottom = 40.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+        verticalArrangement = Arrangement.spacedBy(GROUP)
     ) {
-        BackRow(onBack)
-
-        Text(
-            stringResource(R.string.settings_title),
-            style = MaterialTheme.typography.titleLarge, color = g.onSurface
-        )
-
-        Spacer(Modifier.height(8.dp))
-        SectionLabel(stringResource(R.string.section_appearance))
-        listOf(
-            Prefs.THEME_SYSTEM to R.string.theme_system,
-            Prefs.THEME_LIGHT to R.string.theme_light,
-            Prefs.THEME_DARK to R.string.theme_dark
-        ).forEach { (mode, label) ->
-            ChoiceRow(stringResource(label), themeMode == mode) {
-                haptics.select(); onThemeMode(mode)
+        Section(stringResource(R.string.section_appearance), rule = false) {
+            SettingsCard {
+                // No dividers between these: a radio group is ONE control, and
+                // the choice sheets - the same control - do not divide either.
+                listOf(
+                    Prefs.THEME_SYSTEM to R.string.theme_system,
+                    Prefs.THEME_LIGHT to R.string.theme_light,
+                    Prefs.THEME_DARK to R.string.theme_dark
+                ).forEach { (mode, label) ->
+                    RadioRow(stringResource(label), themeMode == mode) {
+                        haptics.select(); onThemeMode(mode)
+                    }
+                }
             }
         }
 
-        Spacer(Modifier.height(18.dp))
-        SectionLabel(stringResource(R.string.section_language))
-        LinkRow(
-            stringResource(R.string.settings_language),
-            stringResource(R.string.settings_language_why)
-        ) {
-            haptics.open()
-            runCatching {
-                ctx.startActivity(
-                    Intent(Settings.ACTION_APP_LOCALE_SETTINGS)
-                        .setData(Uri.fromParts("package", ctx.packageName, null))
-                )
+        Section(stringResource(R.string.section_language)) {
+            SettingsCard {
+                LinkRow(
+                    stringResource(R.string.settings_language),
+                    stringResource(R.string.settings_language_why),
+                    // Without it this row's text started at 40dp where the radio
+                    // rows above start at 80 - the same ragged left edge "what
+                    // can wake you" had.
+                    leading = {
+                        Icon(
+                            painterResource(R.drawable.ic_language),
+                            contentDescription = null,
+                            tint = LocalContentColor.current,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                ) {
+                    haptics.open()
+                    runCatching {
+                        ctx.startActivity(
+                            Intent(Settings.ACTION_APP_LOCALE_SETTINGS)
+                                .setData(Uri.fromParts("package", ctx.packageName, null))
+                        )
+                    }
+                }
             }
         }
 
-        Spacer(Modifier.height(18.dp))
-        SectionLabel(stringResource(R.string.section_about))
-        Text(
-            stringResource(R.string.settings_about_body),
-            style = MaterialTheme.typography.bodyLarge, color = g.onSurfaceLow
-        )
-        Text(
-            stringResource(R.string.settings_version, version),
-            style = MaterialTheme.typography.bodyLarge, color = g.onSurfaceLow
-        )
-    }
-}
-
-/** Filled when chosen, hollow when not - the same grammar as the day row. */
-@Composable
-private fun ChoiceRow(label: String, selected: Boolean, onSelect: () -> Unit) {
-    val g = gloam
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(20.dp))
-            .selectable(selected = selected, role = Role.RadioButton, onClick = onSelect)
-            .padding(vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Box(
-            Modifier
-                .size(20.dp)
-                .clip(CircleShape)
-                .then(
-                    if (selected) Modifier.background(g.selectFill)
-                    else Modifier.border(1.5.dp, g.line, CircleShape)
-                )
-        )
-        Spacer(Modifier.width(14.dp))
-        Text(label, style = MaterialTheme.typography.titleMedium, color = g.onSurface)
-    }
-}
-
-@Composable
-private fun LinkRow(title: String, subtitle: String, onClick: () -> Unit) {
-    val g = gloam
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(20.dp))
-            .clickable(onClick = onClick)
-            .padding(vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Column(Modifier.weight(1f).padding(end = 12.dp)) {
-            Text(title, style = MaterialTheme.typography.titleMedium, color = g.onSurface)
-            Text(subtitle, style = MaterialTheme.typography.bodyLarge, color = g.onSurfaceLow)
+        Section(stringResource(R.string.section_about)) {
+            Text(
+                stringResource(R.string.settings_about_body),
+                style = MaterialTheme.typography.bodyLarge, color = g.onSurfaceLow
+            )
+            Text(
+                stringResource(R.string.settings_version, version),
+                style = MaterialTheme.typography.bodyLarge, color = g.onSurfaceLow
+            )
         }
-        Text("›", style = MaterialTheme.typography.titleLarge, color = g.onSurfaceLow)
+    }
     }
 }
 
-/**
- * The way back, shared with the allowlist screen. The offset cancels the row's
- * own padding plus the icon's - Google's arrow_back path spans x=4..20 of a 24
- * viewport - so it is the arrow's INK that lands on the content margin.
- */
+/** The app's card, holding a group of rows. */
 @Composable
-fun BackRow(onBack: () -> Unit) {
-    val g = gloam
-    Row(
-        Modifier
-            .offset(x = (-12).dp)
-            .clip(RoundedCornerShape(24.dp))
-            .clickable(onClick = onBack)
-            .heightIn(min = 48.dp)
-            .padding(horizontal = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
+private fun SettingsCard(content: @Composable ColumnScope.() -> Unit) {
+    Surface(
+        color = gloam.raise,
+        shape = RoundedCornerShape(CORNER),
+        modifier = Modifier.fillMaxWidth()
     ) {
-        Icon(
-            painterResource(R.drawable.ic_back),
-            contentDescription = null,
-            tint = g.onSurface,
-            modifier = Modifier.size(24.dp)
-        )
-        Spacer(Modifier.width(8.dp))
-        Text(
-            stringResource(R.string.action_back),
-            style = MaterialTheme.typography.titleMedium, color = g.onSurface
-        )
+        Column(content = content)
     }
 }

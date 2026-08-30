@@ -25,8 +25,43 @@ android {
         versionName = (findProperty("gloamingVersionName") as String?) ?: "0.1"
     }
 
+    // Release signing comes from the ENVIRONMENT, never from the repo - see
+    // .gitignore, which has refused signing material since before any existed.
+    // CI decodes a base64 secret to a file and points GLOAMING_KEYSTORE at it.
+    //
+    // The keystore is what makes an APK upgradable, and getting versionCode
+    // right was necessary but not sufficient. CI used to publish DEBUG APKs,
+    // and the runner generates a throwaway debug key per run - so 0.1 and 0.2
+    // went out signed by different certificates (789ee6a5... and 7fe1791e...)
+    // and 0.2 could not install over 0.1. Measured on the phone rather than
+    // assumed: INSTALL_FAILED_UPDATE_INCOMPATIBLE, "signatures do not match
+    // newer version".
+    val keystorePath: String? = System.getenv("GLOAMING_KEYSTORE")
+    val signingReady = !keystorePath.isNullOrBlank() && file(keystorePath).exists()
+
+    signingConfigs {
+        if (signingReady) create("release") {
+            storeFile = file(keystorePath!!)
+            storePassword = System.getenv("GLOAMING_KEYSTORE_PASSWORD")
+            keyAlias = System.getenv("GLOAMING_KEY_ALIAS") ?: "gloaming"
+            keyPassword = System.getenv("GLOAMING_KEY_PASSWORD")
+        }
+    }
+
     buildTypes {
-        release { isMinifyEnabled = false }
+        release {
+            // Minification stays OFF. Turning it on is a real change to an app
+            // that runs unattended overnight, and it belongs in its own pass
+            // with its own testing rather than riding along with signing.
+            isMinifyEnabled = false
+            // With no keystore configured the APK is left UNSIGNED rather than
+            // falling back to the debug key. A fallback would produce something
+            // that looks releasable and cannot be upgraded - the exact bug this
+            // block exists to fix. The release workflow refuses to publish an
+            // APK that apksigner cannot verify, so this fails loudly in CI and
+            // is merely inert on a laptop that has no key.
+            if (signingReady) signingConfig = signingConfigs.getByName("release")
+        }
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

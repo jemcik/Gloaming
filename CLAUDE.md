@@ -849,6 +849,37 @@ A tag that is not `MAJOR.MINOR[.PATCH]` now FAILS the release rather than
 publishing an APK whose version is a lie. That is a deliberate behaviour change:
 before, "nightly" would have published happily.
 
+**A correct versionCode was necessary and not sufficient, and only a SECOND
+release could reveal it.** CI published DEBUG APKs, and a runner generates a
+throwaway debug keystore per run - so 0.1 and 0.2 went out signed by different
+certificates (`789ee6a5...` and `7fe1791e...`) and Android refuses to install
+over a package signed by a different one. Measured on the phone rather than
+argued: `INSTALL_FAILED_UPDATE_INCOMPATIBLE, signatures do not match newer
+version`. A stable signing identity is the other half of an upgradable APK, and
+0.1 and 0.2 are both stranded - anyone holding either has to uninstall once,
+losing their schedule, before any later release will install.
+
+Releases are signed now, from four repository secrets
+(`GLOAMING_KEYSTORE_BASE64`, `_KEYSTORE_PASSWORD`, `_KEY_ALIAS`,
+`_KEY_PASSWORD`). Two things about the shape are deliberate. With no keystore
+the release build is left UNSIGNED rather than falling back to the debug key,
+because a fallback produces something that looks releasable and cannot be
+upgraded - the exact bug being fixed. And the workflow refuses to publish an APK
+it cannot verify: AGP names an unsigned build `app-release-unsigned.apk`, so the
+filename alone catches a missing key, and `apksigner verify` catches a bad one.
+Both halves were confirmed locally against a throwaway key - unsigned gives
+apksigner exit 1, signed gives exit 0 with the expected certificate and the
+version from the tag properties.
+
+The keystore never enters the repo. `.gitignore` has refused `*.jks`,
+`*.keystore` and `keystore.properties` since before any existed, and the comment
+there is the reason: a key committed once has to be rotated, because rewriting
+history does not un-publish it.
+
+Minification stays OFF through all of this. Turning it on is a real change to an
+app that runs unattended overnight and belongs in its own pass with its own
+testing, not riding along with signing.
+
 The derivation reads `BASH_REMATCH`, so the step declares `shell: bash`. Testing
 it in the local shell first gave versionCode 0 for every tag, because zsh sets
 `$match` instead and the arithmetic silently used empty strings - the same class

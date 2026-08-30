@@ -133,6 +133,19 @@ confirming on real hardware.
 - **Logcat is encrypted** for third-party apps on MagicOS — entries come back as
   `(HKS)...(HKE)`. Hence `Journal.kt`. Never swallow an exception; three bugs
   hid behind `runCatching { }` with no logging.
+- **`run-as` can READ this app's data but not write it.** MagicOS mounts the
+  data directory read-only for `run-as`, so `cat shared_prefs/gloaming.xml`
+  works and `cat > shared_prefs/gloaming.xml` fails with `Read-only file
+  system`. Reading is unaffected, which is why the journal probe works and
+  `check.sh` works — both only read. The consequence is that a setting cannot
+  be corrected from the host: it has to go through the UI, with `adb shell
+  input tap` against a `uiautomator dump`, matching rows by their TEXT rather
+  than by coordinates, and re-reading the prefs afterwards to confirm what
+  actually changed. Note the first failure looks like a different bug —
+  `sh -c 'cat > shared_prefs/...'` reports `No such file or directory`, because
+  the inner shell does not inherit `run-as`'s working directory; switching to
+  an absolute path is what surfaces the real `Permission denied` /
+  `Read-only file system`.
 - **`clip(RoundedCornerShape(n))` on a short container eats content.** A 28 dp
   radius cut off labels; a 12 dp radius trimmed ~12 dp off each end of a 1 dp
   rule. Don't clip anything under ~40 dp tall whose child touches the edge.

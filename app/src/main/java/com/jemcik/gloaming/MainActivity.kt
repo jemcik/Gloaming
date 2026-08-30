@@ -509,9 +509,8 @@ fun Home(
                                 )
                             }
                             Spacer(Modifier.height(4.dp))
-                            Text(
-                                Clock.hhmm(ctx, start),
-                                style = MaterialTheme.typography.displaySmall,
+                            WindowTime(
+                                ctx, start,
                                 // dimmed once it is behind you, but never near-black
                                 color = if (runningNow) g.onSurfaceMid.copy(alpha = 0.62f)
                                 else g.onSurfaceMid
@@ -537,11 +536,7 @@ fun Home(
                                 PhaseGlyph(moon = false, tint = Arc.dawn, ground = ground)
                             }
                             Spacer(Modifier.height(4.dp))
-                            Text(
-                                Clock.hhmm(ctx, end),
-                                style = MaterialTheme.typography.displaySmall,
-                                color = g.onSurfaceMid
-                            )
+                            WindowTime(ctx, end, color = g.onSurfaceMid)
 
                         }
                     }
@@ -957,6 +952,57 @@ fun Home(
 /** "3h 05m" from a whole number of minutes. */
 /** Clock time. 24-hour throughout, which is what the dial is. */
 private fun hhmm(ctx: Context, h: Int, m: Int): String = Clock.hhmm(ctx, h, m)
+
+/**
+ * One of the two window times, at the numeral size, with the day period set a
+ * step down beside it.
+ *
+ * The period is a separate Text on purpose. As one string "11:30 PM" overflows
+ * the 146.5dp column, and CLDR joins it with U+202F - a no-break space - so the
+ * line cannot break at the space and broke mid-token instead, to "11:30 P"/"M".
+ * At titleLarge the period costs about a third of what it did, which fits any
+ * hour rather than just the ones with a single digit. Both halves align on the
+ * BASELINE, not the box, or the small text would float.
+ *
+ * maxLines = 1 on the numerals is the backstop: if some locale still cannot
+ * fit, it must clip rather than reflow, because this block sits directly above
+ * the dial and anything that changes its height moves the whole page.
+ */
+@Composable
+private fun WindowTime(ctx: Context, t: java.time.LocalTime, color: Color) {
+    val r = Clock.reading(ctx, t)
+    if (r.period == null) {
+        Text(
+            r.time,
+            style = MaterialTheme.typography.displaySmall,
+            color = color,
+            maxLines = 1
+        )
+        return
+    }
+    Row(verticalAlignment = Alignment.Bottom) {
+        val numerals = @Composable {
+            Text(
+                r.time,
+                style = MaterialTheme.typography.displaySmall,
+                color = color,
+                maxLines = 1,
+                modifier = Modifier.alignByBaseline()
+            )
+        }
+        val period = @Composable {
+            Text(
+                r.period,
+                style = MaterialTheme.typography.titleLarge,
+                color = color,
+                maxLines = 1,
+                modifier = Modifier.alignByBaseline()
+            )
+        }
+        if (r.periodFirst) { period(); Spacer(Modifier.width(5.dp)); numerals() }
+        else { numerals(); Spacer(Modifier.width(5.dp)); period() }
+    }
+}
 
 /** The dial centre's compact duration - "5h 20m". */
 private fun span(res: Resources, minutes: Long): String =

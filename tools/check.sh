@@ -41,16 +41,28 @@ for k in ("mZenMode", "mInterruptionFilter"):
 
 head("OUR RULE")
 live = re.search(r"mConfigs\[u=0\](.*?)deletedRules", notif, re.S)
-r = re.search(r"ZenRule\[id=([a-f0-9]+),state=(STATE_\w+),enabled=(\w+).*?name=Gloaming.*?"
-              r"deviceEffects=\[([^\]]*)\].*?triggerDescription=([^,]*)",
-              live.group(1) if live else "", re.S)
-if not r:
+# One chunk per rule, and every field must come from OUR chunk.
+# This used to be a single regex running `.*?` from the first ZenRule[ to
+# name=Gloaming, which on any phone holding another zen rule - which is most
+# of them - read id, state and enabled off whatever rule sorted first while
+# still picking up our OWN effects and caption. Half right is the most
+# misleading answer available: it reported our live rule as
+# STATE_FALSE/enabled=FALSE on two different phones while zen was genuinely
+# on, and it read as a vendor quirk twice before a second device made it
+# obvious the tool was at fault, not the phone.
+ours = next((c for c in re.split(r"ZenRule\[", live.group(1) if live else "")
+             if "name=Gloaming" in c), None)
+if ours is None:
     print("  MISSING - the system holds no Gloaming rule")
 else:
-    print(f"  id          {r.group(1)}")
-    print(f"  state       {r.group(2)}      enabled={r.group(3)}")
-    print(f"  effects     [{r.group(4)}]")
-    print(f"  caption     {r.group(5)}")
+    def f(pat):
+        m = re.search(pat, ours, re.S)
+        return m.group(1) if m else "?"
+    print(f"  id          {f(r'\Aid=(\w+)')}")
+    print(f"  state       {f(r'state=(STATE_\w+)')}      "
+          f"enabled={f(r'enabled=(\w+)')}")
+    print(f"  effects     [{f(r'deviceEffects=\[([^\]]*)\]')}]")
+    print(f"  caption     {f(r'triggerDescription=([^,]*)')}")
 
 head("THE APP'S OWN VIEW")
 def pref(name, kind="value"):

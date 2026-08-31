@@ -1449,21 +1449,47 @@ requires — would be enough to write it. That materially revises the old
 conclusion that the scheduling route is shut: `CommonReceiver` is shut, the
 SETTINGS route is not.
 
-**NOT settled: whether the AOD service honours a written schedule.** The obvious
-probe fails, because `aod_doze_state` does not discriminate in this mode (see the
-correction above). Every arm read 1, including a schedule set through the UI that
-excluded the current time — so the instrument is measuring nothing here, and this
-is emphatically NOT evidence that the schedule is ignored. It is an absence of
-evidence either way. Settling it needs the tap-and-look protocol, and the test
-has a confound to design around: the screen's own Note 2 says that in Scheduled
-or All day mode the AOD is disabled when the phone "sleeps at night", so a test
-run in the small hours cannot distinguish a honoured schedule from that rule.
+**Also settled, an hour later: the service HONOURS a schedule written from adb.**
+`aod_doze_state` was useless for this — it read 1 in every arm — so the witness
+was a pair of human eyes on the sleeping screen, four arms, at 02:08:
 
-Why it would matter if it does work: `AmbientControl` currently flips keys at
-each window boundary, which is what makes an uninstall mid-window leave the AOD
-off and lets a user's own change be overwritten at window end. Setting Honor's
-own schedule instead would hand the boundaries to the vendor's service and
-remove both failure modes. Worth resolving before anyone builds it.
+| arm | schedule (written from adb) | screen asleep shows |
+|---|---|---|
+| A control | 00:00–23:59, covers now | **AOD lit** |
+| B | 09:00–12:00, excludes now, written WITHOUT touching the phone | still lit |
+| B′ | same keys, after one wake + sleep | **dark** |
+| C reverse | 00:00–23:59 again, after wake + sleep | **lit again** |
+
+Arm A is what made the rest legible: it proved Note 2's "disabled when the phone
+sleeps at night" was NOT suppressing anything at 02:08, so the later darkness in
+B′ could be attributed to the schedule rather than to the confound. Arm C is the
+reverse control — without it, B′ going dark could have been a timeout, the
+battery, or the night rule arriving late.
+
+Two design facts fall out. **There is no ContentObserver**: B left the AOD lit
+even though the keys had already changed, so the service does not watch them.
+And **it re-reads on a screen transition**: one wake-and-sleep was enough. Which
+of the two edges triggers it was not isolated — both happened together — and an
+implementation would want to know, because writing the schedule at a window
+boundary while the phone is asleep would not take effect until the next
+transition. For a bedtime app that is close to harmless, since someone is
+usually about to pick the phone up, but it is real behaviour and not a detail to
+discover in the field.
+
+Not tested: whether the schedule survives a reboot. `Settings.Secure` persists,
+so it almost certainly does, but nobody has watched it happen. Also still
+unexplained: what Note 2's night rule actually means, given it did not fire at
+02:08, and `aod_scheduled_switch`, which sat at -1 throughout.
+
+Why this matters: `AmbientControl` currently flips keys at each window boundary,
+which is what makes an uninstall mid-window leave the AOD off and lets a user's
+own change be overwritten at window end. Setting Honor's own schedule instead
+hands the boundaries to the vendor's service and removes both. It costs no new
+permission — `WRITE_SECURE_SETTINGS` is the same grant `AmbientControl` already
+needs. NOT BUILT, and deliberately so: it is a different shape of change from
+what this app does elsewhere, it would want the reboot question answered first,
+and the honest comparison against the existing key-flip has not been made. The
+finding is the value here, not a mandate.
 
 One more caveat for whoever picks this up: `AmbientControl`'s four keys were
 derived entirely from TAP TO SHOW mode. A phone sitting in Scheduled or All day

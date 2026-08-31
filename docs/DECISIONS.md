@@ -1377,6 +1377,36 @@ trying the app on anything but the Honor:
 
 Everything else naming a vendor is a comment.
 
+**Second device, 1 Sep 2026 — what it caught.** The OnePlus was reattached to
+check one path the Honor physically cannot draw: the always-on row, which is
+gated on `ambientRow` and is false on a phone with no vendor keys. It renders
+correctly, and so do two other Honor-invisible paths — `PermissionSection` on a
+fresh install, and both sections' `NoticeStrip` with the future-tense heading
+while bedtime is off.
+
+The unplanned find was worth more. `tools/check.sh` had been reporting our rule
+as `STATE_FALSE  enabled=FALSE` while zen was genuinely ON, and it did so on
+BOTH phones. One phone reads as a vendor quirk and was shrugged off twice; two
+unrelated phones reading identically is a tool bug. Its regex ran `.*?` from the
+first `ZenRule[` in the live config to `name=Gloaming` — 3,202 characters across
+four rules on the OnePlus — so id, state and enabled came off whatever rule
+sorted first, while `deviceEffects` and `triggerDescription`, which sit AFTER
+the name, were correctly ours. Half right is the worst possible answer: the
+fields that were wrong are the ones you consult to decide whether the app is
+working, and they contradicted the architecture (`enabled` is TRUE in both
+states — the rule holds the policy, we flip the condition) without anyone
+noticing. Fixed by splitting on `ZenRule[` and parsing only the chunk carrying
+our name.
+
+Two more answers, both previously attributed to MagicOS on inference:
+
+- Logcat IS readable for a third-party app here. `Journal` is a MagicOS
+  workaround, not an Android one, and on this device ordinary logcat works.
+- `font_scale` is 1.15 on this phone and the Ukrainian always-on title wraps to
+  two lines, making a three-line row. It renders correctly — the card grows and
+  the switch stays centred, not top-aligned — but `RowFitTest` measures at the
+  default font scale only, so the wrap is outside what the suite can see.
+
 Worth knowing on ANY device: nothing flashes a "Do Not Disturb is on"
 notification at first launch any more. That was `DarkCapability.probe`
 activating a throwaway rule, and it is gone with the probe.

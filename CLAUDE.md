@@ -108,6 +108,10 @@ is in DECISIONS.md.
   correctly. Test through real alarms.
 - `dumpsys notification` prints a `Zen Log:` history as well as live config, so
   `sed '/Zen Log:/q'` before grepping or long-deleted rules read as present.
+  The live config holds SEVERAL `ZenRule[` records and ours is rarely first, so
+  a pattern that runs `.*?` from `ZenRule[` to `name=Gloaming` reads id, state
+  and enabled off a stranger's rule while still picking up OUR effects and
+  caption. Split on `ZenRule[` and take the chunk carrying `name=Gloaming`.
 
 **Compose**
 

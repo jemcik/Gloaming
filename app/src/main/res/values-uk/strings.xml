@@ -133,7 +133,7 @@
     <string name="filter_all">Дозволено все.</string>
     <string name="filter_ignored">Ви ввімкнули режим «Не турбувати», але телефон його не застосовує.</string>
     <string name="filter_priority">Усе, що ви не дозволили, блокується.</string>
-    <string name="filter_alarms">Дозволено лише будильники.</string>
+    <string name="filter_alarms">Дозволені лише будильники.</string>
     <string name="filter_none">Блокується навіть те, що ви дозволили.</string>
     <string name="filter_unknown">Телефон не повідомив, що діє.</string>
 

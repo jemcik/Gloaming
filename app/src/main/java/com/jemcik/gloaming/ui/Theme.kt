@@ -196,7 +196,14 @@ data class GloamColors(
        surface. Darkening a surface silently invalidates every container tone
        borrowed from a spec that assumed the old one. */
     val alertBorder: Color,
-    val cta: Color,
+    /* There is no `cta` token any more, and its absence is the note.
+       It was the arc's WARM end used as an action colour - the Allow button,
+       the picker's Set, and the scheme's secondary/tertiary. That survived the
+       accent moving to the arc's COOL end, and left a chroma-46 burnt orange
+       154 degrees from everything else on a screen whose card is chroma 3.
+       Every one of those now takes the scheme's own primary, which is
+       `stateOn`, so they cannot drift from the accent again. Warm still exists
+       where it belongs: Arc.ember, Arc.dawn and Arc.onDawn, on the dial. */
     val dark: Boolean
 )
 
@@ -260,7 +267,6 @@ private val Dusk = GloamColors(
     alert = Color(0xFF6F362E),         // tone 30 · ink 7.24:1
     onAlert = Color(0xFFFFDAD5),
     alertBorder = Color(0xFFB85B52),   // tone 50 · 2.74:1 on a card
-    cta = Color(0xFFF49B66),
     dark = true
 )
 
@@ -309,7 +315,6 @@ private val Dawn = GloamColors(
     alert = Color(0xFFFFDAD5),         // tone 90 · ink 7.27:1
     onAlert = Color(0xFF6B3831),
     alertBorder = Color(0xFFD16F65),   // tone 58 · 2.69:1 on a card
-    cta = Color(0xFF954914),
     dark = false
 )
 
@@ -633,14 +638,14 @@ fun GloamingTheme(dark: Boolean = isSystemInDarkTheme(), content: @Composable ()
     val g = if (dark) Dusk else Dawn
     val scheme = if (dark) darkColorScheme(
         primary = g.stateOn, onPrimary = g.onState,
-        secondary = g.cta, onSecondary = g.onSurface,
+        secondary = g.stateOn, onSecondary = g.onState,
         background = g.surface, onBackground = g.onSurface,
         surface = g.surface, onSurface = g.onSurface,
         surfaceVariant = g.raise, onSurfaceVariant = g.onSurfaceLow,
         outline = g.outline, outlineVariant = g.veil,
         secondaryContainer = g.selectFill, onSecondaryContainer = g.onSelect,
         primaryContainer = g.selectFill, onPrimaryContainer = g.onSelect,
-        tertiary = g.cta, onTertiary = g.surface,
+        tertiary = g.stateOn, onTertiary = g.onState,
         tertiaryContainer = g.raise, onTertiaryContainer = g.onSurface,
         errorContainer = g.alert, onErrorContainer = g.onAlert,
         surfaceContainerHighest = g.veil, surfaceContainerHigh = g.raise,
@@ -648,14 +653,14 @@ fun GloamingTheme(dark: Boolean = isSystemInDarkTheme(), content: @Composable ()
         surfaceContainerLowest = g.surface
     ) else lightColorScheme(
         primary = g.stateOn, onPrimary = g.onState,
-        secondary = g.cta, onSecondary = g.onSurface,
+        secondary = g.stateOn, onSecondary = g.onState,
         background = g.surface, onBackground = g.onSurface,
         surface = g.surface, onSurface = g.onSurface,
         surfaceVariant = g.raise, onSurfaceVariant = g.onSurfaceLow,
         outline = g.outline, outlineVariant = g.veil,
         secondaryContainer = g.selectFill, onSecondaryContainer = g.onSelect,
         primaryContainer = g.selectFill, onPrimaryContainer = g.onSelect,
-        tertiary = g.cta, onTertiary = g.surface,
+        tertiary = g.stateOn, onTertiary = g.onState,
         tertiaryContainer = g.raise, onTertiaryContainer = g.onSurface,
         errorContainer = g.alert, onErrorContainer = g.onAlert,
         surfaceContainerHighest = g.veil, surfaceContainerHigh = g.raise,

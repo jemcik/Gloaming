@@ -70,6 +70,8 @@ enum class IconTint(private val dark: Color, private val light: Color) {
     /** media - pink */
     Media(Color(0xFFF2A8F1), Color(0xFFA551AB)),
     /** alarms - red, the one thing never silenced */
+    /** a restart that went unhandled - violet, clear of the two reds beside it */
+    Boot(Color(0xFFCCB5FF), Color(0xFF7E5ECD)),
     Alarm(Color(0xFFFFABA2), Color(0xFFDD2524));
 
     /** On the card behind it: Dusk takes the pale member, Dawn the deep one. */

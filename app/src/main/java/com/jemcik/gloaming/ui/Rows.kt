@@ -176,11 +176,16 @@ fun ActionRow(
     headline: String,
     modifier: Modifier = Modifier,
     supporting: String? = null,
+    // The only row here that had no leading slot, which is why the permission
+    // panel's text started 40dp from the edge where every other row on the
+    // screen starts at 80 - the same ragged left edge "what can wake you" had.
+    leading: (@Composable () -> Unit)? = null,
     trailing: @Composable () -> Unit
 ) {
     ListItem(
         headlineContent = { Headline(headline) },
         supportingContent = supporting?.let { { Supporting(it) } },
+        leadingContent = leading,
         trailingContent = trailing,
         colors = rowColors(),
         modifier = modifier

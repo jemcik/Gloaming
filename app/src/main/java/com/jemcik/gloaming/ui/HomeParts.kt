@@ -361,22 +361,72 @@ internal fun DayRow(selected: Set<DayOfWeek>, onToggle: (DayOfWeek) -> Unit) {
     }
 }
 
+/**
+ * One thing the app needs, why it needs it, and the button that grants it.
+ *
+ * An M3 CARD WITH ACTIONS, not a list item, and the difference is the point.
+ * A list item is for scannable, uniform entries; this is a piece of persuasion
+ * with a call to action, which is what M3's card anatomy - headline, supporting
+ * text, action area - is for.
+ *
+ * It was tried as a grouped list first, which fixed one thing and broke
+ * another. The leading icon put the headline at 80dp, matching every other row
+ * on Home instead of starting 40dp from the edge; but it also took 80dp out of
+ * the text column, so the supporting line wrapped to three, which makes an M3
+ * ListItem three-line, which TOP-ALIGNS its trailing content. The result was a
+ * button floating at the top of a five-line row. That is the same alignment
+ * trap this project already documents for switches, reached from a new
+ * direction: there the fix is to keep rows at two lines, and here the text
+ * cannot be shortened because it has to say why a permission is wanted, in
+ * three languages.
+ *
+ * Giving the text the full width and putting the action beneath it solves both:
+ * the icon stays, the left edge still lines up, and nothing has to fit beside
+ * anything.
+ */
 @Composable
-internal fun PermissionRow(title: String, why: String, granted: Boolean, onRequest: () -> Unit) {
+internal fun PermissionCard(
+    title: String,
+    why: String,
+    granted: Boolean,
+    @DrawableRes icon: Int,
+    tint: IconTint,
+    onRequest: () -> Unit
+) {
     val g = gloam
-    ActionRow(
-        headline = title,
-        supporting = why,
-        trailing = {
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .padding(horizontal = CARD_PAD, vertical = 14.dp),
+        verticalArrangement = Arrangement.spacedBy(TIGHT)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            RowIcon(icon, tint)
+            Spacer(Modifier.width(16.dp))
+            Text(
+                title,
+                style = MaterialTheme.typography.titleMedium, color = g.onSurface
+            )
+        }
+        Text(why, style = MaterialTheme.typography.bodySmall, color = g.onSurfaceLow)
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
             if (granted) Text(
                 stringResource(R.string.perm_allowed),
                 style = MaterialTheme.typography.labelLarge, color = g.stateOn
             ) else Button(
                 onClick = onRequest,
-                shape = CircleShape,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = g.cta, contentColor = g.surface
-                )
+                shape = CircleShape
+                // NO colour override. M3's own buttonColors resolve to the
+                // scheme's primary/onPrimary, which this app wires to
+                // stateOn/onState - so the button is the accent and flips the
+                // right way per theme for free: dark fill with white text in
+                // Dawn, light fill with dark text in Dusk.
+                //
+                // It used to name `cta`, the arc's WARM end. That survived the
+                // accent moving to the arc's COOL end and left a chroma-46
+                // burnt orange 154 degrees from everything else, on a screen
+                // whose card is chroma 3. Reported, fairly, as ugly. The fix is
+                // less code than the bug was.
             ) {
                 Text(
                     stringResource(R.string.perm_allow),
@@ -384,7 +434,7 @@ internal fun PermissionRow(title: String, why: String, granted: Boolean, onReque
                 )
             }
         }
-    )
+    }
 }
 
 /* The handles' own marks, shrunk. Colour alone made the wake side learnable;

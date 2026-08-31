@@ -16,9 +16,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.clickable
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.AnimatedVisibility
@@ -52,7 +50,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -128,10 +125,6 @@ private val SIDE = 24.dp        // screen side padding
    still draws and still takes touches at full size. */
 private val DIAL_TRIM = 18.dp
 private val CHIP_HEIGHT = 38.dp   // the effect chips' own height, kept from the Surface they were
-/* A second. The page changing state is not a control responding to a tap - it
-   is the room the app is describing, and it was reported as a blink at 0ms and
-   still read as quick at 450. */
-private const val GROUND_FADE = 1000
 private val CHIP_GUTTER = 7.dp
 private val DAY_SIZE = 40.dp
 // Where a day chip's corners land while held. Round is DAY_SIZE / 2 = 20dp.
@@ -336,59 +329,22 @@ fun Home(
         if (prefs.enabled) { Scheduler.rescheduleAll(ctx, prefs); tick++ }
     }
 
-    // Animated, not swapped. The page has three grounds and Dawn DEEPENS while
-    // bedtime runs rather than lifting, which is the right instinct - it makes
-    // the running state felt rather than read. But it was painted straight from
-    // the state, so dragging the dial across the "now" boundary repainted the
-    // whole screen and grew a bloom in ONE frame, mid-drag. A state change that
-    // takes 0ms does not read as a state change, it reads as a glitch, and it
-    // was reported as exactly that: "the background changes, what is that?".
-    //
-    // 450ms, which is slow for a control and about right for a room. It was
-    // also the only transition on this screen that was not animated - the day
-    // pickers collapse, the switch thumb grows, the bar reacts to scroll.
-    val groundTarget = when {
-        runningNow -> g.surfaceRunning
-        !enabled -> g.surfaceOff
-        else -> g.surface
-    }
-    val ground by animateColorAsState(
-        groundTarget,
-        animationSpec = tween(durationMillis = GROUND_FADE),
-        label = "ground"
-    )
-    // The cards travel with the page. In Dawn the running ground deepens
-    // TOWARDS them, so a page that moved alone would have swallowed them.
-    val card by animateColorAsState(
-        if (runningNow) g.raiseRunning else g.raise,
-        animationSpec = tween(durationMillis = GROUND_FADE),
-        label = "card"
-    )
-    // The bloom appears only while running, and it has to fade with the ground
-    // or the highlight would still arrive in a single frame on top of a colour
-    // that took 450ms. Its alpha carries that.
-    val bloomAlpha by animateFloatAsState(
-        if (runningNow) 1f else 0f,
-        animationSpec = tween(durationMillis = GROUND_FADE),
-        label = "bloom"
-    )
+    // The page does not move with the state, and neither do the cards.
+    // There used to be a three-rung ground ladder crossfading over a second,
+    // with a radial bloom on top while running. Both are gone. Two things are
+    // worth keeping from how that ended: the animation was added because the
+    // instant version read as a glitch mid-drag ("the background changes, what
+    // is that?"), so if a moving ground ever comes back it has to be animated;
+    // and `raiseRunning` was never a design choice, only compensation for the
+    // page deepening towards the cards in Dawn, so it left with the thing it
+    // was compensating for.
+    val ground = g.surface
+    val card = g.raise
 
     Box(
         Modifier
             .fillMaxSize()
-            .drawBehind {
-                drawRect(ground)
-                if (bloomAlpha > 0f) {
-                    drawRect(
-                        Brush.radialGradient(
-                            colors = listOf(g.bloom, ground),
-                            center = Offset(size.width * 0.78f, size.height * 0.06f),
-                            radius = size.height * 0.62f
-                        ),
-                        alpha = bloomAlpha
-                    )
-                }
-            }
+            .drawBehind { drawRect(ground) }
     ) {
         // The master control lives in the bar, not in a card in the flow. It
         // governs everything on the screen and the screen is 1.9 viewports tall
@@ -916,7 +872,7 @@ fun Home(
                                     // same job 60dp apart, and they were 29
                                     // tones apart until someone looked at them
                                     // together instead of at their numbers.
-                                    activeBorderColor = g.outline,
+                                    activeBorderColor = g.selectBorder,
                                     inactiveContainerColor = Color.Transparent,
                                     inactiveContentColor = g.onSurfaceMid,
                                     inactiveBorderColor = g.outline
@@ -1238,6 +1194,20 @@ private data class Quad(val pill: Int, val line: Int, val fill: Color, val ink: 
  */
 @Composable
 private fun StatusPill(text: String, fill: Color, ink: Color) {
+    val g = gloam
+    // The pill wears the same border language as the control it reports on:
+    // a filled pill is an "on" state and takes the selected border, a veil pill
+    // is an "off" state and takes the unselected one - on the same ground the
+    // unchecked switch track sits on, which is why offBorder is asked for the
+    // veil variant here.
+    val border = when (fill) {
+        g.selectFill -> g.selectBorder
+        g.veil -> g.veilOutline
+        // `alert` keeps none. It is the one FAILURE state on the screen and it
+        // is already the loudest thing there; a rim would be a fifth edge on a
+        // colour that is not competing with anything.
+        else -> null
+    }
     Text(
         text,
         style = MaterialTheme.typography.labelLarge,
@@ -1245,6 +1215,7 @@ private fun StatusPill(text: String, fill: Color, ink: Color) {
         modifier = Modifier
             .clip(CircleShape)
             .background(fill)
+            .then(border?.let { Modifier.border(1.dp, it, CircleShape) } ?: Modifier)
             .padding(horizontal = 12.dp, vertical = 5.dp)
     )
 }
@@ -1281,7 +1252,13 @@ private fun NoticeStrip(text: String) {
     Box(Modifier.fillMaxWidth().background(g.selectFill)) {
         Text(
             text,
-            style = MaterialTheme.typography.bodySmall,
+            // `labelLarge`, not `bodySmall`: this is a WARNING about controls
+            // that look live and are not, and at Figtree 400 it read like the
+            // supporting line under a row - the same weight as the text it is
+            // qualifying. labelLarge is the same 14sp at weight 600, so this
+            // costs no height and adds no fontWeight override outside Theme.kt,
+            // which is a rule this app holds to.
+            style = MaterialTheme.typography.labelLarge,
             color = g.onSelect,
             modifier = Modifier.padding(horizontal = CARD_PAD, vertical = 14.dp)
         )
@@ -1558,9 +1535,21 @@ private fun DayRow(selected: Set<DayOfWeek>, onToggle: (DayOfWeek) -> Unit) {
                         .size(DAY_SIZE)
                         .clip(dayShape)
                         .then(
-                            if (on) Modifier.background(g.selectFill)
+                            // Filled AND rimmed when selected, a ring when not.
+                            // The rim is `selectBorder`, the same edge the
+                            // checked switch, the active preset and the "in
+                            // effect" pill wear - one border language, so the
+                            // day row and the preset row 60dp above it cannot
+                            // drift apart again.
+                            if (on) Modifier
+                                .background(g.selectFill)
+                                .border(1.5.dp, g.selectBorder, dayShape)
                             // `outline`, not `line`: this ring reports state,
-                            // and in `line` it measured 1.66:1 in Dawn.
+                            // and in `line` it measured 1.66:1 in Dawn. It stays
+                            // `outline` rather than the heavier `veilOutline` -
+                            // this ring sits on the PAGE, and the day letter
+                            // inside it carries the state at 8.28:1, so the ring
+                            // reinforces rather than reports.
                             else Modifier.border(1.5.dp, g.outline, dayShape)
                         ),
                     contentAlignment = Alignment.Center

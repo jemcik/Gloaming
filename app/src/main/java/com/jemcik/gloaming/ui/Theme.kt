@@ -59,28 +59,24 @@ val Figtree = FontFamily(figtree(400), figtree(600), figtree(700))
    above the palettes for what moved and why.                                */
 
 data class GloamColors(
-    val surface: Color,          // armed and waiting
-    /* Three grounds, and they are a LADDER: the more the app is doing, the
-       deeper the page. Both themes sit on the same three rungs, stated in tone
-       so the two are comparable: Dusk runs 16.5 / 14 / 11 and Dawn 99 / 98 / 95.
-       Dusk's rungs are wider than Dawn's because a dark ground has more room
-       below it than a near-white one has above it - Dawn's `off` cannot climb
-       past 100, so the ladder there is necessarily shallower. */
-    val surfaceRunning: Color,   // while running - deeper
-    val surfaceOff: Color,       // switched off - lifted
-    val bloom: Color,            // radial highlight, running only
+    /* ONE page colour, in every state.
+       There used to be three, a LADDER - the more the app was doing, the deeper
+       the page - crossfading over a second, plus a radial `bloom` while
+       running. It is gone, asked for directly, and the reason is worth keeping:
+       the page is the one surface a person is not looking at, so moving it says
+       nothing they were trying to read and it drags every container on top of
+       it along. Dawn now sits at what used to be the OFF rung, tone 99.3,
+       which is the value that was picked by looking at all three.
+       What went with it: `surfaceRunning`, `surfaceOff`, `bloom`,
+       `raiseRunning`, the two colour animations and the float that faded the
+       bloom. `raiseRunning` existed ONLY to compensate - in Dawn the running
+       page deepened TOWARDS the cards and would have swallowed them - so with
+       a still page it has nothing to do.
+       Cards keep their own separation from the page: 1.26:1 in Dusk, and in
+       Dawn 1.12:1, which is where Google Health's own cards measure on this
+       phone. */
+    val surface: Color,
     val raise: Color,            // cards, dial track
-    /* Cards while bedtime runs. In Dawn the page deepens TOWARDS the cards, so
-       leaving them still would close the gap to nothing - `raise` and
-       `surfaceRunning` are both tone 95. They deepen with it instead, to tone
-       90, which holds 1.14:1. In Dusk the page deepens AWAY from them, so there
-       the token is simply `raise` and the separation improves for free: 1.26:1
-       resting, 1.35:1 running.
-       Both are near Google's own: Health's cards measure 1.10:1 in light and
-       1.12:1 in dark against their pages. That is much flatter than the 1.40:1
-       Dusk used to hold, and deliberately so - the old number was bought with a
-       tone-7 page, and lifting the ground is what the whole rebuild was for. */
-    val raiseRunning: Color,
     val veil: Color,             // hairlines, ticks, off arc
     val line: Color,             // section rules, dividers, dial ticks and dots
     /* The border of a selection control: the unselected day's ring AND the
@@ -111,6 +107,29 @@ data class GloamColors(
        the tone that cleared the guideline (50, 4.28:1) was built, installed and
        rejected on sight as black. If it ever needs to go back inside the
        guideline, tone 58 is the lightest that does. */    val outline: Color,
+
+    /* The border of a SELECTED control: the checked switch track, the selected
+       day, the active preset segment and the "in effect" pill. One token, for
+       the same reason `outline` is one - they are the same job in four places,
+       and the day ring and the preset segment were 29 tones apart the last time
+       that was left to call sites.
+       M3 leaves a checked track bare and outlines only the unchecked one, and
+       this app followed that. It stops here, deliberately: the checked track
+       measures 1.26:1 against its card in Dawn and 2.06:1 in Dusk, both under
+       the 3:1 a component needs to be identifiable against its background, and
+       nothing else on the track supplies it. The rim roughly doubles both.
+       The asymmetry M3's rule protects survives anyway - thumb POSITION, thumb
+       SIZE (16dp against 24dp) and the thumb's GLYPH are three shape cues that
+       do not depend on a border. The one lost measured 1.87:1, which is under
+       what it needed to be read at all. */
+    val selectBorder: Color,
+    /* The border of an UNSELECTED control on a `veil` ground: the unchecked
+       switch track and the "off" pill. Separate from `outline` because the two
+       grounds are 6 tones apart and one value cannot serve both - `outline`
+       manages only 1.87:1 on veil in BOTH themes, while a value that clears 3:1
+       there lands near tone 50 on the page, which is the "the border around
+       days is black" report. So: `outline` on the page, this on veil. */
+    val veilOutline: Color,
     val onSurface: Color,
     val onSurfaceMid: Color,
     /* Secondary text, and the ink most of the app is written in - 24 usages
@@ -210,22 +229,20 @@ data class GloamColors(
 // Dusk
 private val Dusk = GloamColors(
     surface = Color(0xFF20242A),          // tone 14
-    surfaceRunning = Color(0xFF1A1E23),   // tone 11
-    surfaceOff = Color(0xFF25292E),       // tone 16.5
-    bloom = Color(0xFF282E36),
     raise = Color(0xFF2F353D),            // tone 22 · 1.26:1 on the page
-    raiseRunning = Color(0xFF2F353D),     //            1.35:1 while running
     veil = Color(0xFF383E46),
     line = Color(0xFF49505A),
     outline = Color(0xFF61666E),      // tone 43 · ring 2.70:1 on the page
+    selectBorder = Color(0xFF8896AF), // tone 62 · 4.14:1 on a card
+    veilOutline = Color(0xFF8A8B90),  // tone 58 · 3.17:1 on the veil track
     onSurface = Color(0xFFEAEBED),        // 10.37:1 on a card
     onSurfaceMid = Color(0xFFC7CDD7),
     onSurfaceLow = Color(0xFFBCC1CC),     //  6.86:1 on a card
-    stateOn = Color(0xFFA1CBB4),          // tone 78 - Material's `primary`
-    onState = Color(0xFF203A2E),
-    selectFill = Color(0xFF4C6A5A),       // tone 42 chroma 20 · 2.61:1 on the page
-    onSelect = Color(0xFFD2F0DD),         //                     4.90:1 on the fill
-    switchThumb = Color(0xFFD2F0DD),      // = onSelect here; Dawn's differs, see below
+    stateOn = Color(0xFFB0C3E0),          // tone 78 - Material's `primary`
+    onState = Color(0xFF23354E),
+    selectFill = Color(0xFF566479),       // tone 42 chroma 18.7 · 2.59:1 on the page
+    onSelect = Color(0xFFDDE9FF),         //                       4.91:1 on the fill
+    switchThumb = Color(0xFFDDE9FF),      // = onSelect here; Dawn's differs, see below
     switchThumbOff = Color(0xFF9196A0),   //                     3.59:1 on the veil track
     alert = Color(0xFF6F362E),         // tone 30 · ink 7.24:1
     onAlert = Color(0xFFFFDAD5),
@@ -235,23 +252,33 @@ private val Dusk = GloamColors(
 
 // Dawn
 private val Dawn = GloamColors(
-    surface = Color(0xFFFEF8F4),          // tone 98
-    surfaceRunning = Color(0xFFF8EFEA),   // tone 95
-    surfaceOff = Color(0xFFFDFDFD),       // tone 99.3
-    bloom = Color(0xFFFFFAF7),
-    raise = Color(0xFFF9EFE6),            // tone 95 · 1.08:1 on the page
-    raiseRunning = Color(0xFFECE1D6),     //            1.14:1 while running
-    veil = Color(0xFFF1E7DE),
+    // Tone 99.3. This used to be the OFF rung of a three-rung ladder and is now
+    // the only page colour, which is what was asked for by name - and it is the
+    // rung that makes every container on top of it read: cards go from 1.08:1
+    // against the old tone-98 page to 1.12:1, and the checked switch track,
+    // which sits on a CARD, keeps its own separation instead of having the card
+    // walk towards it. Deepening the card was tried first and does the opposite:
+    // it buys card-versus-page and spends switch-versus-card.
+    surface = Color(0xFFFDFDFD),
+    raise = Color(0xFFF9EFE6),            // tone 95 · 1.12:1 on the page
+    veil = Color(0xFFF0E6DD),
     line = Color(0xFFCCC2B9),
     outline = Color(0xFFB4A99E),      // tone 70 · ring 2.19:1 on the page
+    selectBorder = Color(0xFFA2ACBD), // tone 70 · 2.02:1 on a card, from 1.26
+    veilOutline = Color(0xFF897F75),  // tone 54 · 3.19:1 on the veil track
     onSurface = Color(0xFF1E1B18),        // 15.11:1 on a card
     onSurfaceMid = Color(0xFF514A43),
     onSurfaceLow = Color(0xFF514A43),     //  7.68:1 on a card
-    stateOn = Color(0xFF416134),          // tone 38 - Material's `primary`
+    stateOn = Color(0xFF505A6A),          // tone 38 - Material's `primary`
     onState = Color(0xFFFFFFFF),
-    selectFill = Color(0xFFC5E0B5),       // tone 86 chroma 24 · 1.36:1 on the page
-    onSelect = Color(0xFF314B26),         //                     6.79:1 on the fill
-    switchThumb = Color(0xFF426833),      // tone 40 chroma 36 · 4.51:1 on the track
+    selectFill = Color(0xFFD1D8E5),       // tone 86 chroma 11.4 · 1.36:1 on the page
+    // Tone 23, not the container role's 29. The fill is the arc's own night
+    // stop as it is drawn when bedtime is OFF, and at that chroma it is near
+    // the floor of what still reads as a hue - so the label on it was the first
+    // thing to suffer. 8.38:1 here against 6.76:1 at tone 29, and the ink still
+    // holds chroma 13.3, so it stays a blue ink rather than going near-black.
+    onSelect = Color(0xFF2F3744),
+    switchThumb = Color(0xFF545F71),      // tone 40 · 4.51:1 on the track
     switchThumbOff = Color(0xFF837B72),   //                     3.39:1 on the veil track
     alert = Color(0xFFFFDAD5),         // tone 90 · ink 7.27:1
     onAlert = Color(0xFF6B3831),
@@ -499,10 +526,10 @@ private val GloamShapes = Shapes(
 fun gloamSwitchColors(): SwitchColors = SwitchDefaults.colors(
     checkedTrackColor = gloam.selectFill,
     checkedThumbColor = gloam.switchThumb,
-    checkedBorderColor = Color.Transparent,
+    checkedBorderColor = gloam.selectBorder,
     uncheckedTrackColor = gloam.veil,
     uncheckedThumbColor = gloam.switchThumbOff,
-    uncheckedBorderColor = gloam.outline,
+    uncheckedBorderColor = gloam.veilOutline,
     // the check reads as the track's own green on the pale thumb
     checkedIconColor = gloam.selectFill,
     disabledUncheckedTrackColor = gloam.veil,

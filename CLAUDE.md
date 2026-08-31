@@ -435,8 +435,17 @@ confirming on real hardware.
   the unselected day's ring managed 1.91:1 in Dusk and 1.66:1 in Dawn, and the
   unchecked switch's border 1.33 and 1.43, against the 3:1 a UI part that must
   be identified has to reach - M3's own baseline manages 3.51 for that border.
-  `outline` is its own token now and carries every border that bounds a
-  selection control: the day rings, the switch, AND the preset row's segments.
+  `outline` is its own token now. It carried EVERY border that bounds a
+  selection control - day rings, switch, preset segments - and that is now split
+  three ways, by STATE and by GROUND: `selectBorder` for anything selected (the
+  checked track, the filled day, the active preset, the "in effect" pill),
+  `outline` for anything unselected on the PAGE (the day ring, the inactive
+  preset), and `veilOutline` for anything unselected on VEIL (the unchecked
+  track, the "off" pill). The last split is the one that is not obvious: the two
+  grounds are 6 tones apart, so one value cannot clear 3:1 on veil without
+  landing near tone 50 on the page - which is precisely the "the border around
+  days is black" report below. One token per JOB is right; one token per job per
+  GROUND is what the measurement actually demanded.
   What deliberately kept `line`: section rules, card dividers, the dial's ticks
   and dots. They separate blocks rather than bounding a control, and quiet is
   right there - which is why the fix was a second token and not a louder `line`.
@@ -651,11 +660,20 @@ confirming on real hardware.
   and a checked switch. There is nothing to keep in sync because it is not a
   copy of the accent, it IS the accent. 4.90:1 in Dusk and 6.79:1 in Dawn, at
   2.07:1 and 1.26:1 against the card.
-  The honest cost, so nobody has to rediscover it: the band is now the colour of
-  the controls it warns about, and green conventionally reads "on". It earns
-  that back by being unmistakably part of this app rather than a fourth hue on
-  a screen that already carries the arc's two and the alert red - and the WORDS
-  do the semantic work, which is where that work belongs.
+  The honest cost, so nobody has to rediscover it: the band is the colour of the
+  controls it warns about. That was sharper when the accent was GREEN, which
+  conventionally reads "on"; the accent is the arc's slate now, so the band no
+  longer says the opposite of what it means - but it still says "selected", and
+  the WORDS are what do the semantic work, which is where that work belongs.
+  It earns its place by being unmistakably part of this app rather than a
+  fourth hue on a screen that already carries the arc's two and the alert red.
+  **Its text is `labelLarge`, not `bodySmall`, and that was asked for.** Same
+  14sp, weight 600 rather than 400 - so it costs no height and adds no
+  `fontWeight` override outside `Theme.kt`, which is a rule this app holds to.
+  At 400 the warning was the same weight as the supporting lines it qualifies,
+  which is the typographic version of the mistake the band's POSITION already
+  fixed once: a caveat that arrives looking like the thing it is qualifying has
+  not been read.
   A lesson that generalises past this band: a dark warm colour IS brown. Three
   rounds were spent trying to make a dark orange strip not look brown, and the
   only exits are to strip the chroma out (reads warm grey), move the hue off
@@ -1517,9 +1535,20 @@ Disturb changes from the quick settings tile while the screen is open.
   matches Google Messages' own switch on this phone. That glyph now carries a
   fifth thing on the master switch - a check while armed, a crescent while
   running - which is the whole reason the state lamp could go.
-  So the fix once proposed here - set `checkedBorderColor` - is WRONG and is
-  recorded as wrong: it would outline both states and destroy the asymmetry
-  currently doing the work, removing a cue while appearing to add one.
+  **The fix once recorded here as WRONG - set `checkedBorderColor` - is what
+  ships now, and the reversal is the more useful note.** The objection was that
+  outlining the checked track destroys the outline/no-outline asymmetry, and
+  that was true and beside the point: the border it protects measured 1.87:1 in
+  BOTH themes, against M3's own 3.51:1 for it, so it was a cue too faint to be
+  read being credited with work it was not doing. Meanwhile the checked TRACK
+  measured 1.26:1 against its card in Dawn and 2.06:1 in Dusk, under the 3:1 a
+  component needs to be identifiable against its background - which is what 1.4.11
+  actually requires, as distinct from the state-to-state exemption quoted below.
+  Both are fixed: `selectBorder` rims the checked track, `veilOutline` lifts the
+  unchecked one to 3.19:1 and 3.17:1. The asymmetry survives regardless - thumb
+  POSITION, thumb SIZE and the thumb GLYPH are three shape cues that owe nothing
+  to a border. The lesson is not "outline it after all", it is that an argument
+  resting on a cue nobody can see should be re-measured before it is quoted.
   WCAG 1.4.11 says the same thing, and quoting it is worth the space because the
   intuition runs the other way: it "does not require that changes in color that
   differentiate between states of an individual component meet the 3:1 contrast
@@ -1534,14 +1563,34 @@ Disturb changes from the quick settings tile while the screen is open.
   being separated mostly by hue - the distinction red-green colourblindness
   collapses - no longer applies. The selected fill sits at 2.61:1 on the page in
   Dusk and 1.37:1 in Dawn.
-  The accent itself is a muted fern green, hue 165, and arrived by elimination
-  over three rounds on the phone rather than by taste: the old sage (hue 130,
-  tone 75) was the thing that glowed; a slate blue fixed that and was then
-  reported as reading almost greyscale in Dusk and too cool in Dawn; a lilac was
-  disliked outright. Hue 165 is a green with a cool lean, which is why chroma 20
-  in Dusk and 16 in Dawn still reads as a colour. Dusk carries more than Dawn
-  because a dark ground swallows chroma - at 14 the theme measured and looked
-  greyscale.
+  **The accent comes off the dial, and specifically off the dial AS DRAWN WHEN
+  BEDTIME IS OFF.** It is `Arc.night`'s hue - the bedtime handle's own colour -
+  in both themes: Dusk `#566479` at tone 42 chroma 18.7, Dawn `#D1D8E5` at tone
+  86. Asked for directly, on the reasoning that a palette which quotes the one
+  ornament on the screen will read as balanced, and it does.
+  Two measurements decided the shape of it and neither was guessable.
+  THE RAMP IS NOT A CONTINUUM. It is two hue families with a grey hole between:
+  cool at hue 255-261 chroma ~24 over t 0.0-0.42, warm at hue 49-50 chroma 34-45
+  over t 0.7-1.0, and at the midpoint chroma collapses to 7.6 and the hue is
+  meaningless. So "pick a value from the gradient" offers two colours, not a
+  spectrum - the same thing the launcher icon's ramp taught, from the other end.
+  AND THE ARC IS DRAWN AT alpha 0.55 WHEN OFF (`BedtimeDial.arcAlpha`), which is
+  the version that was asked for - at full strength it is too intense to wear.
+  Composited over the track that softens it: in Dusk all four stops keep chroma
+  18-25, but in DAWN the cool end washes out to chroma 11.4 and 10.8. So the
+  light theme literally cannot take a faithful cool sample; what ships there is
+  the arc's HUE at a chroma the warm white can carry.
+  The ink is tone 23, not the container role's 29. At chroma 11.4 the fill is
+  near the floor of what reads as a hue, and the label on it was the first thing
+  to suffer - 8.38:1 at tone 23 against 6.76:1 at 29, reported on sight. It
+  still holds chroma 13.3, so it is a blue ink and not a near-black one.
+  What this replaced, kept because the elimination is the record: a muted fern
+  green at hue 165, itself reached over three rounds - the old sage (hue 130
+  tone 75) glowed; a generic slate blue read almost greyscale in Dusk and too
+  cool in Dawn; a lilac was disliked outright. Note the slate rejection did NOT
+  survive: this is a slate, and the difference is that it is the ARC's slate and
+  it now sits directly under an arc of the same hue. A colour that fails alone
+  can work in company.
 - The state lamp had its own `lampOn` / `lampOff` tokens rather than reusing
   `stateOn`, and the reasoning is kept although the mark is gone, because it is
   right about small marks in general: a lamp carries no text, so at 10 dp it
@@ -1551,29 +1600,28 @@ Disturb changes from the quick settings tile while the screen is open.
   needs chroma to be seen at all, and chroma is what makes it obtrusive** -
   there is no setting of that dial that yields a quiet 10 dp state light. The
   way out was not a quieter lamp but no lamp; see the master-switch note above.
-- Dawn deepens while running rather than lifting. "Deeper" is not "brighter".
-  The three grounds are a LADDER - the more the app is doing, the deeper the
-  page - and Dawn was missing a rung. Dusk had it symmetric, running at
-  (-5,-6,-7) from `surface` and off at (+5,+5,+6); Dawn had the running half and
-  a `surfaceOff` IDENTICAL to `surface`, so switching the app off in the light
-  theme changed nothing on screen at all. Dawn's off is `#FAF0E1` now, mirroring
-  Dawn's own running delta, so both themes sit on the same three rungs.
-  It CROSSFADES over a second, and that is not decoration. It used to be painted
-  straight from the state, so dragging the dial across the "now" boundary
-  repainted the whole page and grew the bloom in a single frame, mid-drag - and
-  a state change that takes 0ms does not read as a state change, it reads as a
-  glitch. It was reported as "the background changes, what is that?", which is
-  what a change with no duration always gets asked. The bloom's alpha and the
-  CARDS animate on the same spec - a highlight or a container arriving instantly
-  on top of a colour that took a second is the same fault again, smaller.
-
-  In Dawn the page deepens TOWARDS `raise`, so leaving the cards still would
-  close the gap to nothing - `raise` and `surfaceRunning` are both tone 95.
-  Hence `raiseRunning`, which drops to tone 90 and holds 1.14:1. In Dusk the
-  page deepens AWAY from the cards, so `raiseRunning` is simply `raise` there
-  and the separation improves for free, 1.26:1 to 1.35:1. Everything that draws
-  a container on Home takes the animated value: the bar, both cards, the effect
-  chips and the dial's track.
+- **The page does not move with the state, and that is a reversal.** There were
+  three grounds - a LADDER, the more the app was doing the deeper the page -
+  crossfading over a second, with a radial `bloom` on top while running. All of
+  it is gone, asked for directly, and Dawn now sits permanently on what used to
+  be the OFF rung: tone 99.3, named as the correct one after seeing all three.
+  Three things are worth keeping from how it ended.
+  `raiseRunning` WAS NEVER A DESIGN CHOICE. It existed only because in Dawn the
+  running page deepened TOWARDS the cards and would have swallowed them, so it
+  dropped them to tone 90 to keep 1.14:1. With a still page it has nothing to
+  compensate for, and it left with the thing it was compensating for. Ask of any
+  token whether it states something or only corrects something else.
+  THE CROSSFADE WAS NOT DECORATION and should come back with any moving ground.
+  The instant version repainted the page mid-drag as the dial crossed the "now"
+  boundary, and a state change that takes 0ms reads as a glitch - reported as
+  "the background changes, what is that?".
+  AND THE LADDER WAS SPENDING WHAT IT BOUGHT. Deepening the CARD to separate it
+  from the page was the obvious fix for a flat 1.08:1, and it is wrong here:
+  every container that darkens moves TOWARDS the checked switch track sitting on
+  it, so card-versus-page improves and switch-versus-card gets worse - measured
+  1.26:1 bare, 1.16-1.18:1 for every variant that deepened the card, and 1.26:1
+  kept by lifting the PAGE instead. Reported before it was measured. When two
+  things sit on one surface, moving the surface pays one and charges the other.
 - Bedtime and Wake sit ABOVE the dial and share a top edge. The brief put them
   below it, stepped by 18 dp, reading as a passage. Below the dial they are
   under your hand for the whole drag, so the one thing you cannot see is the
@@ -1821,7 +1869,9 @@ Disturb changes from the quick settings tile while the screen is open.
   `surfaceVariant`, `secondaryContainer`, `tertiaryContainer` and the
   `surfaceContainer` ladder, so a component that reaches for a container gets the
   same colour. One token moves all of them, which is the point.
-  It is 1.26:1 against the page in Dusk and 1.08:1 in Dawn, and the RUNNING
+  It is 1.26:1 against the page in Dusk and 1.12:1 in Dawn - the latter lifted
+  from 1.08:1 by moving the PAGE up rather than the card down, see the ground
+  note. There is no longer a running variant. Formerly the RUNNING
   state is the one to watch rather than the resting one, because that is where
   the screen spends the night: 1.35:1 and 1.14:1 there.
   Those look thin and are not. Google Health's own cards measure 1.10:1 against

@@ -39,7 +39,23 @@
      The asymmetry is the practical note: the LEFT end has 9.0:1 where it needs
      3, so if this ever wants to be lighter again, lighten the LEFT and leave
      the right alone. Push the right end further and the orange horn really does
-     start dissolving into its own background. -->
+     start dissolving into its own background.
+
+     ASKED TO BE LIGHTER AGAIN, AND THE LEFT STOP HAD NOTHING LEFT TO GIVE - it
+     is tone 96.2. So the lift went into a THIRD stop at offset 0.55, tone ~85,
+     which lightens the two thirds of the tile the eye reads as "the colour of
+     the icon" while leaving offset 1.00 exactly where the dawn horn needs it.
+     Moving the right stop was built and compared: tone 50 takes the horn from
+     2.61:1 to 2.19:1, and there is no version of a LIGHT ground under a light
+     horn that works - which is the whole reason the ramp runs diagonally in the
+     first place.
+     One measurement here is worth more than the change. Sampled off the render,
+     the worst warm-artwork-versus-ground pair is 1.00:1 - IN THE SHIPPED ICON
+     AS WELL as in every lighter variant. Orange and blue-grey at equal
+     luminance. So no contrast ratio can referee this artwork at any stop value;
+     it has always been carried by hue, and the 2.61:1 quoted above describes
+     one pair rather than the worst one. Compare these on a launcher, not in a
+     spreadsheet. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp" android:height="108dp"
@@ -50,6 +66,7 @@
                 android:startX="0" android:startY="68"
                 android:endX="108" android:endY="40">
                     <item android:offset="0.00" android:color="#FFF0F4FF" />
+                    <item android:offset="0.55" android:color="#FFCBD5E6" />
                     <item android:offset="1.00" android:color="#FF5A6B89" />
             </gradient>
         </aapt:attr>

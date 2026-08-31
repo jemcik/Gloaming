@@ -35,7 +35,7 @@ def ramp(stops, t):
     return hx(stops[-1][1])
 
 ARC = [(0.00,'#2F4260'), (0.42,'#4E6480'), (0.76,'#B2622D'), (1.00,'#F6A06B')]
-BG  = [(0.00,'#F0F4FF'), (1.00,'#5A6B89')]
+BG  = [(0.00,'#F0F4FF'), (0.55,'#CBD5E6'), (1.00,'#5A6B89')]
 
 yy, xx = np.mgrid[0:N, 0:N]
 X = xx / S; Y = yy / S                      # in dp units

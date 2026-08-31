@@ -931,6 +931,25 @@ confirming on real hardware.
   which a WCAG ratio does not model. The floor exists for small parts whose only
   cue is lightness. It is not licence to go under 3:1 elsewhere, and the numbers
   are in the drawable so the next person can disagree from the same evidence.
+  **Asked to be lighter again, and the left stop had nothing left to give** - it
+  is tone 96.2. So the lift went into a THIRD stop at offset 0.55, tone ~85,
+  which lightens the two thirds of the tile the eye reads as "the colour of the
+  icon" while leaving offset 1.00 exactly where the dawn horn needs it. Moving
+  the right stop was built and compared: tone 50 takes the horn from 2.61:1 to
+  2.19:1, and there is no version of a LIGHT ground under a light horn that
+  works, which is the whole reason the ramp runs diagonally.
+  **And that 2.61 describes one pair, not the worst one.** Sampled off the
+  render rather than reasoned about, the worst warm-artwork-versus-ground pair
+  in this icon is 1.00:1 - orange and blue-grey at identical luminance - and it
+  is 1.00:1 in the SHIPPED icon too, not something the lighter variants
+  introduced. So no contrast ratio can referee this artwork at any stop value.
+  The hue argument above was right and was understated: hue is not helping
+  luminance here, in places it is doing the whole job. Compare icon variants on
+  a launcher, never in a spreadsheet.
+  Note the near-miss in measuring that: the 1.00:1 result looked so wrong that
+  the instrument was accused before the numbers were - `contrast()` was tested
+  against black-on-white and came back 21.0, correctly. Check the tool, but
+  believe it when it passes.
 
 - **Row icons carry one colour each, and getting there found three perceptual
   traps in a row.** `ui/IconTint.kt` holds fourteen pairs, one per row, spaced

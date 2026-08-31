@@ -899,6 +899,34 @@ confirming on real hardware.
   cue is lightness. It is not licence to go under 3:1 elsewhere, and the numbers
   are in the drawable so the next person can disagree from the same evidence.
 
+- **Row icons carry one colour each, and getting there found three perceptual
+  traps in a row.** `ui/IconTint.kt` holds fourteen pairs, one per row, spaced
+  by hue within the SECTION each row appears in - which is where they have to be
+  told apart. There is no standard to copy: Apple does not document its own
+  Settings colours and Material says nothing, so they are the associations
+  people already carry (a phone is green, a calendar orange, alarms red).
+  Tone and chroma are ONE pair for all of them - Dawn 48/58, Dusk 78/46 - so
+  they differ by hue and agree on weight, which is what stops fourteen colours
+  reading as a rainbow. The three exceptions are corrections, not breaks:
+  TONE 30 SHOWS NO HUE. The first version put them at Material's container tone
+  and every one read as the same dark blob. Reported on sight. A hue simply does
+  not read that deep, whatever chroma it carries, and no amount of chroma fixes
+  it - that is what moved the pair to 48.
+  RED NEEDS MORE CHROMA THAN THE REST. Dnd and Alarm carry 92 where everything
+  else has 58, because red is where sRGB has least room: M3's own error is
+  chroma 76, Material Red 700 is 83, iOS systemRed is 95. At 58 red reads as
+  brick. Matching PERCEIVED intensity means a bigger number, the same argument
+  this file already makes for the app's three different greens.
+  YELLOW HAS THE MIRROR PROBLEM AND CANNOT WIN. Amber only reads as amber high
+  up: measured at hue 80 the crossover is tone 58, which is exactly 3.00:1 on a
+  card - below it is olive, above it is under the 3:1 a non-text graphic holds.
+  There is no third option in that hue, so Reminders left yellow entirely.
+  And note Dusk could not follow the reds: at tone 78, hue 25 clamps at chroma
+  33.6, the gamut ceiling. All three red candidates produced the identical hex
+  there. Every one of these was found by building it and looking, never by
+  reasoning from the numbers - the numbers said tone 30 was fine (8:1 contrast)
+  and it was the worst of them.
+
 - **Do not hand-draw icons.** Three rounds went into a phone handset built
   from arcs and capsules; it read as the letter C, then a horseshoe, then a
   limp hook. Icon geometry is craft and it is already done: the path data lives

@@ -56,27 +56,27 @@ private enum class Who { Call, Msg, Conv, Repeat, Bell, Cal, Media, Alarm }
  */
 @Composable
 private fun WhoIcon(kind: Who) {
-    Icon(
-        painter = painterResource(
-            when (kind) {
-                Who.Call -> R.drawable.ic_call
-                Who.Msg -> R.drawable.ic_message
-                Who.Conv -> R.drawable.ic_forum
-                Who.Repeat -> R.drawable.ic_repeat
-                Who.Bell -> R.drawable.ic_reminder
-                Who.Cal -> R.drawable.ic_event
-                Who.Media -> R.drawable.ic_media
-                Who.Alarm -> R.drawable.ic_alarm
-            }
-        ),
-        contentDescription = null,
-        // The row's leadingIconColor, and M3's 24dp for a leading icon. These
-        // used to be 22dp glyphs inside 44dp circles filled with selectFill -
-        // which is the SELECTION token, filled identically whether the row was
-        // allowed or blocked, so the green said nothing. Two lists on two
-        // screens drew the same idea two different ways.
-        tint = LocalContentColor.current,
-        modifier = Modifier.size(24.dp)
+    RowAvatar(
+        id = when (kind) {
+            Who.Call -> R.drawable.ic_call
+            Who.Msg -> R.drawable.ic_message
+            Who.Conv -> R.drawable.ic_forum
+            Who.Repeat -> R.drawable.ic_repeat
+            Who.Bell -> R.drawable.ic_reminder
+            Who.Cal -> R.drawable.ic_event
+            Who.Media -> R.drawable.ic_media
+            Who.Alarm -> R.drawable.ic_alarm
+        },
+        tint = when (kind) {
+            Who.Call -> IconTint.Call
+            Who.Msg -> IconTint.Msg
+            Who.Conv -> IconTint.Conv
+            Who.Repeat -> IconTint.Repeat
+            Who.Bell -> IconTint.Bell
+            Who.Cal -> IconTint.Cal
+            Who.Media -> IconTint.Media
+            Who.Alarm -> IconTint.Alarm
+        }
     )
 }
 

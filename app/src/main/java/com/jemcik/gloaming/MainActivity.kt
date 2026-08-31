@@ -78,6 +78,8 @@ import com.jemcik.gloaming.core.*
 import com.jemcik.gloaming.ui.BedtimeDial
 import com.jemcik.gloaming.ui.GloamingTheme
 import com.jemcik.gloaming.ui.GroupedList
+import com.jemcik.gloaming.ui.IconTint
+import com.jemcik.gloaming.ui.RowAvatar
 import com.jemcik.gloaming.ui.InterruptionsScreen
 import com.jemcik.gloaming.ui.Arc
 import com.jemcik.gloaming.ui.CARD_PAD
@@ -968,7 +970,7 @@ fun Home(
                         // these two started their text 40dp from the screen edge
                         // where the card directly below started at 80 - a ragged
                         // left edge between two cards on one screen.
-                        leading = { RowIcon(R.drawable.ic_dnd) },
+                        leading = { RowIcon(R.drawable.ic_dnd, IconTint.Dnd) },
                         onCheckedChange = { fxDnd = it; haptics.toggle(it); commit() },
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -984,7 +986,7 @@ fun Home(
                         headline = stringResource(R.string.what_is_allowed),
                         supporting =
                             if (fxDnd) gets else stringResource(R.string.dnd_nothing_silenced),
-                        leading = { RowIcon(R.drawable.ic_allowlist) },
+                        leading = { RowIcon(R.drawable.ic_allowlist, IconTint.Allowed) },
                         onClick = { haptics.open(); onOpenInterruptions() },
                         modifier = Modifier
                             .alpha(if (fxDnd) 1f else 0.45f)
@@ -1488,21 +1490,17 @@ private fun EffectRow(
     )
 }
 
-/** A list row's leading icon: LocalContentColor, and M3's 24dp. */
+/** A list row's leading icon, in a tonal container. */
 @Composable
-private fun RowIcon(@DrawableRes id: Int) {
-    Icon(
-        painterResource(id),
-        contentDescription = null,
-        tint = LocalContentColor.current,
-        modifier = Modifier.size(24.dp)
+private fun RowIcon(@DrawableRes id: Int, tint: IconTint) {
+    RowAvatar(id, tint
     )
 }
 
 @Composable
 private fun FxIcon(icon: Fx) {
-    Icon(
-        painter = painterResource(
+    RowAvatar(
+        id = (
             when (icon) {
                 Fx.Grayscale -> R.drawable.ic_grayscale
                 Fx.Dim -> R.drawable.ic_dim
@@ -1510,11 +1508,12 @@ private fun FxIcon(icon: Fx) {
                 Fx.Ambient -> R.drawable.ic_ambient
             }
         ),
-        contentDescription = null,
-        // LocalContentColor, so the row's leadingIconColor decides it, and 24dp,
-        // which is M3's size for a list item's leading icon. It was 16.
-        tint = LocalContentColor.current,
-        modifier = Modifier.size(24.dp)
+        tint = when (icon) {
+            Fx.Grayscale -> IconTint.Grayscale
+            Fx.Dim -> IconTint.Dim
+            Fx.Dark -> IconTint.Dark
+            Fx.Ambient -> IconTint.Ambient
+        }
     )
 }
 

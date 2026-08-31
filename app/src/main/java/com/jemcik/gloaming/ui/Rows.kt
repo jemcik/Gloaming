@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.Icon
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
@@ -24,10 +26,11 @@ import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.semantics.Role
 import com.jemcik.gloaming.R
 
 /**
@@ -232,4 +235,27 @@ fun RadioRow(
             color = gloam.onSurface
         )
     }
+}
+
+
+/**
+ * A leading icon, tinted per row.
+ *
+ * A TONAL CONTAINER was tried first - M3's list samples use one, 40dp with a
+ * 24dp icon - and `RowFitTest` rejected it: the extra width wrapped a Russian
+ * subtitle onto a third line, which top-aligns a ListItem's switch. 36dp and
+ * 32dp failed the same way, so the container was never worth what it cost.
+ * The colour was the point anyway; the circle behind it was not.
+ *
+ * 24dp, M3's size for a list item's leading icon, and the tint is the ink of
+ * the row's [IconTint] rather than LocalContentColor.
+ */
+@Composable
+fun RowAvatar(id: Int, tint: IconTint) {
+    Icon(
+        painterResource(id),
+        contentDescription = null,
+        tint = tint.ink,
+        modifier = Modifier.size(24.dp)
+    )
 }

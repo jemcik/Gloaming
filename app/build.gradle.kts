@@ -81,8 +81,8 @@ android {
 
 dependencies {
     testImplementation("junit:junit:4.13.2")
-    testImplementation("org.robolectric:robolectric:4.14.1")
-    testImplementation("androidx.test:core:1.6.1")
+    testImplementation("org.robolectric:robolectric:4.16.1")
+    testImplementation("androidx.test:core:1.7.0")
     testImplementation("androidx.compose.ui:ui-test-junit4")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 
@@ -90,20 +90,31 @@ dependencies {
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.ui:ui")
     debugImplementation("androidx.compose.ui:ui-tooling")
-    implementation("androidx.activity:activity-compose:1.11.0")
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.9.4")
-    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.9.4")
-    implementation("androidx.core:core-ktx:1.17.0")
+    implementation("androidx.activity:activity-compose:1.13.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.11.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.11.0")
+    implementation("androidx.core:core-ktx:1.19.0")
 }
 
 kotlin {
     compilerOptions { jvmTarget.set(JvmTarget.JVM_17) }
 }
 
-// Robolectric instruments bytecode, and its ASM cannot read Java 25 class files
-// ("Unsupported class file major version 69"). Gradle auto-provisions a 25 JDK
-// on this machine, so the unit tests are pinned to 21, which it understands.
-// Only the TEST jvm: the app still compiles against the toolchain above.
+// The unit tests run on 21. Only the TEST jvm: the app still compiles against
+// the toolchain above.
+//
+// The original reason was that Robolectric's ASM could not read Java 25 class
+// files ("Unsupported class file major version 69") while Gradle auto-
+// provisioned a 25 JDK here. THAT REASON IS PROBABLY GONE: Robolectric 4.16.1
+// declares ASM 9.8, and 9.8 is the release that added Java 25 support.
+//
+// It stays because nothing here can prove it. This machine now has only a 21
+// JDK installed, so removing the pin "passes" for the wrong reason - the tests
+// run on 21 either way - and both CI workflows pin java-version: '21'
+// explicitly, so CI would never exercise the difference. Deleting it on that
+// evidence would be deleting a guard because the thing it guards against
+// cannot currently happen. Anyone with a 25 JDK can drop these five lines and
+// find out.
 val testJvm = extensions.getByType<JavaToolchainService>().launcherFor {
     languageVersion.set(JavaLanguageVersion.of(21))
 }

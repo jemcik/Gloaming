@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.Icon
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
@@ -24,10 +26,11 @@ import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.semantics.Role
 import com.jemcik.gloaming.R
 
 /**
@@ -83,15 +86,19 @@ private fun Supporting(text: String) =
 @Composable
 fun SwitchRow(
     headline: String,
-    supporting: String? = null,
     checked: Boolean,
+    // `modifier` is the FIRST optional parameter, which is Compose's own API
+    // guideline and what lint's ModifierParameter checks. Every call site here
+    // passes by name, so the order is convention rather than ergonomics - but
+    // the convention is the point when the next reader is an Android developer.
+    modifier: Modifier = Modifier,
+    supporting: String? = null,
     // The @Composable slot sits AHEAD of the action lambda, so a trailing
     // lambda at the call site binds to the action and not to the slot. Getting
     // that backwards once cost an evening: Compose ran the click handler as
     // content on every composition, which opened a sheet that swallowed every
     // touch on the screen beneath it.
     leading: (@Composable () -> Unit)? = null,
-    modifier: Modifier = Modifier,
     enabled: Boolean = true,
     onCheckedChange: (Boolean) -> Unit
 ) {
@@ -119,9 +126,9 @@ fun SwitchRow(
 @Composable
 fun LinkRow(
     headline: String,
+    modifier: Modifier = Modifier,
     supporting: String? = null,
     leading: (@Composable () -> Unit)? = null,
-    modifier: Modifier = Modifier,
     enabled: Boolean = true,
     onClick: () -> Unit
 ) {
@@ -145,9 +152,9 @@ fun LinkRow(
 @Composable
 fun StaticRow(
     headline: String,
+    modifier: Modifier = Modifier,
     supporting: String? = null,
-    leading: (@Composable () -> Unit)? = null,
-    modifier: Modifier = Modifier
+    leading: (@Composable () -> Unit)? = null
 ) {
     ListItem(
         headlineContent = { Headline(headline) },
@@ -167,9 +174,9 @@ fun StaticRow(
 @Composable
 fun ActionRow(
     headline: String,
+    modifier: Modifier = Modifier,
     supporting: String? = null,
-    trailing: @Composable () -> Unit,
-    modifier: Modifier = Modifier
+    trailing: @Composable () -> Unit
 ) {
     ListItem(
         headlineContent = { Headline(headline) },
@@ -232,4 +239,27 @@ fun RadioRow(
             color = gloam.onSurface
         )
     }
+}
+
+
+/**
+ * A leading icon, tinted per row.
+ *
+ * A TONAL CONTAINER was tried first - M3's list samples use one, 40dp with a
+ * 24dp icon - and `RowFitTest` rejected it: the extra width wrapped a Russian
+ * subtitle onto a third line, which top-aligns a ListItem's switch. 36dp and
+ * 32dp failed the same way, so the container was never worth what it cost.
+ * The colour was the point anyway; the circle behind it was not.
+ *
+ * 24dp, M3's size for a list item's leading icon, and the tint is the ink of
+ * the row's [IconTint] rather than LocalContentColor.
+ */
+@Composable
+fun RowAvatar(id: Int, tint: IconTint) {
+    Icon(
+        painterResource(id),
+        contentDescription = null,
+        tint = tint.ink,
+        modifier = Modifier.size(24.dp)
+    )
 }

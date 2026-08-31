@@ -20,6 +20,20 @@
     <string name="window_span_same_day">З %1$s до %2$s %3$s</string>
     <string name="day_today">сьогодні</string>
     <string name="day_tomorrow">завтра</string>
+    <string name="day_span_monday">понеділка</string>
+    <string name="day_span_tuesday">вівторка</string>
+    <string name="day_span_wednesday">середи</string>
+    <string name="day_span_thursday">четверга</string>
+    <string name="day_span_friday">пʼятниці</string>
+    <string name="day_span_saturday">суботи</string>
+    <string name="day_span_sunday">неділі</string>
+    <string name="day_note_monday">у понеділок</string>
+    <string name="day_note_tuesday">у вівторок</string>
+    <string name="day_note_wednesday">у середу</string>
+    <string name="day_note_thursday">у четвер</string>
+    <string name="day_note_friday">у пʼятницю</string>
+    <string name="day_note_saturday">у суботу</string>
+    <string name="day_note_sunday">у неділю</string>
 
     <!-- ============ Home: permissions ============ -->
     <plurals name="permissions_to_go">
@@ -66,9 +80,9 @@
     <string name="dnd_nothing_silenced">Звук не вимикається</string>
 
     <!-- ============ Home: how the screen looks ============ -->
-    <string name="note_off">Режим сну вимкнено, тому ці налаштування не діють.</string>
-    <string name="note_until">Ці налаштування не діятимуть до %1$s %2$s.</string>
-    <string name="note_unscheduled">Нічого не заплановано, тому ці налаштування не діють.</string>
+    <string name="note_off">Режим сну вимкнено. Ці налаштування запрацюють, коли ви його ввімкнете.</string>
+    <string name="note_until">Ці налаштування запрацюють о %1$s %2$s.</string>
+    <string name="note_unscheduled">Ночі не заплановано, тому ці налаштування не спрацюють.</string>
     <string name="section_how_the_screen_looks">вигляд екрана</string>
     <string name="section_how_the_screen_will_look">як виглядатиме екран</string>
     <!-- BUDGET: chip labels, two per row at 14sp. -->
@@ -82,11 +96,6 @@
     <string name="fx_ambient_sub">Екран не світиться</string>
 
     <!-- ============ Home: end-bedtime dialog ============ -->
-    <string name="end_bedtime_title">Завершити режим сну зараз?</string>
-    <string name="end_bedtime_body_once">Режим «Не турбувати» та ефекти екрана вимкнуться негайно. Більше нічого не заплановано.</string>
-    <string name="end_bedtime_body">Режим «Не турбувати» та ефекти екрана вимкнуться негайно. Наступного разу режим увімкнеться за розкладом.</string>
-    <string name="end_now">Завершити</string>
-    <string name="keep_going">Продовжити</string>
     <string name="action_set">Установити</string>
     <string name="action_cancel">Скасувати</string>
 
@@ -110,11 +119,18 @@
     <string name="state_allowed">Дозволено</string>
     <string name="state_blocked">Заблоковано</string>
 
-    <string name="filter_all">Режим «Не турбувати» вимкнено. Усе дозволено.</string>
-    <string name="filter_priority">Режим «Не турбувати» увімкнено. Усе, що ви не дозволили, блокується.</string>
+    <string name="filter_pill_on">Застосовано</string>
+    <string name="filter_pill_off">Вимкнено</string>
+    <string name="filter_pill_ignored">Не застосовано</string>
+    <string name="filter_pill_alarms">Лише будильники</string>
+    <string name="filter_pill_none">Повна тиша</string>
+    <string name="filter_pill_unknown">Невідомо</string>
+    <string name="filter_all">Дозволено все.</string>
+    <string name="filter_ignored">Ви ввімкнули режим «Не турбувати», але телефон його не застосовує.</string>
+    <string name="filter_priority">Усе, що ви не дозволили, блокується.</string>
     <string name="filter_alarms">Дозволені лише будильники.</string>
-    <string name="filter_none">Увімкнено повну тишу — блокується навіть те, що ви дозволили.</string>
-    <string name="filter_unknown">Ваш телефон не повідомив, що саме діє.</string>
+    <string name="filter_none">Блокується навіть те, що ви дозволили.</string>
+    <string name="filter_unknown">Телефон не повідомив, що діє.</string>
 
     <string name="sheet_who_can_call">Хто може телефонувати</string>
     <string name="sheet_who_can_message">Хто може писати</string>

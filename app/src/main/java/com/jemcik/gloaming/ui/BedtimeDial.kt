@@ -99,14 +99,14 @@ fun BedtimeDial(
     enabled: Boolean,
     centreValue: String,
     centreLabel: String,
+    modifier: Modifier = Modifier,
     centreIndex: Int = 0,
     centreCount: Int = 1,
     /** Direction to move through the centre's readings: +1 next, -1 previous. */
     onCentreCycle: ((Int) -> Unit)? = null,
     onStartChange: (LocalTime) -> Unit,
     onEndChange: (LocalTime) -> Unit,
-    onDragFinished: () -> Unit,
-    modifier: Modifier = Modifier
+    onDragFinished: () -> Unit
 ) {
     val g = gloam
     val haptics = rememberHaptics()
@@ -389,7 +389,9 @@ private fun DrawScope.drawHandle(
 ) {
     drawCircle(ringColor, radius = r + ring, center = at)
     drawCircle(fill, radius = r, center = at)
-    val icon = if (moon) Color(0xFFEEF1F5) else Color(0xFF402310)
+    // The sun's ink is Arc.onDawn, shared with the notice strip so the two
+    // cannot drift; the moon's stays local, nothing else draws it.
+    val icon = if (moon) Color(0xFFEEF1F5) else Arc.onDawn
     if (moon) {
         drawCircle(icon, radius = r * 0.50f, center = at)
         drawCircle(fill, radius = r * 0.44f, center = Offset(at.x + r * 0.26f, at.y - r * 0.20f))

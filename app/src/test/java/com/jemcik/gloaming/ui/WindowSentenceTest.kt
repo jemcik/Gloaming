@@ -7,10 +7,10 @@ import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.core.app.ApplicationProvider
-import com.jemcik.gloaming.Home
 import com.jemcik.gloaming.R
 import com.jemcik.gloaming.core.Prefs
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -18,9 +18,12 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.GraphicsMode
 import java.time.DayOfWeek
 import java.time.LocalTime
+import java.time.format.TextStyle
+import java.util.Locale
 
 /**
  * The sentence under the dial, in every branch it has.
@@ -134,5 +137,54 @@ class WindowSentenceTest {
         val s = sentence(true, LocalTime.of(22, 0), LocalTime.of(7, 0), setOf(far))
         assertFalse(s, s.contains(today))
         assertFalse(s, s.contains(tomorrow))
+    }
+
+    @Test
+    fun `each weekday set is declined where the language declines it`() {
+        // java.time returns the NOMINATIVE in every TextStyle - both FULL and
+        // FULL_STANDALONE give "среда" - so the window sentence shipped as
+        // "С 22:30 среда до 8:30 четверг", which is not Russian.
+        //
+        // There are TWO sets because the two sentences need different grammar:
+        // the span reads the day as a possessive ("from Wednesday's 22:30") and
+        // the note as a point in time with its own preposition ("в среду").
+        // Only English is indifferent, which is what makes it the control here.
+        //
+        // Asserted as PROPERTIES, never against the wording: English must MATCH
+        // java.time, Russian and Ukrainian must differ from it, and their two
+        // sets must differ from EACH OTHER - which is what catches one being
+        // pasted over the other. A test on the literal strings would only prove
+        // the translation equals itself and would block any rephrasing.
+        val span = listOf(
+            R.string.day_span_monday, R.string.day_span_tuesday,
+            R.string.day_span_wednesday, R.string.day_span_thursday,
+            R.string.day_span_friday, R.string.day_span_saturday,
+            R.string.day_span_sunday
+        )
+        val note = listOf(
+            R.string.day_note_monday, R.string.day_note_tuesday,
+            R.string.day_note_wednesday, R.string.day_note_thursday,
+            R.string.day_note_friday, R.string.day_note_saturday,
+            R.string.day_note_sunday
+        )
+        for ((tag, declines) in listOf("en" to false, "ru" to true, "uk" to true)) {
+            RuntimeEnvironment.setQualifiers("+$tag")
+            val ctx = ApplicationProvider.getApplicationContext<Context>()
+            val loc = Locale.forLanguageTag(tag)
+            DayOfWeek.entries.forEach { day ->
+                val i = day.ordinal
+                val s = ctx.getString(span[i])
+                val n = ctx.getString(note[i])
+                val nominative = day.getDisplayName(TextStyle.FULL_STANDALONE, loc)
+                if (declines) {
+                    assertNotEquals("$tag $day span is still the nominative", nominative, s)
+                    assertNotEquals("$tag $day note is still the nominative", nominative, n)
+                    assertNotEquals("$tag $day span and note are the same form", s, n)
+                } else {
+                    assertEquals("$tag $day span should match java.time", nominative, s)
+                    assertEquals("$tag $day note should match java.time", nominative, n)
+                }
+            }
+        }
     }
 }

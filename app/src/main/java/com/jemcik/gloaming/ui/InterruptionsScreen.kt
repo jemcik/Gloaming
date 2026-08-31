@@ -4,24 +4,17 @@ import android.content.Intent
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
-import androidx.compose.foundation.selection.toggleable
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -56,27 +49,27 @@ private enum class Who { Call, Msg, Conv, Repeat, Bell, Cal, Media, Alarm }
  */
 @Composable
 private fun WhoIcon(kind: Who) {
-    Icon(
-        painter = painterResource(
-            when (kind) {
-                Who.Call -> R.drawable.ic_call
-                Who.Msg -> R.drawable.ic_message
-                Who.Conv -> R.drawable.ic_forum
-                Who.Repeat -> R.drawable.ic_repeat
-                Who.Bell -> R.drawable.ic_reminder
-                Who.Cal -> R.drawable.ic_event
-                Who.Media -> R.drawable.ic_media
-                Who.Alarm -> R.drawable.ic_alarm
-            }
-        ),
-        contentDescription = null,
-        // The row's leadingIconColor, and M3's 24dp for a leading icon. These
-        // used to be 22dp glyphs inside 44dp circles filled with selectFill -
-        // which is the SELECTION token, filled identically whether the row was
-        // allowed or blocked, so the green said nothing. Two lists on two
-        // screens drew the same idea two different ways.
-        tint = LocalContentColor.current,
-        modifier = Modifier.size(24.dp)
+    RowAvatar(
+        id = when (kind) {
+            Who.Call -> R.drawable.ic_call
+            Who.Msg -> R.drawable.ic_message
+            Who.Conv -> R.drawable.ic_forum
+            Who.Repeat -> R.drawable.ic_repeat
+            Who.Bell -> R.drawable.ic_reminder
+            Who.Cal -> R.drawable.ic_event
+            Who.Media -> R.drawable.ic_media
+            Who.Alarm -> R.drawable.ic_alarm
+        },
+        tint = when (kind) {
+            Who.Call -> IconTint.Call
+            Who.Msg -> IconTint.Msg
+            Who.Conv -> IconTint.Conv
+            Who.Repeat -> IconTint.Repeat
+            Who.Bell -> IconTint.Bell
+            Who.Cal -> IconTint.Cal
+            Who.Media -> IconTint.Media
+            Who.Alarm -> IconTint.Alarm
+        }
     )
 }
 
@@ -137,7 +130,7 @@ fun InterruptionsScreen(onBack: () -> Unit, onChanged: () -> Unit) {
     }
 
     val wake: LocalTime = prefs.endTime
-    val res = ctx.resources
+    val res = LocalResources.current
     val allowed = Interruptions.allowed(
         res, calls, messages, conversations, repeatCallers, reminders, events, media
     )
@@ -146,39 +139,7 @@ fun InterruptionsScreen(onBack: () -> Unit, onChanged: () -> Unit) {
     // scrolling column, which meant the only visible way out left the screen as
     // soon as you scrolled - and this screen is nine rows long. The title moves
     // up with it, which is where M3 puts a detail screen's title anyway.
-    //
-    // No scrollBehavior on purpose. The bar is one constant colour, for the same
-    // reason Home's is: M3 defaults to transparent at rest and `raise` once
-    // anything scrolls under, which is a step change that reads as a blink. A
-    // scroll behaviour here would have nothing left to drive.
-    Scaffold(
-        containerColor = g.surface,
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        stringResource(R.string.what_is_allowed),
-                        style = MaterialTheme.typography.titleLarge, color = g.onSurface
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            painterResource(R.drawable.ic_back),
-                            contentDescription = stringResource(R.string.action_back),
-                            tint = g.onSurface
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = g.raise,
-                    scrolledContainerColor = g.raise,
-                    titleContentColor = g.onSurface,
-                    navigationIconContentColor = g.onSurface
-                )
-            )
-        }
-    ) { inner ->
+    DetailScaffold(stringResource(R.string.what_is_allowed), onBack) { inner ->
     Column(
         Modifier
             .fillMaxSize()
@@ -200,57 +161,67 @@ fun InterruptionsScreen(onBack: () -> Unit, onChanged: () -> Unit) {
         )
 
         Section(stringResource(R.string.section_people)) {
-        AllowCard {
-            AllowRow(
-                Who.Call, stringResource(R.string.row_calls),
-                Interruptions.peopleLabel(res, calls)
-            ) { haptics.open(); editing = "calls" }
-            RowDivider()
-            AllowRow(
-                Who.Msg, stringResource(R.string.row_messages),
-                Interruptions.peopleLabel(res, messages)
-            ) { haptics.open(); editing = "messages" }
-            RowDivider()
-            AllowRow(
-                Who.Conv, stringResource(R.string.row_conversations),
-                Interruptions.convLabel(res, conversations)
-            ) { haptics.open(); editing = "conv" }
-            RowDivider()
-            AllowRow(
-                Who.Repeat, stringResource(R.string.row_repeat_callers),
-                stringResource(
-                    if (repeatCallers) R.string.row_repeat_callers_on else R.string.state_blocked
-                ),
-                checked = repeatCallers,
-                onCheckedChange = { haptics.toggle(it); repeatCallers = it; save() }
-            )
-        }
+        GroupedList(gloam.raise, listOf(
+            {
+                AllowRow(
+                    Who.Call, stringResource(R.string.row_calls),
+                    Interruptions.peopleLabel(res, calls)
+                ) { haptics.open(); editing = "calls" }
+            },
+            {
+                AllowRow(
+                    Who.Msg, stringResource(R.string.row_messages),
+                    Interruptions.peopleLabel(res, messages)
+                ) { haptics.open(); editing = "messages" }
+            },
+            {
+                AllowRow(
+                    Who.Conv, stringResource(R.string.row_conversations),
+                    Interruptions.convLabel(res, conversations)
+                ) { haptics.open(); editing = "conv" }
+            },
+            {
+                AllowRow(
+                    Who.Repeat, stringResource(R.string.row_repeat_callers),
+                    stringResource(
+                        if (repeatCallers) R.string.row_repeat_callers_on
+                        else R.string.state_blocked
+                    ),
+                    checked = repeatCallers,
+                    onCheckedChange = { haptics.toggle(it); repeatCallers = it; save() }
+                )
+            }
+        ))
 
         }
 
         Section(stringResource(R.string.section_everything_else)) {
-        AllowCard {
-            AllowRow(
-                Who.Bell, stringResource(R.string.row_reminders),
-                stringResource(if (reminders) R.string.state_allowed else R.string.state_blocked),
-                checked = reminders,
-                onCheckedChange = { haptics.toggle(it); reminders = it; save() }
-            )
-            RowDivider()
-            AllowRow(
-                Who.Cal, stringResource(R.string.row_events),
-                stringResource(if (events) R.string.state_allowed else R.string.state_blocked),
-                checked = events,
-                onCheckedChange = { haptics.toggle(it); events = it; save() }
-            )
-            RowDivider()
-            AllowRow(
-                Who.Media, stringResource(R.string.row_media),
-                stringResource(if (media) R.string.row_media_on else R.string.state_blocked),
-                checked = media,
-                onCheckedChange = { haptics.toggle(it); media = it; save() }
-            )
-            RowDivider()
+        GroupedList(gloam.raise, listOf(
+            {
+                AllowRow(
+                    Who.Bell, stringResource(R.string.row_reminders),
+                    stringResource(if (reminders) R.string.state_allowed else R.string.state_blocked),
+                    checked = reminders,
+                    onCheckedChange = { haptics.toggle(it); reminders = it; save() }
+                )
+            },
+            {
+                AllowRow(
+                    Who.Cal, stringResource(R.string.row_events),
+                    stringResource(if (events) R.string.state_allowed else R.string.state_blocked),
+                    checked = events,
+                    onCheckedChange = { haptics.toggle(it); events = it; save() }
+                )
+            },
+            {
+                AllowRow(
+                    Who.Media, stringResource(R.string.row_media),
+                    stringResource(if (media) R.string.row_media_on else R.string.state_blocked),
+                    checked = media,
+                    onCheckedChange = { haptics.toggle(it); media = it; save() }
+                )
+            },
+            {
             // Android will silence alarms if asked. We never ask: an app that
             // can mute your morning alarm is a footgun, and the old copy blamed
             // the platform for a decision that was ours.
@@ -260,7 +231,8 @@ fun InterruptionsScreen(onBack: () -> Unit, onChanged: () -> Unit) {
                 Who.Alarm, stringResource(R.string.row_alarms),
                 stringResource(R.string.row_alarms_why)
             )
-        }
+            }
+        ))
         }
     }
     }
@@ -339,29 +311,6 @@ private fun PeopleSheet(title: String, selected: Int, onPick: (Int) -> Unit) {
         onPick = onPick,
         onDismiss = { onPick(selected) }
     )
-}
-
-/**
- * A card holding a group of rows, divided - the same shape as "What can wake
- * you" on Home. Each row used to be its own little card, which made the screen a
- * stack of eight rather than two groups, and said nothing about which rows
- * belong together.
- */
-@Composable
-private fun AllowCard(content: @Composable ColumnScope.() -> Unit) {
-    Surface(
-        color = gloam.raise,
-        shape = RoundedCornerShape(CORNER),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(content = content)
-    }
-}
-
-/** `line`, not `veil`: veil at 1dp on raise measures 1.02:1, which is no edge. */
-@Composable
-private fun RowDivider() {
-    HorizontalDivider(Modifier.padding(horizontal = CARD_PAD), color = gloam.line)
 }
 
 /**

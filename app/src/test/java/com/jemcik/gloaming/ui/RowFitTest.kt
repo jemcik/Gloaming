@@ -9,7 +9,6 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.unit.dp
 import androidx.test.core.app.ApplicationProvider
-import com.jemcik.gloaming.Home
 import com.jemcik.gloaming.R
 import com.jemcik.gloaming.core.Prefs
 import org.junit.Assert.assertTrue

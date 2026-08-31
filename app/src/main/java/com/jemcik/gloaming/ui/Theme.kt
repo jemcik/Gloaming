@@ -1,5 +1,6 @@
 package com.jemcik.gloaming.ui
 
+import androidx.annotation.DrawableRes
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.SwitchColors
 import androidx.compose.material3.SwitchDefaults
@@ -20,6 +21,8 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -52,138 +55,261 @@ val Figtree = FontFamily(figtree(400), figtree(600), figtree(700))
 
 /* ── Colour ────────────────────────────────────────────────────────────────
    Two grounds. "Dusk" is the default and the one the app is designed for;
-   "Dawn" is the light theme, inherited from Organic.                        */
+   "Dawn" is the light theme. Both were rebuilt 31 Aug 2026 - see the note
+   above the palettes for what moved and why.                                */
 
 data class GloamColors(
-    val surface: Color,          // armed and waiting
-    /* Three grounds, and they are a LADDER: the more the app is doing, the
-       deeper the page. Dusk had it symmetric - running is (-5,-6,-7) from
-       surface and off is (+5,+5,+6) - while Dawn had only the running half and
-       an `off` identical to `surface`, so switching the app off in the light
-       theme changed nothing at all. Dawn's off now mirrors Dawn's own running
-       delta, which puts both themes on the same three rungs. */
-    val surfaceRunning: Color,   // while running - deeper
-    val surfaceOff: Color,       // switched off - lifted
-    val bloom: Color,            // radial highlight, running only
+    /* ONE page colour, in every state.
+       There used to be three, a LADDER - the more the app was doing, the deeper
+       the page - crossfading over a second, plus a radial `bloom` while
+       running. It is gone, asked for directly, and the reason is worth keeping:
+       the page is the one surface a person is not looking at, so moving it says
+       nothing they were trying to read and it drags every container on top of
+       it along. Dawn now sits at what used to be the OFF rung, tone 99.3,
+       which is the value that was picked by looking at all three.
+       What went with it: `surfaceRunning`, `surfaceOff`, `bloom`,
+       `raiseRunning`, the two colour animations and the float that faded the
+       bloom. `raiseRunning` existed ONLY to compensate - in Dawn the running
+       page deepened TOWARDS the cards and would have swallowed them - so with
+       a still page it has nothing to do.
+       Cards keep their own separation from the page: 1.26:1 in Dusk, and in
+       Dawn 1.12:1, which is where Google Health's own cards measure on this
+       phone. */
+    val surface: Color,
     val raise: Color,            // cards, dial track
-    /* Cards while bedtime runs. In Dawn the page deepens TOWARDS the cards, so
-       leaving them still would have closed the gap to 1.03:1 and dissolved
-       them - the exact failure this palette was rebuilt to fix. They deepen
-       with it instead, which keeps 1.217:1, slightly BETTER than the 1.153 they
-       had. In Dusk the page deepens AWAY from them, so there the same token is
-       simply `raise` and the separation improves for free: 1.469 to 1.500. */
-    val raiseRunning: Color,
-    /* The strip at the foot of a card whose switches are not in effect. It is a
-       RUNG, not an alert: `cta` at 24% over `raise`, which puts it 1.23:1 from
-       the card in Dawn and 1.40:1 in Dusk - the SAME separation `raise` itself
-       has from the page (1.22 / 1.40). So it reads as page -> card -> notice,
-       one more step on a ladder that already exists, rather than as an error.
-       Colouring the TEXT instead was measured first and fails: `cta` as ink is
-       2.49:1 on the card in Dawn and `lampOff` is 3.80:1, both under the 4.5:1
-       body minimum and under even the 3:1 large-text exemption. The cream
-       cannot carry an accent hue as text, which is the WAKE UP finding again.
-       Its ink is plain `onSurface` - 9.31:1 in Dawn, 8.17:1 in Dusk - so there
-       is deliberately no `onNotice`: a token identical to one beside it is
-       noise. The quiet `onSurfaceLow` was tried on it and passes at 5.30/4.55,
-       but in Dusk a cool grey on a warm band reads washed out. */
-    val notice: Color,
     val veil: Color,             // hairlines, ticks, off arc
-    val line: Color,             // hollow handles, disabled
+    val line: Color,             // section rules, dividers, dial ticks and dots
+    /* The border of a selection control: the unselected day's ring AND the
+       preset row's segments. One token for both, and that is the load-bearing
+       part - they sit 60dp apart doing the same job, and when the ring was
+       split out to fix its contrast the preset row kept naming `line` at its
+       own call site. 29 tones apart on one screen, reported on sight as one
+       being black next to the other's calm grey. The numbers were checked; the
+       two controls were never looked at together.
+       Distinct from `line`, which draws section rules, card dividers and the
+       dial's ticks - those separate blocks rather than bounding a control, and
+       quiet is right there. `line` is tone 34 and 79, which IS Material's
+       `outlineVariant`; the scheme used to alias `outline` to it, so the strong
+       role and the quiet one were the same colour.
+       Tone 70 in Dawn and 43 in Dusk: 2.19:1 and 2.70:1 against the page, and
+       9 tones from `line` in both - close enough that the borders and the rules
+       read as one family without the rules gaining any weight. That gap was
+       closed from the BORDER side deliberately: moving the DIVIDERS to this
+       token instead was built and looked at, and it lifts every section rule
+       from 1.66:1 to 2.49:1 in Dawn and 1.91 to 3.23 in Dusk - roughly half
+       again as heavy - which is the rules starting to box the content, the one
+       thing they were tuned not to do. Material splits them for that reason:
+       `outlineVariant` (80/30) is for dividers, `outline` (50/60) for control
+       borders, and `line` at 79/34 IS outlineVariant.
+       Dawn is UNDER the 3:1 a UI part is meant to hold, deliberately and after
+       looking. The state here is carried by fill-versus-no-fill and the day
+       letter sits at 8.28:1, so the ring reinforces rather than reports - and
+       the tone that cleared the guideline (50, 4.28:1) was built, installed and
+       rejected on sight as black. If it ever needs to go back inside the
+       guideline, tone 58 is the lightest that does. */    val outline: Color,
+
+    /* The border of a SELECTED control: the checked switch track, the selected
+       day, the active preset segment and the "in effect" pill. One token, for
+       the same reason `outline` is one - they are the same job in four places,
+       and the day ring and the preset segment were 29 tones apart the last time
+       that was left to call sites.
+       M3 leaves a checked track bare and outlines only the unchecked one, and
+       this app followed that. It stops here, deliberately: the checked track
+       measures 1.26:1 against its card in Dawn and 2.06:1 in Dusk, both under
+       the 3:1 a component needs to be identifiable against its background, and
+       nothing else on the track supplies it. The rim roughly doubles both.
+       The asymmetry M3's rule protects survives anyway - thumb POSITION, thumb
+       SIZE (16dp against 24dp) and the thumb's GLYPH are three shape cues that
+       do not depend on a border. The one lost measured 1.87:1, which is under
+       what it needed to be read at all. */
+    val selectBorder: Color,
+    /* The border of an UNSELECTED control on a `veil` ground: the unchecked
+       switch track and the "off" pill. Separate from `outline` because the two
+       grounds are 6 tones apart and one value cannot serve both - `outline`
+       manages only 1.87:1 on veil in BOTH themes, while a value that clears 3:1
+       there lands near tone 50 on the page, which is the "the border around
+       days is black" report. So: `outline` on the page, this on veil. */
+    val veilOutline: Color,
     val onSurface: Color,
     val onSurfaceMid: Color,
     /* Secondary text, and the ink most of the app is written in - 24 usages
-       against onSurface's 13. Its worst case is not the page but a CARD, which
-       is a lighter ground in Dawn and a lighter one in Dusk, and it was 4.54:1
-       there in Dawn and 4.30:1 in Dusk - the second of those failing AA outright
-       and the first passing it by 0.04. Both now clear 6.3:1 on a card, which is
-       a margin rather than a rounding. The titles stay at 11.4:1 on the same
-       ground, so the hierarchy is unchanged; what moved is the floor. */
+       against onSurface's 13. Its worst case is not the page but a CARD: 6.86:1
+       in Dusk and 7.68:1 in Dawn, against the 4.5:1 body minimum. Both were
+       under 4.6 on the old palette and one of them failed outright, which is
+       what forced the ink darker; the rebuilt grounds carry it for free.
+       Titles sit at 10.4:1 and 15.1:1 on the same ground, so the hierarchy is
+       intact - what moved is the floor, and it moved up. */
     val onSurfaceLow: Color,
     val stateOn: Color,          // armed, active - accent and TEXT
     val onState: Color,
-    /* Selection as a filled surface: day toggles, effect chips, allowlist
-       avatars, the switch track. Not stateOn - that one has to stay legible
-       as text on the ground, which forces it dark in Dawn, and a fill that
-       dark makes every selected day read as a hole punched in the screen. */
+    /* Selection as a filled surface: the day toggles, the preset pill, the
+       effect fills - AND the checked switch track, which used to have its own
+       pair. Material would separate them: a switch track is `primary` (tone 80
+       dark / 40 light) because it is small, a chip is `secondaryContainer`
+       (tone 30 / 90) because it is large. Gloaming deliberately does not, on
+       the grounds that one accent used identically for every selection control
+       is what makes a palette read as authored. The two tokens are COLLAPSED
+       rather than merely set equal, so the requirement cannot drift.
+       What that costs is measured in the switch's own note below.
+       Not stateOn - that one has to stay legible as TEXT on the ground. */
     val selectFill: Color,
     val onSelect: Color,
-    /* The switch track is not selectFill either. A chip is large and can carry
-       a washed fill; a track is small, and washed track plus light thumb
-       leaves the control with no definition at all. */
-    val switchTrack: Color,
+    /* The checked thumb. It was `onSelect` for one release and that was wrong
+       in Dawn: the ink is TEXT and has to clear 4.5:1 on the fill, so at ink
+       strength the thumb arrived as a near-black dot at 6.80:1 - reported as
+       too hard on the eye. A thumb is a UI part and needs 3:1, so it gets its
+       own tone, and the softening comes as much from CHROMA as from tone: a
+       desaturated dark dot reads as black, a chromatic one reads as coloured. */
     val switchThumb: Color,
-    /* The UNSELECTED thumb needs its own token for the same reason the track
-       did. M3 builds it from `outline` on `surfaceContainerHighest`, which here
-       are `line` on `veil` - the hairline colour on the hairline colour, since
-       both are deliberately quiet and `line` is literally what gets drawn ON
-       `veil` elsewhere. Measured 1.35:1 in Dawn and 1.34:1 in Dusk against the
-       3:1 a UI part has to reach; M3's own baseline manages 3.51. Borrowing a
-       darker `outline` was not an option: it also draws the segmented button's
-       border, the day circles' rings and the dial's dots, where quiet is right. */
+    /* The UNSELECTED thumb has its own token, and now carries more than it used
+       to: with the checked track no longer bright, the THUMB is what separates
+       on from off. M3 would build it from `outline` on `surfaceContainerHighest`
+       - here `line` on `veil` - and that measures 1.35:1 in Dawn and 1.34:1 in
+       Dusk against the 3:1 a UI part must reach. This token holds 3.42:1 and
+       3.64:1 instead. Borrowing a darker `outline` was not an option: it also
+       draws the segmented button's border, the day circles' rings and the
+       dial's dots, where quiet is right. */
     val switchThumbOff: Color,
-    /* The state light is NOT stateOn. A fill has to be dark in Dawn so onState
-       reads on top of it; a lamp carries no text, so at 10dp it needs chroma
-       rather than value contrast or it reads as a dark speck, not a colour. */
-    val lampOn: Color,
-    val lampOff: Color,
-    val stateTint: Color,        // armed chip fill
+    /* The one FAILURE state in the app: bedtime is running, Do Not Disturb was
+       asked for, and the phone reports that everything is getting through.
+       Material's error container tones (30 dark / 90 light). It is now the
+       ONLY red in the app: the state lamp used to carry a second one for
+       merely being switched off, which is not a failure, and it is gone.
+       So a red on screen means exactly one thing.
+       It is a container pair rather than an ink because the readout that uses
+       it is a status PILL now - fill plus same-hue ink, the grammar Google
+       Health uses for "In range" and "Out of range". It used to be `cta` as
+       TEXT, which was borrowing the accent to mean alarm and said nothing to
+       anyone reading shape rather than colour. */
+    val alert: Color,
+    val onAlert: Color,
+    /* The alert pill's rim, and it exists because the ground moved under it.
+       All three status pills are light fills on a light card in Dawn, so each
+       needs an edge; the other two take `selectBorder` and `veilOutline`. This
+       one was left bare on the argument that the failure state is already the
+       loudest thing on screen - true when the card was tone 95 and the pill
+       held 1.14:1 against it, false at tone 91 where it fell to 1.02:1, which
+       is the same lightness. A red on a neutral card would still have read by
+       HUE alone, and hue alone is exactly what this app does not rely on.
+       Note what the near-miss teaches: `alert` is Material's errorContainer
+       tone (90 light / 30 dark), and that tone assumes a tone-95-or-lighter
+       surface. Darkening a surface silently invalidates every container tone
+       borrowed from a spec that assumed the old one. */
+    val alertBorder: Color,
     val cta: Color,
     val dark: Boolean
 )
 
+/* Both palettes are stated as HCT - Material's own space, where TONE is CIE L*
+   and every number below is comparable to m3.material.io's tone table. They
+   were rebuilt 31 Aug 2026 against that table and against Google Health,
+   Dialer, Calendar, Tasks and Messages sampled on the Honor; the spec and
+   Google's shipping apps agree exactly, which is worth knowing before treating
+   any of it as an ideal nobody follows.
+
+   Dusk is "soft charcoal": page tone 14, running 11, cards 22. Nothing on
+   screen is near black. That is a deliberate walk-back of the old ground, whose
+   running page was tone 3.5 - darker than surfaceContainerLowest, the darkest
+   surface Material defines - while carrying a tone-75 selection fill. Both ends
+   of the range sat past the edge in opposite directions, and the total swing
+   from ground to selection was 71 tones. It is 28 now. The argument for lifting
+   rather than deepening is that a near-black field with a bright disc on it is
+   the harsher thing for a dark-adapted eye: the pupil opens for the ground and
+   then takes the accent full force.
+
+   The accent is green, but the two themes are NOT the same green, which is a
+   deliberate asymmetry: Dusk is fern at hue 165 chroma 20, Dawn is sage at hue
+   165's warmer neighbour 140, chroma 24. A cool green sits badly on a warm
+   near-white ground - it is the one place the two grounds pull in different
+   directions - and this phone's panel makes it worse, running colour mode 0
+   (the vendor profile, not sRGB) with a colour-temperature correction that
+   attenuates blue about 2.4%. Judged on the panel, not on a screenshot, for
+   the reason recorded under Gotchas.
+   It arrived by elimination rather than by taste: the old sage (hue 130) was
+   rejected as too bright, a slate blue was reported as reading almost greyscale
+   in Dusk and too cool in Dawn, and a lilac was disliked outright. Hue 165 is a
+   green with a cool lean, which is why the chroma can stay this low and still
+   read as a colour. Dusk carries more of it than Dawn because a dark ground
+   swallows chroma: at 14 the theme looked greyscale, measured and reported.
+
+   Dawn is "warm white": page tone 98 at chroma 2, cards 95. The old cream sat
+   at tone 93 with chroma 7.8 at hue 89 - yellow-green, the direction the eye
+   reads as tint most readily - so nothing in the theme reached above tone 95
+   and it had no clean high end to anchor against. The warmth survives at hue
+   ~76 and a third of the chroma, plus the arc, the CTA and the notice strip,
+   which is where it was doing work.                                          */
+
 // Dusk
 private val Dusk = GloamColors(
-    surface = Color(0xFF12161B),
-    surfaceRunning = Color(0xFF0A0D11),
-    surfaceOff = Color(0xFF171B21),
-    bloom = Color(0xFF1E2530),
-    raise = Color(0xFF29323D),
-    raiseRunning = Color(0xFF29323D),
-    notice = Color(0xFF534440),
-    veil = Color(0xFF2B333D),
-    line = Color(0xFF3C4551),
-    onSurface = Color(0xFFEEF1F5),
-    onSurfaceMid = Color(0xFFC3CAD3),
-    onSurfaceLow = Color(0xFFACB7C3),
-    stateOn = Color(0xFFAEBF92),
-    onState = Color(0xFF1B2114),
-    selectFill = Color(0xFFAEBF92),
-    onSelect = Color(0xFF1B2114),
-    switchTrack = Color(0xFFAEBF92),
-    switchThumb = Color(0xFF1B2114),
-    switchThumbOff = Color(0xFF7E8B9B),
-    lampOn = Color(0xFFA9C98C),
-    lampOff = Color(0xFFC98079),
-    stateTint = Color(0xFF2B333D),
-    cta = Color(0xFFD67F48),
+    surface = Color(0xFF20242A),          // tone 14
+    raise = Color(0xFF2F353D),            // tone 22 · 1.26:1 on the page
+    veil = Color(0xFF383E46),
+    line = Color(0xFF49505A),
+    outline = Color(0xFF61666E),      // tone 43 · ring 2.70:1 on the page
+    selectBorder = Color(0xFF8896AF), // tone 62 · 4.14:1 on a card
+    veilOutline = Color(0xFF8A8B90),  // tone 58 · 3.17:1 on the veil track
+    onSurface = Color(0xFFEAEBED),        // 10.37:1 on a card
+    onSurfaceMid = Color(0xFFC7CDD7),
+    onSurfaceLow = Color(0xFFBCC1CC),     //  6.86:1 on a card
+    stateOn = Color(0xFFB0C3E0),          // tone 78 - Material's `primary`
+    onState = Color(0xFF23354E),
+    selectFill = Color(0xFF566479),       // tone 42 chroma 18.7 · 2.59:1 on the page
+    onSelect = Color(0xFFDDE9FF),         //                       4.91:1 on the fill
+    switchThumb = Color(0xFFDDE9FF),      // = onSelect here; Dawn's differs, see below
+    switchThumbOff = Color(0xFF9196A0),   //                     3.59:1 on the veil track
+    alert = Color(0xFF6F362E),         // tone 30 · ink 7.24:1
+    onAlert = Color(0xFFFFDAD5),
+    alertBorder = Color(0xFFB85B52),   // tone 50 · 2.74:1 on a card
+    cta = Color(0xFFF49B66),
     dark = true
 )
 
 // Dawn
 private val Dawn = GloamColors(
-    surface = Color(0xFFF5EAD8),
-    surfaceRunning = Color(0xFFE6DCCB),
-    surfaceOff = Color(0xFFFAF0E1),
-    bloom = Color(0xFFF7EDDD),
-    raise = Color(0xFFE2D5BD),
-    raiseRunning = Color(0xFFD4C8B2),
-    notice = Color(0xFFDBBD9D),
-    veil = Color(0xFFDCD3C4),
-    line = Color(0xFFC0B6A5),
-    onSurface = Color(0xFF201E1D),
-    onSurfaceMid = Color(0xFF4C453B),
-    onSurfaceLow = Color(0xFF4C453B),
-    stateOn = Color(0xFF56633F),
-    onState = Color(0xFFF0FAE1),
-    selectFill = Color(0xFFBDCB9F),
-    onSelect = Color(0xFF2E3720),
-    switchTrack = Color(0xFF7F945A),
-    switchThumb = Color(0xFFFBFDF6),
-    switchThumbOff = Color(0xFF7C7060),
-    lampOn = Color(0xFF4E8B3C),
-    lampOff = Color(0xFFB24632),
-    stateTint = Color(0xFFE1EECC),
-    cta = Color(0xFFC67139),
+    // Tone 99.3. This used to be the OFF rung of a three-rung ladder and is now
+    // the only page colour, which is what was asked for by name - and it is the
+    // rung that makes every container on top of it read: cards go from 1.08:1
+    // against the old tone-98 page to 1.12:1, and the checked switch track,
+    // which sits on a CARD, keeps its own separation instead of having the card
+    // walk towards it. Deepening the card was tried first and does the opposite:
+    // it buys card-versus-page and spends switch-versus-card.
+    surface = Color(0xFFFDFDFD),
+    // Hue 130 at low chroma - a green-grey paper, not a cream. The creamy
+    // beige it replaced was hue 76, and the accent is hue 258: nearly opposite,
+    // which is what "inappropriate" meant when it was reported.
+    // Tone 91, not 95, and the ladder is the whole trade: card-versus-page goes
+    // 1.12 to 1.24 while everything sitting ON the card loses the same amount,
+    // because all of it is lighter than the card. That is affordable now only
+    // because the controls gained RIMS - the checked track's raw fill drops to
+    // 1.13:1 and its rim carries it at 1.81:1.
+    // Note hue 130 will not take Material's chroma-8 stepping for the outline
+    // family: at that weight it reads olive rather than grey. It passes as
+    // neutral paper only while its chroma stays near 3, which is the cost of
+    // choosing a hue that is not the accent's.
+    raise = Color(0xFFE4E5E2),            // tone 91 · 1.24:1 on the page
+    veil = Color(0xFFDCDEDA),
+    line = Color(0xFFC5C4BD),
+    outline = Color(0xFFACACA5),      // tone 70 · ring 2.24:1 on the page
+    selectBorder = Color(0xFFA2ACBD), // tone 70 · 1.81:1 on a card
+    veilOutline = Color(0xFF7C7C76),  // tone 52 · 3.10:1 on the veil track
+    onSurface = Color(0xFF1E1B18),        // 15.11:1 on a card
+    onSurfaceMid = Color(0xFF514A43),
+    onSurfaceLow = Color(0xFF514A43),     //  7.68:1 on a card
+    stateOn = Color(0xFF505A6A),          // tone 38 - Material's `primary`
+    onState = Color(0xFFFFFFFF),
+    selectFill = Color(0xFFD1D8E5),       // tone 86 chroma 11.4 · 1.36:1 on the page
+    // Tone 23, not the container role's 29. The fill is the arc's own night
+    // stop as it is drawn when bedtime is OFF, and at that chroma it is near
+    // the floor of what still reads as a hue - so the label on it was the first
+    // thing to suffer. 8.38:1 here against 6.76:1 at tone 29, and the ink still
+    // holds chroma 13.3, so it stays a blue ink rather than going near-black.
+    onSelect = Color(0xFF2F3744),
+    switchThumb = Color(0xFF545F71),      // tone 40 · 4.51:1 on the track
+    switchThumbOff = Color(0xFF837B72),   //                     3.39:1 on the veil track
+    alert = Color(0xFFFFDAD5),         // tone 90 · ink 7.27:1
+    onAlert = Color(0xFF6B3831),
+    alertBorder = Color(0xFFD16F65),   // tone 58 · 2.69:1 on a card
+    cta = Color(0xFF954914),
     dark = false
 )
 
@@ -195,6 +321,10 @@ object Arc {
     val dusk = Color(0xFF4E6480)    // 0.42 · deepest hour
     val ember = Color(0xFFB2622D)   // 0.76
     val dawn = Color(0xFFF6A06B)    // 1.00 · wake handle
+    /* The sun's rays, drawn on `dawn`. It was a literal inside BedtimeDial -
+       the only colour in the app that did not come from a token - and naming it
+       is worth keeping whatever else moves. */
+    val onDawn = Color(0xFF402310)
     val stops = listOf(0f to night, 0.42f to dusk, 0.76f to ember, 1f to dawn)
 
     /* The same ramp, started from dusk on a dark ground. Measured: night is
@@ -371,28 +501,64 @@ private val GloamShapes = Shapes(
 /**
  * Every switch in the app, in one place.
  *
- * The geometry was already M3's - measured on the phone at 52x32dp with a 24dp
- * thumb, exactly the spec. What was not M3's was the CONTRAST between the parts.
- * The unselected thumb sat at 1.35:1 on its own track and the selected one at
- * 2.69:1 on its own, where M3's baseline reaches 3.51 and 6.44 and a UI part
- * that must be identified needs 3. A switch whose thumb you cannot find is
- * telling you nothing that its position alone does not.
+ * The geometry is M3's - measured on the phone at 52x32dp with a 24dp thumb,
+ * exactly the spec - and so are both tones it used to draw with. That was
+ * checked rather than assumed: Google Messages' checked track measures tone 80
+ * at 10.83:1 against its page and Gloaming's old one tone 75 at 9.23:1, so this
+ * control was never the thing that glowed. What glowed was every SELECTED
+ * CONTAINER sharing the switch's token.
  *
- * Dawn's track darkens from #8FA36C to #7F945A to buy that, which is a
- * deliberate walk-back of the note in CLAUDE.md about a track needing less
- * weight than a chip: it still does - #7F945A is nowhere near the chips' fill -
- * but not at the price of an invisible thumb.
+ * The track takes `selectFill`, so the switch, the day discs and the preset
+ * pill are one colour rather than two tones of one. The thumb has its own token
+ * because the ink is TEXT (4.5:1 on the fill) and a thumb is a UI PART (3:1);
+ * at ink strength Dawn's arrived as a near-black dot at 6.80:1 and was reported
+ * as too hard. It is tone 40 at chroma 28 now - 4.52:1 - and the softening is
+ * as much the chroma as the tone: a desaturated dark dot reads as black, a
+ * chromatic one reads as coloured.
+ *
+ * A dim checked track means the track's own on-versus-off lightness separation
+ * is only 1.80:1 in Dusk and 1.19:1 in Dawn, and that was written up here as a
+ * cost the thumb had to cover. **It was overstated, and the correction is worth
+ * more than the worry was.** Measured off the device rather than reasoned about:
+ *
+ *     checked thumb    24.0dp        unchecked thumb   16.0dp
+ *     checked track    no outline    unchecked track   2dp outline
+ *
+ * M3 grows the handle by half its diameter - 2.25x the area - and outlines only
+ * the UNCHECKED track. Both are shape cues, both survive any colour vision, and
+ * neither depends on the accent. With position and the check mark that is four
+ * shape cues before a single colour is counted, and Gloaming's 16/24dp matches
+ * Google Messages' own switch on this phone (23.7dp checked, measured).
+ *
+ * So the answer is that nothing needs fixing, and specifically NOT the thing
+ * proposed here before: setting `checkedBorderColor` would put an outline on
+ * BOTH states and destroy the asymmetry that is currently doing the work. It
+ * would remove a cue while appearing to add one.
+ *
+ * WCAG 1.4.11 agrees and is worth quoting, because the intuition runs the other
+ * way: it "does not require that changes in color that differentiate between
+ * states of an individual component meet the 3:1 contrast ratio when they do
+ * not appear next to each other". What it asks is that each state be
+ * identifiable against ITS OWN adjacent colours. Both clear that on the thumb -
+ * on 4.90:1 in Dusk and 4.52:1 in Dawn, off 3.59:1 and 3.39:1.
+ *
+ * One thing IS weaker than M3's baseline and is a separate call: the unchecked
+ * outline is `line`, which this app keeps deliberately quiet, so it measures
+ * 1.33:1 and 1.43:1 on its own track where M3's baseline manages 3.51:1. It
+ * does not fail 1.4.11 - the thumb identifies the control - but if that outline
+ * is ever wanted as a real cue it needs its own token rather than `line`, which
+ * also draws the day rings, the section rules and the dial's dots.
  */
 @Composable
 fun gloamSwitchColors(): SwitchColors = SwitchDefaults.colors(
-    checkedTrackColor = gloam.switchTrack,
+    checkedTrackColor = gloam.selectFill,
     checkedThumbColor = gloam.switchThumb,
-    checkedBorderColor = Color.Transparent,
+    checkedBorderColor = gloam.selectBorder,
     uncheckedTrackColor = gloam.veil,
     uncheckedThumbColor = gloam.switchThumbOff,
-    uncheckedBorderColor = gloam.line,
+    uncheckedBorderColor = gloam.veilOutline,
     // the check reads as the track's own green on the pale thumb
-    checkedIconColor = gloam.switchTrack,
+    checkedIconColor = gloam.selectFill,
     disabledUncheckedTrackColor = gloam.veil,
     disabledUncheckedThumbColor = gloam.line,
     disabledUncheckedBorderColor = gloam.line
@@ -418,22 +584,42 @@ fun GloamSwitch(
     // null everywhere a ROW carries the toggle, which is everywhere except the
     // app bar - a bar has no row to hand the gesture to, so there the switch
     // has to be its own target.
-    onCheckedChange: ((Boolean) -> Unit)? = null
+    onCheckedChange: ((Boolean) -> Unit)? = null,
+    // What the thumb wears when checked. Every switch in the app leaves this
+    // alone; the master switch passes a moon while a window is actually
+    // running, so armed and running are told apart by the control itself
+    // rather than by a lamp beside it saying the same thing a third time.
+    @DrawableRes icon: Int = R.drawable.ic_check,
+    // Every switch in the app but one sits in a ROW that carries the label and
+    // the gesture, so the switch is an unnamed indicator and correctly so. The
+    // app bar's has no row: read off the device it came back with no text and
+    // no content description at all, which TalkBack announces as a bare
+    // "on, switch". Naming it is the fix, and it is the same string the title
+    // beside it shows.
+    contentDescription: String? = null
 ) {
     Switch(
         checked = checked,
         onCheckedChange = onCheckedChange,
         enabled = enabled,
         interactionSource = interactionSource,
+        modifier = if (contentDescription == null) Modifier
+                   else Modifier.semantics { this.contentDescription = contentDescription },
         colors = gloamSwitchColors(),
         // M3 offers the thumb an icon and it is worth taking: it states the ON
         // state a second way, so the control does not rest on thumb POSITION
         // alone - which is the one cue that survives neither a glance nor
         // colour blindness. Only on the checked side; an icon on both is noise.
+        //
+        // Note the sizing this rests on, before anyone reaches for an icon on
+        // the unchecked side too: M3 grows the thumb to 24dp whenever
+        // thumbContent is non-null, so an icon there would silently flatten
+        // the 16/24dp asymmetry that CLAUDE.md records as load-bearing.
+        // Passing null while unchecked is what keeps it.
         thumbContent = if (checked) {
             {
                 Icon(
-                    painterResource(R.drawable.ic_check),
+                    painterResource(icon),
                     contentDescription = null,
                     modifier = Modifier.size(SwitchDefaults.IconSize)
                 )
@@ -446,30 +632,32 @@ fun GloamSwitch(
 fun GloamingTheme(dark: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
     val g = if (dark) Dusk else Dawn
     val scheme = if (dark) darkColorScheme(
-        primary = g.switchTrack, onPrimary = g.switchThumb,
+        primary = g.stateOn, onPrimary = g.onState,
         secondary = g.cta, onSecondary = g.onSurface,
         background = g.surface, onBackground = g.onSurface,
         surface = g.surface, onSurface = g.onSurface,
         surfaceVariant = g.raise, onSurfaceVariant = g.onSurfaceLow,
-        outline = g.line, outlineVariant = g.veil,
-        secondaryContainer = g.raise, onSecondaryContainer = g.onSurface,
-        primaryContainer = g.stateTint, onPrimaryContainer = g.onSurface,
+        outline = g.outline, outlineVariant = g.veil,
+        secondaryContainer = g.selectFill, onSecondaryContainer = g.onSelect,
+        primaryContainer = g.selectFill, onPrimaryContainer = g.onSelect,
         tertiary = g.cta, onTertiary = g.surface,
         tertiaryContainer = g.raise, onTertiaryContainer = g.onSurface,
+        errorContainer = g.alert, onErrorContainer = g.onAlert,
         surfaceContainerHighest = g.veil, surfaceContainerHigh = g.raise,
         surfaceContainer = g.raise, surfaceContainerLow = g.surface,
         surfaceContainerLowest = g.surface
     ) else lightColorScheme(
-        primary = g.switchTrack, onPrimary = g.switchThumb,
+        primary = g.stateOn, onPrimary = g.onState,
         secondary = g.cta, onSecondary = g.onSurface,
         background = g.surface, onBackground = g.onSurface,
         surface = g.surface, onSurface = g.onSurface,
         surfaceVariant = g.raise, onSurfaceVariant = g.onSurfaceLow,
-        outline = g.line, outlineVariant = g.veil,
-        secondaryContainer = g.stateTint, onSecondaryContainer = g.onSurface,
-        primaryContainer = g.stateTint, onPrimaryContainer = g.onSurface,
+        outline = g.outline, outlineVariant = g.veil,
+        secondaryContainer = g.selectFill, onSecondaryContainer = g.onSelect,
+        primaryContainer = g.selectFill, onPrimaryContainer = g.onSelect,
         tertiary = g.cta, onTertiary = g.surface,
         tertiaryContainer = g.raise, onTertiaryContainer = g.onSurface,
+        errorContainer = g.alert, onErrorContainer = g.onAlert,
         surfaceContainerHighest = g.veil, surfaceContainerHigh = g.raise,
         surfaceContainer = g.raise, surfaceContainerLow = g.surface,
         surfaceContainerLowest = g.surface

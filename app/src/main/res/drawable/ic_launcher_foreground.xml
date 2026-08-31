@@ -2,8 +2,16 @@
 <!-- The crescent, ringed by the window arc - the dial's own span, so the icon
      and the home screen tell the same story.
 
-     THE CRESCENT: an outer circle with a nearly-equal circle offset across its
-     edge, so the overlap is bitten out.
+     THE CRESCENT: an outer circle with a smaller circle offset across its edge,
+     so the overlap is bitten out.
+     ITS PROPORTIONS ARE THE DIAL HANDLE'S, copied as RATIOS of the outer radius
+     rather than by eye - `BedtimeDial.drawHandle` draws the bedtime moon as
+     r*0.50 bitten by r*0.44 at (+r*0.26, -r*0.20), which is a bite of 0.880 R
+     offset 0.656 R at -37.6 degrees, leaving the crescent 0.776 R thick at its
+     thickest. The icon's own numbers were a bite of 0.940 R offset only
+     0.439 R, so 0.499 R thick - bigger AND closer is what made it thin, and it
+     was reported as not matching the dial. Ratios are the thing to carry
+     between the two, since the radii differ by an order of magnitude.
      The clip-path is load-bearing. evenOdd fills whatever lies inside exactly
      ONE subpath, and the bite circle sticks out past the outer one - so without
      the clip, that overhang is filled too and the horns close into a ring. That
@@ -13,13 +21,22 @@
      The gradient is INSIDE the rotated group, so it runs along the crescent's
      own axis - dawn at the upper horn, night at the lower.
 
-     THE ARC: the window, drawn round the moon at radius 31.1 with a 113 degree
-     gap centred on the bottom. The gap is the point - it is what makes this a
-     span, with a start and an end, rather than a ring. Round caps, and a hair
-     under 3dp, because it has to stay a hairline against a 42dp moon.
-     Outer extent is 31.1 + 1.5 = 32.6dp of radius, just inside the 33dp safe
-     circle a launcher mask may crop to. There is no room to make it thicker
-     without moving it inward.
+     THE ARC: the window, drawn round the moon with a 113 degree gap centred on
+     the bottom. The gap is the point - it is what makes this a span, with a
+     start and an end, rather than a ring. Round caps.
+     4dp, THICKENED INWARD, which is what that last sentence used to say could
+     not be avoided: the outer extent is fixed at 32.6dp of radius, just inside
+     the 33dp safe circle a launcher mask may crop to, so the path radius moved
+     31.1 -> 30.6 to spend the extra width on the inside. The four waypoints are
+     recomputed at that radius - they are the same four ANGLES (56.65, 138.89,
+     221.11, 303.35), which is what to preserve if it ever moves again.
+     Its inner edge is 28.6dp against a moon whose outer edge is 18.06dp, so
+     there is 10.5dp of clear air between them; the moon is no longer 42dp
+     across, it is 36dp, which is why 4dp still reads as a hairline beside it.
+     And note the thickening moved the OPTICAL CENTRE. The gap is at the bottom,
+     so a thicker arc adds ink almost entirely above the centre line, and the
+     mark had to drop from translateY 2.76 to 3.88 to keep its ink centroid on
+     the tile centre. Any change to the stroke has to re-solve that.
 
      WHY THE GROUP IS ROTATED 90.95: a sweep gradient runs 0..1 over 0..360 and
      so has a seam at 0 degrees, but the arc spans 147.6 through 360 to 34.3 and
@@ -32,35 +49,69 @@
     xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp" android:height="108dp"
     android:viewportWidth="108" android:viewportHeight="108">
-    <group android:rotation="-32" android:pivotX="54" android:pivotY="54">
+    <!-- BALANCE. The mark is 65dp wide and 53.5dp tall - a near-circle cut at
+         the bottom - so in the 72dp the launcher shows it sat with margins of
+         3.5 left, 3.5 right, 3.5 top and 15.0 BOTTOM. It hugged three edges and
+         left a gap under itself, reported as looking asymmetric.
+         This group centres it vertically and gives it room: 6.2dp at the sides,
+         8.8 above and 16.8 below.
+         THOSE TOP AND BOTTOM NUMBERS ARE DELIBERATELY UNEQUAL, and the version
+         that made them equal shipped first and was wrong. Balancing the BOUNDING
+         BOX (translateY 6.49) put the INK 3.7dp below the tile centre and left
+         36% of it above the centre line - reported immediately as the icon
+         sitting low. The box lies here: the arc's 113 degree gap is at the
+         bottom, so the lower half of the box is mostly empty and centring the
+         box drags the mass down after it. translateY 2.76 puts the ink CENTROID
+         on the tile centre instead, which is what optical centring means and
+         what the eye is actually reading. The CRESCENT is scaled again, 0.86, on
+         its own rotation group below - asked for, and it opens a visible gap
+         between the moon and its ring where the two used to nearly touch at the
+         lower left. Scaling it on that group is what keeps its outer disc
+         concentric with the arc, which is the relationship that reads.
+         Note what is NOT achievable and should not be chased: EVEN margins on
+         all four sides. The mark is wider than it is tall, so a square tile
+         cannot give it equal air on every side without distorting it. The
+         target is vertical CENTRING plus adequate side margin, not equality.
+         Centring the crescent's own CENTROID was tried first and is wrong - a
+         sickle's mass sits far from where it looks centred (6.1dp left and
+         9.1dp down of the tile centre), so moving that to the middle shoves the
+         shape up and right into the ring. The crescent's outer disc is already
+         concentric with the arc, which is the relationship that reads. -->
+    <group
+        android:pivotX="54" android:pivotY="54"
+        android:scaleX="0.92" android:scaleY="0.92"
+        android:translateY="2.51">
+    <group android:rotation="-32" android:pivotX="54" android:pivotY="54"
+        android:scaleX="0.86" android:scaleY="0.86">
         <clip-path android:pathData="M33.00,54.00 a21.00,21.00 0 1,0 42.00,0 a21.00,21.00 0 1,0 -42.00,0 Z" />
-        <path android:fillType="evenOdd" android:pathData="M33.00,54.00 a21.00,21.00 0 1,0 42.00,0 a21.00,21.00 0 1,0 -42.00,0 Z M42.66,50.22 a19.74,19.74 0 1,0 39.48,0 a19.74,19.74 0 1,0 -39.48,0 Z">
+        <path android:fillType="evenOdd" android:pathData="M33.00,54.00 a21.00,21.00 0 1,0 42.00,0 a21.00,21.00 0 1,0 -42.00,0 Z M46.43,45.59 a18.48,18.48 0 1,0 36.96,0 a18.48,18.48 0 1,0 -36.96,0 Z">
             <aapt:attr name="android:fillColor">
                 <gradient android:type="linear"
                     android:startX="54" android:startY="75.00"
                     android:endX="54"   android:endY="33.00">
                     <item android:offset="0.00" android:color="#FF2F4260" />
                     <item android:offset="0.42" android:color="#FF4E6480" />
-                    <item android:offset="0.76" android:color="#FFB2622D" />
-                    <item android:offset="1.00" android:color="#FFF6A06B" />
+                    <item android:offset="0.76" android:color="#FFA85C2A" />
+                    <item android:offset="1.00" android:color="#FFD4814C" />
                 </gradient>
             </aapt:attr>
         </path>
     </group>
     <group android:rotation="90.95" android:pivotX="54" android:pivotY="54">
         <path
-            android:pathData="M71.10,79.98 A31.1,31.1 0 0 1 30.57,74.45 A31.1,31.1 0 0 1 30.57,33.55 A31.1,31.1 0 0 1 71.10,28.02"
-            android:strokeWidth="3.0" android:strokeLineCap="round" android:fillColor="#00000000">
+            android:pathData="M70.82,79.56 A30.60,30.60 0 0 1 30.95,74.12 A30.60,30.60 0 0 1 30.95,33.88 A30.60,30.60 0 0 1 70.82,28.44"
+            android:strokeWidth="4.0" android:strokeLineCap="round" android:fillColor="#00000000">
             <aapt:attr name="android:strokeColor">
                 <gradient android:type="sweep" android:centerX="54" android:centerY="54">
                     <item android:offset="0.0000" android:color="#FF2F4260" />
                     <item android:offset="0.1574" android:color="#FF2F4260" />
                     <item android:offset="0.4452" android:color="#FF4E6480" />
-                    <item android:offset="0.6782" android:color="#FFB2622D" />
-                    <item android:offset="0.8426" android:color="#FFF6A06B" />
-                    <item android:offset="1.0000" android:color="#FFF6A06B" />
+                    <item android:offset="0.6782" android:color="#FFA85C2A" />
+                    <item android:offset="0.8426" android:color="#FFD4814C" />
+                    <item android:offset="1.0000" android:color="#FFD4814C" />
                 </gradient>
             </aapt:attr>
         </path>
+    </group>
     </group>
 </vector>

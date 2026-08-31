@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <!-- Dusk's surface: the ground the dial sits on at night. -->
-    <color name="ic_launcher_background">#12161B</color>
-</resources>

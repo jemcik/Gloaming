@@ -37,6 +37,48 @@
     <string name="window_span_same_day">From %1$s to %2$s %3$s</string>
     <string name="day_today">today</string>
     <string name="day_tomorrow">tomorrow</string>
+    <!-- The weekday, in TWO sets, because the two sentences that name one need
+         different grammar and only English is indifferent to that.
+
+         day_span_* goes in the window sentence, where the time comes first and
+         the day reads as a possessive: "from Wednesday's 22:30". Russian and
+         Ukrainian want the genitive there - "С 22:30 среды до 8:30 четверга".
+
+         day_note_* goes in the plan note, where the day is a point in time and
+         needs its own preposition: "заработают в 22:30 в среду". The
+         preposition is INSIDE the string on purpose - Russian alternates в/во
+         by the following sound ("во вторник"), and no format string can do that.
+
+         Neither can come from java.time, which returns the nominative in every
+         TextStyle - FULL and FULL_STANDALONE both give "среда", which is how
+         "С 22:30 среда до 8:30 четверг" came to ship. today/tomorrow above are
+         adverbs, decline for nothing, and serve both sets. -->
+    <string name="day_span_monday">Monday</string>
+    <string name="day_span_tuesday">Tuesday</string>
+    <string name="day_span_wednesday">Wednesday</string>
+    <string name="day_span_thursday">Thursday</string>
+    <string name="day_span_friday">Friday</string>
+    <string name="day_span_saturday">Saturday</string>
+    <string name="day_span_sunday">Sunday</string>
+    <string name="day_note_monday">Monday</string>
+    <string name="day_note_tuesday">Tuesday</string>
+    <string name="day_note_wednesday">Wednesday</string>
+    <string name="day_note_thursday">Thursday</string>
+    <string name="day_note_friday">Friday</string>
+    <string name="day_note_saturday">Saturday</string>
+    <string name="day_note_sunday">Sunday</string>
+    <!-- The weekday, for the two sentences that name one: the window span and
+         the plan note. It is a RESOURCE rather than java.time's
+         getDisplayName because Russian and Ukrainian decline it and java.time
+         offers only the nominative - FULL and FULL_STANDALONE both return
+         "среда", so "С 22:30 среда до 8:30 четверг" was what shipped, which is
+         not a sentence in either language.
+
+         Both call sites put the TIME first and the day second, and both read
+         the day as a possessive there - "from Wednesday's 22:30" - so one
+         genitive set serves both. today/tomorrow above are adverbs and do not
+         decline, which is why they stay separate and why the bug only ever
+         showed for a window more than a day out. -->
 
     <!-- ============ Home: permissions ============ -->
     <plurals name="permissions_to_go">
@@ -100,10 +142,18 @@
          running. Every switch above them is a PLAN - written to prefs on the
          tap and applied when the window opens - and with bedtime off, turning
          Do Not Disturb "on" silences nothing tonight while looking exactly like
-         a switch that would. No budget: these wrap inside a full-width card. -->
-    <string name="note_off">Bedtime is off, so none of this is in effect.</string>
-    <string name="note_until">None of this is in effect until %1$s %2$s.</string>
-    <string name="note_unscheduled">Nothing is scheduled, so none of this is in effect.</string>
+         a switch that would. No budget: these wrap inside a full-width card.
+
+         Positively framed - they say when the settings WILL work rather than
+         that they do not. "None of this is in effect until X" is a double
+         negative a reader has to unpick, and it was reported as such. They also
+         say "these settings" rather than "this" or "none of this": the strip
+         sits ABOVE the rows it qualifies now, so any wording that points
+         backwards would be false. See the note about text that points at its
+         neighbours travelling badly. -->
+    <string name="note_off">Bedtime is off. These settings take effect once you turn it on.</string>
+    <string name="note_until">These settings take effect at %1$s %2$s.</string>
+    <string name="note_unscheduled">No nights are scheduled, so these settings never run.</string>
 
     <!-- ============ Home: how the screen looks ============ -->
     <!-- Two tenses of one label. "how the screen LOOKS" is a claim about now,
@@ -123,11 +173,6 @@
     <string name="fx_ambient_sub">The screen stays dark</string>
 
     <!-- ============ Home: end-bedtime dialog ============ -->
-    <string name="end_bedtime_title">End bedtime now?</string>
-    <string name="end_bedtime_body_once">Do Not Disturb and the screen effects stop straight away. Nothing else is scheduled.</string>
-    <string name="end_bedtime_body">Do Not Disturb and the screen effects stop straight away. The next one runs as scheduled.</string>
-    <string name="end_now">End now</string>
-    <string name="keep_going">Keep going</string>
     <string name="action_set">Set</string>
     <string name="action_cancel">Cancel</string>
 
@@ -151,10 +196,31 @@
     <string name="state_allowed">Allowed</string>
     <string name="state_blocked">Blocked</string>
 
-    <string name="filter_all">Do Not Disturb is off. Everything is allowed.</string>
-    <string name="filter_priority">Do Not Disturb is on. Anything you have not allowed is being held back.</string>
-    <string name="filter_alarms">Only alarms are allowed.</string>
-    <string name="filter_none">Total silence is on — even what you allowed is held back.</string>
+    <!-- The one readout in the app that is not the app's own belief: it reports
+         what getCurrentInterruptionFilter ANSWERED, which is the whole premise
+         here - a vendor can accept a request and quietly ignore it.
+
+         It is a status PILL plus a sentence now: the pill is the verdict at a
+         glance, the sentence is what that means. Before this the pill did not
+         exist and the FAILURE case was signalled by colour alone - and worse,
+         by the wrong words. Do Not Disturb asked for and the phone reporting
+         everything getting through printed "Do Not Disturb is off. Everything
+         is allowed.", which is the opposite of what happened: it was not off,
+         it was ignored. filter_ignored exists for exactly that case.
+
+         BUDGET-EACH 18 filter_pill_on filter_pill_off filter_pill_ignored
+         filter_pill_alarms filter_pill_none filter_pill_unknown -->
+    <string name="filter_pill_on">In effect</string>
+    <string name="filter_pill_off">Off</string>
+    <string name="filter_pill_ignored">Not in effect</string>
+    <string name="filter_pill_alarms">Alarms only</string>
+    <string name="filter_pill_none">Total silence</string>
+    <string name="filter_pill_unknown">Unknown</string>
+    <string name="filter_all">Everything is getting through.</string>
+    <string name="filter_ignored">You asked for Do Not Disturb and your phone is not applying it.</string>
+    <string name="filter_priority">Anything you have not allowed is being held back.</string>
+    <string name="filter_alarms">Only alarms are getting through.</string>
+    <string name="filter_none">Even what you allowed is held back.</string>
     <string name="filter_unknown">Your phone did not say what is in effect.</string>
 
     <string name="sheet_who_can_call">Who can call</string>

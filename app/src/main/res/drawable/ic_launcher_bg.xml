@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The ground behind the crescent: FLAT WHITE, like Google's own launcher
+     icons on this phone - Drive, Files, Gmail, Google, Maps, Meet, Messages are
+     all white tiles with a saturated mark.
+
+     This file used to open "No FLAT colour can serve this artwork", and that
+     was true of the colour it was written about. The shipped icon was #12161B,
+     a near-black tile: it read the dawn horn at 8.79:1 and the night horn at
+     1.79:1, an orange fingernail on black, reported as the darkest icon on the
+     launcher. A diagonal gradient followed, light behind the cool horn and deep
+     behind the warm one, and it worked.
+
+     White inverts the problem rather than repeating it, and that is what makes
+     it viable where black was not. On white the night horn holds 10.15:1 and
+     the DAWN horn is the one that gets swallowed, at 2.07:1. The difference is
+     that this end can be fixed in the ARTWORK: a dawn orange deepened from tone
+     73 to 62 is still unmistakably a dawn orange, whereas the fix black needed
+     was to LIGHTEN the night horn, which is to stop it being night. One end of
+     this ramp has somewhere to go and the other does not.
+
+     So the warm half of ic_launcher_foreground.xml moved with this file:
+     tone 62 #D4814C at the tip, 2.98:1 on white, with the ember stop deepened
+     to match. Change one and you must change the other - and note the app's
+     own dial keeps the ORIGINAL Arc stops, deliberately. The dial is ~200dp on
+     a known ground; the icon is ~40dp on someone's wallpaper.
+
+     Two things measured here that survive the change, both first attempts wrong:
+
+     THE AXIS, if a gradient ever returns. Read off the RENDERED icon, not the
+     path data: the cool half of the artwork centres at x=0.35 of the tile and
+     the warm half at x=0.63, so any split is very nearly horizontal. Reasoning
+     from the crescent's -32 degree rotation gives 45 degrees and puts the light
+     in the wrong corner.
+
+     AND A RATIO CANNOT REFEREE THIS ARTWORK ON A TINTED GROUND. Sampled off the
+     render, the worst warm-versus-ground pair in the gradient version was
+     1.00:1 - orange and blue-grey at identical luminance - in the shipped icon
+     as much as in any variant of it. That is the strongest argument for white:
+     on white every pair is a real ratio again, and the numbers above mean
+     something. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <path
+        android:pathData="M0,0 h108 v108 h-108 Z"
+        android:fillColor="#FFFFFFFF" />
+</vector>

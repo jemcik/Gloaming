@@ -426,6 +426,25 @@ confirming on real hardware.
   for a role we never write ourselves. `TimePicker` reads `displayLarge` for its
   hour and minute fields, which were rendering in Roboto next to the app's own
   Baloo numerals. All fifteen roles are named now, so nothing can fall through.
+- **A role can be WRONG as well as unset, and that is harder to see.** The two
+  traps below are about roles nobody wrote. This one was written, and written to
+  the wrong token: the scheme mapped `outline = g.line` while `line` sits at
+  tone 34 and 79 - which IS Material's `outlineVariant` (30 dark / 80 light).
+  So the strong outline role and the quiet one were the same colour, and every
+  outline that had to be READ was drawn in the one meant to whisper. Measured:
+  the unselected day's ring managed 1.91:1 in Dusk and 1.66:1 in Dawn, and the
+  unchecked switch's border 1.33 and 1.43, against the 3:1 a UI part that must
+  be identified has to reach - M3's own baseline manages 3.51 for that border.
+  `outline` is its own token now, at Material's tones (60 dark, 50 light), and
+  carries exactly the two things that report state: the day ring and the switch
+  border. 4.93 / 4.28 and 3.41 / 3.70.
+  What deliberately kept `line`: section rules, card dividers, the dial's ticks
+  and dots. They separate blocks rather than reporting state, and quiet is
+  right there - which is why the fix was a second token and not a louder `line`.
+  The way to catch this class is to check what each M3 role is SUPPOSED to be
+  (the tone table above) against what the app actually assigned it, rather than
+  only checking for roles left null.
+
 - **Any `ColorScheme` role left unset falls back to Material's baseline violet.**
   `TimePicker` reads `primaryContainer` for the selected field and
   `surfaceContainerHighest` for the clock face and the unselected field; neither
@@ -556,31 +575,28 @@ confirming on real hardware.
   semantics, and the way to find out is to read it off the device rather than
   the source.
 
-- **The "right now" readout is the last line of the "What can wake you" card,
-  and only while bedtime runs.** It is
-  the one thing on any screen that is not the app's own belief: everything else
-  reports what we ASKED for, this reports what the phone ANSWERED
-  (`getCurrentInterruptionFilter`), which is the entire premise of this app - a
-  vendor can accept a request and quietly ignore it. It used to sit at the foot
-  of the allowlist, which was the wrong place twice over. Configuring during the
-  day it printed "Do Not Disturb is off. Everything is getting through."
-  directly beneath rows just set to Blocked, read - reasonably - as the settings
-  not working. And it was on a screen about a FUTURE window while reporting NOW.
-  Gated on `runningNow`, it can only be read when there is something to verify.
-  It sits INSIDE the card rather than in a section of its own, because that is
-  the card which asks for Do Not Disturb and this is the evidence it happened -
-  and it puts the worst case where it cannot be missed: the switch reading ON,
-  with a line directly beneath it saying the phone reports everything getting
-  through. A section of its own cost a `SectionRule` and a label for one
-  sentence, and separated the claim from its evidence.
-  Note what the move broke, because it is the same fault a third time: the copy
-  said "anything not listed ABOVE", which was true at the foot of the allowlist
-  and false anywhere else. Text that points at its neighbours travels badly.
-  When the phone says everything is getting through while Do Not Disturb was
-  asked for, the line is drawn in `cta` rather than `onSurfaceLow` - that is the
-  failure the app exists to catch, so it does not whisper it in the same ink as
-  good news.
-
+- **The "right now" readout is a status PILL, and finding that out found a bug
+  in what it said.** It reports `getCurrentInterruptionFilter` - the one thing
+  on any screen that is not the app's own belief, and the whole premise here,
+  since a vendor can accept a request and quietly ignore it. It lives inside the
+  "What can wake you" card, gated on `runningNow`, because that is the card
+  which asks for Do Not Disturb and this is the evidence it happened.
+  It used to be one sentence whose INK went `cta` when the phone disagreed. Two
+  things were wrong with that. Colour alone says nothing to anyone reading shape
+  and cannot be asserted in a test. And the words were wrong: the failure case
+  reused `filter_all`, "Do Not Disturb is off. Everything is allowed.", which is
+  the opposite of what happened - it was not off, it was ignored. The app's
+  headline failure printed the reverse of the truth for as long as it existed.
+  Now: a tonal pill with same-hue ink carrying the verdict, and a sentence under
+  it saying what that means - the grammar Google Health uses for "In range" and
+  "Out of range", measured on this phone. `filter_ignored` exists for the case
+  that had no words of its own. Three treatments: `selectFill`/`onSelect` when
+  the phone is doing what was asked, `veil`/`onSurfaceLow` when Do Not Disturb
+  was not asked for, and `alert`/`onAlert` for the failure - a new pair at the
+  off-lamp's red hue on Material's error-container tones, so the two reds on
+  screen are the same red. `errorContainer` was another unset scheme role.
+  A test asserts the ignored case says `filter_ignored` and NOT `filter_all`.
+  That test was impossible while the difference was a colour.
 - **Every switch on Home is a PLAN, and for months nothing said so.** Reported
   as the sharpest version: with the master switch OFF, the Do Not Disturb switch
   and the four effect switches are fully live, so a person turns Do Not Disturb

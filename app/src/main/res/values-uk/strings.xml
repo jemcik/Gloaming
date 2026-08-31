@@ -110,11 +110,18 @@
     <string name="state_allowed">Дозволено</string>
     <string name="state_blocked">Заблоковано</string>
 
-    <string name="filter_all">Режим «Не турбувати» вимкнено. Усе дозволено.</string>
-    <string name="filter_priority">Режим «Не турбувати» увімкнено. Усе, що ви не дозволили, блокується.</string>
-    <string name="filter_alarms">Дозволені лише будильники.</string>
-    <string name="filter_none">Увімкнено повну тишу — блокується навіть те, що ви дозволили.</string>
-    <string name="filter_unknown">Ваш телефон не повідомив, що саме діє.</string>
+    <string name="filter_pill_on">Діє</string>
+    <string name="filter_pill_off">Вимкнено</string>
+    <string name="filter_pill_ignored">Не діє</string>
+    <string name="filter_pill_alarms">Лише будильники</string>
+    <string name="filter_pill_none">Повна тиша</string>
+    <string name="filter_pill_unknown">Невідомо</string>
+    <string name="filter_all">Проходить усе.</string>
+    <string name="filter_ignored">Ви ввімкнули режим «Не турбувати», але телефон його не застосовує.</string>
+    <string name="filter_priority">Усе, що ви не дозволили, блокується.</string>
+    <string name="filter_alarms">Проходять лише будильники.</string>
+    <string name="filter_none">Блокується навіть те, що ви дозволили.</string>
+    <string name="filter_unknown">Телефон не повідомив, що діє.</string>
 
     <string name="sheet_who_can_call">Хто може телефонувати</string>
     <string name="sheet_who_can_message">Хто може писати</string>

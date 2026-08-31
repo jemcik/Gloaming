@@ -110,11 +110,18 @@
     <string name="state_allowed">Разрешено</string>
     <string name="state_blocked">Заблокировано</string>
 
-    <string name="filter_all">Режим «Не беспокоить» выключен. Разрешено всё.</string>
-    <string name="filter_priority">Режим «Не беспокоить» включен. Все, что вы не разрешили, блокируется.</string>
-    <string name="filter_alarms">Разрешены только будильники.</string>
-    <string name="filter_none">Включена полная тишина — блокируется даже то, что вы разрешили.</string>
-    <string name="filter_unknown">Телефон не сообщил о текущих настройках.</string>
+    <string name="filter_pill_on">Действует</string>
+    <string name="filter_pill_off">Выключен</string>
+    <string name="filter_pill_ignored">Не действует</string>
+    <string name="filter_pill_alarms">Только будильники</string>
+    <string name="filter_pill_none">Полная тишина</string>
+    <string name="filter_pill_unknown">Неизвестно</string>
+    <string name="filter_all">Проходит всё.</string>
+    <string name="filter_ignored">Вы включили режим «Не беспокоить», но телефон его не применяет.</string>
+    <string name="filter_priority">Всё, что вы не разрешили, блокируется.</string>
+    <string name="filter_alarms">Проходят только будильники.</string>
+    <string name="filter_none">Блокируется даже то, что вы разрешили.</string>
+    <string name="filter_unknown">Телефон не сообщил, что действует.</string>
 
     <string name="sheet_who_can_call">Кто может звонить</string>
     <string name="sheet_who_can_message">Кто может писать</string>

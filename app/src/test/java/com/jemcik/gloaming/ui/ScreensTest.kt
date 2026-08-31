@@ -101,6 +101,15 @@ class ScreensTest {
         compose.onNodeWithText("Reminders").assertIsOn()
     }
 
+    /** A window that contains this instant, whatever hour the suite runs at. */
+    private fun runningWindow(prefs: Prefs) {
+        val now = LocalTime.now()
+        prefs.startTime = now.minusHours(1)
+        prefs.endTime = now.plusHours(1)
+        prefs.days = DayOfWeek.entries.toSet()
+        prefs.activeDay = Prefs.NO_DAY
+    }
+
     @Test
     fun `the right-now readout is hidden when bedtime is not running`() {
         // It reports what the SYSTEM says is in effect, which is only worth
@@ -125,19 +134,40 @@ class ScreensTest {
     fun `the right-now readout appears while bedtime is running`() {
         val prefs = Prefs(ApplicationProvider.getApplicationContext())
         prefs.enabled = true
-        // A window that contains this instant whenever the test runs.
-        val now = LocalTime.now()
-        prefs.startTime = now.minusHours(1)
-        prefs.endTime = now.plusHours(1)
-        prefs.days = DayOfWeek.entries.toSet()
-        prefs.activeDay = Prefs.NO_DAY
+        // Do Not Disturb NOT asked for, so a filter of ALL is the honest answer
+        // rather than the phone ignoring us.
+        prefs.fxDnd = false
+        runningWindow(prefs)
         compose.setContent {
             GloamingTheme(dark = false) {
                 Home(rememberScrollState(), onOpenSettings = {}, onOpenInterruptions = {})
             }
         }
-        val readout = ctx().getString(R.string.filter_all)
-        compose.onNodeWithText(readout).assertExists()
+        compose.onNodeWithText(ctx().getString(R.string.filter_all)).assertExists()
+        compose.onNodeWithText(ctx().getString(R.string.filter_pill_off)).assertExists()
+    }
+
+    @Test
+    fun `the readout names the phone ignoring Do Not Disturb, and does not call it off`() {
+        // THE failure this app exists to catch: bedtime running, Do Not Disturb
+        // asked for, and the phone reporting that everything gets through.
+        // It used to print filter_all here - "Do Not Disturb is off. Everything
+        // is allowed." - which is the opposite of what happened, with only the
+        // ink colour carrying the difference. A test on the colour was never
+        // possible; a test on the WORDS is.
+        val prefs = Prefs(ApplicationProvider.getApplicationContext())
+        prefs.enabled = true
+        prefs.fxDnd = true
+        runningWindow(prefs)
+        compose.setContent {
+            GloamingTheme(dark = false) {
+                Home(rememberScrollState(), onOpenSettings = {}, onOpenInterruptions = {})
+            }
+        }
+        compose.onNodeWithText(ctx().getString(R.string.filter_ignored)).assertExists()
+        compose.onNodeWithText(ctx().getString(R.string.filter_pill_ignored)).assertExists()
+        // and specifically NOT the sentence that would say it was switched off
+        compose.onNodeWithText(ctx().getString(R.string.filter_all)).assertDoesNotExist()
     }
 
     @Test

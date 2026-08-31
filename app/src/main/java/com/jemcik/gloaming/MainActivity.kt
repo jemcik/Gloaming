@@ -1028,27 +1028,52 @@ fun Home(
                         HorizontalDivider(
                             Modifier.padding(horizontal = CARD_PAD), color = g.line
                         )
-                        Text(
-                            when (filter) {
-                                NotificationManager.INTERRUPTION_FILTER_ALL ->
-                                    R.string.filter_all
-                                NotificationManager.INTERRUPTION_FILTER_PRIORITY ->
-                                    R.string.filter_priority
-                                NotificationManager.INTERRUPTION_FILTER_ALARMS ->
-                                    R.string.filter_alarms
-                                NotificationManager.INTERRUPTION_FILTER_NONE ->
-                                    R.string.filter_none
-                                else -> R.string.filter_unknown
-                            }.let { stringResource(it) },
-                            style = MaterialTheme.typography.bodySmall,
-                            // cta when the phone disagrees with what we asked:
-                            // that is the failure this app exists to catch, so
-                            // it is not said in the same ink as good news.
-                            color = if (ignored) g.cta else g.onSurfaceLow,
-                            modifier = Modifier.padding(
-                                horizontal = CARD_PAD, vertical = 14.dp
+                        // Verdict first, then what it means. The pill is the
+                        // grammar Google Health uses for "In range" / "Out of
+                        // range": a tonal fill with same-hue ink, so the state
+                        // is carried by an ELEMENT rather than by the colour of
+                        // a sentence. What it replaced said the failure only in
+                        // `cta` ink, which is invisible to anyone reading shape
+                        // - and said it in words that were wrong, see strings.
+                        val (pill, line, fill, ink) = when {
+                            ignored -> Quad(
+                                R.string.filter_pill_ignored, R.string.filter_ignored,
+                                g.alert, g.onAlert
                             )
-                        )
+                            filter == NotificationManager.INTERRUPTION_FILTER_ALL -> Quad(
+                                R.string.filter_pill_off, R.string.filter_all,
+                                g.veil, g.onSurfaceLow
+                            )
+                            filter == NotificationManager.INTERRUPTION_FILTER_PRIORITY -> Quad(
+                                R.string.filter_pill_on, R.string.filter_priority,
+                                g.selectFill, g.onSelect
+                            )
+                            filter == NotificationManager.INTERRUPTION_FILTER_ALARMS -> Quad(
+                                R.string.filter_pill_alarms, R.string.filter_alarms,
+                                g.selectFill, g.onSelect
+                            )
+                            filter == NotificationManager.INTERRUPTION_FILTER_NONE -> Quad(
+                                R.string.filter_pill_none, R.string.filter_none,
+                                g.selectFill, g.onSelect
+                            )
+                            else -> Quad(
+                                R.string.filter_pill_unknown, R.string.filter_unknown,
+                                g.veil, g.onSurfaceLow
+                            )
+                        }
+                        Column(
+                            Modifier.padding(
+                                horizontal = CARD_PAD, vertical = 14.dp
+                            ),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            StatusPill(stringResource(pill), fill, ink)
+                            Text(
+                                stringResource(line),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = g.onSurfaceLow
+                            )
+                        }
                     }
                 }
             }
@@ -1255,6 +1280,31 @@ private fun windowSentence(
  * carrying one sentence about the rows above it. Both cards on Home use it, so
  * the two cannot drift.
  */
+/** Four things travel together per filter state; a data class beats four whens. */
+private data class Quad(val pill: Int, val line: Int, val fill: Color, val ink: Color)
+
+/**
+ * A status pill: tonal fill, same-hue ink, capsule.
+ *
+ * Borrowed deliberately from Google Health, which labels every metric this way
+ * ("In range", "Goal not met"). The point is that STATE becomes an element you
+ * can see and a screen reader can reach, instead of the colour of a sentence -
+ * the same fault the effect chips and the choice sheets both had before they
+ * were given real semantics.
+ */
+@Composable
+private fun StatusPill(text: String, fill: Color, ink: Color) {
+    Text(
+        text,
+        style = MaterialTheme.typography.labelLarge,
+        color = ink,
+        modifier = Modifier
+            .clip(CircleShape)
+            .background(fill)
+            .padding(horizontal = 12.dp, vertical = 5.dp)
+    )
+}
+
 @Composable
 private fun NoticeStrip(text: String) {
     val g = gloam
@@ -1526,7 +1576,9 @@ private fun DayRow(selected: Set<DayOfWeek>, onToggle: (DayOfWeek) -> Unit) {
                         .clip(CircleShape)
                         .then(
                             if (on) Modifier.background(g.selectFill)
-                            else Modifier.border(1.5.dp, g.line, CircleShape)
+                            // `outline`, not `line`: this ring reports state,
+                            // and in `line` it measured 1.66:1 in Dawn.
+                            else Modifier.border(1.5.dp, g.outline, CircleShape)
                         ),
                     contentAlignment = Alignment.Center
                 ) {

@@ -159,10 +159,31 @@
     <string name="state_allowed">Allowed</string>
     <string name="state_blocked">Blocked</string>
 
-    <string name="filter_all">Do Not Disturb is off. Everything is allowed.</string>
-    <string name="filter_priority">Do Not Disturb is on. Anything you have not allowed is being held back.</string>
-    <string name="filter_alarms">Only alarms are allowed.</string>
-    <string name="filter_none">Total silence is on — even what you allowed is held back.</string>
+    <!-- The one readout in the app that is not the app's own belief: it reports
+         what getCurrentInterruptionFilter ANSWERED, which is the whole premise
+         here - a vendor can accept a request and quietly ignore it.
+
+         It is a status PILL plus a sentence now: the pill is the verdict at a
+         glance, the sentence is what that means. Before this the pill did not
+         exist and the FAILURE case was signalled by colour alone - and worse,
+         by the wrong words. Do Not Disturb asked for and the phone reporting
+         everything getting through printed "Do Not Disturb is off. Everything
+         is allowed.", which is the opposite of what happened: it was not off,
+         it was ignored. filter_ignored exists for exactly that case.
+
+         BUDGET-EACH 18 filter_pill_on filter_pill_off filter_pill_ignored
+         filter_pill_alarms filter_pill_none filter_pill_unknown -->
+    <string name="filter_pill_on">In effect</string>
+    <string name="filter_pill_off">Off</string>
+    <string name="filter_pill_ignored">Not in effect</string>
+    <string name="filter_pill_alarms">Alarms only</string>
+    <string name="filter_pill_none">Total silence</string>
+    <string name="filter_pill_unknown">Unknown</string>
+    <string name="filter_all">Everything is getting through.</string>
+    <string name="filter_ignored">You asked for Do Not Disturb and your phone is not applying it.</string>
+    <string name="filter_priority">Anything you have not allowed is being held back.</string>
+    <string name="filter_alarms">Only alarms are getting through.</string>
+    <string name="filter_none">Even what you allowed is held back.</string>
     <string name="filter_unknown">Your phone did not say what is in effect.</string>
 
     <string name="sheet_who_can_call">Who can call</string>

@@ -79,7 +79,23 @@ data class GloamColors(
        tone-7 page, and lifting the ground is what the whole rebuild was for. */
     val raiseRunning: Color,
     val veil: Color,             // hairlines, ticks, off arc
-    val line: Color,             // hollow handles, disabled
+    val line: Color,             // section rules, dividers, dial ticks and dots
+    /* The outline of a control whose STATE you have to be able to read: the
+       unselected day's ring, the unchecked switch's border. Both were `line`,
+       and `line` is deliberately quiet - it also draws the section rules and
+       the dial's dots, where quiet is right. Measured there, the day ring was
+       1.91:1 in Dusk and 1.66:1 in Dawn and the switch border 1.33 and 1.43,
+       against the 3:1 a UI part that must be identified has to reach; M3's own
+       baseline manages 3.51 for the same border.
+       The cause was a mis-mapping rather than a bad colour. `line` sits at tone
+       34 and 79, which IS Material's `outlineVariant` (30 dark / 80 light) -
+       and the scheme was aliasing `outline` to it, so the strong role and the
+       quiet one were the same token. This is the strong one, at Material's own
+       tones: 60 dark, 50 light. 4.93 / 4.28 on the ring, 3.41 / 3.70 on the
+       switch border.
+       Note what deliberately did NOT change: section rules, dividers and the
+       dial keep `line`. They separate blocks; they do not report state. */
+    val outline: Color,
     val onSurface: Color,
     val onSurfaceMid: Color,
     /* Secondary text, and the ink most of the app is written in - 24 usages
@@ -129,6 +145,17 @@ data class GloamColors(
        so the red/green convention is not load-bearing here. */
     val lampOn: Color,
     val lampOff: Color,
+    /* The one FAILURE state in the app: bedtime is running, Do Not Disturb was
+       asked for, and the phone reports that everything is getting through.
+       Material's error container tones (30 dark / 90 light) at the off-lamp's
+       own red hue, so the two reds on screen are the same red.
+       It is a container pair rather than an ink because the readout that uses
+       it is a status PILL now - fill plus same-hue ink, the grammar Google
+       Health uses for "In range" and "Out of range". It used to be `cta` as
+       TEXT, which was borrowing the accent to mean alarm and said nothing to
+       anyone reading shape rather than colour. */
+    val alert: Color,
+    val onAlert: Color,
     val cta: Color,
     val dark: Boolean
 )
@@ -182,6 +209,7 @@ private val Dusk = GloamColors(
     raiseRunning = Color(0xFF2F353D),     //            1.35:1 while running
     veil = Color(0xFF383E46),
     line = Color(0xFF49505A),
+    outline = Color(0xFF8D9198),      // tone 60 · ring 4.93:1, border 3.41:1
     onSurface = Color(0xFFEAEBED),        // 10.37:1 on a card
     onSurfaceMid = Color(0xFFC7CDD7),
     onSurfaceLow = Color(0xFFBCC1CC),     //  6.86:1 on a card
@@ -193,6 +221,8 @@ private val Dusk = GloamColors(
     switchThumbOff = Color(0xFF9196A0),   //                     3.59:1 on the veil track
     lampOn = Color(0xFF88CAA8),
     lampOff = Color(0xFFE7968A),
+    alert = Color(0xFF6F362E),         // tone 30 · ink 7.24:1
+    onAlert = Color(0xFFFFDAD5),
     cta = Color(0xFFF49B66),
     dark = true
 )
@@ -207,6 +237,7 @@ private val Dawn = GloamColors(
     raiseRunning = Color(0xFFECE1D6),     //            1.14:1 while running
     veil = Color(0xFFF1E7DE),
     line = Color(0xFFCCC2B9),
+    outline = Color(0xFF7F756B),      // tone 50 · ring 4.28:1, border 3.70:1
     onSurface = Color(0xFF1E1B18),        // 15.11:1 on a card
     onSurfaceMid = Color(0xFF514A43),
     onSurfaceLow = Color(0xFF514A43),     //  7.68:1 on a card
@@ -218,6 +249,8 @@ private val Dawn = GloamColors(
     switchThumbOff = Color(0xFF837B72),   //                     3.39:1 on the veil track
     lampOn = Color(0xFF3E742B),
     lampOff = Color(0xFFAD483B),
+    alert = Color(0xFFFFDAD5),         // tone 90 · ink 7.27:1
+    onAlert = Color(0xFF6B3831),
     cta = Color(0xFF954914),
     dark = false
 )
@@ -465,7 +498,7 @@ fun gloamSwitchColors(): SwitchColors = SwitchDefaults.colors(
     checkedBorderColor = Color.Transparent,
     uncheckedTrackColor = gloam.veil,
     uncheckedThumbColor = gloam.switchThumbOff,
-    uncheckedBorderColor = gloam.line,
+    uncheckedBorderColor = gloam.outline,
     // the check reads as the track's own green on the pale thumb
     checkedIconColor = gloam.selectFill,
     disabledUncheckedTrackColor = gloam.veil,
@@ -526,11 +559,12 @@ fun GloamingTheme(dark: Boolean = isSystemInDarkTheme(), content: @Composable ()
         background = g.surface, onBackground = g.onSurface,
         surface = g.surface, onSurface = g.onSurface,
         surfaceVariant = g.raise, onSurfaceVariant = g.onSurfaceLow,
-        outline = g.line, outlineVariant = g.veil,
+        outline = g.outline, outlineVariant = g.veil,
         secondaryContainer = g.selectFill, onSecondaryContainer = g.onSelect,
         primaryContainer = g.selectFill, onPrimaryContainer = g.onSelect,
         tertiary = g.cta, onTertiary = g.surface,
         tertiaryContainer = g.raise, onTertiaryContainer = g.onSurface,
+        errorContainer = g.alert, onErrorContainer = g.onAlert,
         surfaceContainerHighest = g.veil, surfaceContainerHigh = g.raise,
         surfaceContainer = g.raise, surfaceContainerLow = g.surface,
         surfaceContainerLowest = g.surface
@@ -540,11 +574,12 @@ fun GloamingTheme(dark: Boolean = isSystemInDarkTheme(), content: @Composable ()
         background = g.surface, onBackground = g.onSurface,
         surface = g.surface, onSurface = g.onSurface,
         surfaceVariant = g.raise, onSurfaceVariant = g.onSurfaceLow,
-        outline = g.line, outlineVariant = g.veil,
+        outline = g.outline, outlineVariant = g.veil,
         secondaryContainer = g.selectFill, onSecondaryContainer = g.onSelect,
         primaryContainer = g.selectFill, onPrimaryContainer = g.onSelect,
         tertiary = g.cta, onTertiary = g.surface,
         tertiaryContainer = g.raise, onTertiaryContainer = g.onSurface,
+        errorContainer = g.alert, onErrorContainer = g.onAlert,
         surfaceContainerHighest = g.veil, surfaceContainerHigh = g.raise,
         surfaceContainer = g.raise, surfaceContainerLow = g.surface,
         surfaceContainerLowest = g.surface

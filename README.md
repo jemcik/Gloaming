@@ -77,6 +77,13 @@ doing it, or on any vendor doing it at all.
   with no alarms behind it. Gloaming compares the boot it handled against the
   boot it is running on, says so when one goes unreported, and offers a button
   to the screen that fixes it.
+- **Two themes that were measured rather than picked.** Dusk and Dawn are
+  stated in Material 3's own tone scale, and checked against what Google's apps
+  actually ship on a phone rather than against the documentation — the two
+  agree, which is worth knowing before treating the spec as an ideal nobody
+  follows. Every contrast figure sits in the source beside the colour it
+  belongs to, including the ones that only just pass and the one that
+  deliberately does not.
 - **English, Russian and Ukrainian**, with a per-app language picker, and clock
   times in whichever 12- or 24-hour format the phone is set to.
 - **A journal.** The app keeps its own on-device log of every decision it makes
@@ -163,6 +170,11 @@ first, or turn always-on back on in Settings.
     ./tools/deploy.sh     install on the attached device
     ./tools/check.sh      what the phone thinks: zen state, the rule, the app's
                           own view, the next alarms and the journal. Read-only.
+    python3 tools/render_icon.py
+                          re-render docs/icon.png from the adaptive icon's own
+                          numbers — cropped to the 72dp a launcher shows and
+                          masked to a squircle, so it has transparent corners
+                          instead of a black square
 
 ## Tests
 
@@ -230,5 +242,9 @@ The real documentation. It carries what the code cannot: the behaviour measured
 on hardware, the design decisions and what was rejected, and the mistakes worth
 not repeating — among them that `updateAutomaticZenRule` silently clears a
 rule's condition, so rewriting a live rule switches Do Not Disturb off
-underneath you. Much of it is written against one phone, because that is the
-phone it could be measured on.
+underneath you. It also carries the colour work: why no flat background can
+serve the launcher icon, why a dark warm colour is always brown, and why a
+screenshot can compare two captures but can never establish that a colour is
+right — on a panel that is not running in sRGB, the framebuffer and the glass
+disagree. Much of it is written against one phone, because that is the phone it
+could be measured on.

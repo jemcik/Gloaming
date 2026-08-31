@@ -66,9 +66,9 @@
     <string name="dnd_nothing_silenced">Звук не отключен</string>
 
     <!-- ============ Home: how the screen looks ============ -->
-    <string name="note_off">Режим сна выключен, поэтому эти настройки не действуют.</string>
-    <string name="note_until">Эти настройки не действуют до %1$s %2$s.</string>
-    <string name="note_unscheduled">Расписание не задано, поэтому эти настройки не действуют.</string>
+    <string name="note_off">Режим сна выключен. Эти настройки заработают, когда вы его включите.</string>
+    <string name="note_until">Эти настройки заработают в %1$s %2$s.</string>
+    <string name="note_unscheduled">Ночи не запланированы, поэтому эти настройки не сработают.</string>
     <string name="section_how_the_screen_looks">как выглядит экран</string>
     <string name="section_how_the_screen_will_look">как будет выглядеть экран</string>
     <!-- BUDGET: chip labels, two per row at 14sp. -->

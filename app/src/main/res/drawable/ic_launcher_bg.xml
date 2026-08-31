@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The ground behind the crescent.
+
+     No FLAT colour can serve this artwork, and that is the whole reason this
+     file exists. The foreground spans tone 27.7 at the night horn to 73.4 at
+     the dawn horn, so any single value contrasts with one end and swallows the
+     other. The shipped icon was #12161B: it read the dawn horn at 8.79:1 and
+     the night horn at 1.79:1, which is to say it read as a black tile with an
+     orange fingernail on it, and was reported as the darkest icon on the
+     launcher it sat in. It was stale as well - #12161B was Dusk's surface
+     before the 31 Aug 2026 palette rebuild and was never updated with it.
+
+     TWO things were measured rather than reasoned about, and both first
+     attempts were wrong.
+
+     THE AXIS. Read off the RENDERED icon, not the path data: the cool half of
+     the artwork centres at x=0.35 of the tile and the warm half at x=0.63, so
+     the split is very nearly horizontal. A first attempt assumed 45 degrees
+     from the crescent's -32 degree rotation and put the light in the wrong
+     corner. Hence startY 68 to endY 40 - left to right with only a slight rise.
+
+     THE RAMP stays inside ONE hue family. A warm-light to cool-dark gradient
+     loses its chroma in the middle - measured at 7, against the 18 a single-hue
+     ramp holds - and the icon came out grey-brown through its centre while both
+     of its ends were fine. That midpoint is the thing to check when changing
+     these stops.
+
+     Light on the left behind the cool horn (9.0:1), deep on the right behind
+     the warm one (2.61:1). THAT SECOND NUMBER IS BELOW 3:1 AND IS DELIBERATE.
+     It was not arrived at by not looking: the step that clears the guideline
+     (tone 41, 3.01:1) was built, installed and compared against this one on the
+     device, and this was chosen with the shortfall on the table. The reasons it
+     holds are that the dawn horn is a ~40dp shape rather than a hairline or a
+     glyph, and that it separates from this ground by HUE as much as by
+     luminance - orange on blue - which a WCAG ratio does not model at all. 3:1
+     is a floor written for small UI parts whose only cue is lightness.
+     Do not read this as licence to go below 3:1 elsewhere, and do not "fix" it
+     upward without looking at the two side by side first.
+     The asymmetry is the practical note: the LEFT end has 9.0:1 where it needs
+     3, so if this ever wants to be lighter again, lighten the LEFT and leave
+     the right alone. Push the right end further and the orange horn really does
+     start dissolving into its own background. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <path android:pathData="M0,0 h108 v108 h-108 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:type="linear"
+                android:startX="0" android:startY="68"
+                android:endX="108" android:endY="40">
+                    <item android:offset="0.00" android:color="#FFF0F4FF" />
+                    <item android:offset="1.00" android:color="#FF5A6B89" />
+            </gradient>
+        </aapt:attr>
+    </path>
+</vector>

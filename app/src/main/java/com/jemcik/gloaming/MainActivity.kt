@@ -948,6 +948,10 @@ fun Home(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column {
+                    // At the TOP of the card, not its foot. It qualifies
+                    // everything below it, and a caveat you meet only after
+                    // reading what it qualifies has already failed at its job.
+                    if (!runningNow) NoticeStrip(planNote(ctx, enabled, start, end, days, loc))
                     // No supporting line, deliberately. Any sentence here makes
                     // a claim about who gets through, and the row directly below
                     // makes that claim properly and dynamically - "Alarms, calls,
@@ -1045,7 +1049,7 @@ fun Home(
                                 horizontal = CARD_PAD, vertical = 14.dp
                             )
                         )
-                    } else NoticeStrip(planNote(ctx, enabled, start, end, days, loc))
+                    }
                 }
             }
 
@@ -1077,6 +1081,10 @@ fun Home(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column {
+                        // Same note, same slot, same reason as the card above.
+                        if (!runningNow) {
+                            NoticeStrip(planNote(ctx, enabled, start, end, days, loc))
+                        }
                         EffectRow(
                             Fx.Grayscale, stringResource(R.string.fx_grayscale),
                             stringResource(R.string.fx_grayscale_sub), fxGray
@@ -1105,13 +1113,6 @@ fun Home(
                                 Fx.Ambient, stringResource(R.string.fx_ambient),
                                 stringResource(R.string.fx_ambient_sub), fxAmbient
                             ) { fxAmbient = !fxAmbient; haptics.toggle(fxAmbient); commit() }
-                        }
-                        // The same note as the Do Not Disturb card, in the same
-                        // slot, for the same reason. Absent while running,
-                        // where the effects ARE applied and the screen in front
-                        // of you is the evidence.
-                        if (!runningNow) {
-                            NoticeStrip(planNote(ctx, enabled, start, end, days, loc))
                         }
                     }
                 }
@@ -1257,18 +1258,37 @@ private fun windowSentence(
 @Composable
 private fun NoticeStrip(text: String) {
     val g = gloam
-    // Full width and no inset, so it is a STRIP rather than a padded paragraph -
-    // the area is what does the work here, since the accent hue cannot be
-    // carried as text on the cream (see `notice` in Theme.kt).
+    // Full width and no inset, so it is a STRIP rather than a padded paragraph.
+    // Area is what does the work: this is a warning about controls that look
+    // live and are not, and it has to be seen before they are read.
     //
-    // No rule above it: the colour step IS the boundary, and a rule plus a
-    // colour change is two edges drawn for one. The bottom corners come free -
+    // It is `selectFill` behind `onSelect` - the SAME pair as a selected day,
+    // the preset pill and a checked switch - and it carries no token of its own.
+    // That is the fourth shape this band has had and the first that cannot
+    // drift: there is nothing to keep in sync, because it is not a copy of the
+    // accent, it IS the accent.
+    //
+    // What the three earlier shapes cost is worth knowing before adding a
+    // `notice` token back. A themed pair drifted 34 tones apart between the two
+    // schemes. A single shared pair taken from Arc.dawn could not be tuned per
+    // theme at all. A re-themed pair could, and then needed a dead-band worked
+    // around (between tone 48 and 58 on that hue, NEITHER ink clears 4.5:1).
+    // Reusing the accent has none of those problems by construction.
+    //
+    // The honest cost: the band is now the colour of the controls it is warning
+    // about, and green conventionally reads "on". It earns that back by being
+    // unmistakably part of this app rather than a fourth hue on the screen, and
+    // the words do the semantic work. 4.90:1 in Dusk, 6.79:1 in Dawn; 2.07:1
+    // and 1.26:1 against the card behind it.
+    //
+    // No rule below it: the colour step IS the boundary, and a rule plus a
+    // colour change is two edges drawn for one. The TOP corners come free -
     // the card is a Surface with a shape, and a Surface clips its content.
-    Box(Modifier.fillMaxWidth().background(g.notice)) {
+    Box(Modifier.fillMaxWidth().background(g.selectFill)) {
         Text(
             text,
             style = MaterialTheme.typography.bodySmall,
-            color = g.onSurface,
+            color = g.onSelect,
             modifier = Modifier.padding(horizontal = CARD_PAD, vertical = 14.dp)
         )
     }

@@ -42,7 +42,21 @@ core/Clock.kt            clock times in the phone's own 12/24 format
     ui/SettingsScreen.kt     theme mode, a link to the system language picker
     ui/Theme.kt              Dusk/Dawn tokens, Baloo 2 + Figtree type scale,
                              and the arc's ground-aware variants (stopsOn,
-                             nightOn) for thin strokes and fills on Dusk
+                             nightOn) for thin strokes and fills on Dusk.
+                             Both palettes were rebuilt 31 Aug 2026 against
+                             Material's tone table and against Google Health,
+                             Dialer, Calendar, Tasks and Messages sampled on the
+                             Honor. Dusk is a soft charcoal (page tone 14, not
+                             7); Dawn is a warm white (page tone 98, not 93);
+                             and one accent - a desaturated slate - fills the
+                             day discs, the preset pill AND the checked switch
+                             track, which is a deliberate break with Material
+                             and is argued in "Deviations" below. Several
+                             constraints recorded elsewhere in this file were
+                             bought with the OLD grounds and have expired; each
+                             is marked where it sits rather than deleted,
+                             because the measurement is still the record of how
+                             it was found.
 
 The rule holds the policy; we hold the trigger. `component=null` on the rule is
 deliberate — there is no condition provider, which is precisely what avoids the
@@ -580,19 +594,52 @@ confirming on real hardware.
   off and disabling the rest would mean a new user can configure nothing until
   they arm a schedule they have not set up yet. And M3 disabled content is ~38%
   opacity and explicitly exempt from contrast minimums, which undoes the work
-  that took `onSurfaceLow` from 4.30:1 to 6.4:1 for an app read in a dark room -
+  that put `onSurfaceLow` at 6.9:1 / 7.7:1 for an app read in a dark room -
   and disabled controls are not focusable, so TalkBack loses them entirely.
   So: nothing is disabled, and `planNote` says the truth at the foot of each
   card instead, in the slot the "right now" readout already established. It is
-  a `NoticeStrip` - full width, no inset, `notice` behind `onSurface` - because
-  the first attempt at "make it noticeable" was to colour the TEXT, and that is
-  measured shut: `cta` as ink is 2.49:1 on a card in Dawn and `lampOff` is
-  3.80:1, both under the 4.5:1 body minimum and under even the 3:1 large-text
-  exemption. The cream cannot carry an accent hue as text - the WAKE UP finding
-  a second time. The attention has to come from AREA, and the band is pitched at
-  the same 1.23:1 / 1.40:1 the cards already have against the page, so it reads
-  as page -> card -> notice rather than as an error state. See `notice` in
-  Theme.kt for the rest of the numbers. Three
+  a `NoticeStrip` - full width, no inset, at the TOP of the card, drawn in
+  `selectFill` behind `onSelect`. Three things there were reversed on
+  31 Aug 2026 after use, and all three reversals are worth keeping.
+  It sat at the FOOT, which meant the caveat arrived after the rows it
+  qualifies had already been read. A warning you meet on the way out has failed.
+  It was pitched as a RUNG rather than an alert - 1.32:1 / 1.11:1 from the card,
+  the same separation `raise` has from the page - which was a deliberate choice
+  and the wrong one: it did not attract attention, which for a warning about
+  controls that look live and are not is its only job.
+  And it has no colour of its own. **This took four shapes and the first three
+  are worth recording as costs, not as history.** A themed `notice` pair drifted
+  34 tones apart between the two schemes, because separate values are exactly
+  what lets that happen. A single shared pair taken from `Arc.dawn` - the sun on
+  the dial, asked for by name - could not then be tuned per theme at all. A
+  re-themed pair could, and immediately hit a DEAD BAND: between tone 48 and 58
+  on that hue neither ink clears 4.5:1, the sun's own rays falling to 4.21 and
+  white reaching only 2.85, so "a bit darker" had two landing zones and nothing
+  between them. The fourth shape has none of those problems by construction:
+  the band is `selectFill`, the same token as a selected day, the preset pill
+  and a checked switch. There is nothing to keep in sync because it is not a
+  copy of the accent, it IS the accent. 4.90:1 in Dusk and 6.79:1 in Dawn, at
+  2.07:1 and 1.26:1 against the card.
+  The honest cost, so nobody has to rediscover it: the band is now the colour of
+  the controls it warns about, and green conventionally reads "on". It earns
+  that back by being unmistakably part of this app rather than a fourth hue on
+  a screen that already carries the arc's two and the red lamp - and the WORDS
+  do the semantic work, which is where that work belongs.
+  A lesson that generalises past this band: a dark warm colour IS brown. Three
+  rounds were spent trying to make a dark orange strip not look brown, and the
+  only exits are to strip the chroma out (reads warm grey), move the hue off
+  orange, or stop being dark. That is perception, not a palette bug.
+  **The reason originally recorded for that no longer holds, and the correction
+  matters more than the band does.** Colouring the TEXT was rejected as measured
+  shut: `cta` as ink was 2.49:1 on a card in Dawn and `lampOff` 3.80:1, both
+  under the 4.5:1 body minimum and under even the 3:1 large-text exemption - the
+  cream could not carry an accent hue as text, which was the WAKE UP finding a
+  second time. On the warm white those are 5.71:1 and 4.92:1, and both pass. The
+  band stays because area was always the better answer for something that must
+  be noticed, not because coloured text is still impossible. Anyone re-deriving
+  "the ground cannot carry an accent as text" from this paragraph would be
+  quoting a constraint that expired on 31 Aug 2026. See `NoticeStrip` in
+  MainActivity.kt for the rest of the numbers. Three
   readings, because the reason differs and a person can act on the difference -
   switched off, armed and waiting, and armed with nothing to run. It is drawn
   only when NOT running: while the window is live the Do Not Disturb card has
@@ -736,6 +783,38 @@ confirming on real hardware.
   behind it and therefore no ripple (`indication = null`) - see the clip note
   above for why that matters.
 
+- **No FLAT colour can serve the launcher icon, and the shipped one proved it
+  for years.** The foreground spans tone 27.7 at the crescent's night horn to
+  73.4 at its dawn horn, so any single background value contrasts with one end
+  and swallows the other. `#12161B` read the dawn horn at 8.79:1 and the night
+  horn at 1.79:1 - a black tile with an orange fingernail on it, and reported as
+  the darkest icon on the launcher it sat in. It was stale too: that hex was
+  Dusk's `surface` from before the palette rebuild, and the icon never followed.
+  The ground is a gradient now (`drawable/ic_launcher_bg.xml`), and both things
+  that make it work were MEASURED after a first attempt got them wrong.
+  THE AXIS came off the rendered icon rather than the path data - the cool half
+  of the artwork centres at x=0.35 of the tile and the warm half at x=0.63, so
+  the split is nearly horizontal. Reasoning from the crescent's -32 degree
+  rotation gave 45 degrees and put the light in the wrong corner. Sampling a
+  screenshot for the CENTROID of each hue is a two-minute check and settles it.
+  THE RAMP stays inside one hue family. A warm-light to cool-dark gradient loses
+  its chroma in the middle - measured at 7 against the 18 a single-hue ramp
+  holds - so the icon came out grey-brown through its centre while both ends
+  were fine. Check the MIDPOINT's chroma, not just the stops.
+  The two ends are NOT equally free, which is the practical note: the light end
+  holds 9.0:1 against the cool horn where it needs 3, and the deep end only
+  2.61:1 against the warm one. So "make it lighter" is answered by moving the
+  LEFT stop; move the right and the dawn horn starts dissolving into its own
+  ground.
+  That 2.61 is below the 3:1 a graphical object is meant to hold, and it is
+  deliberate rather than unnoticed. The step that clears the guideline was built,
+  installed and compared on the device, and this one was chosen with the
+  shortfall on the table: the dawn horn is a ~40dp shape, not a hairline, and it
+  separates from this ground by HUE as much as by luminance - orange on blue -
+  which a WCAG ratio does not model. The floor exists for small parts whose only
+  cue is lightness. It is not licence to go under 3:1 elsewhere, and the numbers
+  are in the drawable so the next person can disagree from the same evidence.
+
 - **Do not hand-draw icons.** Three rounds went into a phone handset built
   from arcs and capsules; it read as the letter C, then a horseshoe, then a
   limp hook. Icon geometry is craft and it is already done: the path data lives
@@ -790,10 +869,56 @@ confirming on real hardware.
   error - that probe observed the right field at a time it could not have moved;
   these observed fields that never move at all.
 
-- **Screenshots are not colour-accurate.** `adb exec-out screencap` on this
-  device returns values a few units off the source hex, consistently in the
-  same direction. Fine for comparing two captures, useless for verifying an
-  exact colour — sample both and compare, never assert a hex from a capture.
+- **A screenshot cannot settle a COLOUR on this phone, and that cost a whole
+  review round.** `adb exec-out screencap` grabs the framebuffer before the
+  panel's own pipeline, and on the Honor that pipeline is doing real work:
+  `dumpsys display` reports `supportedColorModes [0, 7, 9]` with
+  `mActiveColorMode=0` - the vendor profile, NOT sRGB (7), though the panel
+  supports it and P3 (9) - and `settings get global color_temperature_cie`
+  returns per-channel gains `0.99007, 1, 0.975868`, i.e. blue attenuated about
+  2.4% and red about 1%. So a warm shift and a vendor gamut mapping sit between
+  the PNG and the eye.
+  This bit hardest on a pale, low-chroma, COOL green: a fern accent at chroma 16
+  on a warm near-white ground measured identical in the capture and the source -
+  `#C9DCCE` both - and still looked wrong in the hand. Nothing was broken; the
+  instrument was.
+  It is the same blind spot as the grayscale transform and the doze layer,
+  making three. The rule that follows: a screenshot may COMPARE two captures,
+  and may never establish that a colour is right. Hue and chroma decisions go on
+  the panel, in the room the app is used in.
+  A corollary learned the slow way, over four rounds on the notice strip: when
+  the app ALREADY CONTAINS the colour being asked for, match it rather than
+  deriving a new one. "Make it more like the sun on the dial" is answerable in
+  one step by reading `Arc.dawn` out of the source; it took four because each
+  round moved a different axis - chroma, then hue, then tone - against a
+  screenshot, while the reference sat on the same screen the whole time. Note
+  the near-miss inside it: at tone 82 hue 50 reads as PEACH, so a hue that was
+  right the whole way through looked wrong, and the next move was very nearly to
+  abandon it. Pale plus weak reads pink; the sun is nine tones deeper and half
+  again as saturated at the same hue.
+  Note the trap inside the trap: sampling a screenshot and quoting the result as
+  though it were the palette value. That happened here - a fill generated at
+  chroma 34.0 sampled as 28.3, and the low number was reported as a gamut
+  ceiling that did not exist (hue 165 reaches chroma 67.7 at tone 86). It sent
+  the light theme to a different hue on a false premise. If a number describes
+  the palette, read it from the palette.
+
+- **A debug palette left running is indistinguishable from a shipped bug.** The
+  review builds took the accent from an intent extra
+  (`--es palette FERN`), and an Activity keeps the intent it was launched with.
+  So a capture loop that ends on its last variant leaves THAT variant on screen,
+  and the next person to pick the phone up is looking at a colour nobody chose.
+  It happened, was reported as "this is not what you shipped", and produced a
+  confident wrong self-diagnosis before the intent was checked. Two cheap
+  habits: end any such loop with a force-stop and a plain relaunch, and read
+  `dumpsys activity recents | grep intent` before believing anything about what
+  is on screen.
+  The same loops also knock `Prefs.themeMode` - a blind `input tap` from a stale
+  `uiautomator dump` lands on the theme radios often enough that it happened
+  three times in one session, and `run-as` cannot write prefs back, so each one
+  costs a walk through the UI. Check `themeMode` in the prefs dump before
+  trusting that `cmd uimode night` decided what you are looking at.
+
 - **`veil` is invisible at 1 dp** despite being the hairline token by name. The
   stepped-time rules used `line` instead; those rules are gone, but the next
   1 dp stroke will hit the same wall. It already did: the divider inside the Do
@@ -803,11 +928,18 @@ confirming on real hardware.
   card. Note that swapping the component alone would not have fixed it: M3's
   divider defaults to `outlineVariant`, which this app wires to `veil`, so it
   would have drawn exactly the same invisible line with more ceremony.
-- **`Arc.night` barely registers on a dark ground.** 8.4:1 against Dawn's cream,
-  1.8:1 against Dusk's surface, 1.6:1 as a fill on `raise`. A hairline looks
-  like it starts halfway along; a filled block stops reading as a block. Hence
-  `Arc.stopsOn(dark)` and `Arc.nightOn(dark)`, which begin at `dusk` instead.
-  The ring itself keeps `night` — at 17 dp it carries its own weight.
+- **`Arc.night` barely registers on a dark ground, and lifting that ground made
+  it worse rather than better.** 9.6:1 against Dawn's warm white, but 1.5:1
+  against Dusk's surface and 1.2:1 as a fill on `raise`. A hairline looks like
+  it starts halfway along; a filled block stops reading as a block. Hence
+  `Arc.stopsOn(dark)` and `Arc.nightOn(dark)`, which begin at `dusk` instead and
+  reach 2.0:1 on a card. The ring itself keeps `night` — at 17 dp it carries its
+  own weight, checked on the phone after the rebuild.
+  This is the one place the 31 Aug 2026 rebuild cost something. The arc is a
+  fixed four-stop ramp shared by both themes, so raising Dusk's page from tone 7
+  to tone 14 walked the ground up towards the arc's dark end while the arc
+  stayed put. If the low end ever stops reading, the fix is to lift `night` and
+  `dusk` for the dark theme rather than to push the ground back down.
 
 ## Build
 
@@ -1211,27 +1343,63 @@ Disturb changes from the quick settings tile while the screen is open.
   check, because the radio already says what those said. Before that they were
   two different hand-drawn circles for the same job. `stateOn` has to
   stay legible as text on the ground ("Allowed", the chosen row in a choice
-  sheet), which forces it dark in Dawn, and at `#56633F` every selected day
-  read as a hole punched in the screen. Dawn now fills with `#BDCB9F`; Dusk is
-  unchanged. Note the tradeoff, chosen deliberately: the number that governs
-  this is selected-vs-unselected, not selected-vs-background, and `#BDCB9F`
-  sits at 1.3:1 against the unselected chip `#EBDDC5`. The two states are
-  therefore separated mostly by hue, which is the distinction red-green
-  colourblindness collapses. `#8FA36C` (2.1:1) was tried and judged too heavy.
-  If this ever needs fixing without darkening the fill, give the selected chip
-  an outline rather than a stronger colour.
-- The switch track has its own `switchTrack` / `switchThumb` pair too, wired
-  through the scheme's primary/onPrimary so both switches in the app follow it.
-  Dawn's track is `#8FA36C` — the same green rejected as too heavy for the
-  chips. That is not an inconsistency: a 44 dp chip and a 32 dp track need
-  different weights to read as the same intensity, and `#BDCB9F` on a track
-  under a near-white thumb leaves the control with no definition at all.
-  Three green pairs now exist — lamp, chip fill, switch — so reharmonising the
-  greens means touching all three.
+  sheet), which is why it is a separate token from the fill.
+- **`selectFill` and the switch track are ONE token, and that is a deliberate
+  break with Material.** M3 has two accent slots and they are not
+  interchangeable: `primary` (tone 80 dark / 40 light) for small parts - a
+  switch track, an icon, active text - and `secondaryContainer` (tone 30 / 90)
+  for filled areas. Gloaming used `primary`'s brightness for BOTH, which is what
+  made the day row glow: the selected discs measured 9.23:1 against the page
+  where Google's own selected containers measure 1.80:1. The fix was to move the
+  fills to the container role, and the further decision - asked for and worth
+  recording as a choice, not a slip - was that one accent used identically for
+  every selection control is what makes a palette read as authored. So
+  `switchTrack` / `switchThumb` are DELETED and the switch takes `selectFill` /
+  `onSelect`. Collapsed rather than merely set equal, so the requirement cannot
+  drift back apart.
+  **The cost of that was written up here as larger than it is, and the
+  correction is the more useful note.** A dim checked track does drop the
+  track's own on-versus-off lightness separation to 1.80:1 in Dusk and 1.19:1 in
+  Dawn - but the switch was never resting on track lightness. Measured off the
+  device rather than reasoned about: the checked thumb is 24.0dp and the
+  unchecked one 16.0dp (2.25x the area), and M3 outlines the UNCHECKED track
+  while leaving the checked one bare. Both are SHAPE cues, both survive any
+  colour vision, neither touches the accent. With position and the check mark
+  that is four shape cues before a colour is counted, and the 16/24dp matches
+  Google Messages' own switch on this phone.
+  So the fix once proposed here - set `checkedBorderColor` - is WRONG and is
+  recorded as wrong: it would outline both states and destroy the asymmetry
+  currently doing the work, removing a cue while appearing to add one.
+  WCAG 1.4.11 says the same thing, and quoting it is worth the space because the
+  intuition runs the other way: it "does not require that changes in color that
+  differentiate between states of an individual component meet the 3:1 contrast
+  ratio when they do not appear next to each other". Each state must be
+  identifiable against ITS OWN neighbours, which both are, on the thumb:
+  4.90 / 3.59 in Dusk and 4.52 / 3.39 in Dawn.
+  The genuinely weak part is elsewhere and is a separate call: the UNCHECKED
+  outline is `line`, kept deliberately quiet, so it measures 1.33:1 and 1.43:1
+  on its own track where M3's baseline reaches 3.51:1.
+  Selected-versus-unselected is filled-versus-hollow, not two fills: the
+  unselected day is a ring in `line`, so the old worry about the two states
+  being separated mostly by hue - the distinction red-green colourblindness
+  collapses - no longer applies. The selected fill sits at 2.61:1 on the page in
+  Dusk and 1.37:1 in Dawn.
+  The accent itself is a muted fern green, hue 165, and arrived by elimination
+  over three rounds on the phone rather than by taste: the old sage (hue 130,
+  tone 75) was the thing that glowed; a slate blue fixed that and was then
+  reported as reading almost greyscale in Dusk and too cool in Dawn; a lilac was
+  disliked outright. Hue 165 is a green with a cool lean, which is why chroma 20
+  in Dusk and 16 in Dawn still reads as a colour. Dusk carries more than Dawn
+  because a dark ground swallows chroma - at 14 the theme measured and looked
+  greyscale.
 - The state lamp has its own `lampOn` / `lampOff` tokens rather than reusing
-  `stateOn`. A fill has to be dark in Dawn so `onState` reads on top of it; a
-  lamp carries no text, so at 10 dp it needs chroma instead of value contrast
-  or it reads as a dark speck rather than a colour.
+  `stateOn`. A lamp carries no text, so at 10 dp it needs chroma instead of
+  value contrast or it reads as a speck rather than a colour: 6.47:1 and 4.92:1
+  on the app bar. It follows the ACCENT hue rather than staying green - with a
+  slate accent a green lamp would be a fifth hue on a screen already carrying
+  the arc's two, the accent and the red - and armed-versus-off is
+  filled-versus-hollow as well as colour, so the red/green convention is not
+  load-bearing.
 - Dawn deepens while running rather than lifting. "Deeper" is not "brighter".
   The three grounds are a LADDER - the more the app is doing, the deeper the
   page - and Dawn was missing a rung. Dusk had it symmetric, running at
@@ -1248,16 +1416,13 @@ Disturb changes from the quick settings tile while the screen is open.
   CARDS animate on the same spec - a highlight or a container arriving instantly
   on top of a colour that took a second is the same fault again, smaller.
 
-  The running state is also four times deeper than it was. Dawn's ground went
-  `#F0E4CF` to `#E6DCCB` and Dusk's `#0D1014` to `#0A0D11`, which in Dawn meant
-  the cards had to move too: the page there deepens TOWARDS `raise`, so leaving
-  it still would have closed the gap to 1.03:1 and dissolved every card on the
-  screen - the exact failure the palette was rebuilt to fix. Hence
-  `raiseRunning`, `#D4C8B2` in Dawn, which holds 1.217:1 - better than the 1.153
-  the cards had before. In Dusk the page deepens AWAY from the cards, so
-  `raiseRunning` is simply `raise` there and the separation improves for free,
-  1.469 to 1.500. Everything that draws a container on Home takes the animated
-  value: the bar, both cards, the effect chips and the dial's track.
+  In Dawn the page deepens TOWARDS `raise`, so leaving the cards still would
+  close the gap to nothing - `raise` and `surfaceRunning` are both tone 95.
+  Hence `raiseRunning`, which drops to tone 90 and holds 1.14:1. In Dusk the
+  page deepens AWAY from the cards, so `raiseRunning` is simply `raise` there
+  and the separation improves for free, 1.26:1 to 1.35:1. Everything that draws
+  a container on Home takes the animated value: the bar, both cards, the effect
+  chips and the dial's track.
 - Bedtime and Wake sit ABOVE the dial and share a top edge. The brief put them
   below it, stepped by 18 dp, reading as a passage. Below the dial they are
   under your hand for the whole drag, so the one thing you cannot see is the
@@ -1302,13 +1467,19 @@ Disturb changes from the quick settings tile while the screen is open.
   itself is now the same ink as BEDTIME**, and only the sun stays warm. In
   `Arc.dawn` that word measured 1.7:1 on the cream, against BEDTIME's 14:1 in the
   same row - a tint rather than a shade. At 11sp it does not reach WCAG's
-  large-text exemption, and nothing warm enough to still read as dawn clears
-  4.5:1: `cta` reaches 3.0 and the best that passes is `#9E5426`, which arrives
-  as rust. So the warmth moved to the glyph, which needs only 3:1 because it is
-  not text. 5.5:1 in Dawn and 6.0:1 in Dusk now, and the two sides are finally
-  symmetric - grey word, own glyph, both ends. Changed in Dusk too, where
-  contrast was never the problem (8.8:1), because one rule in both themes beats
-  a rule that holds in one. The crown also
+  large-text exemption, and on that ground nothing warm enough to still read as
+  dawn cleared 4.5:1: `cta` reached 3.0 and the best that passed was `#9E5426`,
+  which arrives as rust. So the warmth moved to the glyph, which needs only 3:1
+  because it is not text - 6.2:1 in Dawn and 7.2:1 in Dusk - and the two sides
+  are finally symmetric: grey word, own glyph, both ends. Changed in Dusk too,
+  where contrast was never the problem, because one rule in both themes beats a
+  rule that holds in one.
+  Note that the CONSTRAINT here expired with the 31 Aug 2026 palette rebuild, in
+  the same way the notice strip's did: on the warm white `cta` is 6.15:1 as text,
+  so a warm WAKE UP would now pass. The decision stands anyway, and for better
+  reasons than the one that forced it - symmetry between the two ends, and a
+  glyph surviving a dimmed screen and a colourblind reader where a hue alone
+  does not. Keep the decision; do not keep the arithmetic as a reason. The crown also
   works: one tick per whole hour makes the window countable at rest, and inside
   the window it splits spent from remaining with a marker at now — the same
   grammar the ring uses, so the arc between the moon and the sun reads as the
@@ -1447,42 +1618,40 @@ Disturb changes from the quick settings tile while the screen is open.
 - **Secondary text was thinnest exactly where it is read most: on a card.**
   `onSurfaceLow` is the ink 24 of the app's text usages take - subtitles, the
   master card's status line, the dial's centre label - and its worst ground is
-  not the page but `raise`. Measured: 4.54:1 in Dawn, which passes AA by 0.04,
-  and 4.30:1 in Dusk, which does not pass at all. Both are 6.4:1 or better now,
-  `#4C453B` on Dawn and `#ACB7C3` on Dusk, chosen from four candidates rendered
-  on the phone. Titles stay at 11.4:1 on the same ground so the hierarchy is
-  untouched - only the floor moved. Note the ladder if it needs revisiting:
-  each step of about 8 in luminance is worth roughly 0.7 of contrast on a card,
-  and the step past this one starts to flatten the difference between a title
-  and its subtitle, which matters in an app read in the dark.
-  It also fixed something not being looked for: the bedtime numeral is dimmed to
-  62% alpha once the window is running, and at the old ink that landed at 2.51:1
-  - below the 3:1 that large text needs. It is 3.05 now, which is passing but
-  barely, and is the number to watch if that alpha is ever tuned.
+  not the page but `raise`. On the old palette it measured 4.54:1 in Dawn -
+  passing AA by 0.04 - and 4.30:1 in Dusk, which did not pass at all, and the
+  ink was darkened to buy 6.4:1. The 31 Aug 2026 rebuild made that free: on the
+  lifted grounds it is 6.86:1 in Dusk and 7.68:1 in Dawn, with titles at 10.4
+  and 15.1 on the same ground, so the hierarchy is intact and the floor moved
+  up. Note the ladder if it ever needs revisiting: each step of about 8 in
+  luminance is worth roughly 0.7 of contrast on a card, and the step past this
+  one starts to flatten the difference between a title and its subtitle, which
+  matters in an app read in the dark.
+  The number that was nearly missed here is worth keeping: the bedtime numeral
+  is dimmed to 62% alpha once the window is running, and on the old ink that
+  landed at 2.51:1 - below the 3:1 that large text needs. It is 6.16:1 in Dusk
+  and 4.58:1 in Dawn now, so the margin is comfortable, but it is still the
+  number to check if that alpha is ever tuned.
 
 - **`raise` carries every container in the app** — both home cards, the
   permission panel, both dialogs, the choice sheets, every allowlist row, every
   unselected chip, and the dial's own track — and it is wired into Material's
   `surfaceVariant`, `secondaryContainer`, `tertiaryContainer` and the
   `surfaceContainer` ladder, so a component that reaches for a container gets the
-  same colour. One token moves all of them, which is the point. It sat at 1.13:1
-  against the page in Dawn and 1.15:1 in Dusk, which is below where the eye
-  resolves a surface as a separate plane at all — the cards did not read as
-  cards. Now `#E2D5BD` at 1.22:1 in Dawn and `#29323D` at 1.40:1 in Dusk. The two
-  are deliberately NOT the same ratio: 1.40 was tried in both and judged too dark
-  on the cream, where a container that reads as a plane starts competing with the
-  dial, while on the near-black it reads as exactly right.
-  The number to watch when changing either is the RUNNING state, not the resting
-  one. Dawn deepens to `surfaceRunning` while bedtime is on, which costs about
-  0.07 of whatever separation is chosen — and that is the state the screen is in
-  for most of the night. The old `#EBDDC5` fell to 1.07:1 there, which is
-  nothing; 1.22 holds 1.15. That is deliberately near the floor — 1.40 and 1.28
-  were both tried on the device first and judged too heavy on the cream, where a
-  container that reads as a distinct plane competes with the dial. Chosen by eye
-  on real hardware in real light, which is the only way this particular call can
-  be made; the numbers here are the record, not the reason. If it ever needs to
-  go lower, it cannot: `#EBDDC5` at 1.13/1.07 was the starting point and was
-  invisible.
+  same colour. One token moves all of them, which is the point.
+  It is 1.26:1 against the page in Dusk and 1.08:1 in Dawn, and the RUNNING
+  state is the one to watch rather than the resting one, because that is where
+  the screen spends the night: 1.35:1 and 1.14:1 there.
+  Those look thin and are not. Google Health's own cards measure 1.10:1 against
+  their page in light and 1.12:1 in dark, sampled on the Honor - so this ladder
+  is at or above what Material ships. The reason it can be flatter than the
+  1.40:1 Dusk used to hold is that the old number was bought with a tone-7 page,
+  and lifting the ground off near-black is what the whole rebuild was for. A
+  card reads as a plane because of where the ground sits, not only because of
+  the gap.
+  What has NOT changed is the failure mode at the bottom: the palette this
+  replaced started at 1.13:1 resting and 1.07:1 running, and at those numbers
+  the cards did not read as cards at all. That is the floor to stay above.
   The unselected DAY circles are the one deliberate exception: no fill at all, a
   hollow ring in `line`. That is the filled-vs-hollow grammar described below and
   it stays.

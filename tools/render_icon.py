@@ -1,0 +1,98 @@
+"""Render docs/icon.png from the adaptive icon, for the README.
+
+The launcher icon is a vector; GitHub needs a raster. Screenshotting the phone
+would bake the wallpaper into the mask's corners, so this redraws the same
+geometry from the same numbers the drawables use, crops to the central 72dp a
+launcher actually shows of the 108dp canvas, and masks it to a squircle with
+TRANSPARENT corners. The version this replaced was an opaque square, which is
+exactly how it looked on the README: a black tile.
+
+The stops here are duplicated from ic_launcher_bg.xml and ic_launcher_foreground
+.xml rather than parsed out of them. If either changes, change them here too and
+re-run - the check is that the output matches a screenshot of the real launcher
+icon, which is how a mirrored first attempt was caught.
+
+Run from anywhere:  python3 tools/render_icon.py
+"""
+import math, os, numpy as np
+from PIL import Image
+
+S = 8                      # supersample per dp
+N = 108 * S
+def px(v): return v * S
+
+def lerp(a, b, t):
+    return tuple(a[i] + (b[i]-a[i])*t for i in range(3))
+def hx(h):
+    h=h.lstrip('#'); return tuple(int(h[i:i+2],16) for i in (0,2,4))
+def ramp(stops, t):
+    t = max(0.0, min(1.0, t))
+    for i in range(len(stops)-1):
+        o0,c0 = stops[i]; o1,c1 = stops[i+1]
+        if o0 <= t <= o1:
+            u = 0 if o1==o0 else (t-o0)/(o1-o0)
+            return lerp(hx(c0), hx(c1), u)
+    return hx(stops[-1][1])
+
+ARC = [(0.00,'#2F4260'), (0.42,'#4E6480'), (0.76,'#B2622D'), (1.00,'#F6A06B')]
+BG  = [(0.00,'#F0F4FF'), (1.00,'#5A6B89')]
+
+yy, xx = np.mgrid[0:N, 0:N]
+X = xx / S; Y = yy / S                      # in dp units
+img = np.zeros((N, N, 4), dtype=float)
+
+# ── background: linear gradient (0,68) -> (108,40)
+ax, ay, bx, by = 0.0, 68.0, 108.0, 40.0
+dx, dy = bx-ax, by-ay
+t = ((X-ax)*dx + (Y-ay)*dy) / (dx*dx + dy*dy)
+t = np.clip(t, 0, 1)
+for i,(o,c) in enumerate(BG[:-1]):
+    pass
+lut = np.array([ramp(BG, i/255) for i in range(256)])
+idx = (t*255).astype(int)
+img[...,:3] = lut[idx]
+img[...,3] = 255
+
+def rot(px_, py_, deg, cx=54.0, cy=54.0):
+    r = math.radians(deg)
+    ox, oy = px_-cx, py_-cy
+    return (cx + ox*math.cos(r) + oy*math.sin(r),
+            cy - ox*math.sin(r) + oy*math.cos(r))
+
+# ── crescent: rotate the SAMPLE point by +32 to undo the group's -32
+rx, ry = rot(X, Y, -32.0)
+outer = (rx-54.0)**2 + (ry-54.0)**2 <= 21.0**2
+bite  = (rx-62.40)**2 + (ry-50.22)**2 <= 19.74**2
+cres  = outer & ~bite
+# gradient along the crescent's own axis: (54,75) night -> (54,33) dawn
+ct = np.clip((75.0 - ry) / (75.0 - 33.0), 0, 1)
+clut = np.array([ramp(ARC, i/255) for i in range(256)])
+cidx = (ct*255).astype(int)
+img[cres, :3] = clut[cidx][cres]
+
+# ── arc: rotate by -90.95 to undo the group's +90.95
+ax_, ay_ = rot(X, Y, 90.95)
+r = np.hypot(ax_-54.0, ay_-54.0)
+ang = (np.degrees(np.arctan2(ay_-54.0, ax_-54.0)) + 360) % 360
+band = (r >= 31.1-1.5) & (r <= 31.1+1.5)
+span = (ang >= 56.65) & (ang <= 303.35)          # the gap is the other 113 deg
+arc = band & span
+at = np.clip((ang - 56.65) / (303.35 - 56.65), 0, 1)
+aidx = (at*255).astype(int)
+img[arc, :3] = clut[aidx][arc]
+
+# ── crop to the central 72dp the launcher shows, then squircle-mask
+lo, hi = px(18), px(90)
+img = img[lo:hi, lo:hi]
+M = hi - lo
+gy, gx = np.mgrid[0:M, 0:M]
+u = (gx - (M-1)/2) / ((M-1)/2); v = (gy - (M-1)/2) / ((M-1)/2)
+mask = (np.abs(u)**5 + np.abs(v)**5) <= 1.0        # superellipse ~ Android squircle
+img[...,3] = np.where(mask, 255, 0)
+
+out = Image.fromarray(np.clip(img,0,255).astype(np.uint8), 'RGBA')
+out = out.resize((512,512), Image.LANCZOS)
+dest = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'docs', 'icon.png')
+dest = os.path.normpath(dest)
+out.save(dest)
+print(dest, out.size, "· corner alpha", out.getpixel((3, 3))[3])

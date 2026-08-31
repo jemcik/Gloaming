@@ -100,10 +100,18 @@
          running. Every switch above them is a PLAN - written to prefs on the
          tap and applied when the window opens - and with bedtime off, turning
          Do Not Disturb "on" silences nothing tonight while looking exactly like
-         a switch that would. No budget: these wrap inside a full-width card. -->
-    <string name="note_off">Bedtime is off, so none of this is in effect.</string>
-    <string name="note_until">None of this is in effect until %1$s %2$s.</string>
-    <string name="note_unscheduled">Nothing is scheduled, so none of this is in effect.</string>
+         a switch that would. No budget: these wrap inside a full-width card.
+
+         Positively framed - they say when the settings WILL work rather than
+         that they do not. "None of this is in effect until X" is a double
+         negative a reader has to unpick, and it was reported as such. They also
+         say "these settings" rather than "this" or "none of this": the strip
+         sits ABOVE the rows it qualifies now, so any wording that points
+         backwards would be false. See the note about text that points at its
+         neighbours travelling badly. -->
+    <string name="note_off">Bedtime is off. These settings take effect once you turn it on.</string>
+    <string name="note_until">These settings take effect at %1$s %2$s.</string>
+    <string name="note_unscheduled">No nights are scheduled, so these settings never run.</string>
 
     <!-- ============ Home: how the screen looks ============ -->
     <!-- Two tenses of one label. "how the screen LOOKS" is a claim about now,

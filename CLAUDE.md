@@ -163,14 +163,16 @@ is in DECISIONS.md.
                          the next alarms, the journal. Read-only
     ./gradlew test       the whole suite, on the JVM, in seconds
     ./gradlew coverage   JaCoCo, HTML + XML under app/build/reports/jacoco
-    ./gradlew lint       0 errors; 7 findings left are policy (targetSdk
-                         currency and dependency versions)
+    ./gradlew lint       0 errors; 1 finding left is policy (targetSdk currency)
     python3 tools/check_translation.py app/src/main/res/values-ru/strings.xml ru
     python3 tools/render_icon.py        re-render docs/icon.png from the drawable
     adb shell run-as com.jemcik.gloaming cat files/journal.log
 
-Unit tests run on **JDK 21**, pinned in `app/build.gradle.kts` — Robolectric
-cannot read Java 25 class files.
+Unit tests run on **JDK 21**, pinned in `app/build.gradle.kts`. The reason —
+Robolectric's ASM choking on Java 25 class files — is probably obsolete since
+4.16.1 ships ASM 9.8, which reads them. The pin stays because it cannot be
+disproved here: this machine has only a 21 JDK, so removing it passes for the
+wrong reason, and both CI workflows pin 21 explicitly.
 
 A pre-push hook runs tests, lint and both translation checkers. A fresh clone
 opts in once:

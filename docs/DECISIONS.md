@@ -370,7 +370,21 @@ Every `hihonor` AOD permission on the device is `signature` or
 `.AODService` is the one worth remembering, because it looks exactly like the
 answer for as long as it takes to test it: exported, ungated, and advertising
 the precise verbs anyone would want. It is a dead intent-filter in front of a
-service that stops itself. **The only reason that took ten minutes rather than a
+service that stops itself.
+
+Challenged, fairly, on whether that null result was really a DEFERRED one — the
+dark theme on this phone needs an unlock before it applies, and the schedule
+keys above need a screen transition, so "nothing happened yet" is a live
+hypothesis here rather than a lazy one. It does not hold, and the reason is
+worth keeping: dark theme defers because the platform RECORDS the state and
+applies it later, whereas `onStartCommand` stops without recording anything, so
+there is no pending effect for a restart to flush. Re-tested anyway with the
+same wake-sleep cycle the schedule keys need, with intent delivery and the
+service's reply in one capture:
+
+    Starting service: Intent { act=com.hihonor.aod.action.QUIT_AOD
+                               cmp=com.hihonor.aod/.AODService }
+    W HnAOD : AODService:onStartCommand stop self now. **The only reason that took ten minutes rather than a
 day is that logcat printed it** — see the logcat note in CLAUDE.md, which used
 to read as "logcat is useless on MagicOS" and is now scoped to third-party app
 logs only.

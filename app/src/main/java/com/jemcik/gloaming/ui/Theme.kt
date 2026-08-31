@@ -160,7 +160,18 @@ data class GloamColors(
        too hard on the eye. A thumb is a UI part and needs 3:1, so it gets its
        own tone, and the softening comes as much from CHROMA as from tone: a
        desaturated dark dot reads as black, a chromatic one reads as coloured. */
-    /* The checked switch's TRACK, split back out of `selectFill`.
+    /* The checked switch's TRACK.
+       It is the SAME VALUE as `selectFill` again in both themes, and the round
+       trip is the note. The two were originally one token so a selected day,
+       the preset pill and the switch could not drift. They were split apart
+       when the accent was a pale washed sage, because a large light fill on
+       every one of those controls put too much of one colour on the screen.
+       Then the accent went DARK - tone 46, white text - and that inverted the
+       problem: a dark fill reads as one system rather than as four competing
+       areas, and the split it had needed was gone. The token stays separate so
+       the two CAN diverge; today they do not.
+       The history below is kept because the reasoning still holds for a pale
+       accent, and this is the second time this app has been pale.
        The two were deliberately collapsed into one token so a selected day, the
        preset pill and the switch could not drift - and that held while the
        accent was a dark fern. With the accent a WASHED SAGE the screen carried
@@ -316,13 +327,13 @@ private val Dawn = GloamColors(
     veil = Color(0xFFDCDEDA),
     line = Color(0xFFC5C4BD),
     outline = Color(0xFFACACA5),      // tone 70 · ring 2.24:1 on the page
-    selectBorder = Color(0xFF9EB19C),     // tone 70 · the accent's OWN hue; it was left blue by mistake
+    selectBorder = Color(0xFF596F8B),     // = the fill; a dark fill bounds itself
     veilOutline = Color(0xFF7C7C76),  // tone 52 · 3.10:1 on the veil track
     onSurface = Color(0xFF1E1B18),        // 15.11:1 on a card
     onSurfaceMid = Color(0xFF514A43),
     onSurfaceLow = Color(0xFF514A43),     //  7.68:1 on a card
-    stateOn = Color(0xFF4B5E4A),          // tone 38 - Material's `primary`
-    onState = Color(0xFFFFFFFF),
+    stateOn = Color(0xFF435B7A),          // tone 38 - TEXT, so darker than the fill: 5.51:1 on a card
+    onState = Color(0xFFFFFFFF),          
     /* Tone 88, chroma 13.7, hue 150 - a washed sage.
        Two reports moved it here and both are worth keeping. It was the arc's
        night stop at chroma 11, and GREY CONVENTIONALLY READS DISABLED, so a
@@ -337,15 +348,15 @@ private val Dawn = GloamColors(
        Note what this gives up, deliberately: the accent no longer comes off the
        dial, which is what the palette rebuild was named for. Chosen anyway,
        with that on the table. */
-    selectFill = Color(0xFFD3E1D0),       // tone 88 chroma 12 · 1.32:1 on the page, 1.06:1 on a card
+    selectFill = Color(0xFF596F8B),       // tone 46 · white on it 5.16:1
     // Tone 23, not the container role's 29. The fill is the arc's own night
     // stop as it is drawn when bedtime is OFF, and at that chroma it is near
     // the floor of what still reads as a hue - so the label on it was the first
     // thing to suffer. 8.38:1 here against 6.76:1 at tone 29, and the ink still
     // holds chroma 13.3, so it stays a blue ink rather than going near-black.
-    onSelect = Color(0xFF2A3C2B),         // 8.62:1 on the fill
-    switchTrack = Color(0xFF4E6480),      // Arc.dusk, verbatim · 4.80:1 on a card
-    switchThumb = Color(0xFFFFFFFF),      // 6.07:1 on the track
+    onSelect = Color(0xFFFFFFFF),         // white; tone 50 would fail it at 4.47:1
+    switchTrack = Color(0xFF596F8B),      // the SAME token again - see the note above
+    switchThumb = Color(0xFFFFFFFF),      // 5.16:1 on the track
     switchThumbOff = Color(0xFF837B72),   //                     3.39:1 on the veil track
     alert = Color(0xFFFFDAD5),         // tone 90 · ink 7.27:1
     onAlert = Color(0xFF6B3831),

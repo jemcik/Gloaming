@@ -1689,9 +1689,15 @@ Disturb changes from the quick settings tile while the screen is open.
   **The accent came off the dial, and then the LIGHT theme left it again. Read
   this whole entry before quoting any part of it.**
 
-  Where it ended up: Dusk keeps the arc's night stop, `#566479`. Dawn is a
-  WASHED SAGE, `#D3E1D0` - hue 150, chroma 12, tone 88 - which is 101 degrees
-  from the arc and owes it nothing. That was chosen with the departure on the
+  Where it ended up: Dusk keeps the arc's night stop, `#566479`. Dawn is
+  `#596F8B` - hue 254, chroma 24, TONE 46 - which is the arc's own hue at a
+  tone dark enough to carry WHITE text, and it is the single value behind every
+  selected thing: the day discs, the preset pill, the status pills, the notice
+  strip and the switch track.
+  It went via a washed sage, `#D3E1D0` at tone 88, which is where the light/dark
+  grammar flipped: a PALE fill with dark ink, versus a DARK fill with white ink.
+  Both work; they are different screens. The sage's own reasoning is below and
+  is still correct for a pale accent. That was chosen with the departure on the
   table, so the story this rebuild was named for holds for one theme only.
 
   What moved it, in order, because each step invalidated the last:
@@ -1705,6 +1711,14 @@ Disturb changes from the quick settings tile while the screen is open.
   24-26 READS BRIGHT. Which puts the usable band at roughly 13 to 20 - narrow,
   and narrower than it looks, because dropping chroma also costs separation from
   the card: 5.8 perceptual units at chroma 17 down to 4.9 at 11.8.
+
+  WHITE TEXT HAS ITS OWN CEILING, and it is what fixes the final value: tone 48
+  gives white 4.80:1 and tone 50 gives 4.47:1, which fails. So a dark fill can
+  be lightened by about two tones from where this one sits and no further -
+  past that the answer is not a lighter fill but dark text on a pale one.
+  Note `stateOn` does NOT follow the fill. It is TEXT on a card, where tone 46
+  reaches only 4.13:1; it sits at tone 38 for 5.51:1. A token that looks like it
+  should track the accent, and cannot.
 
   AND "WASHED OUT" IS TONE, NOT CHROMA. Asked to soften it further, the first
   three attempts lowered chroma, which drains a colour rather than fading it.

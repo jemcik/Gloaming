@@ -38,7 +38,11 @@ ARC = [(0.00,'#2F4260'), (0.42,'#4E6480'), (0.76,'#A85C2A'), (1.00,'#D4814C')]
 BG  = [(0.00,'#FFFFFF'), (1.00,'#FFFFFF')]
 
 yy, xx = np.mgrid[0:N, 0:N]
-X = xx / S; Y = yy / S                      # in dp units
+# The mark is scaled 0.90 and dropped 5.18dp to centre it vertically in the
+# 72dp the launcher shows - see ic_launcher_foreground.xml. Sampling inverts it.
+MARK, MARK_DY = 0.90, 5.18
+X = (xx / S - 54.0) / MARK + 54.0
+Y = (yy / S - MARK_DY - 54.0) / MARK + 54.0
 img = np.zeros((N, N, 4), dtype=float)
 
 # ── background: linear gradient (0,68) -> (108,40)

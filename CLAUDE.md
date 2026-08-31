@@ -929,6 +929,19 @@ confirming on real hardware.
   family as Google's own on this phone, which are white tiles with a saturated
   mark: Drive, Files, Gmail, Google, Maps, Meet, Messages. Confirmed in the
   drawer beside Gemini, Gmail and Google.
+  **The mark is centred and scaled 0.90, and how that was got wrong first is
+  the useful half.** In the 72dp the launcher shows, the mark sat with margins
+  of 3.5 left, 3.5 right, 3.5 top and 15.0 BOTTOM - hugging three edges with a
+  gap under it, reported as asymmetric. It is 6.8 / 6.8 / 12.0 / 12.0 now.
+  Centring the CRESCENT's own centroid was the obvious first move and is wrong.
+  A sickle's mass sits nowhere near where it looks centred - 6.1dp left and
+  9.1dp down of the tile centre - so moving that point to the middle shoves the
+  shape up and right into the ring. What reads is that the crescent's outer disc
+  is concentric with the arc, and it already was.
+  And EVEN margins on four sides are not achievable, so do not chase them: the
+  mark is 65dp wide against 53.5dp tall, a near-circle cut at the bottom, and a
+  square tile cannot give a non-square mark equal air all round. The target is
+  vertical CENTRING plus adequate side margin.
   What follows is the gradient's own record. It is kept because the two
   measurements in it are about the ARTWORK, not the ground, and would be needed
   again by anyone reintroducing a tinted tile - both were wrong on the first

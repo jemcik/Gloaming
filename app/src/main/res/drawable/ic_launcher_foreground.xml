@@ -32,6 +32,25 @@
     xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp" android:height="108dp"
     android:viewportWidth="108" android:viewportHeight="108">
+    <!-- BALANCE. The mark is 65dp wide and 53.5dp tall - a near-circle cut at
+         the bottom - so in the 72dp the launcher shows it sat with margins of
+         3.5 left, 3.5 right, 3.5 top and 15.0 BOTTOM. It hugged three edges and
+         left a gap under itself, reported as looking asymmetric.
+         This group centres it vertically and gives it room: 6.8dp at the sides
+         and 12.0 top and bottom.
+         Note what is NOT achievable and should not be chased: EVEN margins on
+         all four sides. The mark is wider than it is tall, so a square tile
+         cannot give it equal air on every side without distorting it. The
+         target is vertical CENTRING plus adequate side margin, not equality.
+         Centring the crescent's own CENTROID was tried first and is wrong - a
+         sickle's mass sits far from where it looks centred (6.1dp left and
+         9.1dp down of the tile centre), so moving that to the middle shoves the
+         shape up and right into the ring. The crescent's outer disc is already
+         concentric with the arc, which is the relationship that reads. -->
+    <group
+        android:pivotX="54" android:pivotY="54"
+        android:scaleX="0.90" android:scaleY="0.90"
+        android:translateY="5.18">
     <group android:rotation="-32" android:pivotX="54" android:pivotY="54">
         <clip-path android:pathData="M33.00,54.00 a21.00,21.00 0 1,0 42.00,0 a21.00,21.00 0 1,0 -42.00,0 Z" />
         <path android:fillType="evenOdd" android:pathData="M33.00,54.00 a21.00,21.00 0 1,0 42.00,0 a21.00,21.00 0 1,0 -42.00,0 Z M42.66,50.22 a19.74,19.74 0 1,0 39.48,0 a19.74,19.74 0 1,0 -39.48,0 Z">
@@ -62,5 +81,6 @@
                 </gradient>
             </aapt:attr>
         </path>
+    </group>
     </group>
 </vector>

@@ -14,8 +14,11 @@ TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 adb shell dumpsys notification --noredact > "$TMP/notif" 2>/dev/null
 adb shell dumpsys alarm                   > "$TMP/alarm" 2>/dev/null
-adb shell run-as $PKG cat shared_prefs/gloaming.xml > "$TMP/prefs" 2>/dev/null
-adb shell run-as $PKG cat files/journal.log        > "$TMP/journal" 2>/dev/null
+# 2>&1, not 2>/dev/null: WHY run-as failed is the useful part. A release build
+# refuses it outright, and the two halves of this report stop agreeing - see
+# the note above "THE APP'S OWN VIEW".
+adb shell run-as $PKG cat shared_prefs/gloaming.xml > "$TMP/prefs" 2>&1
+adb shell run-as $PKG cat files/journal.log        > "$TMP/journal" 2>&1
 DATE=$(adb shell date | tr -d '\r')
 ZEN=$(adb shell settings get global zen_mode | tr -d '\r')
 LOC=$(adb shell cmd locale get-app-locales $PKG 2>/dev/null | tr -d '\r')
@@ -64,7 +67,32 @@ else:
     print(f"  effects     [{f(r'deviceEffects=\[([^\]]*)\]')}]")
     print(f"  caption     {f(r'triggerDescription=([^,]*)')}")
 
+# Everything below comes through `run-as`, which works ONLY on a debuggable
+# build. Against a release APK it fails and every field here would fall back to
+# its placeholder - and one of those placeholders, "none - runs once, then
+# switches off", is a legitimate app state rather than an absence. That is a
+# confident wrong answer dressed as data, the same shape as the rule-identity
+# bug this script had: half the output right, the wrong half plausible. So say
+# the half is missing, and say why, instead of printing it.
+def unreadable(blob):
+    """None if the prefs really were read, else why not - in one phrase."""
+    if "<map" in blob: return None
+    if "not debuggable" in blob:
+        return ("this is a RELEASE build, so run-as is refused",
+                "the system half above is still true; install a debug build for the rest")
+    if "unknown package" in blob or "is unknown" in blob:
+        # NB: PKG is a shell var and this heredoc is quoted - do not use it here.
+        return ("the app is not installed", "nothing to read")
+    if "No such file" in blob:
+        return ("the app has never written its prefs",
+                "a fresh install that has not been opened yet")
+    return ("prefs could not be read", (blob.strip().splitlines() or [""])[0][:60])
+
 head("THE APP'S OWN VIEW")
+why = unreadable(prefs)
+if why:
+    print(f"  UNAVAILABLE - {why[0]}")
+    print(f"  {why[1]}")
 def pref(name, kind="value"):
     m = re.search(rf'name="{name}" value="([^"]*)"', prefs)
     return m.group(1) if m else "-"
@@ -75,13 +103,15 @@ def hhmm(secs):
 ORDER = ["MONDAY","TUESDAY","WEDNESDAY","THURSDAY","FRIDAY","SATURDAY","SUNDAY"]
 days = re.search(r'name="days">(.*?)</set>', prefs, re.S)
 chosen = set(re.findall(r"<string>(\w+)</string>", days.group(1))) if days else set()
-print(f"  switch      {pref('enabled')}")
-print(f"  window      {hhmm(pref('start'))} -> {hhmm(pref('end'))}")
-print("  mornings    " + (" ".join(d[:2].title() for d in ORDER if d in chosen)
-                          if chosen else "none - runs once, then switches off"))
-print(f"  activeDay   {pref('activeDay')}")
-print(f"  effects     dnd={pref('fxDnd')}  grayscale={pref('fxGrayscale')}  dim={pref('fxDimWallpaper')}")
-print(f"  theme       {pref('themeMode')}   (0 system · 1 light · 2 dark)")
+if not why:
+    print(f"  switch      {pref('enabled')}")
+    print(f"  window      {hhmm(pref('start'))} -> {hhmm(pref('end'))}")
+    print("  mornings    " + (" ".join(d[:2].title() for d in ORDER if d in chosen)
+                              if chosen else "none - runs once, then switches off"))
+    print(f"  activeDay   {pref('activeDay')}")
+    print(f"  effects     dnd={pref('fxDnd')}  grayscale={pref('fxGrayscale')}  dim={pref('fxDimWallpaper')}")
+    print(f"  theme       {pref('themeMode')}   (0 system · 1 light · 2 dark)")
+# the per-app locale comes from `cmd locale`, not from run-as, so it survives
 print(f"  language    {loc.split('are ')[-1] if 'are' in loc else loc}")
 
 head("ALARMS")
@@ -105,7 +135,13 @@ for block in alarm.split("RTC_WAKEUP")[1:]:
 if not any_found: print("  none scheduled")
 
 head("JOURNAL   (last 8)")
-for line in journal.strip().split("\n")[-8:]:
-    print("  " + line.strip())
+jwhy = unreadable(journal) if "<map" not in journal else None
+if journal.strip() and jwhy and not journal.strip().startswith(("0","1","2")):
+    print(f"  UNAVAILABLE - {jwhy[0]}")
+elif not journal.strip():
+    print("  empty - nothing logged yet")
+else:
+    for line in journal.strip().split("\n")[-8:]:
+        print("  " + line.strip())
 print()
 PY

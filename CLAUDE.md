@@ -106,7 +106,9 @@ is in DECISIONS.md.
 - **Logcat is encrypted** for third-party apps on MagicOS. Use `Journal`. Never
   swallow an exception.
 - **`run-as` can read this app's data but not write it** — on any Android, not
-  just MagicOS. A setting can only be corrected through the UI.
+  just MagicOS. A setting can only be corrected through the UI. And it does not
+  work at all on a RELEASE build, so `check.sh` loses its whole app-side half
+  against a published APK; it now says so rather than printing placeholders.
 - **MagicOS withholds `ACTION_BOOT_COMPLETED`** unless the app is set to
   auto-launch. `BootWatch` detects the symptom rather than the vendor.
 - minSdk is **35** because `ZenDeviceEffects`, `AutomaticZenRule.Builder` and

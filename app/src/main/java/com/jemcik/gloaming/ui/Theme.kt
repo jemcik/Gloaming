@@ -92,7 +92,16 @@ data class GloamColors(
        quiet is right there. `line` is tone 34 and 79, which IS Material's
        `outlineVariant`; the scheme used to alias `outline` to it, so the strong
        role and the quiet one were the same colour.
-       Tone 66 in Dawn and 48 in Dusk: 2.49:1 and 3.23:1 against the page.
+       Tone 70 in Dawn and 43 in Dusk: 2.19:1 and 2.70:1 against the page, and
+       9 tones from `line` in both - close enough that the borders and the rules
+       read as one family without the rules gaining any weight. That gap was
+       closed from the BORDER side deliberately: moving the DIVIDERS to this
+       token instead was built and looked at, and it lifts every section rule
+       from 1.66:1 to 2.49:1 in Dawn and 1.91 to 3.23 in Dusk - roughly half
+       again as heavy - which is the rules starting to box the content, the one
+       thing they were tuned not to do. Material splits them for that reason:
+       `outlineVariant` (80/30) is for dividers, `outline` (50/60) for control
+       borders, and `line` at 79/34 IS outlineVariant.
        Dawn is UNDER the 3:1 a UI part is meant to hold, deliberately and after
        looking. The state here is carried by fill-versus-no-fill and the day
        letter sits at 8.28:1, so the ring reinforces rather than reports - and
@@ -212,7 +221,7 @@ private val Dusk = GloamColors(
     raiseRunning = Color(0xFF2F353D),     //            1.35:1 while running
     veil = Color(0xFF383E46),
     line = Color(0xFF49505A),
-    outline = Color(0xFF6E727A),      // tone 48 · ring 3.23:1 on the page
+    outline = Color(0xFF61666E),      // tone 43 · ring 2.70:1 on the page
     onSurface = Color(0xFFEAEBED),        // 10.37:1 on a card
     onSurfaceMid = Color(0xFFC7CDD7),
     onSurfaceLow = Color(0xFFBCC1CC),     //  6.86:1 on a card
@@ -240,7 +249,7 @@ private val Dawn = GloamColors(
     raiseRunning = Color(0xFFECE1D6),     //            1.14:1 while running
     veil = Color(0xFFF1E7DE),
     line = Color(0xFFCCC2B9),
-    outline = Color(0xFFA99E93),      // tone 66 · ring 2.49:1 on the page
+    outline = Color(0xFFB4A99E),      // tone 70 · ring 2.19:1 on the page
     onSurface = Color(0xFF1E1B18),        // 15.11:1 on a card
     onSurfaceMid = Color(0xFF514A43),
     onSurfaceLow = Color(0xFF514A43),     //  7.68:1 on a card

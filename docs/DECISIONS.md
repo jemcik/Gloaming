@@ -266,6 +266,45 @@ platform's OWN lever, the one `DefaultDeviceEffectsApplier` pulls,
 the token released. The platform records the suppression and `com.hihonor.aod`
 ignores it.
 
+**The search for an UNPRIVILEGED lever on Honor's AOD is exhausted, 1 Sep 2026.**
+Everything above concerns what an app can do once it holds
+`WRITE_SECURE_SETTINGS`. The separate question — whether Honor exposes any AOD
+control an ordinary app could reach with no grant at all — is now answered no,
+by enumeration rather than by not having found one.
+
+`HnAOD.apk` was pulled from `/product_h/region_comm/oversea/app/HnAOD/HnAOD.apk`
+and its manifest read in full: 22 components, against the three examined
+previously.
+
+| component | exported | gate | why it is closed |
+|---|---|---|---|
+| `.AODService` | **true** | **NONE** | declares `QUIT_AOD`, `PAUSE_AOD`, `ENTER_AOD`, `AOD_SCREEN_ON/OFF`, `AODSERVICE_START` — and does not implement them. Sent from adb it is accepted, then logcat prints `AODService:onStartCommand stop self now.` |
+| `.StartService` | true | none | no intent filter, nothing to address |
+| `.BootReceiver` | true | none | `BOOT_COMPLETED` only |
+| `.superwallpaper.HnAodProvider` | true | `readPermission`/`writePermission` = `com.hihonor.permission.aod.READ_AOD` | that permission is `signature\|privileged` |
+| `.doze.DozeService` | true | `BIND_DREAM_SERVICE` | system only — and THIS is the real always-on |
+| `.ui.AODSettingsActivity` | true | `WRITE_SECURE_SETTINGS` | same wall as the keys |
+| `.AODSettingsActivityAlias` | true | `HW_SIGNATURE_OR_SYSTEM` | vendor signature |
+| `.ui.DisplayModeActivity` | **false** | — | the Tap-to-show / Scheduled / All day screen. Not deep-linkable, so the app cannot even hand the user to it |
+| `.CommonReceiver` | false | — | Honor's own AOD alarms, as recorded above |
+
+Every `hihonor` AOD permission on the device is `signature` or
+`signature|privileged`; none can be held by an ordinary install.
+
+`.AODService` is the one worth remembering, because it looks exactly like the
+answer for as long as it takes to test it: exported, ungated, and advertising
+the precise verbs anyone would want. It is a dead intent-filter in front of a
+service that stops itself. **The only reason that took ten minutes rather than a
+day is that logcat printed it** — see the logcat note in CLAUDE.md, which used
+to read as "logcat is useless on MagicOS" and is now scoped to third-party app
+logs only.
+
+One methodological trap, since it nearly produced a wrong answer here. The first
+parse checked `android:permission` alone and reported the provider among the
+ungated components. `readPermission` and `writePermission` are SEPARATE
+attributes, and a provider carries those instead. Checking one attribute name is
+how you conclude a content provider is wide open when it is not.
+
 **But Honor's AOD IS controllable, by four Secure keys written together.**
 Toggling it in Settings moves `aod_display_type` 2 to 0, `aod_switch` 1 to 0,
 `aod_touch_time` 5 to 0 and `fingerprint_touch_time` 5 to 0. Writing

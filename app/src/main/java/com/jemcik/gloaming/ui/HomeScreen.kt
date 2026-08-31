@@ -28,6 +28,11 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Button
 import androidx.compose.material3.*
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
@@ -987,21 +992,34 @@ fun Home(
             onDismissRequest = { picking = null },
             containerColor = g.raise,
             shape = RoundedCornerShape(32.dp),
+            // CONTAINERS, not bare text. Both actions already met Android's
+            // 48dp touch minimum - measured 69x48 and 58x48 - but a TextButton
+            // draws no container, so only the words read as a button and they
+            // were reported as too small. Filled for the confirm and outlined
+            // for the dismiss keeps M3's emphasis order while giving each one a
+            // shape to aim at, and the filled one matches the permission card's
+            // button, which is now the app's only other action button.
+            //
+            // Neither names a colour: the scheme's primary is `stateOn`, so
+            // they follow the accent and flip correctly per theme.
             confirmButton = {
-                TextButton(onClick = {
-                    haptics.confirm()
-                    val t = LocalTime.of(state.hour, state.minute)
-                    if (picking == "start") start = t else end = t
-                    picking = null; commit()
-                }) {
-                    // No colour named. A TextButton takes the scheme's primary,
-                    // which this app wires to `stateOn` - so the confirm action
-                    // is the accent, like the permission card's button.
-                    Text(stringResource(R.string.action_set))
-                }
+                Button(
+                    onClick = {
+                        haptics.confirm()
+                        val t = LocalTime.of(state.hour, state.minute)
+                        if (picking == "start") start = t else end = t
+                        picking = null; commit()
+                    },
+                    shape = CircleShape
+                ) { Text(stringResource(R.string.action_set)) }
             },
             dismissButton = {
-                TextButton(onClick = { picking = null }) { Text(stringResource(R.string.action_cancel), color = g.onSurfaceLow) }
+                OutlinedButton(
+                    onClick = { picking = null },
+                    shape = CircleShape,
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = g.onSurfaceLow),
+                    border = BorderStroke(1.dp, g.outline)
+                ) { Text(stringResource(R.string.action_cancel)) }
             },
             text = {
                 TimePicker(state = state, colors = pickerColors(accent, onAccent))

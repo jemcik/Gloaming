@@ -668,6 +668,32 @@ confirming on real hardware.
   reason - "how the screen LOOKS" is a claim about now, and it is false whenever
   the window is not running, which is most of the time anyone reads it.
 
+- **`java.time` gives you the NOMINATIVE and nothing else, which is not a
+  sentence in Russian or Ukrainian.** `getDisplayName` returns "среда" for both
+  `FULL` and `FULL_STANDALONE` - checked, not assumed - so the window sentence
+  shipped as «С 22:30 среда до 8:30 четверг» and the plan note as «заработают
+  в 22:30 среда». Neither is grammatical, and English hides it completely
+  because English does not decline.
+  The weekday is a RESOURCE now, in TWO sets, because the two sentences need
+  different cases and one set will not do:
+  - `day_span_*` for the window sentence, where the time comes first and the day
+    reads as a possessive - "from Wednesday's 22:30". Genitive: «С 22:30 среды
+    до 8:30 четверга».
+  - `day_note_*` for the plan note, where the day is a point in time and needs
+    its own preposition: «заработают в 22:30 в среду».
+  The preposition lives INSIDE the string deliberately. Russian alternates в/во
+  by the following sound - «во вторник» - and no format string can express that;
+  put the preposition in the format and Tuesday is wrong forever.
+  `day_today` / `day_tomorrow` are adverbs, decline for nothing, and serve both
+  sets - which is also why the bug only ever showed for a window more than a day
+  out, and why it survived this long.
+  The test asserts PROPERTIES, never the wording: English must MATCH java.time,
+  Russian and Ukrainian must differ from it, and their two sets must differ from
+  EACH OTHER - that last one is what catches one set pasted over the other, and
+  it was confirmed by doing exactly that and watching it fail. A test on the
+  literal strings would only prove the translation equals itself and would have
+  to be edited by anyone improving the phrasing.
+
 - **A clock time with no day word reads as TODAY, and that has now cost two
   fixes.** The window sentence was the first. The plan note was the second,
   reported within minutes of shipping: the app bar said "Starts in 35h 20m" over

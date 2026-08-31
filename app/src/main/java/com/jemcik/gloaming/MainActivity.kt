@@ -1262,7 +1262,7 @@ private fun windowSentence(
         ?: Scheduler.nextStart(start, end, days, now)) ?: return null
     val to = from.plus(Scheduler.duration(start, end))
 
-    fun day(at: LocalDateTime): String = dayWord(ctx, at, now, locale)
+    fun day(at: LocalDateTime): String = dayWord(ctx, at, now, DaySlot.SPAN)
     // One day word when both ends fall on it. "From 2:40 AM tomorrow to 8:40 AM
     // tomorrow" is correct and says it twice.
     return if (from.toLocalDate() == to.toLocalDate()) res.getString(
@@ -1376,7 +1376,7 @@ private fun planNote(
     // by omission the window sentence was fixed for, so it uses the same rule.
     return ctx.getString(
         R.string.note_until,
-        hhmm(ctx, next.hour, next.minute), dayWord(ctx, next, now, locale)
+        hhmm(ctx, next.hour, next.minute), dayWord(ctx, next, now, DaySlot.NOTE)
     )
 }
 
@@ -1389,15 +1389,33 @@ private fun planNote(
  * "tomorrow" for something five days out. The weekday is localised by
  * java.time, so it needs no string of ours.
  */
+/** Which sentence is asking; the two need different grammar, see strings.xml. */
+private enum class DaySlot { SPAN, NOTE }
+
+private val DAY_SPAN = intArrayOf(
+    R.string.day_span_monday, R.string.day_span_tuesday, R.string.day_span_wednesday,
+    R.string.day_span_thursday, R.string.day_span_friday, R.string.day_span_saturday,
+    R.string.day_span_sunday
+)
+private val DAY_NOTE = intArrayOf(
+    R.string.day_note_monday, R.string.day_note_tuesday, R.string.day_note_wednesday,
+    R.string.day_note_thursday, R.string.day_note_friday, R.string.day_note_saturday,
+    R.string.day_note_sunday
+)
+
 private fun dayWord(
     ctx: Context,
     at: LocalDateTime,
     now: LocalDateTime,
-    locale: Locale
+    slot: DaySlot
 ): String = when (ChronoUnit.DAYS.between(now.toLocalDate(), at.toLocalDate())) {
     0L -> ctx.getString(R.string.day_today)
     1L -> ctx.getString(R.string.day_tomorrow)
-    else -> at.dayOfWeek.getDisplayName(TextStyle.FULL_STANDALONE, locale)
+    // NOT java.time: it returns the nominative in every TextStyle, and the two
+    // sentences that name a weekday decline it differently. See strings.xml.
+    else -> ctx.getString(
+        (if (slot == DaySlot.SPAN) DAY_SPAN else DAY_NOTE)[at.dayOfWeek.ordinal]
+    )
 }
 
 /** Clock time. 24-hour throughout, which is what the dial is. */

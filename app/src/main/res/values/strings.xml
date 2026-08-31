@@ -37,6 +37,48 @@
     <string name="window_span_same_day">From %1$s to %2$s %3$s</string>
     <string name="day_today">today</string>
     <string name="day_tomorrow">tomorrow</string>
+    <!-- The weekday, in TWO sets, because the two sentences that name one need
+         different grammar and only English is indifferent to that.
+
+         day_span_* goes in the window sentence, where the time comes first and
+         the day reads as a possessive: "from Wednesday's 22:30". Russian and
+         Ukrainian want the genitive there - "С 22:30 среды до 8:30 четверга".
+
+         day_note_* goes in the plan note, where the day is a point in time and
+         needs its own preposition: "заработают в 22:30 в среду". The
+         preposition is INSIDE the string on purpose - Russian alternates в/во
+         by the following sound ("во вторник"), and no format string can do that.
+
+         Neither can come from java.time, which returns the nominative in every
+         TextStyle - FULL and FULL_STANDALONE both give "среда", which is how
+         "С 22:30 среда до 8:30 четверг" came to ship. today/tomorrow above are
+         adverbs, decline for nothing, and serve both sets. -->
+    <string name="day_span_monday">Monday</string>
+    <string name="day_span_tuesday">Tuesday</string>
+    <string name="day_span_wednesday">Wednesday</string>
+    <string name="day_span_thursday">Thursday</string>
+    <string name="day_span_friday">Friday</string>
+    <string name="day_span_saturday">Saturday</string>
+    <string name="day_span_sunday">Sunday</string>
+    <string name="day_note_monday">Monday</string>
+    <string name="day_note_tuesday">Tuesday</string>
+    <string name="day_note_wednesday">Wednesday</string>
+    <string name="day_note_thursday">Thursday</string>
+    <string name="day_note_friday">Friday</string>
+    <string name="day_note_saturday">Saturday</string>
+    <string name="day_note_sunday">Sunday</string>
+    <!-- The weekday, for the two sentences that name one: the window span and
+         the plan note. It is a RESOURCE rather than java.time's
+         getDisplayName because Russian and Ukrainian decline it and java.time
+         offers only the nominative - FULL and FULL_STANDALONE both return
+         "среда", so "С 22:30 среда до 8:30 четверг" was what shipped, which is
+         not a sentence in either language.
+
+         Both call sites put the TIME first and the day second, and both read
+         the day as a possessive there - "from Wednesday's 22:30" - so one
+         genitive set serves both. today/tomorrow above are adverbs and do not
+         decline, which is why they stay separate and why the bug only ever
+         showed for a window more than a day out. -->
 
     <!-- ============ Home: permissions ============ -->
     <plurals name="permissions_to_go">

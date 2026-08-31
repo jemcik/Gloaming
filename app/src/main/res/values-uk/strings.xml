@@ -20,6 +20,20 @@
     <string name="window_span_same_day">З %1$s до %2$s %3$s</string>
     <string name="day_today">сьогодні</string>
     <string name="day_tomorrow">завтра</string>
+    <string name="day_span_monday">понеділка</string>
+    <string name="day_span_tuesday">вівторка</string>
+    <string name="day_span_wednesday">середи</string>
+    <string name="day_span_thursday">четверга</string>
+    <string name="day_span_friday">пʼятниці</string>
+    <string name="day_span_saturday">суботи</string>
+    <string name="day_span_sunday">неділі</string>
+    <string name="day_note_monday">у понеділок</string>
+    <string name="day_note_tuesday">у вівторок</string>
+    <string name="day_note_wednesday">у середу</string>
+    <string name="day_note_thursday">у четвер</string>
+    <string name="day_note_friday">у пʼятницю</string>
+    <string name="day_note_saturday">у суботу</string>
+    <string name="day_note_sunday">у неділю</string>
 
     <!-- ============ Home: permissions ============ -->
     <plurals name="permissions_to_go">

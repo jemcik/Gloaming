@@ -48,7 +48,15 @@ the app closed and the screen off, with no battery whitelist and standby bucket
     core/Journal.kt              on-device log; read it over adb, see Build
     core/SystemTheme.kt          the system's own light/dark answer
 
-    ui/HomeScreen.kt             the home screen: state, layout, section order
+    ui/HomeState.kt              everything Home remembers, and the four things
+                                 it can do about it: commit, setBedtime, the
+                                 ON_RESUME re-read, and the re-arm on first
+                                 composition. The screen's state lives here so
+                                 a section is one parameter, not fifteen
+    ui/HomeScreen.kt             the home screen. `Home` itself is the page
+                                 ORDER and nothing else; each section below it
+                                 is its own composable and decides for itself
+                                 whether it draws
     ui/HomeParts.kt              what only Home draws — status pill, notice
                                  strip, day row, numerals, moon and sun glyphs
     ui/Sentences.kt              the schedule as language: windowSentence,

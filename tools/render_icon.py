@@ -40,7 +40,7 @@ BG  = [(0.00,'#FFFFFF'), (1.00,'#FFFFFF')]
 yy, xx = np.mgrid[0:N, 0:N]
 # The mark is scaled 0.90 and dropped 5.18dp to centre it vertically in the
 # 72dp the launcher shows - see ic_launcher_foreground.xml. Sampling inverts it.
-MARK, MARK_DY, CRES = 0.92, 3.88, 0.86
+MARK, MARK_DY, CRES = 0.92, 2.51, 0.86
 X = (xx / S - 54.0) / MARK + 54.0
 Y = (yy / S - MARK_DY - 54.0) / MARK + 54.0
 img = np.zeros((N, N, 4), dtype=float)
@@ -66,7 +66,7 @@ def rot(px_, py_, deg, cx=54.0, cy=54.0):
 # ── crescent: rotate the SAMPLE point by +32 to undo the group's -32
 rx, ry = rot(X, Y, -32.0)
 outer = (rx-54.0)**2 + (ry-54.0)**2 <= (21.0*CRES)**2
-bite  = (rx-(54.0+8.40*CRES))**2 + (ry-(54.0-3.78*CRES))**2 <= (19.74*CRES)**2
+bite  = (rx-(54.0+10.91*CRES))**2 + (ry-(54.0-8.41*CRES))**2 <= (18.48*CRES)**2
 cres  = outer & ~bite
 # gradient along the crescent's own axis: (54,75) night -> (54,33) dawn
 # the gradient lives INSIDE the scaled group, so its axis scales with it

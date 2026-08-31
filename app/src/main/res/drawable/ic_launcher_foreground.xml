@@ -2,8 +2,16 @@
 <!-- The crescent, ringed by the window arc - the dial's own span, so the icon
      and the home screen tell the same story.
 
-     THE CRESCENT: an outer circle with a nearly-equal circle offset across its
-     edge, so the overlap is bitten out.
+     THE CRESCENT: an outer circle with a smaller circle offset across its edge,
+     so the overlap is bitten out.
+     ITS PROPORTIONS ARE THE DIAL HANDLE'S, copied as RATIOS of the outer radius
+     rather than by eye - `BedtimeDial.drawHandle` draws the bedtime moon as
+     r*0.50 bitten by r*0.44 at (+r*0.26, -r*0.20), which is a bite of 0.880 R
+     offset 0.656 R at -37.6 degrees, leaving the crescent 0.776 R thick at its
+     thickest. The icon's own numbers were a bite of 0.940 R offset only
+     0.439 R, so 0.499 R thick - bigger AND closer is what made it thin, and it
+     was reported as not matching the dial. Ratios are the thing to carry
+     between the two, since the radii differ by an order of magnitude.
      The clip-path is load-bearing. evenOdd fills whatever lies inside exactly
      ONE subpath, and the bite circle sticks out past the outer one - so without
      the clip, that overhang is filled too and the horns close into a ring. That
@@ -46,7 +54,7 @@
          3.5 left, 3.5 right, 3.5 top and 15.0 BOTTOM. It hugged three edges and
          left a gap under itself, reported as looking asymmetric.
          This group centres it vertically and gives it room: 6.2dp at the sides,
-         10.0 above and 15.2 below.
+         8.8 above and 16.8 below.
          THOSE TOP AND BOTTOM NUMBERS ARE DELIBERATELY UNEQUAL, and the version
          that made them equal shipped first and was wrong. Balancing the BOUNDING
          BOX (translateY 6.49) put the INK 3.7dp below the tile centre and left
@@ -72,11 +80,11 @@
     <group
         android:pivotX="54" android:pivotY="54"
         android:scaleX="0.92" android:scaleY="0.92"
-        android:translateY="3.88">
+        android:translateY="2.51">
     <group android:rotation="-32" android:pivotX="54" android:pivotY="54"
         android:scaleX="0.86" android:scaleY="0.86">
         <clip-path android:pathData="M33.00,54.00 a21.00,21.00 0 1,0 42.00,0 a21.00,21.00 0 1,0 -42.00,0 Z" />
-        <path android:fillType="evenOdd" android:pathData="M33.00,54.00 a21.00,21.00 0 1,0 42.00,0 a21.00,21.00 0 1,0 -42.00,0 Z M42.66,50.22 a19.74,19.74 0 1,0 39.48,0 a19.74,19.74 0 1,0 -39.48,0 Z">
+        <path android:fillType="evenOdd" android:pathData="M33.00,54.00 a21.00,21.00 0 1,0 42.00,0 a21.00,21.00 0 1,0 -42.00,0 Z M46.43,45.59 a18.48,18.48 0 1,0 36.96,0 a18.48,18.48 0 1,0 -36.96,0 Z">
             <aapt:attr name="android:fillColor">
                 <gradient android:type="linear"
                     android:startX="54" android:startY="75.00"

@@ -933,7 +933,7 @@ confirming on real hardware.
   how that was got wrong first is the useful half.** In the 72dp the launcher
   shows, the mark sat with margins of 3.5 left, 3.5 right, 3.5 top and 15.0
   BOTTOM - hugging three edges with a gap under it, reported as asymmetric. It
-  is 6.2 / 6.2 / 10.0 / 15.2 now, and the second scale opens a visible gap
+  is 6.2 / 6.2 / 8.8 / 16.8 now, and the second scale opens a visible gap
   between the moon and its ring where the two used to nearly touch at the lower
   left. Both are transform GROUPS; no path data changed. The crescent's scale
   shares the arc's pivot, which is what keeps its outer disc concentric.
@@ -948,14 +948,24 @@ confirming on real hardware.
   artwork: for any shape that is not roughly convex and even, measure the INK -
   centroid and the above/below split - not the bounding box, and not the
   centroid of one component (which is the crescent mistake recorded above).
+  **The crescent's proportions are the DIAL HANDLE'S, carried as ratios.**
+  `BedtimeDial.drawHandle` draws the bedtime moon as r*0.50 bitten by r*0.44 at
+  (+r*0.26, -r*0.20) - a bite of 0.880 R offset 0.656 R at -37.6 degrees,
+  leaving it 0.776 R thick at the thickest. The icon's own numbers were a bite
+  of 0.940 R offset 0.439 R, so 0.499 R thick: bigger AND closer, which is what
+  made it thin, and it was reported as not matching the dial. Ratios are what
+  transfer between the two - the radii differ by an order of magnitude, so no
+  absolute number here is portable.
   **And the optical centre MOVES when the artwork does.** The arc is 4dp now,
   thickened INWARD - the outer extent is pinned at 32.6dp by the launcher's
   33dp safe circle, so the path radius went 31.1 to 30.6 and the four waypoints
   were recomputed at that radius, preserving their ANGLES. Because the gap is at
   the bottom, a thicker arc adds ink almost entirely above the centre line, and
-  `translateY` had to go 2.76 to 3.88 to keep the ink centroid on centre. Any
-  future change to the stroke, the crescent scale or the gap has to re-solve
-  that translate; none of them are independent.
+  `translateY` went 2.76 to 3.88 to keep the ink centroid on centre - and then
+  back to 2.51 when the moon was fattened to the dial's proportions, which adds
+  ink low and left. Three changes, three different translates. Any future change
+  to the stroke, the crescent, the gap or the scales has to re-solve it; none of
+  them are independent, and the value is meaningless without the rest.
   Note the gradient lives inside that group and scales with it, so
   `render_icon.py` has to scale the crescent's gradient AXIS too or the exported
   `docs/icon.png` stops matching the drawable it is supposed to depict.

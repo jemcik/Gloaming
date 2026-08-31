@@ -130,10 +130,10 @@
     <string name="filter_pill_alarms">Лише будильники</string>
     <string name="filter_pill_none">Повна тиша</string>
     <string name="filter_pill_unknown">Невідомо</string>
-    <string name="filter_all">Проходить усе.</string>
+    <string name="filter_all">Дозволено все.</string>
     <string name="filter_ignored">Ви ввімкнули режим «Не турбувати», але телефон його не застосовує.</string>
     <string name="filter_priority">Усе, що ви не дозволили, блокується.</string>
-    <string name="filter_alarms">Проходять лише будильники.</string>
+    <string name="filter_alarms">Дозволено лише будильники.</string>
     <string name="filter_none">Блокується навіть те, що ви дозволили.</string>
     <string name="filter_unknown">Телефон не повідомив, що діє.</string>
 

@@ -282,6 +282,14 @@ libelled it.** Re-measured on the same phone, reading it with the screen ASLEEP:
 
 It reads 0 when the AOD is genuinely off and 1 only when the AOD is actually
 lit, so it tracks the DISPLAY rather than the setting, and it can go negative.
+
+**Scope, found the same evening and worth stating before anyone trusts it too
+far: this holds in TAP TO SHOW mode. It does not hold in SCHEDULED mode**, where
+`aod_doze_state` stayed 1 through every arm - schedule covering now, schedule
+excluding now, written from adb, written through the UI, and even
+`aod_switch=0`. In that mode it discriminates nothing, so it is not a witness
+there and no conclusion about Honor's schedule can be drawn from it. Which mode
+you are in is `aod_display_mode`, below.
 It read 1/1 on 30 Aug because the AOD was genuinely on in both arms of that
 test — the experiment had no condition in which it was off, so a correct witness
 reporting "no change" was mistaken for a broken one. The lesson is the one this
@@ -1395,6 +1403,53 @@ not `Exception`, so none of the `runCatching` / `catch (e: Exception)` around th
 zen calls would have caught it.
 
 ## Portability
+
+**Honor's AOD has MODES, and its schedule lives in Settings.Secure after all —
+1 Sep 2026.** This is the difference from LineageOS, which offers a plain on/off:
+Honor's "Display mode" screen offers *Tap to show*, *Scheduled* (with Start and
+End times) and *All day*. Selecting each one moves keys, and selecting Scheduled
+CREATES two pairs that do not exist until then:
+
+| key | meaning |
+|---|---|
+| `aod_display_mode` | 0 = tap to show · 1 = scheduled · (all day untested) |
+| `aod_display_type` | 2 in tap-to-show, 0 otherwise — NOT a simple master gate |
+| `aod_start_hour` / `aod_start_minute` | schedule start, 24-hour, absent until set |
+| `aod_end_hour` / `aod_end_minute` | schedule end, 24-hour, absent until set |
+| `aod_scheduled_switch` | still unexplained; sat at -1 throughout |
+
+Two things follow, and only the first is settled.
+
+**Settled: the keys are reachable.** Writing `aod_start_hour` etc. from adb lands
+in `Settings.Secure` and Honor's own Settings screen reads the written values
+back and displays them. So the schedule is not sealed inside `com.hihonor.aod`'s
+private storage, and `WRITE_SECURE_SETTINGS` — which `AmbientControl` already
+requires — would be enough to write it. That materially revises the old
+conclusion that the scheduling route is shut: `CommonReceiver` is shut, the
+SETTINGS route is not.
+
+**NOT settled: whether the AOD service honours a written schedule.** The obvious
+probe fails, because `aod_doze_state` does not discriminate in this mode (see the
+correction above). Every arm read 1, including a schedule set through the UI that
+excluded the current time — so the instrument is measuring nothing here, and this
+is emphatically NOT evidence that the schedule is ignored. It is an absence of
+evidence either way. Settling it needs the tap-and-look protocol, and the test
+has a confound to design around: the screen's own Note 2 says that in Scheduled
+or All day mode the AOD is disabled when the phone "sleeps at night", so a test
+run in the small hours cannot distinguish a honoured schedule from that rule.
+
+Why it would matter if it does work: `AmbientControl` currently flips keys at
+each window boundary, which is what makes an uninstall mid-window leave the AOD
+off and lets a user's own change be overwritten at window end. Setting Honor's
+own schedule instead would hand the boundaries to the vendor's service and
+remove both failure modes. Worth resolving before anyone builds it.
+
+One more caveat for whoever picks this up: `AmbientControl`'s four keys were
+derived entirely from TAP TO SHOW mode. A phone sitting in Scheduled or All day
+has `aod_display_type=0` and `aod_touch_time=0` already, so three of the four
+writes are no-ops and only `aod_switch` moves — and `aod_switch` alone was
+measured doing nothing. The suppress path has never been tested from those
+modes.
 
 **The `canControl` branch, verified after the HomeState refactor, 1 Sep 2026.**
 `ambientRow` is `ambientZen || AmbientControl.canControl(ctx)`, and the refactor

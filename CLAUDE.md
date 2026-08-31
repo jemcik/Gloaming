@@ -987,9 +987,22 @@ confirming on real hardware.
 
     ./tools/build.sh     debug APK, full log at /tmp/build.log
     ./tools/deploy.sh    install on the attached device. INSTALLS ONLY - it does
-                         not build, so a source or string change made since the
-                         last build goes on the phone as the OLD one, and the
-                         screenshot proving your fix shows the previous text
+                         not build - but it REFUSES when the APK is older than
+                         the sources, which is the trap that used to be silent:
+                         `gradlew test`, `lint` and `check` all compile without
+                         assembling, so a green run leaves a stale APK and the
+                         screenshot proving your fix shows the PREVIOUS build.
+                         Cost real time three times in one session before the
+                         guard existed. `deploy.sh -f` installs it anyway.
+                         The freshness check is mtime against the APK, and
+                         `build.sh` touches the APK on success on purpose:
+                         Gradle decides UP-TO-DATE by content hash, so a file
+                         whose mtime moved without its content changing would
+                         otherwise leave deploy refusing forever with build
+                         unable to clear it. `build.sh` also no longer runs
+                         under `set -e` around gradle - it used to exit before
+                         its own error grep, printing NOTHING on the one
+                         occasion the output matters
     ./tools/check.sh     what the PHONE thinks: zen state, the rule, our prefs,
                          the next alarms and the journal, side by side. Read-only.
     ./gradlew test       the scheduling core, on the JVM, in under a second

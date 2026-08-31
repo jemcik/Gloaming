@@ -167,7 +167,8 @@ first, or turn always-on back on in Settings.
 ## Build
 
     ./tools/build.sh      debug APK, full log at /tmp/build.log
-    ./tools/deploy.sh     install on the attached device
+    ./tools/deploy.sh     install on the attached device. Refuses if the APK is
+                          older than the sources; -f installs it anyway
     ./tools/check.sh      what the phone thinks: zen state, the rule, the app's
                           own view, the next alarms and the journal. Read-only.
     python3 tools/render_icon.py

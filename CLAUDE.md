@@ -933,7 +933,7 @@ confirming on real hardware.
   how that was got wrong first is the useful half.** In the 72dp the launcher
   shows, the mark sat with margins of 3.5 left, 3.5 right, 3.5 top and 15.0
   BOTTOM - hugging three edges with a gap under it, reported as asymmetric. It
-  is 6.2 / 6.2 / 9.0 / 16.5 now, and the second scale opens a visible gap
+  is 6.2 / 6.2 / 10.0 / 15.2 now, and the second scale opens a visible gap
   between the moon and its ring where the two used to nearly touch at the lower
   left. Both are transform GROUPS; no path data changed. The crescent's scale
   shares the arc's pivot, which is what keeps its outer disc concentric.
@@ -948,6 +948,14 @@ confirming on real hardware.
   artwork: for any shape that is not roughly convex and even, measure the INK -
   centroid and the above/below split - not the bounding box, and not the
   centroid of one component (which is the crescent mistake recorded above).
+  **And the optical centre MOVES when the artwork does.** The arc is 4dp now,
+  thickened INWARD - the outer extent is pinned at 32.6dp by the launcher's
+  33dp safe circle, so the path radius went 31.1 to 30.6 and the four waypoints
+  were recomputed at that radius, preserving their ANGLES. Because the gap is at
+  the bottom, a thicker arc adds ink almost entirely above the centre line, and
+  `translateY` had to go 2.76 to 3.88 to keep the ink centroid on centre. Any
+  future change to the stroke, the crescent scale or the gap has to re-solve
+  that translate; none of them are independent.
   Note the gradient lives inside that group and scales with it, so
   `render_icon.py` has to scale the crescent's gradient AXIS too or the exported
   `docs/icon.png` stops matching the drawable it is supposed to depict.

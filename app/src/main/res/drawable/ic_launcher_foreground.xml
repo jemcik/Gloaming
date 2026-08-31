@@ -13,13 +13,22 @@
      The gradient is INSIDE the rotated group, so it runs along the crescent's
      own axis - dawn at the upper horn, night at the lower.
 
-     THE ARC: the window, drawn round the moon at radius 31.1 with a 113 degree
-     gap centred on the bottom. The gap is the point - it is what makes this a
-     span, with a start and an end, rather than a ring. Round caps, and a hair
-     under 3dp, because it has to stay a hairline against a 42dp moon.
-     Outer extent is 31.1 + 1.5 = 32.6dp of radius, just inside the 33dp safe
-     circle a launcher mask may crop to. There is no room to make it thicker
-     without moving it inward.
+     THE ARC: the window, drawn round the moon with a 113 degree gap centred on
+     the bottom. The gap is the point - it is what makes this a span, with a
+     start and an end, rather than a ring. Round caps.
+     4dp, THICKENED INWARD, which is what that last sentence used to say could
+     not be avoided: the outer extent is fixed at 32.6dp of radius, just inside
+     the 33dp safe circle a launcher mask may crop to, so the path radius moved
+     31.1 -> 30.6 to spend the extra width on the inside. The four waypoints are
+     recomputed at that radius - they are the same four ANGLES (56.65, 138.89,
+     221.11, 303.35), which is what to preserve if it ever moves again.
+     Its inner edge is 28.6dp against a moon whose outer edge is 18.06dp, so
+     there is 10.5dp of clear air between them; the moon is no longer 42dp
+     across, it is 36dp, which is why 4dp still reads as a hairline beside it.
+     And note the thickening moved the OPTICAL CENTRE. The gap is at the bottom,
+     so a thicker arc adds ink almost entirely above the centre line, and the
+     mark had to drop from translateY 2.76 to 3.88 to keep its ink centroid on
+     the tile centre. Any change to the stroke has to re-solve that.
 
      WHY THE GROUP IS ROTATED 90.95: a sweep gradient runs 0..1 over 0..360 and
      so has a seam at 0 degrees, but the arc spans 147.6 through 360 to 34.3 and
@@ -37,7 +46,7 @@
          3.5 left, 3.5 right, 3.5 top and 15.0 BOTTOM. It hugged three edges and
          left a gap under itself, reported as looking asymmetric.
          This group centres it vertically and gives it room: 6.2dp at the sides,
-         9.0 above and 16.5 below.
+         10.0 above and 15.2 below.
          THOSE TOP AND BOTTOM NUMBERS ARE DELIBERATELY UNEQUAL, and the version
          that made them equal shipped first and was wrong. Balancing the BOUNDING
          BOX (translateY 6.49) put the INK 3.7dp below the tile centre and left
@@ -63,7 +72,7 @@
     <group
         android:pivotX="54" android:pivotY="54"
         android:scaleX="0.92" android:scaleY="0.92"
-        android:translateY="2.76">
+        android:translateY="3.88">
     <group android:rotation="-32" android:pivotX="54" android:pivotY="54"
         android:scaleX="0.86" android:scaleY="0.86">
         <clip-path android:pathData="M33.00,54.00 a21.00,21.00 0 1,0 42.00,0 a21.00,21.00 0 1,0 -42.00,0 Z" />
@@ -82,8 +91,8 @@
     </group>
     <group android:rotation="90.95" android:pivotX="54" android:pivotY="54">
         <path
-            android:pathData="M71.10,79.98 A31.1,31.1 0 0 1 30.57,74.45 A31.1,31.1 0 0 1 30.57,33.55 A31.1,31.1 0 0 1 71.10,28.02"
-            android:strokeWidth="3.0" android:strokeLineCap="round" android:fillColor="#00000000">
+            android:pathData="M70.82,79.56 A30.60,30.60 0 0 1 30.95,74.12 A30.60,30.60 0 0 1 30.95,33.88 A30.60,30.60 0 0 1 70.82,28.44"
+            android:strokeWidth="4.0" android:strokeLineCap="round" android:fillColor="#00000000">
             <aapt:attr name="android:strokeColor">
                 <gradient android:type="sweep" android:centerX="54" android:centerY="54">
                     <item android:offset="0.0000" android:color="#FF2F4260" />

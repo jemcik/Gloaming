@@ -40,7 +40,7 @@ BG  = [(0.00,'#FFFFFF'), (1.00,'#FFFFFF')]
 yy, xx = np.mgrid[0:N, 0:N]
 # The mark is scaled 0.90 and dropped 5.18dp to centre it vertically in the
 # 72dp the launcher shows - see ic_launcher_foreground.xml. Sampling inverts it.
-MARK, MARK_DY, CRES = 0.92, 2.76, 0.86
+MARK, MARK_DY, CRES = 0.92, 3.88, 0.86
 X = (xx / S - 54.0) / MARK + 54.0
 Y = (yy / S - MARK_DY - 54.0) / MARK + 54.0
 img = np.zeros((N, N, 4), dtype=float)
@@ -79,7 +79,7 @@ img[cres, :3] = clut[cidx][cres]
 ax_, ay_ = rot(X, Y, 90.95)
 r = np.hypot(ax_-54.0, ay_-54.0)
 ang = (np.degrees(np.arctan2(ay_-54.0, ax_-54.0)) + 360) % 360
-band = (r >= 31.1-1.5) & (r <= 31.1+1.5)
+band = (r >= 30.6-2.0) & (r <= 30.6+2.0)
 span = (ang >= 56.65) & (ang <= 303.35)          # the gap is the other 113 deg
 arc = band & span
 at = np.clip((ang - 56.65) / (303.35 - 56.65), 0, 1)

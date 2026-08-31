@@ -56,6 +56,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.layout
 import android.content.res.Resources
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
@@ -124,8 +125,6 @@ private val SIDE = 24.dp        // screen side padding
    than the gaps between blocks. Trimmed off the layout box only; the canvas
    still draws and still takes touches at full size. */
 private val DIAL_TRIM = 18.dp
-private val CHIP_HEIGHT = 38.dp   // the effect chips' own height, kept from the Surface they were
-private val CHIP_GUTTER = 7.dp
 private val DAY_SIZE = 40.dp
 // Where a day chip's corners land while held. Round is DAY_SIZE / 2 = 20dp.
 private val DAY_PRESSED_CORNER = 12.dp
@@ -208,8 +207,11 @@ fun Home(
 ) {
     val ctx = LocalContext.current
     // remember{} blocks are not composable, so they cannot call stringResource;
-    // they read through Resources instead. The locale is for uppercase().
-    val res = ctx.resources
+    // they read through Resources instead. `LocalResources`, not
+    // ctx.resources: the latter is not configuration-aware and keeps serving
+    // the old values after a Configuration change, which in THIS app is not
+    // hypothetical - it ships a per-app language picker.
+    val res = LocalResources.current
     val locale = LocalLocale.current.platformLocale
     val prefs = remember { Prefs(ctx) }
     val g = gloam

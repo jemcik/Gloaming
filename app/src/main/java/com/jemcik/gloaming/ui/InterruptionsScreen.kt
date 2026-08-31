@@ -19,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -137,7 +138,7 @@ fun InterruptionsScreen(onBack: () -> Unit, onChanged: () -> Unit) {
     }
 
     val wake: LocalTime = prefs.endTime
-    val res = ctx.resources
+    val res = LocalResources.current
     val allowed = Interruptions.allowed(
         res, calls, messages, conversations, repeatCallers, reminders, events, media
     )

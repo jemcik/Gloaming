@@ -86,15 +86,19 @@ private fun Supporting(text: String) =
 @Composable
 fun SwitchRow(
     headline: String,
-    supporting: String? = null,
     checked: Boolean,
+    // `modifier` is the FIRST optional parameter, which is Compose's own API
+    // guideline and what lint's ModifierParameter checks. Every call site here
+    // passes by name, so the order is convention rather than ergonomics - but
+    // the convention is the point when the next reader is an Android developer.
+    modifier: Modifier = Modifier,
+    supporting: String? = null,
     // The @Composable slot sits AHEAD of the action lambda, so a trailing
     // lambda at the call site binds to the action and not to the slot. Getting
     // that backwards once cost an evening: Compose ran the click handler as
     // content on every composition, which opened a sheet that swallowed every
     // touch on the screen beneath it.
     leading: (@Composable () -> Unit)? = null,
-    modifier: Modifier = Modifier,
     enabled: Boolean = true,
     onCheckedChange: (Boolean) -> Unit
 ) {
@@ -122,9 +126,9 @@ fun SwitchRow(
 @Composable
 fun LinkRow(
     headline: String,
+    modifier: Modifier = Modifier,
     supporting: String? = null,
     leading: (@Composable () -> Unit)? = null,
-    modifier: Modifier = Modifier,
     enabled: Boolean = true,
     onClick: () -> Unit
 ) {
@@ -148,9 +152,9 @@ fun LinkRow(
 @Composable
 fun StaticRow(
     headline: String,
+    modifier: Modifier = Modifier,
     supporting: String? = null,
-    leading: (@Composable () -> Unit)? = null,
-    modifier: Modifier = Modifier
+    leading: (@Composable () -> Unit)? = null
 ) {
     ListItem(
         headlineContent = { Headline(headline) },
@@ -170,9 +174,9 @@ fun StaticRow(
 @Composable
 fun ActionRow(
     headline: String,
+    modifier: Modifier = Modifier,
     supporting: String? = null,
-    trailing: @Composable () -> Unit,
-    modifier: Modifier = Modifier
+    trailing: @Composable () -> Unit
 ) {
     ListItem(
         headlineContent = { Headline(headline) },

@@ -99,14 +99,14 @@ fun BedtimeDial(
     enabled: Boolean,
     centreValue: String,
     centreLabel: String,
+    modifier: Modifier = Modifier,
     centreIndex: Int = 0,
     centreCount: Int = 1,
     /** Direction to move through the centre's readings: +1 next, -1 previous. */
     onCentreCycle: ((Int) -> Unit)? = null,
     onStartChange: (LocalTime) -> Unit,
     onEndChange: (LocalTime) -> Unit,
-    onDragFinished: () -> Unit,
-    modifier: Modifier = Modifier
+    onDragFinished: () -> Unit
 ) {
     val g = gloam
     val haptics = rememberHaptics()

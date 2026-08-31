@@ -118,7 +118,7 @@ fun SettingsScreen(themeMode: Int, onThemeMode: (Int) -> Unit, onBack: () -> Uni
             SettingsCard {
                 LinkRow(
                     stringResource(R.string.settings_language),
-                    stringResource(R.string.settings_language_why),
+                    supporting = stringResource(R.string.settings_language_why),
                     // Without it this row's text started at 40dp where the radio
                     // rows above start at 80 - the same ragged left edge "what
                     // can wake you" had.

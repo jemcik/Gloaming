@@ -15,8 +15,8 @@ it — driven by exact alarms, so it fires with the app closed.
 [![Compose](https://img.shields.io/badge/Jetpack%20Compose-Material%203-4285F4)](https://developer.android.com/jetpack/compose)
 [![Tests](https://img.shields.io/badge/tests-93-success)](#tests)
 
-<img src="docs/screenshots/home.png" width="19%" alt="Home">
-<img src="docs/screenshots/home-dark.png" width="19%" alt="Home, dark">
+<img src="docs/screenshots/home.png" width="19%" alt="Home, mid-window">
+<img src="docs/screenshots/home-dark.png" width="19%" alt="Home, dark, mid-window">
 <img src="docs/screenshots/effects.png" width="19%" alt="How the screen looks">
 <img src="docs/screenshots/allowed.png" width="19%" alt="What is allowed">
 <img src="docs/screenshots/settings.png" width="19%" alt="Settings">

@@ -814,6 +814,35 @@ confirming on real hardware.
   that reason, and `GROUP`/`TIGHT` live in `Section.kt` rather than being
   redeclared privately per file.
 
+- **Rows are a GROUPED LIST now, not a divided card.** Every list on Home and
+  the allowlist was one `Surface` with `HorizontalDivider`s between the rows.
+  Each row is its own `Surface` instead, spaced 2dp, with the group's OUTER
+  corners at `CORNER` and the corners BETWEEN items at 6dp - so it still reads
+  as one block made of parts. `ui/Section.kt` owns it: `GroupedList(color,
+  items)` plus `listItemShape(i, n)`.
+  The corner asymmetry is the whole trick and it was not the first attempt. With
+  uniform corners and a 6dp gap it read as several unrelated cards, which is the
+  obvious objection to separating rows at all - and the objection is right for
+  that version. M3 states the same idea in its connected-button-group tokens:
+  a large `ContainerShape`, a small `InnerCorner`, `BetweenSpace` 2dp. At 2dp
+  the separation is a hairline of the PAGE showing through.
+  Two things fell out that were not the point. It retires the question of what
+  colour a divider should be, because there is no divider left - and that
+  question had just cost two rounds. And the vertical cost, which was the main
+  argument against, is 165dp to 175dp for three rows: ten. That argument was
+  wrong and was made confidently.
+  Items are passed as a LIST, not a trailing lambda, because each one's shape
+  depends on how many there are and Compose cannot count children it has not
+  composed. `buildList` at the call site keeps conditional rows readable - the
+  notice strip is an item, so the top outer corner belongs to whichever row is
+  actually first, and a hidden ambient row just makes the group one shorter with
+  the corners re-forming around what is left.
+  NOT converted, deliberately: Settings' theme radios. A radio group is ONE
+  control - the choice sheets do not divide either - and splitting it into three
+  containers would say the options are three separate things. The permission
+  panel and the boot notice stay plain cards for the same reason: they are one
+  container with padded prose, not a list.
+
 - **One row, six implementations.** `AllowRow`, `EffectRow`, two rows written
   inline on Home, `LinkRow` and `PermissionRow` were the same conceptual thing
   and agreed about nothing: leading element, trailing element, subtitle style,

@@ -77,6 +77,7 @@ import com.jemcik.gloaming.R
 import com.jemcik.gloaming.core.*
 import com.jemcik.gloaming.ui.BedtimeDial
 import com.jemcik.gloaming.ui.GloamingTheme
+import com.jemcik.gloaming.ui.GroupedList
 import com.jemcik.gloaming.ui.InterruptionsScreen
 import com.jemcik.gloaming.ui.Arc
 import com.jemcik.gloaming.ui.CARD_PAD
@@ -953,21 +954,13 @@ fun Home(
             // left that screen fully live while doing nothing, because the
             // filter had become INTERRUPTION_FILTER_ALL. One card: the switch,
             // and beneath it what the switch governs.
-            Surface(
-                color = card, shape = RoundedCornerShape(CORNER),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column {
-                    // At the TOP of the card, not its foot. It qualifies
-                    // everything below it, and a caveat you meet only after
-                    // reading what it qualifies has already failed at its job.
-                    if (!runningNow) NoticeStrip(planNote(ctx, enabled, start, end, days, loc))
-                    // No supporting line, deliberately. Any sentence here makes
-                    // a claim about who gets through, and the row directly below
-                    // makes that claim properly and dynamically - "Alarms, calls,
-                    // and 2 more". A static one can only duplicate it or, as it
-                    // did, contradict it: "Calls and alerts are quiet" sat above
-                    // a row saying calls are allowed.
+            GroupedList(card, buildList<@Composable () -> Unit> {
+                // At the TOP of the group, not its foot - a caveat you meet
+                // after reading what it qualifies has already failed.
+                if (!runningNow) add {
+                    NoticeStrip(planNote(ctx, enabled, start, end, days, loc))
+                }
+                add {
                     SwitchRow(
                         headline = stringResource(R.string.dnd_title),
                         checked = fxDnd,
@@ -979,17 +972,8 @@ fun Home(
                         onCheckedChange = { fxDnd = it; haptics.toggle(it); commit() },
                         modifier = Modifier.fillMaxWidth()
                     )
-                    // HorizontalDivider, and in `line` rather than `veil`.
-                    // M3's divider defaults to outlineVariant, which this app
-                    // wires to veil - and veil on raise measures 1.02:1, which
-                    // is not a faint edge, it is no edge. CLAUDE.md already
-                    // records that veil is invisible at 1dp; SectionRule learned
-                    // it and uses line, and this one instance had not. 1.38:1
-                    // now, the same as the rules between the blocks outside.
-                    HorizontalDivider(
-                        Modifier.padding(horizontal = CARD_PAD),
-                        color = g.line
-                    )
+                }
+                add {
                     val gets = remember(tick, fxDnd) {
                         Interruptions.shortSummary(res, Interruptions.allowed(res, prefs, short = true))
                     }
@@ -1007,87 +991,64 @@ fun Home(
                             .fillMaxWidth(),
                         enabled = fxDnd
                     )
-                    // What the SYSTEM says is in effect, and only while bedtime
-                    // is actually running.
-                    //
-                    // It is the one thing on any screen that is not the app's
-                    // own belief. Everything else reports what we asked for;
-                    // this reports what the phone answered, which is the whole
-                    // premise here - a vendor can accept a request and quietly
-                    // ignore it.
-                    //
-                    // Inside this card rather than in a section of its own,
-                    // because this is the card that asks for Do Not Disturb and
-                    // this is the evidence it happened. It also puts the worst
-                    // case where it cannot be missed: the switch above reading
-                    // ON, and a line directly beneath it saying the phone
-                    // reports everything getting through.
-                    //
-                    // And when it is NOT running, the same slot says so. The
-                    // switches in this card are a PLAN - saved now, applied
-                    // when the window opens - and they look exactly like live
-                    // controls, so with bedtime off a person turns Do Not
-                    // Disturb "on" and reasonably expects to be left alone.
-                    // Reported as exactly that. The sentence goes here rather
-                    // than at the top of the screen because this is the card
-                    // that misleads; see planNote.
-                    if (runningNow) {
-                        val filter = remember(tick) { ZenController.currentFilter(ctx) }
-                        val ignored = fxDnd &&
-                            filter == NotificationManager.INTERRUPTION_FILTER_ALL
-                        HorizontalDivider(
-                            Modifier.padding(horizontal = CARD_PAD), color = g.line
+                }
+                // The readout is its own item. It reports on the two rows above
+                // rather than being one of them, and a grouped list has no way
+                // to say that - so it ends the block, which is where evidence
+                // belongs.
+                if (runningNow) add {
+                    val filter = remember(tick) { ZenController.currentFilter(ctx) }
+                    val ignored = fxDnd &&
+                        filter == NotificationManager.INTERRUPTION_FILTER_ALL
+                    // No divider: the 2dp between items is the separation now.
+                    // Verdict first, then what it means. The pill is the
+                    // grammar Google Health uses for "In range" / "Out of
+                    // range": a tonal fill with same-hue ink, so the state
+                    // is carried by an ELEMENT rather than by the colour of
+                    // a sentence. What it replaced said the failure only in
+                    // `cta` ink, which is invisible to anyone reading shape
+                    // - and said it in words that were wrong, see strings.
+                    val (pill, line, fill, ink) = when {
+                        ignored -> Quad(
+                            R.string.filter_pill_ignored, R.string.filter_ignored,
+                            g.alert, g.onAlert
                         )
-                        // Verdict first, then what it means. The pill is the
-                        // grammar Google Health uses for "In range" / "Out of
-                        // range": a tonal fill with same-hue ink, so the state
-                        // is carried by an ELEMENT rather than by the colour of
-                        // a sentence. What it replaced said the failure only in
-                        // `cta` ink, which is invisible to anyone reading shape
-                        // - and said it in words that were wrong, see strings.
-                        val (pill, line, fill, ink) = when {
-                            ignored -> Quad(
-                                R.string.filter_pill_ignored, R.string.filter_ignored,
-                                g.alert, g.onAlert
-                            )
-                            filter == NotificationManager.INTERRUPTION_FILTER_ALL -> Quad(
-                                R.string.filter_pill_off, R.string.filter_all,
-                                g.veil, g.onSurfaceLow
-                            )
-                            filter == NotificationManager.INTERRUPTION_FILTER_PRIORITY -> Quad(
-                                R.string.filter_pill_on, R.string.filter_priority,
-                                g.selectFill, g.onSelect
-                            )
-                            filter == NotificationManager.INTERRUPTION_FILTER_ALARMS -> Quad(
-                                R.string.filter_pill_alarms, R.string.filter_alarms,
-                                g.selectFill, g.onSelect
-                            )
-                            filter == NotificationManager.INTERRUPTION_FILTER_NONE -> Quad(
-                                R.string.filter_pill_none, R.string.filter_none,
-                                g.selectFill, g.onSelect
-                            )
-                            else -> Quad(
-                                R.string.filter_pill_unknown, R.string.filter_unknown,
-                                g.veil, g.onSurfaceLow
-                            )
-                        }
-                        Column(
-                            Modifier.padding(
-                                horizontal = CARD_PAD, vertical = 14.dp
-                            ),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            StatusPill(stringResource(pill), fill, ink)
-                            Text(
-                                stringResource(line),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = g.onSurfaceLow
-                            )
-                        }
+                        filter == NotificationManager.INTERRUPTION_FILTER_ALL -> Quad(
+                            R.string.filter_pill_off, R.string.filter_all,
+                            g.veil, g.onSurfaceLow
+                        )
+                        filter == NotificationManager.INTERRUPTION_FILTER_PRIORITY -> Quad(
+                            R.string.filter_pill_on, R.string.filter_priority,
+                            g.selectFill, g.onSelect
+                        )
+                        filter == NotificationManager.INTERRUPTION_FILTER_ALARMS -> Quad(
+                            R.string.filter_pill_alarms, R.string.filter_alarms,
+                            g.selectFill, g.onSelect
+                        )
+                        filter == NotificationManager.INTERRUPTION_FILTER_NONE -> Quad(
+                            R.string.filter_pill_none, R.string.filter_none,
+                            g.selectFill, g.onSelect
+                        )
+                        else -> Quad(
+                            R.string.filter_pill_unknown, R.string.filter_unknown,
+                            g.veil, g.onSurfaceLow
+                        )
+                    }
+                    Column(
+                        Modifier.padding(
+                            horizontal = CARD_PAD, vertical = 14.dp
+                        ),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        StatusPill(stringResource(pill), fill, ink)
+                        Text(
+                            stringResource(line),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = g.onSurfaceLow
+                        )
                     }
                 }
-            }
-
+            })
             }
 
             // A card of rows, the same shape as "What can wake you" above it,
@@ -1111,47 +1072,44 @@ fun Home(
                     else R.string.section_how_the_screen_will_look
                 )
             ) {
-                Surface(
-                    color = card, shape = RoundedCornerShape(CORNER),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column {
-                        // Same note, same slot, same reason as the card above.
-                        if (!runningNow) {
-                            NoticeStrip(planNote(ctx, enabled, start, end, days, loc))
-                        }
+                GroupedList(card, buildList<@Composable () -> Unit> {
+                    // The notice is an ITEM of the group, so the top outer
+                    // corner belongs to whichever row is actually first.
+                    if (!runningNow) add {
+                        NoticeStrip(planNote(ctx, enabled, start, end, days, loc))
+                    }
+                    add {
                         EffectRow(
                             Fx.Grayscale, stringResource(R.string.fx_grayscale),
                             stringResource(R.string.fx_grayscale_sub), fxGray
                         ) { fxGray = !fxGray; haptics.toggle(fxGray); commit() }
-                        HorizontalDivider(Modifier.padding(horizontal = CARD_PAD), color = g.line)
+                    }
+                    add {
                         EffectRow(
                             Fx.Dim, stringResource(R.string.fx_dim),
                             stringResource(R.string.fx_dim_sub), fxDim
                         ) { fxDim = !fxDim; haptics.toggle(fxDim); commit() }
-                        HorizontalDivider(Modifier.padding(horizontal = CARD_PAD), color = g.line)
+                    }
+                    add {
                         // The one subtitle that is load-bearing rather than
-                        // descriptive: the platform defers the theme change until
-                        // the screen goes off, so tapping this while watching it
-                        // does nothing and looks broken without the sentence.
+                        // descriptive: the platform defers the theme change
+                        // until the screen goes off, so tapping this while
+                        // watching it does nothing and looks broken without it.
                         EffectRow(
                             Fx.Dark, stringResource(R.string.fx_dark),
                             stringResource(R.string.fx_dark_sub), fxDark
                         ) { fxDark = !fxDark; haptics.toggle(fxDark); commit() }
-                        // The divider belongs to the row, so it goes when the
-                        // row does - a card must not end on a rule.
-                        if (ambientRow) {
-                            HorizontalDivider(
-                                Modifier.padding(horizontal = CARD_PAD), color = g.line
-                            )
-                            EffectRow(
-                                Fx.Ambient, stringResource(R.string.fx_ambient),
-                                stringResource(R.string.fx_ambient_sub), fxAmbient
-                            ) { fxAmbient = !fxAmbient; haptics.toggle(fxAmbient); commit() }
-                        }
                     }
-                }
-                        }
+                    // No divider to remove with it: a grouped list just has one
+                    // item fewer, and the corners re-form around what is left.
+                    if (ambientRow) add {
+                        EffectRow(
+                            Fx.Ambient, stringResource(R.string.fx_ambient),
+                            stringResource(R.string.fx_ambient_sub), fxAmbient
+                        ) { fxAmbient = !fxAmbient; haptics.toggle(fxAmbient); commit() }
+                    }
+                })
+            }
 
         }
         }

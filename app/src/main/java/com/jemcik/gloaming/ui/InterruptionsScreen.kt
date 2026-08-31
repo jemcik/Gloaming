@@ -200,57 +200,67 @@ fun InterruptionsScreen(onBack: () -> Unit, onChanged: () -> Unit) {
         )
 
         Section(stringResource(R.string.section_people)) {
-        AllowCard {
-            AllowRow(
-                Who.Call, stringResource(R.string.row_calls),
-                Interruptions.peopleLabel(res, calls)
-            ) { haptics.open(); editing = "calls" }
-            RowDivider()
-            AllowRow(
-                Who.Msg, stringResource(R.string.row_messages),
-                Interruptions.peopleLabel(res, messages)
-            ) { haptics.open(); editing = "messages" }
-            RowDivider()
-            AllowRow(
-                Who.Conv, stringResource(R.string.row_conversations),
-                Interruptions.convLabel(res, conversations)
-            ) { haptics.open(); editing = "conv" }
-            RowDivider()
-            AllowRow(
-                Who.Repeat, stringResource(R.string.row_repeat_callers),
-                stringResource(
-                    if (repeatCallers) R.string.row_repeat_callers_on else R.string.state_blocked
-                ),
-                checked = repeatCallers,
-                onCheckedChange = { haptics.toggle(it); repeatCallers = it; save() }
-            )
-        }
+        GroupedList(gloam.raise, listOf(
+            {
+                AllowRow(
+                    Who.Call, stringResource(R.string.row_calls),
+                    Interruptions.peopleLabel(res, calls)
+                ) { haptics.open(); editing = "calls" }
+            },
+            {
+                AllowRow(
+                    Who.Msg, stringResource(R.string.row_messages),
+                    Interruptions.peopleLabel(res, messages)
+                ) { haptics.open(); editing = "messages" }
+            },
+            {
+                AllowRow(
+                    Who.Conv, stringResource(R.string.row_conversations),
+                    Interruptions.convLabel(res, conversations)
+                ) { haptics.open(); editing = "conv" }
+            },
+            {
+                AllowRow(
+                    Who.Repeat, stringResource(R.string.row_repeat_callers),
+                    stringResource(
+                        if (repeatCallers) R.string.row_repeat_callers_on
+                        else R.string.state_blocked
+                    ),
+                    checked = repeatCallers,
+                    onCheckedChange = { haptics.toggle(it); repeatCallers = it; save() }
+                )
+            }
+        ))
 
         }
 
         Section(stringResource(R.string.section_everything_else)) {
-        AllowCard {
-            AllowRow(
-                Who.Bell, stringResource(R.string.row_reminders),
-                stringResource(if (reminders) R.string.state_allowed else R.string.state_blocked),
-                checked = reminders,
-                onCheckedChange = { haptics.toggle(it); reminders = it; save() }
-            )
-            RowDivider()
-            AllowRow(
-                Who.Cal, stringResource(R.string.row_events),
-                stringResource(if (events) R.string.state_allowed else R.string.state_blocked),
-                checked = events,
-                onCheckedChange = { haptics.toggle(it); events = it; save() }
-            )
-            RowDivider()
-            AllowRow(
-                Who.Media, stringResource(R.string.row_media),
-                stringResource(if (media) R.string.row_media_on else R.string.state_blocked),
-                checked = media,
-                onCheckedChange = { haptics.toggle(it); media = it; save() }
-            )
-            RowDivider()
+        GroupedList(gloam.raise, listOf(
+            {
+                AllowRow(
+                    Who.Bell, stringResource(R.string.row_reminders),
+                    stringResource(if (reminders) R.string.state_allowed else R.string.state_blocked),
+                    checked = reminders,
+                    onCheckedChange = { haptics.toggle(it); reminders = it; save() }
+                )
+            },
+            {
+                AllowRow(
+                    Who.Cal, stringResource(R.string.row_events),
+                    stringResource(if (events) R.string.state_allowed else R.string.state_blocked),
+                    checked = events,
+                    onCheckedChange = { haptics.toggle(it); events = it; save() }
+                )
+            },
+            {
+                AllowRow(
+                    Who.Media, stringResource(R.string.row_media),
+                    stringResource(if (media) R.string.row_media_on else R.string.state_blocked),
+                    checked = media,
+                    onCheckedChange = { haptics.toggle(it); media = it; save() }
+                )
+            },
+            {
             // Android will silence alarms if asked. We never ask: an app that
             // can mute your morning alarm is a footgun, and the old copy blamed
             // the platform for a decision that was ours.
@@ -260,7 +270,8 @@ fun InterruptionsScreen(onBack: () -> Unit, onChanged: () -> Unit) {
                 Who.Alarm, stringResource(R.string.row_alarms),
                 stringResource(R.string.row_alarms_why)
             )
-        }
+            }
+        ))
         }
     }
     }
@@ -339,29 +350,6 @@ private fun PeopleSheet(title: String, selected: Int, onPick: (Int) -> Unit) {
         onPick = onPick,
         onDismiss = { onPick(selected) }
     )
-}
-
-/**
- * A card holding a group of rows, divided - the same shape as "What can wake
- * you" on Home. Each row used to be its own little card, which made the screen a
- * stack of eight rather than two groups, and said nothing about which rows
- * belong together.
- */
-@Composable
-private fun AllowCard(content: @Composable ColumnScope.() -> Unit) {
-    Surface(
-        color = gloam.raise,
-        shape = RoundedCornerShape(CORNER),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(content = content)
-    }
-}
-
-/** `line`, not `veil`: veil at 1dp on raise measures 1.02:1, which is no edge. */
-@Composable
-private fun RowDivider() {
-    HorizontalDivider(Modifier.padding(horizontal = CARD_PAD), color = gloam.line)
 }
 
 /**

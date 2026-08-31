@@ -228,7 +228,6 @@ Three things worth knowing before adding tests:
 
 ## Outstanding
 
-- README screenshots predate the current palette and icon.
 - `note_unscheduled` is **unreachable**: `nextStart` cannot return null. The
   fallback stays because the signature is nullable; see `SentencesTest`.
 - Dynamic colour, Shizuku and a scheduled always-on for Honor are all considered

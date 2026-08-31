@@ -929,10 +929,17 @@ confirming on real hardware.
   family as Google's own on this phone, which are white tiles with a saturated
   mark: Drive, Files, Gmail, Google, Maps, Meet, Messages. Confirmed in the
   drawer beside Gemini, Gmail and Google.
-  **The mark is centred and scaled 0.90, and how that was got wrong first is
-  the useful half.** In the 72dp the launcher shows, the mark sat with margins
-  of 3.5 left, 3.5 right, 3.5 top and 15.0 BOTTOM - hugging three edges with a
-  gap under it, reported as asymmetric. It is 6.8 / 6.8 / 12.0 / 12.0 now.
+  **The mark is centred and scaled 0.92, the crescent 0.86 again inside it, and
+  how that was got wrong first is the useful half.** In the 72dp the launcher
+  shows, the mark sat with margins of 3.5 left, 3.5 right, 3.5 top and 15.0
+  BOTTOM - hugging three edges with a gap under it, reported as asymmetric. It
+  is 6.2 / 6.2 / 12.5 / 12.8 now, and the second scale opens a visible gap
+  between the moon and its ring where the two used to nearly touch at the lower
+  left. Both are transform GROUPS; no path data changed. The crescent's scale
+  shares the arc's pivot, which is what keeps its outer disc concentric.
+  Note the gradient lives inside that group and scales with it, so
+  `render_icon.py` has to scale the crescent's gradient AXIS too or the exported
+  `docs/icon.png` stops matching the drawable it is supposed to depict.
   Centring the CRESCENT's own centroid was the obvious first move and is wrong.
   A sickle's mass sits nowhere near where it looks centred - 6.1dp left and
   9.1dp down of the tile centre - so moving that point to the middle shoves the

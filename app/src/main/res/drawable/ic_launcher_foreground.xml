@@ -36,8 +36,12 @@
          the bottom - so in the 72dp the launcher shows it sat with margins of
          3.5 left, 3.5 right, 3.5 top and 15.0 BOTTOM. It hugged three edges and
          left a gap under itself, reported as looking asymmetric.
-         This group centres it vertically and gives it room: 6.8dp at the sides
-         and 12.0 top and bottom.
+         This group centres it vertically and gives it room: 6.2dp at the sides
+         and 12.5 / 12.8 top and bottom. The CRESCENT is scaled again, 0.86, on
+         its own rotation group below - asked for, and it opens a visible gap
+         between the moon and its ring where the two used to nearly touch at the
+         lower left. Scaling it on that group is what keeps its outer disc
+         concentric with the arc, which is the relationship that reads.
          Note what is NOT achievable and should not be chased: EVEN margins on
          all four sides. The mark is wider than it is tall, so a square tile
          cannot give it equal air on every side without distorting it. The
@@ -49,9 +53,10 @@
          concentric with the arc, which is the relationship that reads. -->
     <group
         android:pivotX="54" android:pivotY="54"
-        android:scaleX="0.90" android:scaleY="0.90"
-        android:translateY="5.18">
-    <group android:rotation="-32" android:pivotX="54" android:pivotY="54">
+        android:scaleX="0.92" android:scaleY="0.92"
+        android:translateY="6.49">
+    <group android:rotation="-32" android:pivotX="54" android:pivotY="54"
+        android:scaleX="0.86" android:scaleY="0.86">
         <clip-path android:pathData="M33.00,54.00 a21.00,21.00 0 1,0 42.00,0 a21.00,21.00 0 1,0 -42.00,0 Z" />
         <path android:fillType="evenOdd" android:pathData="M33.00,54.00 a21.00,21.00 0 1,0 42.00,0 a21.00,21.00 0 1,0 -42.00,0 Z M42.66,50.22 a19.74,19.74 0 1,0 39.48,0 a19.74,19.74 0 1,0 -39.48,0 Z">
             <aapt:attr name="android:fillColor">

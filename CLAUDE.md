@@ -1868,7 +1868,37 @@ Disturb changes from the quick settings tile while the screen is open.
   the switch is the indicator and not a second target competing for the taps
   people aim most carefully. One semantics node too, so TalkBack reads the row
   once. The master switch routes through a single `setBedtime()` so the row and
-  the switch cannot diverge — including the confirm dialog while running.
+  the switch cannot diverge.
+  It is also the ONE switch that carries a `contentDescription`, and that was a
+  real gap rather than a nicety: every other switch sits in a row that names it,
+  the app bar has no row, and read off the device the node came back
+  `text='' content-desc='' checkable=true` - TalkBack announcing a bare
+  "on, switch" with nothing said about what. Found while looking for a stable
+  test selector, which is the second time this app's accessibility has been
+  fixed by needing to address a control from outside it.
+- **Switching bedtime off mid-window no longer asks.** There was a confirm
+  dialog - "End bedtime now?" with End now / Keep going - and it is deleted.
+  A confirmation is for something destructive or hard to undo, and this is
+  neither: measured on the phone, off gives `zen_mode` 0 with `activeDay`
+  cleared, and one tap back on gives `zen_mode` 1 with `activeDay` re-derived by
+  `rescheduleAll`, the END alarm restored to the same minute and the next START
+  re-queued. Nothing is spent and nothing is lost.
+  Its real job was never consent, it was EXPLANATION - "the next one runs as
+  scheduled", answering "have I just cancelled my whole schedule?" - and the
+  screen behind it already answers that the instant the switch moves: the status
+  line goes to "Off", the dial still draws the window, the days stay filled, and
+  the plan note appears on both cards saying these settings take effect once you
+  turn it on. A modal charges a decision every single time to deliver a fact you
+  need once, and this one fired at the worst possible moment: a dark room, a
+  grayscale screen, someone who wants the window over NOW. It was also the only
+  switch in the app that argued back.
+  `end_bedtime_title`, `end_bedtime_body`, `end_bedtime_body_once`, `end_now`
+  and `keep_going` are gone from all three locales. A `ScreensTest` case pins
+  the one-tap behaviour; note it needs BOTH
+  `setNotificationPolicyAccessGranted(true)` and the static
+  `ShadowAlarmManager.setCanScheduleExactAlarms(true)`, or the switch renders
+  disabled and the click is silently ignored while the node still reads On -
+  a green-looking test that asserts nothing.
 - Haptics are one effect per KIND of interaction, listed at the top of
   `Haptics.kt`: toggle, select, open, confirm, plus the dial's own drag
   vocabulary. Presets and the centre readout used to fire `toggle(true)` though

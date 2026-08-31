@@ -228,7 +228,6 @@ fun Home(
     var end by remember { mutableStateOf(prefs.endTime) }
     var days by remember { mutableStateOf(prefs.days) }
     var picking by remember { mutableStateOf<String?>(null) }
-    var confirmEnd by remember { mutableStateOf(false) }
     // which of the centre's readings is showing; deliberately not persisted, so
     // every visit opens on the most useful one for the current state
     var centreMode by remember { mutableIntStateOf(0) }
@@ -281,18 +280,31 @@ fun Home(
     val runningNow = enabled && insideWindow
 
     // One handler for the master switch, so the row and the switch inside it
-    // cannot drift apart - including the confirm dialog when it is running.
+    // cannot drift apart.
+    //
+    // Switching off MID-WINDOW used to raise a confirm dialog, and it is gone.
+    // A confirmation is for an action that is destructive or hard to undo, and
+    // this is neither: measured on the phone, off gives zen_mode 0 with
+    // activeDay cleared, and one tap back on gives zen_mode 1 with activeDay
+    // re-derived, the END alarm restored to the same minute and the next START
+    // re-queued. Nothing is spent and nothing is lost.
+    // Its real job was not consent but EXPLANATION - "the next one runs as
+    // scheduled" - and the screen behind it already answers that the instant
+    // the switch moves: the status line goes to "Off", the dial still draws the
+    // window, the days stay filled, and the plan note appears on both cards
+    // saying these settings take effect once you turn it on. A modal charges a
+    // decision every single time to deliver a fact you need once.
+    // It also fired at the worst possible moment - a dark room, a grayscale
+    // screen, someone who wants the night over NOW - and it was the only switch
+    // in the app that argued back.
     fun setBedtime(on: Boolean) {
         haptics.toggle(on)
-        if (!on && runningNow) confirmEnd = true
-        else {
-            enabled = on
-            if (!on) {
-                Scheduler.cancelAll(ctx)
-                ZenController.setActive(ctx, prefs, false)
-            }
-            commit()
+        enabled = on
+        if (!on) {
+            Scheduler.cancelAll(ctx)
+            ZenController.setActive(ctx, prefs, false)
         }
+        commit()
     }
 
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -494,7 +506,8 @@ fun Home(
                             // to say. Checked is armed; checked with the moon
                             // is a window actually running.
                             icon = if (runningNow) R.drawable.ic_bedtime
-                                   else R.drawable.ic_check
+                                   else R.drawable.ic_check,
+                            contentDescription = stringResource(R.string.bedtime_mode)
                         )
                         IconButton(onClick = { haptics.open(); onOpenSettings() }) {
                             Icon(
@@ -1116,46 +1129,6 @@ fun Home(
 
         }
         }
-    }
-
-    if (confirmEnd) {
-        AlertDialog(
-            onDismissRequest = { confirmEnd = false },
-            containerColor = g.raise,
-            shape = RoundedCornerShape(32.dp),
-            title = {
-                Text(
-                    stringResource(R.string.end_bedtime_title),
-                    style = MaterialTheme.typography.titleLarge, color = g.onSurface
-                )
-            },
-            text = {
-                Text(
-                    // A one-off has no next occurrence, so the reassuring half
-                    // of this sentence would be a promise the app cannot keep.
-                    stringResource(
-                        if (Scheduler.isOneOff(days)) R.string.end_bedtime_body_once
-                        else R.string.end_bedtime_body
-                    ),
-                    style = MaterialTheme.typography.bodyLarge, color = g.onSurfaceLow
-                )
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    haptics.confirm()
-                    enabled = false
-                    Scheduler.cancelAll(ctx)
-                    ZenController.setActive(ctx, prefs, false)
-                    commit()
-                    confirmEnd = false
-                }) { Text(stringResource(R.string.end_now), color = g.cta) }
-            },
-            dismissButton = {
-                TextButton(onClick = { confirmEnd = false }) {
-                    Text(stringResource(R.string.keep_going), color = g.onSurfaceLow)
-                }
-            }
-        )
     }
 
     if (picking != null) {

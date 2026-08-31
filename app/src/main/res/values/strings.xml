@@ -173,11 +173,6 @@
     <string name="fx_ambient_sub">The screen stays dark</string>
 
     <!-- ============ Home: end-bedtime dialog ============ -->
-    <string name="end_bedtime_title">End bedtime now?</string>
-    <string name="end_bedtime_body_once">Do Not Disturb and the screen effects stop straight away. Nothing else is scheduled.</string>
-    <string name="end_bedtime_body">Do Not Disturb and the screen effects stop straight away. The next one runs as scheduled.</string>
-    <string name="end_now">End now</string>
-    <string name="keep_going">Keep going</string>
     <string name="action_set">Set</string>
     <string name="action_cancel">Cancel</string>
 

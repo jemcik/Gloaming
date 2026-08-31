@@ -21,6 +21,8 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -533,13 +535,22 @@ fun GloamSwitch(
     // alone; the master switch passes a moon while a window is actually
     // running, so armed and running are told apart by the control itself
     // rather than by a lamp beside it saying the same thing a third time.
-    @DrawableRes icon: Int = R.drawable.ic_check
+    @DrawableRes icon: Int = R.drawable.ic_check,
+    // Every switch in the app but one sits in a ROW that carries the label and
+    // the gesture, so the switch is an unnamed indicator and correctly so. The
+    // app bar's has no row: read off the device it came back with no text and
+    // no content description at all, which TalkBack announces as a bare
+    // "on, switch". Naming it is the fix, and it is the same string the title
+    // beside it shows.
+    contentDescription: String? = null
 ) {
     Switch(
         checked = checked,
         onCheckedChange = onCheckedChange,
         enabled = enabled,
         interactionSource = interactionSource,
+        modifier = if (contentDescription == null) Modifier
+                   else Modifier.semantics { this.contentDescription = contentDescription },
         colors = gloamSwitchColors(),
         // M3 offers the thumb an icon and it is worth taking: it states the ON
         // state a second way, so the control does not rest on thumb POSITION

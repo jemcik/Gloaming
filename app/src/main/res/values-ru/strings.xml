@@ -96,11 +96,6 @@
     <string name="fx_ambient_sub">Экран не светится</string>
 
     <!-- ============ Home: end-bedtime dialog ============ -->
-    <string name="end_bedtime_title">Завершить режим сна?</string>
-    <string name="end_bedtime_body_once">Режим «Не беспокоить» и эффекты экрана будут сразу отключены. Больше ничего не запланировано.</string>
-    <string name="end_bedtime_body">Режим «Не беспокоить» и эффекты экрана будут сразу отключены. В следующий раз режим включится по расписанию.</string>
-    <string name="end_now">Завершить</string>
-    <string name="keep_going">Продолжить</string>
     <string name="action_set">Задать</string>
     <string name="action_cancel">Отмена</string>
 

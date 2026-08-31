@@ -96,11 +96,6 @@
     <string name="fx_ambient_sub">Екран не світиться</string>
 
     <!-- ============ Home: end-bedtime dialog ============ -->
-    <string name="end_bedtime_title">Завершити режим сну зараз?</string>
-    <string name="end_bedtime_body_once">Режим «Не турбувати» та ефекти екрана вимкнуться негайно. Більше нічого не заплановано.</string>
-    <string name="end_bedtime_body">Режим «Не турбувати» та ефекти екрана вимкнуться негайно. Наступного разу режим увімкнеться за розкладом.</string>
-    <string name="end_now">Завершити</string>
-    <string name="keep_going">Продовжити</string>
     <string name="action_set">Установити</string>
     <string name="action_cancel">Скасувати</string>
 

@@ -9,6 +9,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performSemanticsAction
+import android.app.NotificationManager
 import androidx.test.core.app.ApplicationProvider
 import java.time.DayOfWeek
 import java.time.LocalTime
@@ -22,6 +23,8 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.Shadows.shadowOf
+import org.robolectric.shadows.ShadowAlarmManager
 import org.robolectric.annotation.Config
 
 /**
@@ -168,6 +171,40 @@ class ScreensTest {
         compose.onNodeWithText(ctx().getString(R.string.filter_pill_ignored)).assertExists()
         // and specifically NOT the sentence that would say it was switched off
         compose.onNodeWithText(ctx().getString(R.string.filter_all)).assertDoesNotExist()
+    }
+
+    @Test
+    fun `switching bedtime off mid-window takes one tap`() {
+        // It took two until 31 Aug 2026: a confirm dialog stood between the
+        // switch and the thing it switches. The action is fully reversible -
+        // measured on the phone, one tap back on restores zen, the END alarm to
+        // the same minute and the next START - so the modal was charging a
+        // decision to deliver a fact the screen behind it already showed.
+        // What must not come back is a second step here, at night, from someone
+        // who wants the window over NOW.
+        val prefs = Prefs(ctx())
+        prefs.enabled = true
+        runningWindow(prefs)
+        // The switch is disabled until the app can actually do the job, and
+        // Robolectric grants neither by default - without these two the node is
+        // found, reads On, and simply ignores the click.
+        shadowOf(ctx().getSystemService(NotificationManager::class.java))
+            .setNotificationPolicyAccessGranted(true)
+        ShadowAlarmManager.setCanScheduleExactAlarms(true)   // static, not per-instance
+        compose.setContent {
+            GloamingTheme(dark = false) {
+                Home(rememberScrollState(), onOpenSettings = {}, onOpenInterruptions = {})
+            }
+        }
+        // By content description, which is also the only switch on Home that
+        // HAS one: every other sits in a row that names it. Selecting the first
+        // toggleable node instead was tried and picked up the Repeat row.
+        val master = compose.onNodeWithContentDescription(ctx().getString(R.string.bedtime_mode))
+        master.assertIsOn()
+        master.performClick()
+        compose.waitForIdle()
+        master.assertIsOff()
+        assertEquals(false, Prefs(ctx()).enabled)
     }
 
     @Test

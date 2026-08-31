@@ -124,9 +124,9 @@
     <string name="state_allowed">Разрешено</string>
     <string name="state_blocked">Заблокировано</string>
 
-    <string name="filter_pill_on">Действует</string>
+    <string name="filter_pill_on">Применён</string>
     <string name="filter_pill_off">Выключен</string>
-    <string name="filter_pill_ignored">Не действует</string>
+    <string name="filter_pill_ignored">Не применён</string>
     <string name="filter_pill_alarms">Только будильники</string>
     <string name="filter_pill_none">Полная тишина</string>
     <string name="filter_pill_unknown">Неизвестно</string>

@@ -36,8 +36,17 @@
          the bottom - so in the 72dp the launcher shows it sat with margins of
          3.5 left, 3.5 right, 3.5 top and 15.0 BOTTOM. It hugged three edges and
          left a gap under itself, reported as looking asymmetric.
-         This group centres it vertically and gives it room: 6.2dp at the sides
-         and 12.5 / 12.8 top and bottom. The CRESCENT is scaled again, 0.86, on
+         This group centres it vertically and gives it room: 6.2dp at the sides,
+         9.0 above and 16.5 below.
+         THOSE TOP AND BOTTOM NUMBERS ARE DELIBERATELY UNEQUAL, and the version
+         that made them equal shipped first and was wrong. Balancing the BOUNDING
+         BOX (translateY 6.49) put the INK 3.7dp below the tile centre and left
+         36% of it above the centre line - reported immediately as the icon
+         sitting low. The box lies here: the arc's 113 degree gap is at the
+         bottom, so the lower half of the box is mostly empty and centring the
+         box drags the mass down after it. translateY 2.76 puts the ink CENTROID
+         on the tile centre instead, which is what optical centring means and
+         what the eye is actually reading. The CRESCENT is scaled again, 0.86, on
          its own rotation group below - asked for, and it opens a visible gap
          between the moon and its ring where the two used to nearly touch at the
          lower left. Scaling it on that group is what keeps its outer disc
@@ -54,7 +63,7 @@
     <group
         android:pivotX="54" android:pivotY="54"
         android:scaleX="0.92" android:scaleY="0.92"
-        android:translateY="6.49">
+        android:translateY="2.76">
     <group android:rotation="-32" android:pivotX="54" android:pivotY="54"
         android:scaleX="0.86" android:scaleY="0.86">
         <clip-path android:pathData="M33.00,54.00 a21.00,21.00 0 1,0 42.00,0 a21.00,21.00 0 1,0 -42.00,0 Z" />

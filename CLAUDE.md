@@ -933,10 +933,21 @@ confirming on real hardware.
   how that was got wrong first is the useful half.** In the 72dp the launcher
   shows, the mark sat with margins of 3.5 left, 3.5 right, 3.5 top and 15.0
   BOTTOM - hugging three edges with a gap under it, reported as asymmetric. It
-  is 6.2 / 6.2 / 12.5 / 12.8 now, and the second scale opens a visible gap
+  is 6.2 / 6.2 / 9.0 / 16.5 now, and the second scale opens a visible gap
   between the moon and its ring where the two used to nearly touch at the lower
   left. Both are transform GROUPS; no path data changed. The crescent's scale
   shares the arc's pivot, which is what keeps its outer disc concentric.
+  **The top and bottom margins are deliberately unequal, and the version that
+  made them equal shipped first and was reported within minutes.** Balancing the
+  BOUNDING BOX put the INK 3.7dp below the tile centre, with 36% of it above the
+  centre line - seen immediately as the icon sitting low. The box lies about
+  this mark: the arc's 113 degree gap is at the bottom, so the lower half of the
+  box is mostly empty and centring the box drags the mass down after it. What
+  ships centres the ink CENTROID instead, which is what optical centring means.
+  The general rule, since this file now has the same lesson twice in one
+  artwork: for any shape that is not roughly convex and even, measure the INK -
+  centroid and the above/below split - not the bounding box, and not the
+  centroid of one component (which is the crescent mistake recorded above).
   Note the gradient lives inside that group and scales with it, so
   `render_icon.py` has to scale the crescent's gradient AXIS too or the exported
   `docs/icon.png` stops matching the drawable it is supposed to depict.

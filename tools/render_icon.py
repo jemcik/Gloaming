@@ -40,7 +40,7 @@ BG  = [(0.00,'#FFFFFF'), (1.00,'#FFFFFF')]
 yy, xx = np.mgrid[0:N, 0:N]
 # The mark is scaled 0.90 and dropped 5.18dp to centre it vertically in the
 # 72dp the launcher shows - see ic_launcher_foreground.xml. Sampling inverts it.
-MARK, MARK_DY, CRES = 0.92, 6.49, 0.86
+MARK, MARK_DY, CRES = 0.92, 2.76, 0.86
 X = (xx / S - 54.0) / MARK + 54.0
 Y = (yy / S - MARK_DY - 54.0) / MARK + 54.0
 img = np.zeros((N, N, 4), dtype=float)

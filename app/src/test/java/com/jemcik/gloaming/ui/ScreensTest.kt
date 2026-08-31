@@ -14,7 +14,6 @@ import androidx.test.core.app.ApplicationProvider
 import java.time.DayOfWeek
 import java.time.LocalTime
 import androidx.compose.foundation.rememberScrollState
-import com.jemcik.gloaming.Home
 import com.jemcik.gloaming.R
 import com.jemcik.gloaming.core.Prefs
 import org.junit.Assert.assertEquals

@@ -183,6 +183,19 @@ data class GloamColors(
        anyone reading shape rather than colour. */
     val alert: Color,
     val onAlert: Color,
+    /* The alert pill's rim, and it exists because the ground moved under it.
+       All three status pills are light fills on a light card in Dawn, so each
+       needs an edge; the other two take `selectBorder` and `veilOutline`. This
+       one was left bare on the argument that the failure state is already the
+       loudest thing on screen - true when the card was tone 95 and the pill
+       held 1.14:1 against it, false at tone 91 where it fell to 1.02:1, which
+       is the same lightness. A red on a neutral card would still have read by
+       HUE alone, and hue alone is exactly what this app does not rely on.
+       Note what the near-miss teaches: `alert` is Material's errorContainer
+       tone (90 light / 30 dark), and that tone assumes a tone-95-or-lighter
+       surface. Darkening a surface silently invalidates every container tone
+       borrowed from a spec that assumed the old one. */
+    val alertBorder: Color,
     val cta: Color,
     val dark: Boolean
 )
@@ -246,6 +259,7 @@ private val Dusk = GloamColors(
     switchThumbOff = Color(0xFF9196A0),   //                     3.59:1 on the veil track
     alert = Color(0xFF6F362E),         // tone 30 · ink 7.24:1
     onAlert = Color(0xFFFFDAD5),
+    alertBorder = Color(0xFFB85B52),   // tone 50 · 2.74:1 on a card
     cta = Color(0xFFF49B66),
     dark = true
 )
@@ -260,12 +274,24 @@ private val Dawn = GloamColors(
     // walk towards it. Deepening the card was tried first and does the opposite:
     // it buys card-versus-page and spends switch-versus-card.
     surface = Color(0xFFFDFDFD),
-    raise = Color(0xFFF9EFE6),            // tone 95 · 1.12:1 on the page
-    veil = Color(0xFFF0E6DD),
-    line = Color(0xFFCCC2B9),
-    outline = Color(0xFFB4A99E),      // tone 70 · ring 2.19:1 on the page
-    selectBorder = Color(0xFFA2ACBD), // tone 70 · 2.02:1 on a card, from 1.26
-    veilOutline = Color(0xFF897F75),  // tone 54 · 3.19:1 on the veil track
+    // Hue 130 at low chroma - a green-grey paper, not a cream. The creamy
+    // beige it replaced was hue 76, and the accent is hue 258: nearly opposite,
+    // which is what "inappropriate" meant when it was reported.
+    // Tone 91, not 95, and the ladder is the whole trade: card-versus-page goes
+    // 1.12 to 1.24 while everything sitting ON the card loses the same amount,
+    // because all of it is lighter than the card. That is affordable now only
+    // because the controls gained RIMS - the checked track's raw fill drops to
+    // 1.13:1 and its rim carries it at 1.81:1.
+    // Note hue 130 will not take Material's chroma-8 stepping for the outline
+    // family: at that weight it reads olive rather than grey. It passes as
+    // neutral paper only while its chroma stays near 3, which is the cost of
+    // choosing a hue that is not the accent's.
+    raise = Color(0xFFE4E5E2),            // tone 91 · 1.24:1 on the page
+    veil = Color(0xFFDCDEDA),
+    line = Color(0xFFC5C4BD),
+    outline = Color(0xFFACACA5),      // tone 70 · ring 2.24:1 on the page
+    selectBorder = Color(0xFFA2ACBD), // tone 70 · 1.81:1 on a card
+    veilOutline = Color(0xFF7C7C76),  // tone 52 · 3.10:1 on the veil track
     onSurface = Color(0xFF1E1B18),        // 15.11:1 on a card
     onSurfaceMid = Color(0xFF514A43),
     onSurfaceLow = Color(0xFF514A43),     //  7.68:1 on a card
@@ -282,6 +308,7 @@ private val Dawn = GloamColors(
     switchThumbOff = Color(0xFF837B72),   //                     3.39:1 on the veil track
     alert = Color(0xFFFFDAD5),         // tone 90 · ink 7.27:1
     onAlert = Color(0xFF6B3831),
+    alertBorder = Color(0xFFD16F65),   // tone 58 · 2.69:1 on a card
     cta = Color(0xFF954914),
     dark = false
 )

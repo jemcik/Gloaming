@@ -619,6 +619,18 @@ confirming on real hardware.
   two reds on screen would be one red; the lamp is gone now, so it is the ONLY
   red, which is the stronger position - a red here means exactly one thing.
   `errorContainer` was another unset scheme role.
+  **It has a rim now, and the reason it needed one is the general lesson.**
+  All three pills were left bare except the two that gained borders with the
+  switch; the alert pill was excused on the grounds that a failure state is
+  already the loudest thing on screen. That was true at 1.14:1 against a tone-95
+  card and false at 1.02:1 against a tone-91 one - the same lightness, leaving
+  only HUE to separate a pill from its card, which is the one thing this app
+  does not let a state rest on. `alertBorder` fixes it: 2.69:1 in Dawn, 2.74:1
+  in Dusk.
+  The trap to carry forward: `alert` is Material's `errorContainer` tone, 90
+  light and 30 dark, and THAT TONE ASSUMES A SURFACE AT 95 OR LIGHTER. Darkening
+  a surface silently invalidates every container tone borrowed from a spec that
+  assumed the old one. Nothing warns you; the pill simply stops being a pill.
   A test asserts the ignored case says `filter_ignored` and NOT `filter_all`.
   That test was impossible while the difference was a colour.
 - **Every switch on Home is a PLAN, and for months nothing said so.** Reported
@@ -1869,9 +1881,29 @@ Disturb changes from the quick settings tile while the screen is open.
   `surfaceVariant`, `secondaryContainer`, `tertiaryContainer` and the
   `surfaceContainer` ladder, so a component that reaches for a container gets the
   same colour. One token moves all of them, which is the point.
-  It is 1.26:1 against the page in Dusk and 1.12:1 in Dawn - the latter lifted
-  from 1.08:1 by moving the PAGE up rather than the card down, see the ground
-  note. There is no longer a running variant. Formerly the RUNNING
+  It is 1.26:1 against the page in Dusk and **1.24:1 in Dawn**, and the Dawn
+  number arrived in two moves that pull in opposite directions: the PAGE went up
+  to tone 99.3 (1.08 to 1.12), then the CARD went down to tone 91 (1.12 to 1.24).
+  Doing only the second was rejected earlier for spending switch-versus-card to
+  buy card-versus-page; doing both is affordable because the controls gained
+  RIMS in between, so the checked track's raw fill can sit at 1.13:1 with its
+  rim carrying the boundary at 1.81:1. The order mattered - the card could not
+  have been darkened first.
+  **Dawn's card is a green-grey now, not a cream.** It was hue 76 against an
+  accent at hue 258, nearly opposite, reported as looking inappropriate together;
+  it is hue 130 at chroma ~3.4. The whole neutral family moved with it - `veil`,
+  `line`, `outline`, `veilOutline` - because shifting only the card would have
+  relocated the clash onto the day rings, which sit on the page.
+  Worth knowing before tuning that hue: **Material derives its neutrals from the
+  ACCENT's hue**, not from grey and not from a chosen one -
+  `core_palette.ts` builds n1 at chroma 4 for surfaces and n2 at chroma 8 for
+  the outline family, both `fromHueAndChroma(sourceHue, ...)`. Hue 130 is a
+  deliberate departure from that, chosen by eye over the compliant hue-258
+  version, and it comes with a constraint: at Material's chroma 8 the outline
+  family at hue 130 reads OLIVE rather than grey. It passes as neutral paper
+  only while its chroma stays near 3. A hue that is not the accent's has to stay
+  quieter than Material's own numbers to keep the same job.
+  There is no longer a running variant. Formerly the RUNNING
   state is the one to watch rather than the resting one, because that is where
   the screen spends the night: 1.35:1 and 1.14:1 there.
   Those look thin and are not. Google Health's own cards measure 1.10:1 against

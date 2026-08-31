@@ -1203,10 +1203,7 @@ private fun StatusPill(text: String, fill: Color, ink: Color) {
     val border = when (fill) {
         g.selectFill -> g.selectBorder
         g.veil -> g.veilOutline
-        // `alert` keeps none. It is the one FAILURE state on the screen and it
-        // is already the loudest thing there; a rim would be a fifth edge on a
-        // colour that is not competing with anything.
-        else -> null
+        else -> g.alertBorder
     }
     Text(
         text,

@@ -605,9 +605,11 @@ confirming on real hardware.
   "Out of range", measured on this phone. `filter_ignored` exists for the case
   that had no words of its own. Three treatments: `selectFill`/`onSelect` when
   the phone is doing what was asked, `veil`/`onSurfaceLow` when Do Not Disturb
-  was not asked for, and `alert`/`onAlert` for the failure - a new pair at the
-  off-lamp's red hue on Material's error-container tones, so the two reds on
-  screen are the same red. `errorContainer` was another unset scheme role.
+  was not asked for, and `alert`/`onAlert` for the failure - a new pair on
+  Material's error-container tones. It was matched to the off-lamp's red so the
+  two reds on screen would be one red; the lamp is gone now, so it is the ONLY
+  red, which is the stronger position - a red here means exactly one thing.
+  `errorContainer` was another unset scheme role.
   A test asserts the ignored case says `filter_ignored` and NOT `filter_all`.
   That test was impossible while the difference was a colour.
 - **Every switch on Home is a PLAN, and for months nothing said so.** Reported
@@ -652,7 +654,7 @@ confirming on real hardware.
   The honest cost, so nobody has to rediscover it: the band is now the colour of
   the controls it warns about, and green conventionally reads "on". It earns
   that back by being unmistakably part of this app rather than a fourth hue on
-  a screen that already carries the arc's two and the red lamp - and the WORDS
+  a screen that already carries the arc's two and the alert red - and the WORDS
   do the semantic work, which is where that work belongs.
   A lesson that generalises past this band: a dark warm colour IS brown. Three
   rounds were spent trying to make a dark orange strip not look brown, and the
@@ -660,7 +662,8 @@ confirming on real hardware.
   orange, or stop being dark. That is perception, not a palette bug.
   **The reason originally recorded for that no longer holds, and the correction
   matters more than the band does.** Colouring the TEXT was rejected as measured
-  shut: `cta` as ink was 2.49:1 on a card in Dawn and `lampOff` 3.80:1, both
+  shut: `cta` as ink was 2.49:1 on a card in Dawn and the old `lampOff` 3.80:1,
+  both
   under the 4.5:1 body minimum and under even the 3:1 large-text exemption - the
   cream could not carry an accent hue as text, which was the WAKE UP finding a
   second time. On the warm white those are 5.71:1 and 4.92:1, and both pass. The
@@ -1452,10 +1455,30 @@ Disturb changes from the quick settings tile while the screen is open.
 ## Deviations from the design brief (deliberate, worth revisiting with designer)
 
 - Master switch stays in one place across all states, and since 29 Aug 2026
-  sits at the top of the screen with the state lamp folded into it — green
-  armed, red off. The brief hides the switch while running, which left no way
-  out of DND until the wake alarm, and carried a separate running-only status
-  pill that said nothing the row does not.
+  sits at the top of the screen. The brief hides the switch while running, which
+  left no way out of DND until the wake alarm, and carried a separate
+  running-only status pill that said nothing the row does not.
+  **All three states live in the switch itself now, and the lamp beside it is
+  deleted.** That dot was the THIRD telling of one fact: the status line under
+  the title names every state in words ("Off", "Starts in 3h 50m", "On now,
+  until 8:30 AM"), the switch shows on-versus-off, and the lamp then said it
+  again in colour alone. The only thing it uniquely carried was armed versus
+  running, and that moved into the thumb - `ic_check` while armed, `ic_bedtime`
+  (Google's own crescent) while a window is actually running - which is where a
+  person looks for this control's state anyway.
+  The complaint that started it was that the lamp drew the eye, and the
+  diagnosis is worth keeping because it was not the size: its OFF state was a
+  RED, on the calmest surface in the app, and a red on a surface reads as a
+  fault. Being switched off is a choice, not a failure. `lampOn` / `lampOff`
+  are deleted with it.
+  **The sizing this rests on is a trap worth naming.** M3 grows the thumb to
+  24dp whenever `thumbContent` is non-null and leaves it at 16dp only when it is
+  null - so an icon on the UNCHECKED side would silently flatten the 16/24dp
+  asymmetry recorded below as load-bearing, while looking like it added a cue.
+  Passing null while unchecked is what keeps it, and the glyph swap costs
+  nothing because both states that carry a glyph are checked and already 24dp.
+  `GloamSwitch` takes the drawable as a parameter defaulting to `ic_check`, so
+  the app's other switches cannot sprout moons by accident.
 - Selection-as-a-fill has its own `selectFill` / `onSelect` tokens — day
   toggles, effect chips, the switch track. The allowlist's leading avatars used
   to be in that list and should not have been: they were filled with `selectFill`
@@ -1489,9 +1512,11 @@ Disturb changes from the quick settings tile while the screen is open.
   device rather than reasoned about: the checked thumb is 24.0dp and the
   unchecked one 16.0dp (2.25x the area), and M3 outlines the UNCHECKED track
   while leaving the checked one bare. Both are SHAPE cues, both survive any
-  colour vision, neither touches the accent. With position and the check mark
-  that is four shape cues before a colour is counted, and the 16/24dp matches
-  Google Messages' own switch on this phone.
+  colour vision, neither touches the accent. With position and the thumb's own
+  glyph that is four shape cues before a colour is counted, and the 16/24dp
+  matches Google Messages' own switch on this phone. That glyph now carries a
+  fifth thing on the master switch - a check while armed, a crescent while
+  running - which is the whole reason the state lamp could go.
   So the fix once proposed here - set `checkedBorderColor` - is WRONG and is
   recorded as wrong: it would outline both states and destroy the asymmetry
   currently doing the work, removing a cue while appearing to add one.
@@ -1517,14 +1542,15 @@ Disturb changes from the quick settings tile while the screen is open.
   in Dusk and 16 in Dawn still reads as a colour. Dusk carries more than Dawn
   because a dark ground swallows chroma - at 14 the theme measured and looked
   greyscale.
-- The state lamp has its own `lampOn` / `lampOff` tokens rather than reusing
-  `stateOn`. A lamp carries no text, so at 10 dp it needs chroma instead of
-  value contrast or it reads as a speck rather than a colour: 6.47:1 and 4.92:1
-  on the app bar. It follows the ACCENT hue rather than staying green - with a
-  slate accent a green lamp would be a fifth hue on a screen already carrying
-  the arc's two, the accent and the red - and armed-versus-off is
-  filled-versus-hollow as well as colour, so the red/green convention is not
-  load-bearing.
+- The state lamp had its own `lampOn` / `lampOff` tokens rather than reusing
+  `stateOn`, and the reasoning is kept although the mark is gone, because it is
+  right about small marks in general: a lamp carries no text, so at 10 dp it
+  needs chroma instead of value contrast or it reads as a speck rather than a
+  colour, which is what put it at 6.47:1 and 4.92:1 on the app bar. That is
+  also exactly why it drew the eye. **A mark small enough to be unobtrusive
+  needs chroma to be seen at all, and chroma is what makes it obtrusive** -
+  there is no setting of that dial that yields a quiet 10 dp state light. The
+  way out was not a quieter lamp but no lamp; see the master-switch note above.
 - Dawn deepens while running rather than lifting. "Deeper" is not "brighter".
   The three grounds are a LADDER - the more the app is doing, the deeper the
   page - and Dawn was missing a rung. Dusk had it symmetric, running at
@@ -1644,7 +1670,7 @@ Disturb changes from the quick settings tile while the screen is open.
 - **No days chosen means the window runs once, then the app switches itself
   off** — the convention alarm clocks use for a non-repeating alarm (Google
   Clock, iOS, Alarmy). Empty first meant "no nights scheduled", which produced
-  a dead state: switch on, lamp green, nothing scheduled, ever. "On, but
+  a dead state: switch on and checked, nothing scheduled, ever. "On, but
   never" is a promise the app cannot keep. `Scheduler.isOneOff(days)` is the
   single test — a one-off queues no following START, and `BedtimeReceiver`
   clears `enabled` when its END fires. `liveWindowEnd` only treats a one-off
@@ -1685,7 +1711,7 @@ Disturb changes from the quick settings tile while the screen is open.
 - The day row carries state in shape as well as colour: selected is a filled
   circle, unselected a hollow ring. The two fills sit at 1.3:1 against each
   other (see the selection-fill note above), so colour alone was not carrying
-  it. Same filled-vs-hollow the lamp and the crown marker use. Labels are two
+  it. Same filled-vs-hollow the crown marker uses. Labels are two
   letters off `TextStyle.SHORT`, not `NARROW` — narrow repeats itself as
   M T W T F S S. Each day is `toggleable` with `Role.Checkbox` and the full day
   name as its content description, so TalkBack no longer announces a bare "T".

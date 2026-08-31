@@ -452,40 +452,36 @@ fun Home(
                         titleContentColor = g.onSurface
                     ),
                     title = {
-                        // The lamp sits OUTSIDE the text column. Inside the
-                        // title row it left the status starting at the lamp's
-                        // left edge while the title started after it - two lines
-                        // of one label, indented differently.
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(
-                                Modifier.size(14.dp).then(
-                                    when {
-                                        runningNow -> Modifier.clip(CircleShape).background(g.lampOn)
-                                        enabled -> Modifier.border(2.dp, g.lampOn, CircleShape)
-                                        else -> Modifier.clip(CircleShape).background(g.lampOff)
-                                    }
-                                )
-                            )
-                            Spacer(Modifier.width(12.dp))
-                            Column {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(stringResource(R.string.bedtime_mode))
-                                    if (Scheduler.isOneOff(days)) {
-                                        Spacer(Modifier.width(8.dp))
-                                        Text(
-                                            stringResource(R.string.badge_once),
-                                            style = MaterialTheme.typography.labelLarge,
-                                            color = g.onSurfaceLow
-                                        )
-                                    }
+                        // No lamp here any more. It was the THIRD telling of one
+                        // fact: the status line below names all three states in
+                        // words, the switch beside it shows on-versus-off, and
+                        // the dot then said it again in colour alone. What it
+                        // uniquely carried - armed versus running - moved into
+                        // the switch's own thumb, which is where a person looks
+                        // for this control's state anyway.
+                        //
+                        // Its OFF state was also the loudest thing on the app's
+                        // calmest surface: lampOff was a red, and a red on a
+                        // surface reads as a fault. Being switched off is a
+                        // choice. lampOn/lampOff are deleted with it.
+                        Column {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(stringResource(R.string.bedtime_mode))
+                                if (Scheduler.isOneOff(days)) {
+                                    Spacer(Modifier.width(8.dp))
+                                    Text(
+                                        stringResource(R.string.badge_once),
+                                        style = MaterialTheme.typography.labelLarge,
+                                        color = g.onSurfaceLow
+                                    )
                                 }
-                                Text(
-                                    status,
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = g.onSurfaceLow,
-                                    maxLines = 1, overflow = TextOverflow.Ellipsis
-                                )
                             }
+                            Text(
+                                status,
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = g.onSurfaceLow,
+                                maxLines = 1, overflow = TextOverflow.Ellipsis
+                            )
                         }
                     },
                     actions = {
@@ -493,7 +489,12 @@ fun Home(
                         // its own target for the first time in this app.
                         GloamSwitch(
                             checked = enabled, enabled = ready,
-                            onCheckedChange = { setBedtime(it) }
+                            onCheckedChange = { setBedtime(it) },
+                            // The one switch in the app that has three things
+                            // to say. Checked is armed; checked with the moon
+                            // is a window actually running.
+                            icon = if (runningNow) R.drawable.ic_bedtime
+                                   else R.drawable.ic_check
                         )
                         IconButton(onClick = { haptics.open(); onOpenSettings() }) {
                             Icon(

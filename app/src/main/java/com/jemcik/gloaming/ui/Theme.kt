@@ -1,5 +1,6 @@
 package com.jemcik.gloaming.ui
 
+import androidx.annotation.DrawableRes
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.SwitchColors
 import androidx.compose.material3.SwitchDefaults
@@ -148,19 +149,12 @@ data class GloamColors(
        draws the segmented button's border, the day circles' rings and the
        dial's dots, where quiet is right. */
     val switchThumbOff: Color,
-    /* The state light is NOT stateOn. A lamp carries no text, so at 10dp it
-       needs chroma rather than value contrast or it reads as a speck rather
-       than a colour: 6.47:1 and 4.92:1 on the app bar. It follows the accent
-       hue rather than staying green - with a slate accent a green lamp would be
-       a fifth hue on a screen that already carries the arc's two, the accent
-       and the red. Armed-versus-off is filled-versus-hollow as well as colour,
-       so the red/green convention is not load-bearing here. */
-    val lampOn: Color,
-    val lampOff: Color,
     /* The one FAILURE state in the app: bedtime is running, Do Not Disturb was
        asked for, and the phone reports that everything is getting through.
-       Material's error container tones (30 dark / 90 light) at the off-lamp's
-       own red hue, so the two reds on screen are the same red.
+       Material's error container tones (30 dark / 90 light). It is now the
+       ONLY red in the app: the state lamp used to carry a second one for
+       merely being switched off, which is not a failure, and it is gone.
+       So a red on screen means exactly one thing.
        It is a container pair rather than an ink because the readout that uses
        it is a status PILL now - fill plus same-hue ink, the grammar Google
        Health uses for "In range" and "Out of range". It used to be `cta` as
@@ -231,8 +225,6 @@ private val Dusk = GloamColors(
     onSelect = Color(0xFFD2F0DD),         //                     4.90:1 on the fill
     switchThumb = Color(0xFFD2F0DD),      // = onSelect here; Dawn's differs, see below
     switchThumbOff = Color(0xFF9196A0),   //                     3.59:1 on the veil track
-    lampOn = Color(0xFF88CAA8),
-    lampOff = Color(0xFFE7968A),
     alert = Color(0xFF6F362E),         // tone 30 · ink 7.24:1
     onAlert = Color(0xFFFFDAD5),
     cta = Color(0xFFF49B66),
@@ -259,8 +251,6 @@ private val Dawn = GloamColors(
     onSelect = Color(0xFF314B26),         //                     6.79:1 on the fill
     switchThumb = Color(0xFF426833),      // tone 40 chroma 36 · 4.51:1 on the track
     switchThumbOff = Color(0xFF837B72),   //                     3.39:1 on the veil track
-    lampOn = Color(0xFF3E742B),
-    lampOff = Color(0xFFAD483B),
     alert = Color(0xFFFFDAD5),         // tone 90 · ink 7.27:1
     onAlert = Color(0xFF6B3831),
     cta = Color(0xFF954914),
@@ -538,7 +528,12 @@ fun GloamSwitch(
     // null everywhere a ROW carries the toggle, which is everywhere except the
     // app bar - a bar has no row to hand the gesture to, so there the switch
     // has to be its own target.
-    onCheckedChange: ((Boolean) -> Unit)? = null
+    onCheckedChange: ((Boolean) -> Unit)? = null,
+    // What the thumb wears when checked. Every switch in the app leaves this
+    // alone; the master switch passes a moon while a window is actually
+    // running, so armed and running are told apart by the control itself
+    // rather than by a lamp beside it saying the same thing a third time.
+    @DrawableRes icon: Int = R.drawable.ic_check
 ) {
     Switch(
         checked = checked,
@@ -550,10 +545,16 @@ fun GloamSwitch(
         // state a second way, so the control does not rest on thumb POSITION
         // alone - which is the one cue that survives neither a glance nor
         // colour blindness. Only on the checked side; an icon on both is noise.
+        //
+        // Note the sizing this rests on, before anyone reaches for an icon on
+        // the unchecked side too: M3 grows the thumb to 24dp whenever
+        // thumbContent is non-null, so an icon there would silently flatten
+        // the 16/24dp asymmetry that CLAUDE.md records as load-bearing.
+        // Passing null while unchecked is what keeps it.
         thumbContent = if (checked) {
             {
                 Icon(
-                    painterResource(R.drawable.ic_check),
+                    painterResource(icon),
                     contentDescription = null,
                     modifier = Modifier.size(SwitchDefaults.IconSize)
                 )

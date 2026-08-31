@@ -1491,12 +1491,26 @@ what this app does elsewhere, it would want the reboot question answered first,
 and the honest comparison against the existing key-flip has not been made. The
 finding is the value here, not a mandate.
 
-One more caveat for whoever picks this up: `AmbientControl`'s four keys were
-derived entirely from TAP TO SHOW mode. A phone sitting in Scheduled or All day
-has `aod_display_type=0` and `aod_touch_time=0` already, so three of the four
-writes are no-ops and only `aod_switch` moves — and `aod_switch` alone was
-measured doing nothing. The suppress path has never been tested from those
-modes.
+**`AmbientControl` works from Scheduled mode too — a worry, raised here and then
+tested rather than left standing.** Its four keys were derived entirely from TAP
+TO SHOW mode, and a phone sitting in Scheduled already has `aod_display_type=0`
+and `aod_touch_time=0`, so only `aod_switch` and `fingerprint_touch_time` move —
+and `aod_switch` alone was recorded above as doing nothing. That looked like a
+defect shipped in 0.5.
+
+It is not. Measured by eye, single variable, Scheduled mode with the window
+covering the current time: with `aod_switch=1` the AOD is lit; with the app
+suppressing (`aod_switch=0`, everything else unchanged) it is dark; the app's own
+restore brings it back and clears `ambientSaved`. The saved string records the
+truth of that mode — `aod_switch=1|aod_touch_time=0|fingerprint_touch_time=5|aod_display_type=0`
+— so the restore is correct rather than lucky.
+
+Which refines the `aod_switch` claim above rather than contradicting it.
+`aod_display_type` is the gate for TAP TO SHOW; `aod_switch` is the master that
+bites in SCHEDULED. Neither is "the one that matters" on its own — it depends on
+`aod_display_mode`. Writing all four zeroes whichever key is load-bearing in the
+current mode, so the existing implementation is robust across modes by
+construction, even though the reasoning recorded for it only ever covered one.
 
 **The `canControl` branch, verified after the HomeState refactor, 1 Sep 2026.**
 `ambientRow` is `ambientZen || AmbientControl.canControl(ctx)`, and the refactor

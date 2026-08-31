@@ -160,6 +160,25 @@ data class GloamColors(
        too hard on the eye. A thumb is a UI part and needs 3:1, so it gets its
        own tone, and the softening comes as much from CHROMA as from tone: a
        desaturated dark dot reads as black, a chromatic one reads as coloured. */
+    /* The checked switch's TRACK, split back out of `selectFill`.
+       The two were deliberately collapsed into one token so a selected day, the
+       preset pill and the switch could not drift - and that held while the
+       accent was a dark fern. With the accent a WASHED SAGE the screen carried
+       green on the days, the presets, the notice strip and every switch, which
+       was reported as too much of it. Splitting the switch back out is the
+       smallest cut that fixes it: one control changes, the rest of the
+       selection language stays one token.
+       Dawn's is Arc.dusk VERBATIM. The dial already contained a colour built
+       for this job - tone 41.7, where a track wants ~42 - so nothing had to be
+       invented, and it gives the switch back a link to the arc that the accent
+       gave up when it went green. Dusk's own value is within two tones and two
+       degrees of it already, so both themes now read the same way: a dark track
+       under a light thumb.
+       It also RESTORES an M3 asymmetry this file argued for and then lost. A
+       dark track bounds itself - 4.80:1 against the card - so the checked side
+       needs no rim, leaving unchecked outlined and checked bare, which is
+       Material's own rule and one more shape cue back. */
+    val switchTrack: Color,
     val switchThumb: Color,
     /* The UNSELECTED thumb has its own token, and now carries more than it used
        to: with the checked track no longer bright, the THUMB is what separates
@@ -262,7 +281,8 @@ private val Dusk = GloamColors(
     onState = Color(0xFF23354E),
     selectFill = Color(0xFF566479),       // tone 42 chroma 18.7 · 2.59:1 on the page
     onSelect = Color(0xFFDDE9FF),         //                       4.91:1 on the fill
-    switchThumb = Color(0xFFDDE9FF),      // = onSelect here; Dawn's differs, see below
+    switchTrack = Color(0xFF566479),      // within 2 tones of Arc.dusk already
+    switchThumb = Color(0xFFDDE9FF),      // light thumb on a dark track
     switchThumbOff = Color(0xFF9196A0),   //                     3.59:1 on the veil track
     alert = Color(0xFF6F362E),         // tone 30 · ink 7.24:1
     onAlert = Color(0xFFFFDAD5),
@@ -296,21 +316,36 @@ private val Dawn = GloamColors(
     veil = Color(0xFFDCDEDA),
     line = Color(0xFFC5C4BD),
     outline = Color(0xFFACACA5),      // tone 70 · ring 2.24:1 on the page
-    selectBorder = Color(0xFFA2ACBD), // tone 70 · 1.81:1 on a card
+    selectBorder = Color(0xFF9EB19C),     // tone 70 · the accent's OWN hue; it was left blue by mistake
     veilOutline = Color(0xFF7C7C76),  // tone 52 · 3.10:1 on the veil track
     onSurface = Color(0xFF1E1B18),        // 15.11:1 on a card
     onSurfaceMid = Color(0xFF514A43),
     onSurfaceLow = Color(0xFF514A43),     //  7.68:1 on a card
-    stateOn = Color(0xFF505A6A),          // tone 38 - Material's `primary`
+    stateOn = Color(0xFF4B5E4A),          // tone 38 - Material's `primary`
     onState = Color(0xFFFFFFFF),
-    selectFill = Color(0xFFD1D8E5),       // tone 86 chroma 11.4 · 1.36:1 on the page
+    /* Tone 88, chroma 13.7, hue 150 - a washed sage.
+       Two reports moved it here and both are worth keeping. It was the arc's
+       night stop at chroma 11, and GREY CONVENTIONALLY READS DISABLED, so a
+       selected day and a checked switch looked unavailable; M3 treats chroma 20
+       as a tint and the sage this replaced carried 24, so 11 was half of what
+       Material considers a colour at all. Then chroma 24-26 read as too bright,
+       which put the usable band at 16-20 - and "washed out" turned out to mean
+       TONE rather than chroma: the fill moves toward its ground instead of
+       losing its colour. Tone 88 is the ceiling. Past it the notice strip and
+       the switch track dissolve into the card at tone 90.8, and one token
+       serves those as well as the day discs, which sit on the far lighter page.
+       Note what this gives up, deliberately: the accent no longer comes off the
+       dial, which is what the palette rebuild was named for. Chosen anyway,
+       with that on the table. */
+    selectFill = Color(0xFFD3E1D0),       // tone 88 chroma 12 · 1.32:1 on the page, 1.06:1 on a card
     // Tone 23, not the container role's 29. The fill is the arc's own night
     // stop as it is drawn when bedtime is OFF, and at that chroma it is near
     // the floor of what still reads as a hue - so the label on it was the first
     // thing to suffer. 8.38:1 here against 6.76:1 at tone 29, and the ink still
     // holds chroma 13.3, so it stays a blue ink rather than going near-black.
-    onSelect = Color(0xFF2F3744),
-    switchThumb = Color(0xFF545F71),      // tone 40 · 4.51:1 on the track
+    onSelect = Color(0xFF2A3C2B),         // 8.62:1 on the fill
+    switchTrack = Color(0xFF4E6480),      // Arc.dusk, verbatim · 4.80:1 on a card
+    switchThumb = Color(0xFFFFFFFF),      // 6.07:1 on the track
     switchThumbOff = Color(0xFF837B72),   //                     3.39:1 on the veil track
     alert = Color(0xFFFFDAD5),         // tone 90 · ink 7.27:1
     onAlert = Color(0xFF6B3831),
@@ -556,14 +591,16 @@ private val GloamShapes = Shapes(
  */
 @Composable
 fun gloamSwitchColors(): SwitchColors = SwitchDefaults.colors(
-    checkedTrackColor = gloam.selectFill,
+    checkedTrackColor = gloam.switchTrack,
     checkedThumbColor = gloam.switchThumb,
-    checkedBorderColor = gloam.selectBorder,
+    // Bare, which is M3's own rule: a dark track bounds itself.
+    checkedBorderColor = gloam.switchTrack,
     uncheckedTrackColor = gloam.veil,
     uncheckedThumbColor = gloam.switchThumbOff,
     uncheckedBorderColor = gloam.veilOutline,
     // the check reads as the track's own green on the pale thumb
-    checkedIconColor = gloam.selectFill,
+    // the check reads as the track's colour on the pale thumb
+    checkedIconColor = gloam.switchTrack,
     disabledUncheckedTrackColor = gloam.veil,
     disabledUncheckedThumbColor = gloam.line,
     disabledUncheckedBorderColor = gloam.line

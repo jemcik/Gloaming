@@ -1686,6 +1686,47 @@ Disturb changes from the quick settings tile while the screen is open.
   being separated mostly by hue - the distinction red-green colourblindness
   collapses - no longer applies. The selected fill sits at 2.61:1 on the page in
   Dusk and 1.37:1 in Dawn.
+  **The accent came off the dial, and then the LIGHT theme left it again. Read
+  this whole entry before quoting any part of it.**
+
+  Where it ended up: Dusk keeps the arc's night stop, `#566479`. Dawn is a
+  WASHED SAGE, `#D3E1D0` - hue 150, chroma 12, tone 88 - which is 101 degrees
+  from the arc and owes it nothing. That was chosen with the departure on the
+  table, so the story this rebuild was named for holds for one theme only.
+
+  What moved it, in order, because each step invalidated the last:
+
+  GREY READS DISABLED. The arc's cool end at 55% over a warm ground gives chroma
+  11, and a selected day and a checked switch at that chroma were reported as
+  looking unavailable. M3's own `secondaryContainer` carries chroma 20 and the
+  sage this replaced carried 24, so 11 was half of what Material treats as a
+  tint at all. That is the floor, and it is a real one.
+
+  24-26 READS BRIGHT. Which puts the usable band at roughly 13 to 20 - narrow,
+  and narrower than it looks, because dropping chroma also costs separation from
+  the card: 5.8 perceptual units at chroma 17 down to 4.9 at 11.8.
+
+  AND "WASHED OUT" IS TONE, NOT CHROMA. Asked to soften it further, the first
+  three attempts lowered chroma, which drains a colour rather than fading it.
+  Fading it means moving the fill TOWARD its ground. The ceiling there is tone
+  88: past that the notice strip and the switch track dissolve into the card at
+  tone 90.8, while the day discs - which sit on the page at tone 99.3 - would
+  still have room. One token serves both, so the tighter constraint wins.
+
+  Two things are worth keeping from the version this replaced, since both are
+  still true of the DARK theme and of any future accent:
+
+  THE RAMP IS NOT A CONTINUUM. It is two hue families with a grey hole between
+  them, chroma collapsing to 7.6 at the midpoint. It offers two colours, not a
+  spectrum.
+
+  AND THE ARC IS DRAWN AT alpha 0.55 WHEN OFF, which is the version worth
+  sampling - at full strength it is too intense to wear. Composited there, Dusk
+  keeps chroma 18-25 across all four stops, but Dawn's cool end washes out to
+  11.4, which is what sent the light theme looking elsewhere in the first place.
+
+  The original entry follows, and its opening sentence is the one now false.
+
   **The accent comes off the dial, and specifically off the dial AS DRAWN WHEN
   BEDTIME IS OFF.** It is `Arc.night`'s hue - the bedtime handle's own colour -
   in both themes: Dusk `#566479` at tone 42 chroma 18.7, Dawn `#D1D8E5` at tone

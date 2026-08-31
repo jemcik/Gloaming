@@ -6,24 +6,16 @@ import androidx.compose.material3.LocalContentColor
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.selectable
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.jemcik.gloaming.R
 import com.jemcik.gloaming.ui.LinkRow
@@ -52,36 +44,7 @@ fun SettingsScreen(themeMode: Int, onThemeMode: (Int) -> Unit, onBack: () -> Uni
         }.getOrNull() ?: ""
     }
 
-    // The same top app bar as the allowlist, for the same reason: Back has to
-    // stay put. It was a row inside the scrolling column here too.
-    Scaffold(
-        containerColor = g.surface,
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        stringResource(R.string.settings_title),
-                        style = MaterialTheme.typography.titleLarge, color = g.onSurface
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            painterResource(R.drawable.ic_back),
-                            contentDescription = stringResource(R.string.action_back),
-                            tint = g.onSurface
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = g.raise,
-                    scrolledContainerColor = g.raise,
-                    titleContentColor = g.onSurface,
-                    navigationIconContentColor = g.onSurface
-                )
-            )
-        }
-    ) { inner ->
+    DetailScaffold(stringResource(R.string.settings_title), onBack) { inner ->
     // 24dp like every other screen. It used to be 8, with 16 added back onto
     // each non-row element, because bare ListItems bring their own 16dp start
     // padding - and that compensation had to be remembered at every call site.

@@ -1,5 +1,15 @@
 package com.jemcik.gloaming.ui
 
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import com.jemcik.gloaming.R
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -157,4 +167,62 @@ fun Section(
             content = content
         )
     }
+}
+
+/**
+ * The chrome both detail screens wear: a Scaffold, and a top app bar carrying
+ * the title and Back.
+ *
+ * It existed twice, byte for byte apart from the title, and SettingsScreen said
+ * so in a comment - "the same top app bar as the allowlist, for the same
+ * reason" - which is duplication acknowledged rather than removed. The reason
+ * it is worth one composable is that the bar's details are each a DECISION, and
+ * a decision copied is a decision that can drift:
+ *
+ * Back lives in the bar rather than in the scrolling column, because it used to
+ * be a row inside the content and on a nine-row screen the only visible way out
+ * scrolled off the top.
+ *
+ * And there is no scrollBehavior, deliberately. M3's default goes transparent
+ * at rest and `raise` the moment anything scrolls under it, which is a step
+ * change that reads as a blink; both bars are one constant colour, for the same
+ * reason Home's is.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DetailScaffold(
+    title: String,
+    onBack: () -> Unit,
+    content: @Composable (PaddingValues) -> Unit
+) {
+    val g = gloam
+    Scaffold(
+        containerColor = g.surface,
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        title,
+                        style = MaterialTheme.typography.titleLarge, color = g.onSurface
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(
+                            painterResource(R.drawable.ic_back),
+                            contentDescription = stringResource(R.string.action_back),
+                            tint = g.onSurface
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = g.raise,
+                    scrolledContainerColor = g.raise,
+                    titleContentColor = g.onSurface,
+                    navigationIconContentColor = g.onSurface
+                )
+            )
+        },
+        content = content
+    )
 }

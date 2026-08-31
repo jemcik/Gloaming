@@ -4,25 +4,17 @@ import android.content.Intent
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
-import androidx.compose.foundation.selection.toggleable
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -147,39 +139,7 @@ fun InterruptionsScreen(onBack: () -> Unit, onChanged: () -> Unit) {
     // scrolling column, which meant the only visible way out left the screen as
     // soon as you scrolled - and this screen is nine rows long. The title moves
     // up with it, which is where M3 puts a detail screen's title anyway.
-    //
-    // No scrollBehavior on purpose. The bar is one constant colour, for the same
-    // reason Home's is: M3 defaults to transparent at rest and `raise` once
-    // anything scrolls under, which is a step change that reads as a blink. A
-    // scroll behaviour here would have nothing left to drive.
-    Scaffold(
-        containerColor = g.surface,
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        stringResource(R.string.what_is_allowed),
-                        style = MaterialTheme.typography.titleLarge, color = g.onSurface
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            painterResource(R.drawable.ic_back),
-                            contentDescription = stringResource(R.string.action_back),
-                            tint = g.onSurface
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = g.raise,
-                    scrolledContainerColor = g.raise,
-                    titleContentColor = g.onSurface,
-                    navigationIconContentColor = g.onSurface
-                )
-            )
-        }
-    ) { inner ->
+    DetailScaffold(stringResource(R.string.what_is_allowed), onBack) { inner ->
     Column(
         Modifier
             .fillMaxSize()

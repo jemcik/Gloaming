@@ -894,10 +894,15 @@ fun Home(
                                 colors = SegmentedButtonDefaults.colors(
                                     activeContainerColor = g.selectFill,
                                     activeContentColor = g.onSelect,
-                                    activeBorderColor = g.line,
+                                    // `outline`, like the day rings directly
+                                    // below - these are two borders doing the
+                                    // same job 60dp apart, and they were 29
+                                    // tones apart until someone looked at them
+                                    // together instead of at their numbers.
+                                    activeBorderColor = g.outline,
                                     inactiveContainerColor = Color.Transparent,
                                     inactiveContentColor = g.onSurfaceMid,
-                                    inactiveBorderColor = g.line
+                                    inactiveBorderColor = g.outline
                                 ),
                                 // No check mark. M3 puts one on the active segment,
                                 // but it costs about 26dp and "Weekdays" already

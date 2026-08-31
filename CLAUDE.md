@@ -435,15 +435,28 @@ confirming on real hardware.
   the unselected day's ring managed 1.91:1 in Dusk and 1.66:1 in Dawn, and the
   unchecked switch's border 1.33 and 1.43, against the 3:1 a UI part that must
   be identified has to reach - M3's own baseline manages 3.51 for that border.
-  `outline` is its own token now, at Material's tones (60 dark, 50 light), and
-  carries exactly the two things that report state: the day ring and the switch
-  border. 4.93 / 4.28 and 3.41 / 3.70.
+  `outline` is its own token now and carries every border that bounds a
+  selection control: the day rings, the switch, AND the preset row's segments.
   What deliberately kept `line`: section rules, card dividers, the dial's ticks
-  and dots. They separate blocks rather than reporting state, and quiet is
+  and dots. They separate blocks rather than bounding a control, and quiet is
   right there - which is why the fix was a second token and not a louder `line`.
   The way to catch this class is to check what each M3 role is SUPPOSED to be
   (the tone table above) against what the app actually assigned it, rather than
   only checking for roles left null.
+  **Two corrections to the first version of this fix, both worth more than the
+  fix.** It shipped at Material's own tones - 60 dark, 50 light - and applied
+  them to the day ring and the switch but NOT the preset row, which names its
+  border at its own call site. That left tone 50 and tone 79 sixty dp apart on
+  one screen, reported on sight as "the border around days is black" next to
+  the preset row's "nice calm grey". The contrast numbers were re-measured after
+  the change; the two controls were never looked at TOGETHER. A measurement is
+  not a review.
+  And tone 50 was over-correcting. 3:1 is for the visual information required to
+  identify a component and its state - here the state is fill-versus-no-fill and
+  the day letter sits at 8.28:1, so the ring reinforces rather than reports. It
+  is tone 66 in Dawn now, 2.49:1, deliberately under the guideline and chosen
+  after building the compliant version and looking at it. Tone 58 is the
+  lightest that clears 3:1 if that judgement is ever revisited.
 
 - **Any `ColorScheme` role left unset falls back to Material's baseline violet.**
   `TimePicker` reads `primaryContainer` for the selected field and

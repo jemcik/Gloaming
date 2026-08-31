@@ -80,22 +80,25 @@ data class GloamColors(
     val raiseRunning: Color,
     val veil: Color,             // hairlines, ticks, off arc
     val line: Color,             // section rules, dividers, dial ticks and dots
-    /* The outline of a control whose STATE you have to be able to read: the
-       unselected day's ring, the unchecked switch's border. Both were `line`,
-       and `line` is deliberately quiet - it also draws the section rules and
-       the dial's dots, where quiet is right. Measured there, the day ring was
-       1.91:1 in Dusk and 1.66:1 in Dawn and the switch border 1.33 and 1.43,
-       against the 3:1 a UI part that must be identified has to reach; M3's own
-       baseline manages 3.51 for the same border.
-       The cause was a mis-mapping rather than a bad colour. `line` sits at tone
-       34 and 79, which IS Material's `outlineVariant` (30 dark / 80 light) -
-       and the scheme was aliasing `outline` to it, so the strong role and the
-       quiet one were the same token. This is the strong one, at Material's own
-       tones: 60 dark, 50 light. 4.93 / 4.28 on the ring, 3.41 / 3.70 on the
-       switch border.
-       Note what deliberately did NOT change: section rules, dividers and the
-       dial keep `line`. They separate blocks; they do not report state. */
-    val outline: Color,
+    /* The border of a selection control: the unselected day's ring AND the
+       preset row's segments. One token for both, and that is the load-bearing
+       part - they sit 60dp apart doing the same job, and when the ring was
+       split out to fix its contrast the preset row kept naming `line` at its
+       own call site. 29 tones apart on one screen, reported on sight as one
+       being black next to the other's calm grey. The numbers were checked; the
+       two controls were never looked at together.
+       Distinct from `line`, which draws section rules, card dividers and the
+       dial's ticks - those separate blocks rather than bounding a control, and
+       quiet is right there. `line` is tone 34 and 79, which IS Material's
+       `outlineVariant`; the scheme used to alias `outline` to it, so the strong
+       role and the quiet one were the same colour.
+       Tone 66 in Dawn and 48 in Dusk: 2.49:1 and 3.23:1 against the page.
+       Dawn is UNDER the 3:1 a UI part is meant to hold, deliberately and after
+       looking. The state here is carried by fill-versus-no-fill and the day
+       letter sits at 8.28:1, so the ring reinforces rather than reports - and
+       the tone that cleared the guideline (50, 4.28:1) was built, installed and
+       rejected on sight as black. If it ever needs to go back inside the
+       guideline, tone 58 is the lightest that does. */    val outline: Color,
     val onSurface: Color,
     val onSurfaceMid: Color,
     /* Secondary text, and the ink most of the app is written in - 24 usages
@@ -209,7 +212,7 @@ private val Dusk = GloamColors(
     raiseRunning = Color(0xFF2F353D),     //            1.35:1 while running
     veil = Color(0xFF383E46),
     line = Color(0xFF49505A),
-    outline = Color(0xFF8D9198),      // tone 60 · ring 4.93:1, border 3.41:1
+    outline = Color(0xFF6E727A),      // tone 48 · ring 3.23:1 on the page
     onSurface = Color(0xFFEAEBED),        // 10.37:1 on a card
     onSurfaceMid = Color(0xFFC7CDD7),
     onSurfaceLow = Color(0xFFBCC1CC),     //  6.86:1 on a card
@@ -237,7 +240,7 @@ private val Dawn = GloamColors(
     raiseRunning = Color(0xFFECE1D6),     //            1.14:1 while running
     veil = Color(0xFFF1E7DE),
     line = Color(0xFFCCC2B9),
-    outline = Color(0xFF7F756B),      // tone 50 · ring 4.28:1, border 3.70:1
+    outline = Color(0xFFA99E93),      // tone 66 · ring 2.49:1 on the page
     onSurface = Color(0xFF1E1B18),        // 15.11:1 on a card
     onSurfaceMid = Color(0xFF514A43),
     onSurfaceLow = Color(0xFF514A43),     //  7.68:1 on a card

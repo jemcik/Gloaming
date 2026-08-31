@@ -280,10 +280,31 @@ by an ordinary install. It IS grantable over adb. So scheduling AOD off at
 bedtime is possible on this phone only as an opt-in path for a user willing to
 run one adb command. Not built — see Outstanding.
 
-The permissive branch of `AmbientCapability` remains unverified: where
-`doze_always_on` exists we return true and ship a live switch on the strength of
-that key alone. The OnePlus has never been checked. Note that checking it needs
-the tap-and-look protocol above, not the dumpsys fields — those measure nothing.
+**The permissive branch of `AmbientCapability` is verified, 1 Sep 2026, on the
+OnePlus CPH2653 / LineageOS 23.2.** Where `doze_always_on` exists we return true
+and ship a live switch, and that switch really does suppress the always-on
+display:
+
+| | our switch OFF (control) | our switch ON |
+|---|---|---|
+| `doze_always_on` | 1 | 1 |
+| `ambientDisplaySuppressed` | false | **true** |
+| `mScreenState`, screen asleep | **DOZE** | **OFF** |
+
+The control is the point: the same pair read with the effect off gives DOZE, so
+the witness can go negative, which is what makes this evidence rather than a
+coincidence.
+
+**And the dumpsys fields DO measure it here — which contradicts the table above
+only until you ask whose AOD it is.** That paragraph used to say checking this
+branch needs the tap-and-look protocol "not the dumpsys fields — those measure
+nothing", and following that advice would have sent the next person past the one
+reading that works. The rule underneath both findings: where the AOD is AOSP's
+own doze, the doze readouts track it; where a vendor ships an AOD ALONGSIDE doze,
+as Honor does, every doze-derived readout is blind to it by construction. The
+witnesses in the table are not bad witnesses, they were pointed at an AOD that
+does not live where they were looking. Ask which kind of AOD you have before
+choosing an instrument.
 
 **So the always-on row is now three-state, and one of the states is absent.**
 Where the zen effect works, it is a switch backed by the rule. Where it does not
@@ -1416,6 +1437,25 @@ trying the app on anything but the Honor:
   observing the thing it measured.
 
 Everything else naming a vendor is a comment.
+
+**Always-on and the pick-up gesture, LineageOS, 1 Sep 2026.** Reported from the
+phone: enabling "Always on" makes "Pick-up" unavailable. Confirmed by reading the
+view hierarchy rather than the pixels — with `doze_always_on=1` the Pick-up row
+is `enabled=false`, with `0` it is `enabled=true`.
+
+It is NOT stock Android behaviour, and the evidence is in who owns the sensor:
+`dumpsys sensorservice` shows `pick_up_motion` (vendor `oplus`, type
+`tilt_detector`) registered by `org.lineageos.settings.doze.PickupSensor`, a
+LineageOS device package. AOSP's own key for this, `doze_pick_up_gesture`, does
+not exist on the device at all. So the row, and the rule that greys it out when
+the display is always on, are LineageOS's — sensible on its face, since a
+gesture that wakes the screen to show notifications has nothing to do when the
+screen is already showing them.
+
+MagicOS is a third thing again rather than a variation on this: Honor does not
+use `doze_always_on` at all, having its own `aod_switch` / `aod_display_type`
+implementation, which is exactly why the zen effect is inert there and why
+`KNOWN_PARALLEL_AOD` exists.
 
 **Second device, 1 Sep 2026 — what it caught.** The OnePlus was reattached to
 check one path the Honor physically cannot draw: the always-on row, which is

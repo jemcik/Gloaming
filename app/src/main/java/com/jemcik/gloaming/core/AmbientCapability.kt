@@ -12,11 +12,18 @@ import android.provider.Settings
  * Half of this is observable and half is not, and the distinction cost a day.
  * Whether the PLATFORM asked is easy: `dumpsys power` prints
  * AmbientDisplaySuppressionController with ambientDisplaySuppressed and
- * mSuppressionTokens. Whether the VENDOR obeyed is the hard half, and the
- * obvious readouts all measure nothing - mWakefulness, Display State,
- * aod_doze_state, the AOD layers in SurfaceFlinger, window focus, that layer's
- * frame counter, and screencap read identically with AOD switched on and off.
- * Do not reach for them. See CLAUDE.md for the table.
+ * mSuppressionTokens. Whether the VENDOR obeyed is the hard half.
+ *
+ * WHICH READOUTS WORK DEPENDS ON WHOSE AOD IT IS, and that one sentence
+ * reconciles two findings that look contradictory. Where the AOD is AOSP's own
+ * doze - LineageOS, and presumably stock - the doze readouts track it, so
+ * mScreenState goes DOZE to OFF and the effect is measurable from adb. Where a
+ * vendor ships an AOD ALONGSIDE doze - Honor - every doze-derived readout is
+ * blind to it by construction, which is why mWakefulness, Display State,
+ * aod_doze_state, the SurfaceFlinger AOD layers, window focus, that layer's
+ * frame counter and screencap all read identically with Honor's AOD on and off.
+ * See CLAUDE.md for that table. Ask first which kind of AOD you are looking at;
+ * do not carry a witness across from one to the other.
  *
  * Measured on the Honor BKQ-N49, 30 Aug 2026, with the one witness that does
  * move - tapping the sleeping screen and looking, validated by a negative
@@ -34,9 +41,16 @@ import android.provider.Settings
  * over adb. Hence still no switch here.
  *
  * The inference below therefore stands for Honor, now measured rather than
- * guessed. The OTHER branch - doze_always_on present, so we return true and ship
- * a live switch - has NOT been verified on any device, and that is the
- * permissive direction. Check it with the tap protocol, not with dumpsys.
+ * guessed.
+ *
+ * The OTHER branch - doze_always_on present, so we return true and ship a live
+ * switch - is VERIFIED as of 1 Sep 2026, on a OnePlus CPH2653 running LineageOS
+ * 23.2. With doze_always_on=1 and the rule carrying suppressAmbientDisplay while
+ * a window runs, ambientDisplaySuppressed goes false to true AND mScreenState
+ * goes DOZE to OFF. The negative control is the same pair read with our switch
+ * off, which gives false and DOZE - so the witness is known to be capable of
+ * reading false, which is the step that makes it evidence rather than a
+ * coincidence. The permissive direction is no longer a guess.
  *
  * VERIFIED, not guessed. Add an entry only after confirming on real hardware
  * that doze_always_on is absent and the vendor key is present.

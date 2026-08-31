@@ -360,7 +360,12 @@ private val Dawn = GloamColors(
     switchThumbOff = Color(0xFF837B72),   //                     3.39:1 on the veil track
     alert = Color(0xFFFFDAD5),         // tone 90 · ink 7.27:1
     onAlert = Color(0xFF6B3831),
-    alertBorder = Color(0xFFD16F65),   // tone 58 · 2.69:1 on a card
+    /* Tone 54, not 58. The pill's FILL is 1.02:1 against the card - the rim is
+       the only thing separating it - so unlike the day ring, which merely
+       reinforces a letter at 8:1, this one genuinely has to reach 3:1. It was
+       set at tone 58 against a different card and drifted to 2.69 when the card
+       moved; 3.06 now. */
+    alertBorder = Color(0xFFC5665B),
     dark = false
 )
 

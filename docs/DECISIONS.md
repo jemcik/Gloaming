@@ -481,9 +481,17 @@ confirming on real hardware.
   And tone 50 was over-correcting. 3:1 is for the visual information required to
   identify a component and its state - here the state is fill-versus-no-fill and
   the day letter sits at 8.28:1, so the ring reinforces rather than reports. It
-  is tone 66 in Dawn now, 2.49:1, deliberately under the guideline and chosen
-  after building the compliant version and looking at it. Tone 58 is the
-  lightest that clears 3:1 if that judgement is ever revisited.
+  is tone 70 in Dawn - this entry said 66 and the code has said 70 for some
+  time; the code is right - measuring 2.24:1, deliberately under the guideline
+  and chosen after building the compliant version and looking at it. Tone 58 is
+  the lightest that clears 3:1 if that judgement is ever revisited.
+  **Re-checked when the selected day became a DARK disc with white letters, and
+  the argument got stronger rather than weaker.** The state is now filled-dark
+  versus hollow-thin, which is about as separated as two states get, so the
+  ring's own contrast carries even less than when this was written. Contrast
+  the alert pill's rim, which looks like the same kind of exception and is not:
+  there the FILL is 1.02:1 against the card, so the rim is the only separation
+  there is and it does have to reach 3:1.
 
 - **Any `ColorScheme` role left unset falls back to Material's baseline violet.**
   `TimePicker` reads `primaryContainer` for the selected field and

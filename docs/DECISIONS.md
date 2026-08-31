@@ -80,6 +80,46 @@ The rule holds the policy; we hold the trigger. `component=null` on the rule is
 deliberate — there is no condition provider, which is precisely what avoids the
 blocked path.
 
+`Home` was 938 lines and could not be split, which is a different complaint from
+being long. It held fourteen pieces of state, a `commit()` closure, a
+`setBedtime()` closure and a lifecycle observer in one scope, and every section
+read half a dozen of those locals — so the FILE could be cut up but the FUNCTION
+could not, and any section lifted out of it needed fifteen parameters to work.
+Hoisting the state into `HomeState` is what made the sections extractable; `Home`
+is now 88 lines and reads as the page order, with each section a private
+composable taking `s: HomeState` and at most two derived values.
+
+Three things were deliberately left OUT of the holder, and the reasons differ:
+
+- `now`, `ambientZen` and `ambientRow` read the PLATFORM, not the holder's own
+  state, so `derivedStateOf` would never know when to recompute them. They stay
+  as `remember(s.tick)` in the composable that uses them, which is the existing
+  keying and is load-bearing: `ambientZen` is keyed on tick precisely so an adb
+  grant is picked up on the next resume.
+- `missedBoot` is deliberately NOT keyed on tick, because it reads prefs and on
+  first run WRITES them. Re-asking it every minute would be pointless and impure
+  both. It lives in the holder but is only re-asked in `onResume`.
+- `insideWindow` and `runningNow` are computed in `Home` and passed down rather
+  than read per section, so every section on one frame agrees about the time.
+  Two sections each calling `LocalTime.now()` can straddle a minute boundary.
+
+What this bought beyond readability: each section is now its own recomposition
+scope, so toggling grayscale no longer recomposes the dial. What it did NOT
+change: nothing under `core/` was touched, and the off/on round trip was
+re-measured on the phone afterwards — `zen_mode` 1→0 with `activeDay` cleared,
+then 0→1 with `activeDay` re-derived, the END alarm restored to the same minute
+and the next START re-queued.
+
+One trap worth recording, because it nearly shipped. The mechanical rename of
+`enabled`/`start`/`end` to `s.enabled`/`s.start`/`s.end` collides with Compose
+NAMED ARGUMENTS of the same name — `enabled = ready`, `start = start`,
+`padding(end = 12.dp)` — and with the string literals `"start"` and `"end"` that
+`picking` holds. A word-boundary replace corrupts all three silently: the code
+still compiles when a named argument is renamed to a value that happens to
+exist. Renaming was done with string literals and comments masked, named
+arguments detected across line breaks (the opening paren is often on the
+previous line), and the four surviving collisions checked by hand.
+
 ## Vendor limitations (all measured, not assumed)
 
 MagicOS accepts these API values and silently ignores them:

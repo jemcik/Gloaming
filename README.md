@@ -13,7 +13,7 @@ it — driven by exact alarms, so it fires with the app closed.
 [![Android](https://img.shields.io/badge/Android-15%2B%20(API%2035)-3DDC84)](#requirements)
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.3.21-7F52FF)](https://kotlinlang.org)
 [![Compose](https://img.shields.io/badge/Jetpack%20Compose-Material%203-4285F4)](https://developer.android.com/jetpack/compose)
-[![Tests](https://img.shields.io/badge/tests-80-success)](#tests)
+[![Tests](https://img.shields.io/badge/tests-93-success)](#tests)
 
 <img src="docs/screenshots/home.png" width="19%" alt="Home">
 <img src="docs/screenshots/home-dark.png" width="19%" alt="Home, dark">
@@ -171,15 +171,16 @@ first, or turn always-on back on in Settings.
                           older than the sources; -f installs it anyway
     ./tools/check.sh      what the phone thinks: zen state, the rule, the app's
                           own view, the next alarms and the journal. Read-only.
+    ./gradlew lint        0 errors
     python3 tools/render_icon.py
                           re-render docs/icon.png from the adaptive icon's own
                           numbers — cropped to the 72dp a launcher shows and
-                          masked to a squircle, so it has transparent corners
-                          instead of a black square
+                          masked to a squircle, so its corners are transparent
+                          rather than a square of background
 
 ## Tests
 
-    ./gradlew test        80 tests, JVM only, about a second
+    ./gradlew test        93 tests, JVM only, seconds
     ./gradlew coverage    JaCoCo HTML at app/build/reports/jacoco/coverage
 
 They cover the scheduling core (pure functions of times, days and an injected
@@ -237,15 +238,26 @@ The repository also redistributes two SIL Open Font License fonts and a set of
 Material Design icon paths; [NOTICE.md](NOTICE.md) lists them with their
 licences.
 
-## CLAUDE.md
+## CLAUDE.md and docs/DECISIONS.md
 
-The real documentation. It carries what the code cannot: the behaviour measured
-on hardware, the design decisions and what was rejected, and the mistakes worth
-not repeating — among them that `updateAutomaticZenRule` silently clears a
-rule's condition, so rewriting a live rule switches Do Not Disturb off
-underneath you. It also carries the colour work: why no flat background can
-serve the launcher icon, why a dark warm colour is always brown, and why a
-screenshot can compare two captures but can never establish that a colour is
-right — on a panel that is not running in sRGB, the framebuffer and the glass
-disagree. Much of it is written against one phone, because that is the phone it
-could be measured on.
+The real documentation, in two parts.
+
+**[CLAUDE.md](CLAUDE.md)** is the working reference: the architecture, the rules
+that will break something if ignored, and the commands. Short enough to read
+before touching anything.
+
+**[docs/DECISIONS.md](docs/DECISIONS.md)** is the lab notebook behind it — every
+measurement, and every wrong first attempt kept beside the answer, because how a
+thing was got wrong is usually the more useful half. Among them: that
+`updateAutomaticZenRule` silently clears a rule's condition, so rewriting a live
+rule switches Do Not Disturb off underneath you; that a dark warm colour is
+always brown; that a screenshot can compare two captures but can never establish
+that a colour is right, because on a panel not running in sRGB the framebuffer
+and the glass disagree; and that centring a crescent by its own centroid moves
+it somewhere it does not look centred.
+
+It also keeps its own reversals. The launcher icon's entry opens by saying no
+flat colour can serve the artwork, then records how a white tile did — the
+evidence was right and the conclusion drawn from it was too narrow. Much of the
+file is written against one phone, because that is the phone it could be
+measured on.

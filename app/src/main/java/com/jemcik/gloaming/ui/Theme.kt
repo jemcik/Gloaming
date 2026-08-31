@@ -160,6 +160,36 @@ data class GloamColors(
        too hard on the eye. A thumb is a UI part and needs 3:1, so it gets its
        own tone, and the softening comes as much from CHROMA as from tone: a
        desaturated dark dot reads as black, a chromatic one reads as coloured. */
+    /* The checked switch's TRACK.
+       It is the SAME VALUE as `selectFill` again in both themes, and the round
+       trip is the note. The two were originally one token so a selected day,
+       the preset pill and the switch could not drift. They were split apart
+       when the accent was a pale washed sage, because a large light fill on
+       every one of those controls put too much of one colour on the screen.
+       Then the accent went DARK - tone 46, white text - and that inverted the
+       problem: a dark fill reads as one system rather than as four competing
+       areas, and the split it had needed was gone. The token stays separate so
+       the two CAN diverge; today they do not.
+       The history below is kept because the reasoning still holds for a pale
+       accent, and this is the second time this app has been pale.
+       The two were deliberately collapsed into one token so a selected day, the
+       preset pill and the switch could not drift - and that held while the
+       accent was a dark fern. With the accent a WASHED SAGE the screen carried
+       green on the days, the presets, the notice strip and every switch, which
+       was reported as too much of it. Splitting the switch back out is the
+       smallest cut that fixes it: one control changes, the rest of the
+       selection language stays one token.
+       Dawn's is Arc.dusk VERBATIM. The dial already contained a colour built
+       for this job - tone 41.7, where a track wants ~42 - so nothing had to be
+       invented, and it gives the switch back a link to the arc that the accent
+       gave up when it went green. Dusk's own value is within two tones and two
+       degrees of it already, so both themes now read the same way: a dark track
+       under a light thumb.
+       It also RESTORES an M3 asymmetry this file argued for and then lost. A
+       dark track bounds itself - 4.80:1 against the card - so the checked side
+       needs no rim, leaving unchecked outlined and checked bare, which is
+       Material's own rule and one more shape cue back. */
+    val switchTrack: Color,
     val switchThumb: Color,
     /* The UNSELECTED thumb has its own token, and now carries more than it used
        to: with the checked track no longer bright, the THUMB is what separates
@@ -196,7 +226,14 @@ data class GloamColors(
        surface. Darkening a surface silently invalidates every container tone
        borrowed from a spec that assumed the old one. */
     val alertBorder: Color,
-    val cta: Color,
+    /* There is no `cta` token any more, and its absence is the note.
+       It was the arc's WARM end used as an action colour - the Allow button,
+       the picker's Set, and the scheme's secondary/tertiary. That survived the
+       accent moving to the arc's COOL end, and left a chroma-46 burnt orange
+       154 degrees from everything else on a screen whose card is chroma 3.
+       Every one of those now takes the scheme's own primary, which is
+       `stateOn`, so they cannot drift from the accent again. Warm still exists
+       where it belongs: Arc.ember, Arc.dawn and Arc.onDawn, on the dial. */
     val dark: Boolean
 )
 
@@ -246,7 +283,15 @@ private val Dusk = GloamColors(
     veil = Color(0xFF383E46),
     line = Color(0xFF49505A),
     outline = Color(0xFF61666E),      // tone 43 · ring 2.70:1 on the page
-    selectBorder = Color(0xFF8896AF), // tone 62 · 4.14:1 on a card
+    /* = the fill, in BOTH themes now. The rim existed to bound a selected
+       control against its ground, and neither fill needs it any more: Dawn's
+       is dark on a light page, Dusk's lifts off its own at 2.59:1. Kept as a
+       token rather than deleted, so a future accent that DOES need bounding
+       can diverge without re-plumbing five call sites.
+       Looked at on the device rather than decided from the ratio: at 17dp a
+       lighter ring on a dark disc reads as a HALO rather than an edge, and the
+       day row came out looking outlined instead of filled. */
+    selectBorder = Color(0xFF566479),
     veilOutline = Color(0xFF8A8B90),  // tone 58 · 3.17:1 on the veil track
     onSurface = Color(0xFFEAEBED),        // 10.37:1 on a card
     onSurfaceMid = Color(0xFFC7CDD7),
@@ -255,12 +300,16 @@ private val Dusk = GloamColors(
     onState = Color(0xFF23354E),
     selectFill = Color(0xFF566479),       // tone 42 chroma 18.7 · 2.59:1 on the page
     onSelect = Color(0xFFDDE9FF),         //                       4.91:1 on the fill
-    switchThumb = Color(0xFFDDE9FF),      // = onSelect here; Dawn's differs, see below
+    switchTrack = Color(0xFF566479),      // within 2 tones of Arc.dusk already
+    switchThumb = Color(0xFFDDE9FF),      // light thumb on a dark track
     switchThumbOff = Color(0xFF9196A0),   //                     3.59:1 on the veil track
     alert = Color(0xFF6F362E),         // tone 30 · ink 7.24:1
     onAlert = Color(0xFFFFDAD5),
-    alertBorder = Color(0xFFB85B52),   // tone 50 · 2.74:1 on a card
-    cta = Color(0xFFF49B66),
+    /* Tone 54, and the same value Dawn uses - a mid-tone rim clears 3:1
+       against a light card AND a dark one, 3.06 and 3.20. Note the direction:
+       on a DARK card this had to go LIGHTER, and the instinct to darken a
+       border makes it worse (tone 46 gives 2.39). */
+    alertBorder = Color(0xFFC5665B),
     dark = true
 )
 
@@ -290,26 +339,45 @@ private val Dawn = GloamColors(
     veil = Color(0xFFDCDEDA),
     line = Color(0xFFC5C4BD),
     outline = Color(0xFFACACA5),      // tone 70 · ring 2.24:1 on the page
-    selectBorder = Color(0xFFA2ACBD), // tone 70 · 1.81:1 on a card
+    selectBorder = Color(0xFF596F8B),     // = the fill; a dark fill bounds itself
     veilOutline = Color(0xFF7C7C76),  // tone 52 · 3.10:1 on the veil track
     onSurface = Color(0xFF1E1B18),        // 15.11:1 on a card
     onSurfaceMid = Color(0xFF514A43),
     onSurfaceLow = Color(0xFF514A43),     //  7.68:1 on a card
-    stateOn = Color(0xFF505A6A),          // tone 38 - Material's `primary`
-    onState = Color(0xFFFFFFFF),
-    selectFill = Color(0xFFD1D8E5),       // tone 86 chroma 11.4 · 1.36:1 on the page
+    stateOn = Color(0xFF435B7A),          // tone 38 - TEXT, so darker than the fill: 5.51:1 on a card
+    onState = Color(0xFFFFFFFF),          
+    /* Tone 88, chroma 13.7, hue 150 - a washed sage.
+       Two reports moved it here and both are worth keeping. It was the arc's
+       night stop at chroma 11, and GREY CONVENTIONALLY READS DISABLED, so a
+       selected day and a checked switch looked unavailable; M3 treats chroma 20
+       as a tint and the sage this replaced carried 24, so 11 was half of what
+       Material considers a colour at all. Then chroma 24-26 read as too bright,
+       which put the usable band at 16-20 - and "washed out" turned out to mean
+       TONE rather than chroma: the fill moves toward its ground instead of
+       losing its colour. Tone 88 is the ceiling. Past it the notice strip and
+       the switch track dissolve into the card at tone 90.8, and one token
+       serves those as well as the day discs, which sit on the far lighter page.
+       Note what this gives up, deliberately: the accent no longer comes off the
+       dial, which is what the palette rebuild was named for. Chosen anyway,
+       with that on the table. */
+    selectFill = Color(0xFF596F8B),       // tone 46 · white on it 5.16:1
     // Tone 23, not the container role's 29. The fill is the arc's own night
     // stop as it is drawn when bedtime is OFF, and at that chroma it is near
     // the floor of what still reads as a hue - so the label on it was the first
     // thing to suffer. 8.38:1 here against 6.76:1 at tone 29, and the ink still
     // holds chroma 13.3, so it stays a blue ink rather than going near-black.
-    onSelect = Color(0xFF2F3744),
-    switchThumb = Color(0xFF545F71),      // tone 40 · 4.51:1 on the track
+    onSelect = Color(0xFFFFFFFF),         // white; tone 50 would fail it at 4.47:1
+    switchTrack = Color(0xFF596F8B),      // the SAME token again - see the note above
+    switchThumb = Color(0xFFFFFFFF),      // 5.16:1 on the track
     switchThumbOff = Color(0xFF837B72),   //                     3.39:1 on the veil track
     alert = Color(0xFFFFDAD5),         // tone 90 · ink 7.27:1
     onAlert = Color(0xFF6B3831),
-    alertBorder = Color(0xFFD16F65),   // tone 58 · 2.69:1 on a card
-    cta = Color(0xFF954914),
+    /* Tone 54, not 58. The pill's FILL is 1.02:1 against the card - the rim is
+       the only thing separating it - so unlike the day ring, which merely
+       reinforces a letter at 8:1, this one genuinely has to reach 3:1. It was
+       set at tone 58 against a different card and drifted to 2.69 when the card
+       moved; 3.06 now. */
+    alertBorder = Color(0xFFC5665B),
     dark = false
 )
 
@@ -551,14 +619,16 @@ private val GloamShapes = Shapes(
  */
 @Composable
 fun gloamSwitchColors(): SwitchColors = SwitchDefaults.colors(
-    checkedTrackColor = gloam.selectFill,
+    checkedTrackColor = gloam.switchTrack,
     checkedThumbColor = gloam.switchThumb,
-    checkedBorderColor = gloam.selectBorder,
+    // Bare, which is M3's own rule: a dark track bounds itself.
+    checkedBorderColor = gloam.switchTrack,
     uncheckedTrackColor = gloam.veil,
     uncheckedThumbColor = gloam.switchThumbOff,
     uncheckedBorderColor = gloam.veilOutline,
     // the check reads as the track's own green on the pale thumb
-    checkedIconColor = gloam.selectFill,
+    // the check reads as the track's colour on the pale thumb
+    checkedIconColor = gloam.switchTrack,
     disabledUncheckedTrackColor = gloam.veil,
     disabledUncheckedThumbColor = gloam.line,
     disabledUncheckedBorderColor = gloam.line
@@ -633,14 +703,14 @@ fun GloamingTheme(dark: Boolean = isSystemInDarkTheme(), content: @Composable ()
     val g = if (dark) Dusk else Dawn
     val scheme = if (dark) darkColorScheme(
         primary = g.stateOn, onPrimary = g.onState,
-        secondary = g.cta, onSecondary = g.onSurface,
+        secondary = g.stateOn, onSecondary = g.onState,
         background = g.surface, onBackground = g.onSurface,
         surface = g.surface, onSurface = g.onSurface,
         surfaceVariant = g.raise, onSurfaceVariant = g.onSurfaceLow,
         outline = g.outline, outlineVariant = g.veil,
         secondaryContainer = g.selectFill, onSecondaryContainer = g.onSelect,
         primaryContainer = g.selectFill, onPrimaryContainer = g.onSelect,
-        tertiary = g.cta, onTertiary = g.surface,
+        tertiary = g.stateOn, onTertiary = g.onState,
         tertiaryContainer = g.raise, onTertiaryContainer = g.onSurface,
         errorContainer = g.alert, onErrorContainer = g.onAlert,
         surfaceContainerHighest = g.veil, surfaceContainerHigh = g.raise,
@@ -648,14 +718,14 @@ fun GloamingTheme(dark: Boolean = isSystemInDarkTheme(), content: @Composable ()
         surfaceContainerLowest = g.surface
     ) else lightColorScheme(
         primary = g.stateOn, onPrimary = g.onState,
-        secondary = g.cta, onSecondary = g.onSurface,
+        secondary = g.stateOn, onSecondary = g.onState,
         background = g.surface, onBackground = g.onSurface,
         surface = g.surface, onSurface = g.onSurface,
         surfaceVariant = g.raise, onSurfaceVariant = g.onSurfaceLow,
         outline = g.outline, outlineVariant = g.veil,
         secondaryContainer = g.selectFill, onSecondaryContainer = g.onSelect,
         primaryContainer = g.selectFill, onPrimaryContainer = g.onSelect,
-        tertiary = g.cta, onTertiary = g.surface,
+        tertiary = g.stateOn, onTertiary = g.onState,
         tertiaryContainer = g.raise, onTertiaryContainer = g.onSurface,
         errorContainer = g.alert, onErrorContainer = g.onAlert,
         surfaceContainerHighest = g.veil, surfaceContainerHigh = g.raise,

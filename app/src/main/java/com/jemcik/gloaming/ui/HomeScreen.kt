@@ -28,6 +28,11 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Button
 import androidx.compose.material3.*
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
@@ -379,33 +384,43 @@ fun Home(
             verticalArrangement = Arrangement.spacedBy(GROUP),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            // A SECTION and a GROUPED LIST, like every other list in the app.
+            // It used to be one Surface of padded prose with a titleLarge
+            // heading inside it and rows carrying no leading icon - the only
+            // block on Home built its own way, which is what "correspond to our
+            // style" was asking about. M3 has no permission component; what it
+            // does have is a list item with a leading icon and a trailing
+            // action, which is exactly what each of these rows is.
             if (!ready) {
                 val missing = listOf(dnd, exact).count { !it }
-                Surface(
-                    color = card, shape = RoundedCornerShape(CORNER),
-                    modifier = Modifier.fillMaxWidth()
+                Section(
+                    pluralStringResource(R.plurals.permissions_to_go, missing, missing),
+                    rule = false
                 ) {
-                    Column(
-                        Modifier.padding(CARD_PAD),
-                        verticalArrangement = Arrangement.spacedBy(14.dp)
-                    ) {
-                        Text(
-                            pluralStringResource(R.plurals.permissions_to_go, missing, missing),
-                            style = MaterialTheme.typography.titleLarge, color = g.onSurface
-                        )
-                        PermissionRow(
-                            stringResource(R.string.perm_dnd_title),
-                            stringResource(R.string.perm_dnd_why), dnd
-                        ) {
-                            ctx.startActivity(
-                                Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS)
-                            )
+                    GroupedList(card, buildList<@Composable () -> Unit> {
+                        add {
+                            PermissionCard(
+                                stringResource(R.string.perm_dnd_title),
+                                stringResource(R.string.perm_dnd_why), dnd,
+                                R.drawable.ic_dnd, IconTint.Dnd
+                            ) {
+                                ctx.startActivity(
+                                    Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS)
+                                )
+                            }
                         }
-                        PermissionRow(
-                            stringResource(R.string.perm_alarms_title),
-                            stringResource(R.string.perm_alarms_why), exact
-                        ) { ctx.startActivity(Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)) }
-                    }
+                        add {
+                            PermissionCard(
+                                stringResource(R.string.perm_alarms_title),
+                                stringResource(R.string.perm_alarms_why), exact,
+                                R.drawable.ic_alarm, IconTint.Alarm
+                            ) {
+                                ctx.startActivity(
+                                    Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
+                                )
+                            }
+                        }
+                    })
                 }
             }
 
@@ -414,24 +429,15 @@ fun Home(
             // restart went unhandled, which is invisible otherwise: the app
             // stays armed, shows the right times, and has no alarms behind them.
             if (missedBoot) {
-                Surface(
-                    color = card, shape = RoundedCornerShape(CORNER),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(
-                        Modifier.padding(CARD_PAD),
-                        verticalArrangement = Arrangement.spacedBy(14.dp)
-                    ) {
-                        Text(
-                            stringResource(R.string.boot_missed_title),
-                            style = MaterialTheme.typography.titleLarge, color = g.onSurface
-                        )
-                        PermissionRow(
+                Section(stringResource(R.string.boot_missed_title), rule = false) {
+                    GroupedList(card, listOf {
+                        PermissionCard(
                             stringResource(R.string.boot_missed_row),
                             stringResource(R.string.boot_missed_why),
-                            granted = false
+                            granted = false,
+                            icon = R.drawable.ic_restart, tint = IconTint.Boot
                         ) { haptics.open(); BootWatch.openAutoStart(ctx) }
-                    }
+                    })
                 }
             }
 
@@ -986,16 +992,34 @@ fun Home(
             onDismissRequest = { picking = null },
             containerColor = g.raise,
             shape = RoundedCornerShape(32.dp),
+            // CONTAINERS, not bare text. Both actions already met Android's
+            // 48dp touch minimum - measured 69x48 and 58x48 - but a TextButton
+            // draws no container, so only the words read as a button and they
+            // were reported as too small. Filled for the confirm and outlined
+            // for the dismiss keeps M3's emphasis order while giving each one a
+            // shape to aim at, and the filled one matches the permission card's
+            // button, which is now the app's only other action button.
+            //
+            // Neither names a colour: the scheme's primary is `stateOn`, so
+            // they follow the accent and flip correctly per theme.
             confirmButton = {
-                TextButton(onClick = {
-                    haptics.confirm()
-                    val t = LocalTime.of(state.hour, state.minute)
-                    if (picking == "start") start = t else end = t
-                    picking = null; commit()
-                }) { Text(stringResource(R.string.action_set), color = g.cta) }
+                Button(
+                    onClick = {
+                        haptics.confirm()
+                        val t = LocalTime.of(state.hour, state.minute)
+                        if (picking == "start") start = t else end = t
+                        picking = null; commit()
+                    },
+                    shape = CircleShape
+                ) { Text(stringResource(R.string.action_set)) }
             },
             dismissButton = {
-                TextButton(onClick = { picking = null }) { Text(stringResource(R.string.action_cancel), color = g.onSurfaceLow) }
+                OutlinedButton(
+                    onClick = { picking = null },
+                    shape = CircleShape,
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = g.onSurfaceLow),
+                    border = BorderStroke(1.dp, g.outline)
+                ) { Text(stringResource(R.string.action_cancel)) }
             },
             text = {
                 TimePicker(state = state, colors = pickerColors(accent, onAccent))

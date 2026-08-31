@@ -1581,6 +1581,37 @@ Disturb changes from the quick settings tile while the screen is open.
   as running while the switch is on, or the dial would draw a phantom window
   on every day of the week. This is also the brief's unbuilt "Turn on tonight"
   behaviour arriving early, without its CTA.
+- **The day toggles morph their corners while held, and that is the only piece
+  of Material 3 Expressive this app takes.** They had no press feedback at all:
+  the ripple is `bounded = false`, so it reads as a halo AROUND the chip rather
+  than as the chip responding, which is the same complaint that got the switch
+  its thumb-growth back. M3 Expressive answers it by morphing a round toggle's
+  corners in while pressed, and says so in tokens - `ConnectedButtonGroupSmall`
+  has `ContainerShape = CornerFull` and `PressedInnerCornerCornerSize =
+  CornerValueExtraSmall`. 20dp to 12dp here, on M3's own "fast spatial" spring,
+  damping 0.6 and stiffness 800.
+  Both sets of numbers are COPIED rather than referenced, and that is the thing
+  to know before reaching for more of Expressive: `material3` 1.4.0, which the
+  BOM resolves, ships the expressive TOKENS but not the composables. There is no
+  `ButtonGroup.kt`, no `ToggleButton.kt` - they live in `material3-expressive`,
+  which is not on this classpath and would be the project's first new dependency
+  since it was written. `ExpressiveMotionTokens` is `internal` on top of that.
+  So the behaviour is four lines of `animateDpAsState` and the tokens are
+  transcribed with a note to re-read them if they drift. Taking a dependency to
+  save four lines is not a trade worth making; taking one for a real component
+  might be, and that decision is still open.
+  Two Expressive ideas were priced and REJECTED at the same time. Leading accent
+  caps on the effects rows: Health uses them to separate CATEGORIES across a
+  dozen heterogeneous cards, and these three rows are one category under a
+  heading that says so. The one true distinction between them - grayscale and
+  dimming apply at once, dark theme waits for screen-off - is already in the
+  supporting lines, in words, which need no legend. And the day row as a
+  connected button group: unavailable as above, and it would put two segmented
+  bars directly on top of each other, since the preset row above it already is
+  one. Note the objection that was WRONG when first raised - that seven segments
+  would not fit. A connected group has no inter-segment gaps, so 311/7 = 44.4dp
+  is exactly what the circles already occupy. The width was never the problem.
+
 - The day row carries state in shape as well as colour: selected is a filled
   circle, unselected a hollow ring. The two fills sit at 1.3:1 against each
   other (see the selection-fill note above), so colour alone was not carrying

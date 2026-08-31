@@ -17,7 +17,9 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.clickable
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
@@ -25,6 +27,7 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.rememberScrollState
@@ -128,6 +131,8 @@ private val CHIP_HEIGHT = 38.dp   // the effect chips' own height, kept from the
 private const val GROUND_FADE = 1000
 private val CHIP_GUTTER = 7.dp
 private val DAY_SIZE = 40.dp
+// Where a day chip's corners land while held. Round is DAY_SIZE / 2 = 20dp.
+private val DAY_PRESSED_CORNER = 12.dp
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -1567,6 +1572,30 @@ private fun DayRow(selected: Set<DayOfWeek>, onToggle: (DayOfWeek) -> Unit) {
         ordered.forEach { d ->
             val on = d in selected
             val press = remember { MutableInteractionSource() }
+            // The day toggles had no press feedback at all - the ripple is
+            // unbounded and reads as a halo around the chip rather than as the
+            // chip responding. M3 Expressive answers this by morphing a round
+            // toggle's corners IN while held, and its connected button group
+            // says so in tokens: ContainerShape CornerFull, and
+            // PressedInnerCornerCornerSize CornerValueExtraSmall.
+            //
+            // The component that does it is not in material3 1.4.0 - only the
+            // tokens ship, the composables are in material3-expressive, which
+            // is not on this classpath and would be this project's first new
+            // dependency. The BEHAVIOUR is four lines, so it is written out
+            // here rather than taken on a dependency.
+            //
+            // The spring is M3's own "fast spatial" - damping 0.6, stiffness
+            // 800, read out of ExpressiveMotionTokens. That object is
+            // `internal`, so the numbers are copied rather than referenced; if
+            // they ever drift, this is the thing to re-read.
+            val pressed by press.collectIsPressedAsState()
+            val corner by animateDpAsState(
+                if (pressed) DAY_PRESSED_CORNER else DAY_SIZE / 2,
+                spring(dampingRatio = 0.6f, stiffness = 800f),
+                label = "day corner"
+            )
+            val dayShape = RoundedCornerShape(corner)
             Box(
                 Modifier
                     .size(width = DAY_SIZE, height = 48.dp)
@@ -1591,12 +1620,12 @@ private fun DayRow(selected: Set<DayOfWeek>, onToggle: (DayOfWeek) -> Unit) {
                 Box(
                     Modifier
                         .size(DAY_SIZE)
-                        .clip(CircleShape)
+                        .clip(dayShape)
                         .then(
                             if (on) Modifier.background(g.selectFill)
                             // `outline`, not `line`: this ring reports state,
                             // and in `line` it measured 1.66:1 in Dawn.
-                            else Modifier.border(1.5.dp, g.outline, CircleShape)
+                            else Modifier.border(1.5.dp, g.outline, dayShape)
                         ),
                     contentAlignment = Alignment.Center
                 ) {

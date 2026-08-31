@@ -244,7 +244,7 @@ ground truth set from Honor's own Settings:
 |---|---|---|
 | `mWakefulness` | Dozing | Dozing |
 | `Display State` / `mScreenState` | DOZE | DOZE |
-| `aod_doze_state` | 1 | 1 |
+| `aod_doze_state` | 1 | 1 | ← **this row was wrong, see below** |
 | `AOD#` layers in `SurfaceFlinger --list` | present | present |
 | AOD window holds focus (`mCurrentFocus`) | yes | yes |
 | that layer's `frame=` counter over 70 s | static at 4 | static |
@@ -254,7 +254,11 @@ Every one would have "confirmed" whatever it was pointed at. The screencap is
 the sharpest warning: the doze layer is not captured at all, the same blind spot
 that keeps `screencap` from seeing the colour transform.
 
-**The witness that works is a tap and a pair of eyes.** This phone's AOD is
+**The witness that works is a tap and a pair of eyes** — superseded 1 Sep 2026
+by `aod_doze_state`, read with the screen asleep; see the correction below. The
+tap protocol is still what validated everything up to that point.
+
+ This phone's AOD is
 tap-to-show (`aod_display_type=2`, `aod_touch_time=5`), so the passive screen is
 dark either way; tapping the sleeping screen shows the clock. Validated with a
 negative control, which is the step that makes it evidence: with AOD off in
@@ -265,6 +269,39 @@ platform's OWN lever, the one `DefaultDeviceEffectsApplier` pulls,
 `ambientDisplaySuppressed=true` — a tap shows the clock exactly as it does with
 the token released. The platform records the suppression and `com.hihonor.aod`
 ignores it.
+
+**CORRECTION, 1 Sep 2026: `aod_doze_state` is a real witness, and this table
+libelled it.** Re-measured on the same phone, reading it with the screen ASLEEP:
+
+| condition | `ambientDisplaySuppressed` | `aod_doze_state` |
+|---|---|---|
+| AOD on, no token | false | 1 |
+| AOD off — all four keys 0 | false | **0** |
+| AOD on, platform token armed | **true** | **1** |
+| anything, screen ON | – | 0 |
+
+It reads 0 when the AOD is genuinely off and 1 only when the AOD is actually
+lit, so it tracks the DISPLAY rather than the setting, and it can go negative.
+
+**Scope, found the same evening and worth stating before anyone trusts it too
+far: this holds in TAP TO SHOW mode. It does not hold in SCHEDULED mode**, where
+`aod_doze_state` stayed 1 through every arm - schedule covering now, schedule
+excluding now, written from adb, written through the UI, and even
+`aod_switch=0`. In that mode it discriminates nothing, so it is not a witness
+there and no conclusion about Honor's schedule can be drawn from it. Which mode
+you are in is `aod_display_mode`, below.
+It read 1/1 on 30 Aug because the AOD was genuinely on in both arms of that
+test — the experiment had no condition in which it was off, so a correct witness
+reporting "no change" was mistaken for a broken one. The lesson is the one this
+file keeps relearning: a negative control is not a formality, and without one
+you cannot tell a dead instrument from a true null result.
+
+Two consequences. The 30 Aug CONCLUSION stands and is now stronger: with the
+platform's own token armed, `ambientDisplaySuppressed=true`, Honor's AOD is
+still lit, so `com.hihonor.aod` ignores it — and that is now provable from adb
+alone rather than by tapping the screen and looking. And the always-on path
+through `AmbientControl` can be verified the same way, with no human in the
+loop.
 
 **But Honor's AOD IS controllable, by four Secure keys written together.**
 Toggling it in Settings moves `aod_display_type` 2 to 0, `aod_switch` 1 to 0,
@@ -280,10 +317,84 @@ by an ordinary install. It IS grantable over adb. So scheduling AOD off at
 bedtime is possible on this phone only as an opt-in path for a user willing to
 run one adb command. Not built — see Outstanding.
 
-The permissive branch of `AmbientCapability` remains unverified: where
-`doze_always_on` exists we return true and ship a live switch on the strength of
-that key alone. The OnePlus has never been checked. Note that checking it needs
-the tap-and-look protocol above, not the dumpsys fields — those measure nothing.
+**The permissive branch of `AmbientCapability` is verified, 1 Sep 2026, on the
+OnePlus CPH2653 / LineageOS 23.2.** Where `doze_always_on` exists we return true
+and ship a live switch, and that switch really does suppress the always-on
+display:
+
+| | our switch OFF (control) | our switch ON |
+|---|---|---|
+| `doze_always_on` | 1 | 1 |
+| `ambientDisplaySuppressed` | false | **true** |
+| `mScreenState`, screen asleep | **DOZE** | **OFF** |
+
+The control is the point: the same pair read with the effect off gives DOZE, so
+the witness can go negative, which is what makes this evidence rather than a
+coincidence.
+
+**And the dumpsys fields DO measure it here — which contradicts the table above
+only until you ask whose AOD it is.** That paragraph used to say checking this
+branch needs the tap-and-look protocol "not the dumpsys fields — those measure
+nothing", and following that advice would have sent the next person past the one
+reading that works. The rule underneath both findings: where the AOD is AOSP's
+own doze, the doze readouts track it; where a vendor ships an AOD ALONGSIDE doze,
+as Honor does, every doze-derived readout is blind to it by construction. The
+witnesses in the table are not bad witnesses, they were pointed at an AOD that
+does not live where they were looking. Ask which kind of AOD you have before
+choosing an instrument.
+**The search for an UNPRIVILEGED lever on Honor's AOD is exhausted, 1 Sep 2026.**
+Everything above concerns what an app can do once it holds
+`WRITE_SECURE_SETTINGS`. The separate question — whether Honor exposes any AOD
+control an ordinary app could reach with no grant at all — is now answered no,
+by enumeration rather than by not having found one.
+
+`HnAOD.apk` was pulled from `/product_h/region_comm/oversea/app/HnAOD/HnAOD.apk`
+and its manifest read in full: 22 components, against the three examined
+previously.
+
+| component | exported | gate | why it is closed |
+|---|---|---|---|
+| `.AODService` | **true** | **NONE** | declares `QUIT_AOD`, `PAUSE_AOD`, `ENTER_AOD`, `AOD_SCREEN_ON/OFF`, `AODSERVICE_START` — and does not implement them. Sent from adb it is accepted, then logcat prints `AODService:onStartCommand stop self now.` |
+| `.StartService` | true | none | no intent filter, nothing to address |
+| `.BootReceiver` | true | none | `BOOT_COMPLETED` only |
+| `.superwallpaper.HnAodProvider` | true | `readPermission`/`writePermission` = `com.hihonor.permission.aod.READ_AOD` | that permission is `signature\|privileged` |
+| `.doze.DozeService` | true | `BIND_DREAM_SERVICE` | system only — and THIS is the real always-on |
+| `.ui.AODSettingsActivity` | true | `WRITE_SECURE_SETTINGS` | same wall as the keys |
+| `.AODSettingsActivityAlias` | true | `HW_SIGNATURE_OR_SYSTEM` | vendor signature |
+| `.ui.DisplayModeActivity` | **false** | — | the Tap-to-show / Scheduled / All day screen. Not deep-linkable, so the app cannot even hand the user to it |
+| `.CommonReceiver` | false | — | Honor's own AOD alarms, as recorded above |
+
+Every `hihonor` AOD permission on the device is `signature` or
+`signature|privileged`; none can be held by an ordinary install.
+
+`.AODService` is the one worth remembering, because it looks exactly like the
+answer for as long as it takes to test it: exported, ungated, and advertising
+the precise verbs anyone would want. It is a dead intent-filter in front of a
+service that stops itself.
+
+Challenged, fairly, on whether that null result was really a DEFERRED one — the
+dark theme on this phone needs an unlock before it applies, and the schedule
+keys above need a screen transition, so "nothing happened yet" is a live
+hypothesis here rather than a lazy one. It does not hold, and the reason is
+worth keeping: dark theme defers because the platform RECORDS the state and
+applies it later, whereas `onStartCommand` stops without recording anything, so
+there is no pending effect for a restart to flush. Re-tested anyway with the
+same wake-sleep cycle the schedule keys need, with intent delivery and the
+service's reply in one capture:
+
+    Starting service: Intent { act=com.hihonor.aod.action.QUIT_AOD
+                               cmp=com.hihonor.aod/.AODService }
+    W HnAOD : AODService:onStartCommand stop self now. **The only reason that took ten minutes rather than a
+day is that logcat printed it** — see the logcat note in CLAUDE.md, which used
+to read as "logcat is useless on MagicOS" and is now scoped to third-party app
+logs only.
+
+One methodological trap, since it nearly produced a wrong answer here. The first
+parse checked `android:permission` alone and reported the provider among the
+ungated components. `readPermission` and `writePermission` are SEPARATE
+attributes, and a provider carries those instead. Checking one attribute name is
+how you conclude a content provider is wide open when it is not.
+
 
 **So the always-on row is now three-state, and one of the states is absent.**
 Where the zen effect works, it is a switch backed by the rule. Where it does not
@@ -1367,6 +1478,120 @@ zen calls would have caught it.
 
 ## Portability
 
+**Honor's AOD has MODES, and its schedule lives in Settings.Secure after all —
+1 Sep 2026.** This is the difference from LineageOS, which offers a plain on/off:
+Honor's "Display mode" screen offers *Tap to show*, *Scheduled* (with Start and
+End times) and *All day*. Selecting each one moves keys, and selecting Scheduled
+CREATES two pairs that do not exist until then:
+
+| key | meaning |
+|---|---|
+| `aod_display_mode` | 0 = tap to show · 1 = scheduled · (all day untested) |
+| `aod_display_type` | 2 in tap-to-show, 0 otherwise — NOT a simple master gate |
+| `aod_start_hour` / `aod_start_minute` | schedule start, 24-hour, absent until set |
+| `aod_end_hour` / `aod_end_minute` | schedule end, 24-hour, absent until set |
+| `aod_scheduled_switch` | still unexplained; sat at -1 throughout |
+
+Two things follow, and only the first is settled.
+
+**Settled: the keys are reachable.** Writing `aod_start_hour` etc. from adb lands
+in `Settings.Secure` and Honor's own Settings screen reads the written values
+back and displays them. So the schedule is not sealed inside `com.hihonor.aod`'s
+private storage, and `WRITE_SECURE_SETTINGS` — which `AmbientControl` already
+requires — would be enough to write it. That materially revises the old
+conclusion that the scheduling route is shut: `CommonReceiver` is shut, the
+SETTINGS route is not.
+
+**Also settled, an hour later: the service HONOURS a schedule written from adb.**
+`aod_doze_state` was useless for this — it read 1 in every arm — so the witness
+was a pair of human eyes on the sleeping screen, four arms, at 02:08:
+
+| arm | schedule (written from adb) | screen asleep shows |
+|---|---|---|
+| A control | 00:00–23:59, covers now | **AOD lit** |
+| B | 09:00–12:00, excludes now, written WITHOUT touching the phone | still lit |
+| B′ | same keys, after one wake + sleep | **dark** |
+| C reverse | 00:00–23:59 again, after wake + sleep | **lit again** |
+
+Arm A is what made the rest legible: it proved Note 2's "disabled when the phone
+sleeps at night" was NOT suppressing anything at 02:08, so the later darkness in
+B′ could be attributed to the schedule rather than to the confound. Arm C is the
+reverse control — without it, B′ going dark could have been a timeout, the
+battery, or the night rule arriving late.
+
+Two design facts fall out. **There is no ContentObserver**: B left the AOD lit
+even though the keys had already changed, so the service does not watch them.
+And **it re-reads on a screen transition**: one wake-and-sleep was enough. Which
+of the two edges triggers it was not isolated — both happened together — and an
+implementation would want to know, because writing the schedule at a window
+boundary while the phone is asleep would not take effect until the next
+transition. For a bedtime app that is close to harmless, since someone is
+usually about to pick the phone up, but it is real behaviour and not a detail to
+discover in the field.
+
+Not tested: whether the schedule survives a reboot. `Settings.Secure` persists,
+so it almost certainly does, but nobody has watched it happen. Also still
+unexplained: what Note 2's night rule actually means, given it did not fire at
+02:08, and `aod_scheduled_switch`, which sat at -1 throughout.
+
+Why this matters: `AmbientControl` currently flips keys at each window boundary,
+which is what makes an uninstall mid-window leave the AOD off and lets a user's
+own change be overwritten at window end. Setting Honor's own schedule instead
+hands the boundaries to the vendor's service and removes both. It costs no new
+permission — `WRITE_SECURE_SETTINGS` is the same grant `AmbientControl` already
+needs. NOT BUILT, and deliberately so: it is a different shape of change from
+what this app does elsewhere, it would want the reboot question answered first,
+and the honest comparison against the existing key-flip has not been made. The
+finding is the value here, not a mandate.
+
+**`AmbientControl` works from Scheduled mode too — a worry, raised here and then
+tested rather than left standing.** Its four keys were derived entirely from TAP
+TO SHOW mode, and a phone sitting in Scheduled already has `aod_display_type=0`
+and `aod_touch_time=0`, so only `aod_switch` and `fingerprint_touch_time` move —
+and `aod_switch` alone was recorded above as doing nothing. That looked like a
+defect shipped in 0.5.
+
+It is not. Measured by eye, single variable, Scheduled mode with the window
+covering the current time: with `aod_switch=1` the AOD is lit; with the app
+suppressing (`aod_switch=0`, everything else unchanged) it is dark; the app's own
+restore brings it back and clears `ambientSaved`. The saved string records the
+truth of that mode — `aod_switch=1|aod_touch_time=0|fingerprint_touch_time=5|aod_display_type=0`
+— so the restore is correct rather than lucky.
+
+Which refines the `aod_switch` claim above rather than contradicting it.
+`aod_display_type` is the gate for TAP TO SHOW; `aod_switch` is the master that
+bites in SCHEDULED. Neither is "the one that matters" on its own — it depends on
+`aod_display_mode`. Writing all four zeroes whichever key is load-bearing in the
+current mode, so the existing implementation is robust across modes by
+construction, even though the reasoning recorded for it only ever covered one.
+
+**The `canControl` branch, verified after the HomeState refactor, 1 Sep 2026.**
+`ambientRow` is `ambientZen || AmbientControl.canControl(ctx)`, and the refactor
+moved it into `ScreenEffectsSection`. Only the FIRST branch had been exercised
+since — on the OnePlus, where the zen effect works — so the vendor-keys branch
+shipped in 0.5 untested. Checked on the Honor with `WRITE_SECURE_SETTINGS`
+granted: the row is drawn, and a full cycle behaves as designed. Enabling it
+mid-window put all four keys to 0 with `ambientSaved` holding
+`aod_switch=1|aod_touch_time=5|fingerprint_touch_time=5|aod_display_type=2`, and
+journalled `ambient off (was ...)`; ending the window restored all four to
+exactly those values, cleared `ambientSaved`, and journalled
+`ambient restored (...)`. The journal ORDER is evidence in itself —
+`ambient restored` precedes `zen state -> OFF`, which is the hook sitting at the
+top of `ZenController.setActive`, where every path funnels through it.
+
+Read directly rather than inferred: `doze_always_on` is **null** on the Honor, so
+`AmbientCapability.isSupported` falls through to the parallel-AOD check, finds
+`aod_switch`, and returns false. The ordering inside that function — AOSP key
+first, exclusion list second — is therefore never exercised here, but it stays
+load-bearing: a phone shipping BOTH keys would get a live switch that does
+nothing, and nothing in the code says so out loud.
+
+One key seen for the first time and NOT understood: `aod_scheduled_switch=-1`.
+Honor evidently has some notion of a scheduled AOD in Secure settings, and no
+companion start/end key is visible while it sits at -1. Not investigated. If a
+scheduled always-on for Honor is ever revisited, start there rather than at
+`CommonReceiver`, which is `exported=false` and shut.
+
 **Second device, 30 Aug 2026.** Everything below was an audit until a OnePlus
 CPH2653 running LineageOS 23.2 (Android 16, SDK 36) was attached. It installed
 and ran first time, with the phone in Ukrainian on a 12-hour clock - a
@@ -1416,6 +1641,25 @@ trying the app on anything but the Honor:
   observing the thing it measured.
 
 Everything else naming a vendor is a comment.
+
+**Always-on and the pick-up gesture, LineageOS, 1 Sep 2026.** Reported from the
+phone: enabling "Always on" makes "Pick-up" unavailable. Confirmed by reading the
+view hierarchy rather than the pixels — with `doze_always_on=1` the Pick-up row
+is `enabled=false`, with `0` it is `enabled=true`.
+
+It is NOT stock Android behaviour, and the evidence is in who owns the sensor:
+`dumpsys sensorservice` shows `pick_up_motion` (vendor `oplus`, type
+`tilt_detector`) registered by `org.lineageos.settings.doze.PickupSensor`, a
+LineageOS device package. AOSP's own key for this, `doze_pick_up_gesture`, does
+not exist on the device at all. So the row, and the rule that greys it out when
+the display is always on, are LineageOS's — sensible on its face, since a
+gesture that wakes the screen to show notifications has nothing to do when the
+screen is already showing them.
+
+MagicOS is a third thing again rather than a variation on this: Honor does not
+use `doze_always_on` at all, having its own `aod_switch` / `aod_display_type`
+implementation, which is exactly why the zen effect is inert there and why
+`KNOWN_PARALLEL_AOD` exists.
 
 **Second device, 1 Sep 2026 — what it caught.** The OnePlus was reattached to
 check one path the Honor physically cannot draw: the always-on row, which is

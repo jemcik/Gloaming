@@ -103,8 +103,12 @@ is in DECISIONS.md.
 
 **Platform**
 
-- **Logcat is encrypted** for third-party apps on MagicOS. Use `Journal`. Never
-  swallow an exception.
+- **Logcat is encrypted for THIRD-PARTY app logs** on MagicOS — our own lines
+  never appear, which is what `Journal` exists for. But SYSTEM and VENDOR tags
+  are readable and worth reaching for: `HnAOD`, `DozeService` and
+  `HWPowerManger_JNI` print plainly, and reading them is what settled how
+  Honor's always-on behaves when guessing had failed for two days. Do not read
+  the first sentence as "logcat is useless here". Never swallow an exception.
 - **`run-as` can read this app's data but not write it** — on any Android, not
   just MagicOS. A setting can only be corrected through the UI. And it does not
   work at all on a RELEASE build, so `check.sh` loses its whole app-side half

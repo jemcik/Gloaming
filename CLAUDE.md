@@ -900,15 +900,39 @@ confirming on real hardware.
   behind it and therefore no ripple (`indication = null`) - see the clip note
   above for why that matters.
 
-- **No FLAT colour can serve the launcher icon, and the shipped one proved it
-  for years.** The foreground spans tone 27.7 at the crescent's night horn to
-  73.4 at its dawn horn, so any single background value contrasts with one end
-  and swallows the other. `#12161B` read the dawn horn at 8.79:1 and the night
-  horn at 1.79:1 - a black tile with an orange fingernail on it, and reported as
-  the darkest icon on the launcher it sat in. It was stale too: that hex was
-  Dusk's `surface` from before the palette rebuild, and the icon never followed.
-  The ground is a gradient now (`drawable/ic_launcher_bg.xml`), and both things
-  that make it work were MEASURED after a first attempt got them wrong.
+- **The launcher icon is a FLAT WHITE tile, and the claim this entry used to
+  open with - "no flat colour can serve it" - was overturned by asking for the
+  one flat colour nobody had tried.** Read the reversal before re-deriving the
+  old rule from the evidence below, because the evidence is all still true.
+  The foreground spans tone 27.7 at the crescent's night horn to 73.4 at its
+  dawn horn, so any single background value does contrast with one end and
+  swallow the other. `#12161B` read the dawn horn at 8.79:1 and the night horn
+  at 1.79:1 - a black tile with an orange fingernail on it, reported as the
+  darkest icon on the launcher it sat in. That was answered with a diagonal
+  GRADIENT, light behind the cool horn and deep behind the warm one, and it
+  worked.
+  **White inverts the problem instead of repeating it, and that is the whole
+  difference.** On white the night horn holds 10.15:1 and the DAWN horn is the
+  one swallowed, at 2.07:1. Black's swallowed end could only be rescued by
+  LIGHTENING the night horn, which is to stop it being night. White's can be
+  rescued in the artwork: a dawn orange deepened from tone 73 to 62 is still
+  unmistakably a dawn orange. So the warm half of `ic_launcher_foreground.xml`
+  moved with the ground - `#D4814C` at the tip, 2.98:1 on white, ember deepened
+  to match. One end of that ramp had somewhere to go and the other never did.
+  Note the app's own dial keeps the ORIGINAL `Arc` stops, deliberately: the dial
+  is ~200dp on a known ground, the icon ~40dp on someone's wallpaper.
+  **And the strongest argument for white is not aesthetic.** Sampled off the
+  render, the worst warm-versus-ground pair in the gradient version was 1.00:1 -
+  orange and blue-grey at identical luminance - in the shipped icon as much as
+  in any variant. On a tinted ground no ratio could referee this artwork at all;
+  on white every pair is a real number again. It also puts the icon in the same
+  family as Google's own on this phone, which are white tiles with a saturated
+  mark: Drive, Files, Gmail, Google, Maps, Meet, Messages. Confirmed in the
+  drawer beside Gemini, Gmail and Google.
+  What follows is the gradient's own record. It is kept because the two
+  measurements in it are about the ARTWORK, not the ground, and would be needed
+  again by anyone reintroducing a tinted tile - both were wrong on the first
+  attempt.
   THE AXIS came off the rendered icon rather than the path data - the cool half
   of the artwork centres at x=0.35 of the tile and the warm half at x=0.63, so
   the split is nearly horizontal. Reasoning from the crescent's -32 degree

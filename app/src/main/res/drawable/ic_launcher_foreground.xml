@@ -41,8 +41,8 @@
                     android:endX="54"   android:endY="33.00">
                     <item android:offset="0.00" android:color="#FF2F4260" />
                     <item android:offset="0.42" android:color="#FF4E6480" />
-                    <item android:offset="0.76" android:color="#FFB2622D" />
-                    <item android:offset="1.00" android:color="#FFF6A06B" />
+                    <item android:offset="0.76" android:color="#FFA85C2A" />
+                    <item android:offset="1.00" android:color="#FFD4814C" />
                 </gradient>
             </aapt:attr>
         </path>
@@ -56,9 +56,9 @@
                     <item android:offset="0.0000" android:color="#FF2F4260" />
                     <item android:offset="0.1574" android:color="#FF2F4260" />
                     <item android:offset="0.4452" android:color="#FF4E6480" />
-                    <item android:offset="0.6782" android:color="#FFB2622D" />
-                    <item android:offset="0.8426" android:color="#FFF6A06B" />
-                    <item android:offset="1.0000" android:color="#FFF6A06B" />
+                    <item android:offset="0.6782" android:color="#FFA85C2A" />
+                    <item android:offset="0.8426" android:color="#FFD4814C" />
+                    <item android:offset="1.0000" android:color="#FFD4814C" />
                 </gradient>
             </aapt:attr>
         </path>

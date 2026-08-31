@@ -34,8 +34,8 @@ def ramp(stops, t):
             return lerp(hx(c0), hx(c1), u)
     return hx(stops[-1][1])
 
-ARC = [(0.00,'#2F4260'), (0.42,'#4E6480'), (0.76,'#B2622D'), (1.00,'#F6A06B')]
-BG  = [(0.00,'#F0F4FF'), (0.55,'#CBD5E6'), (1.00,'#5A6B89')]
+ARC = [(0.00,'#2F4260'), (0.42,'#4E6480'), (0.76,'#A85C2A'), (1.00,'#D4814C')]
+BG  = [(0.00,'#FFFFFF'), (1.00,'#FFFFFF')]
 
 yy, xx = np.mgrid[0:N, 0:N]
 X = xx / S; Y = yy / S                      # in dp units

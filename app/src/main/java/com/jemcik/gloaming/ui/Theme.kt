@@ -283,7 +283,15 @@ private val Dusk = GloamColors(
     veil = Color(0xFF383E46),
     line = Color(0xFF49505A),
     outline = Color(0xFF61666E),      // tone 43 · ring 2.70:1 on the page
-    selectBorder = Color(0xFF8896AF), // tone 62 · 4.14:1 on a card
+    /* = the fill, in BOTH themes now. The rim existed to bound a selected
+       control against its ground, and neither fill needs it any more: Dawn's
+       is dark on a light page, Dusk's lifts off its own at 2.59:1. Kept as a
+       token rather than deleted, so a future accent that DOES need bounding
+       can diverge without re-plumbing five call sites.
+       Looked at on the device rather than decided from the ratio: at 17dp a
+       lighter ring on a dark disc reads as a HALO rather than an edge, and the
+       day row came out looking outlined instead of filled. */
+    selectBorder = Color(0xFF566479),
     veilOutline = Color(0xFF8A8B90),  // tone 58 · 3.17:1 on the veil track
     onSurface = Color(0xFFEAEBED),        // 10.37:1 on a card
     onSurfaceMid = Color(0xFFC7CDD7),
@@ -297,7 +305,11 @@ private val Dusk = GloamColors(
     switchThumbOff = Color(0xFF9196A0),   //                     3.59:1 on the veil track
     alert = Color(0xFF6F362E),         // tone 30 · ink 7.24:1
     onAlert = Color(0xFFFFDAD5),
-    alertBorder = Color(0xFFB85B52),   // tone 50 · 2.74:1 on a card
+    /* Tone 54, and the same value Dawn uses - a mid-tone rim clears 3:1
+       against a light card AND a dark one, 3.06 and 3.20. Note the direction:
+       on a DARK card this had to go LIGHTER, and the instinct to darken a
+       border makes it worse (tone 46 gives 2.39). */
+    alertBorder = Color(0xFFC5665B),
     dark = true
 )
 

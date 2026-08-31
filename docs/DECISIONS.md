@@ -492,6 +492,18 @@ confirming on real hardware.
   the alert pill's rim, which looks like the same kind of exception and is not:
   there the FILL is 1.02:1 against the card, so the rim is the only separation
   there is and it does have to reach 3:1.
+  **Both themes were audited pair by pair, and the same two came up under floor
+  in each.** All text passes in both. The alert rim was a real defect in both
+  and is `#C5665B` in each now - one mid-tone clears 3:1 against a light card
+  and a dark one alike, 3.06 and 3.20. Keep the DIRECTION: on a dark card that
+  rim had to go LIGHTER, and darkening it, which is the instinct, makes it
+  worse - tone 46 gives 2.39.
+  And `selectBorder` is the fill in both themes now. It bounded a selected
+  control against its ground and neither fill needs it: Dawn's is dark on a
+  light page, Dusk's lifts off its own at 2.59:1. Decided by looking rather than
+  by the ratio - at 17dp a lighter ring on a dark disc reads as a HALO, and the
+  day row came out looking outlined instead of filled. The token stays so a
+  future accent that does need bounding can diverge.
 
 - **Any `ColorScheme` role left unset falls back to Material's baseline violet.**
   `TimePicker` reads `primaryContainer` for the selected field and

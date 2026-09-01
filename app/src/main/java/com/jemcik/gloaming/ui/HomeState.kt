@@ -196,6 +196,7 @@ class HomeState(
         // and both callers share it rather than agreeing by coincidence.
         writePrefs()
         Bedtime.set(ctx, prefs, on)
+        BedtimeTile.refresh(ctx)
         tick++
     }
 

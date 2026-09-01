@@ -1,5 +1,7 @@
 package com.jemcik.gloaming.ui
 
+import android.content.ComponentName
+import android.content.Context
 import android.graphics.drawable.Icon
 import android.service.quicksettings.Tile
 import android.service.quicksettings.TileService
@@ -38,6 +40,25 @@ import com.jemcik.gloaming.core.ZenController
  * explaining why.
  */
 class BedtimeTile : TileService() {
+
+    companion object {
+        /**
+         * Ask SystemUI to let the tile speak again.
+         *
+         * A tile is only alive between onStartListening and onStopListening -
+         * roughly, while the shade is open - so everything that changes bedtime
+         * behind its back leaves it showing a stale face. That is most of the
+         * interesting cases: the START alarm turning armed into running, the END
+         * turning it back, a reboot re-arming. Without this the tick never
+         * becomes a moon unless you happen to reopen the shade, which is exactly
+         * the bug this fixes.
+         */
+        fun refresh(ctx: Context) {
+            runCatching {
+                requestListeningState(ctx, ComponentName(ctx, BedtimeTile::class.java))
+            }
+        }
+    }
 
     override fun onStartListening() {
         super.onStartListening()

@@ -97,4 +97,60 @@ class PrefsMigrationTest {
                 .getBoolean("daysAreMornings", false)
         )
     }
+
+    // ---- the screen effects' defaults, and the install that predates them ----
+
+    @Test
+    fun `a fresh install starts with every screen effect off`() {
+        // Grayscale and dim used to be on out of the box. They are the two a
+        // person sees the instant bedtime starts, and the first night should not
+        // change the screen in a way they did not ask for.
+        val p = Prefs(ctx)
+        assertEquals(false, p.fxGrayscale)
+        assertEquals(false, p.fxDimWallpaper)
+        assertEquals(false, p.fxDarkTheme)
+        assertEquals(false, p.fxHideAmbient)
+        // Do Not Disturb is the app, not a look, and stays on.
+        assertEquals(true, p.fxDnd)
+    }
+
+    @Test
+    fun `an install that predates the change keeps grayscale and dim`() {
+        // The trap in changing a read-through default: the value lives only in
+        // the code, so lowering it lowers it RETROACTIVELY, and an install that
+        // had simply never touched these rows would lose grayscale overnight
+        // with nothing on screen to say why.
+        seedOldFormat(h2230, h0800, setOf(DayOfWeek.FRIDAY))
+        val p = Prefs(ctx)
+        assertEquals(true, p.fxGrayscale)
+        assertEquals(true, p.fxDimWallpaper)
+    }
+
+    @Test
+    fun `an existing install that had switched them OFF is not switched back on`() {
+        // The other half, and the one a "write the old defaults in" migration
+        // gets wrong if it only checks the flag: false is a real answer, and
+        // absent is the only thing that may be filled in.
+        seedOldFormat(h2230, h0800, setOf(DayOfWeek.FRIDAY))
+        ctx.getSharedPreferences("gloaming", Context.MODE_PRIVATE).edit {
+            putBoolean("fxGrayscale", false)
+            putBoolean("fxDimWallpaper", false)
+        }
+        val p = Prefs(ctx)
+        assertEquals(false, p.fxGrayscale)
+        assertEquals(false, p.fxDimWallpaper)
+    }
+
+    @Test
+    fun `a fresh install stays off however many times Prefs is constructed`() {
+        // `fresh` is read from an EMPTY store, and the first construction stops
+        // it being empty. If the backfill were keyed on the flag rather than on
+        // freshness, the second construction would see a non-fresh install with
+        // the keys absent and switch both effects on - which is the old defaults
+        // coming back through the door they were shown out of.
+        repeat(5) { Prefs(ctx) }
+        val p = Prefs(ctx)
+        assertEquals(false, p.fxGrayscale)
+        assertEquals(false, p.fxDimWallpaper)
+    }
 }

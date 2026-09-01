@@ -7,6 +7,11 @@ import android.content.Intent
 class BedtimeReceiver : BroadcastReceiver() {
     override fun onReceive(ctx: Context, intent: Intent) {
         val p = Prefs(ctx)
+        // Boot and upgrade re-assert the zen state rather than trusting what the
+        // rule claims: across a reboot the rule's condition survives as
+        // STATE_TRUE while zen_mode is reset to 0, so believing it loses the
+        // window. START and END force for their own reasons, below.
+        var force = false
         when (intent.action) {
             Scheduler.ACTION_START -> {
                 Journal.write(ctx, "START fired")
@@ -45,10 +50,11 @@ class BedtimeReceiver : BroadcastReceiver() {
                 // syncRule skips identical rules, so nothing would ever repair
                 // one edited from Settings. Boot and upgrade force a push.
                 p.ruleSignature = null
+                force = true
             }
             else -> return
         }
         // Always rearm: exact alarms are one-shot.
-        Scheduler.rescheduleAll(ctx, p)
+        Scheduler.rescheduleAll(ctx, p, force)
     }
 }

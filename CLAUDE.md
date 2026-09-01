@@ -84,6 +84,15 @@ is in DECISIONS.md.
 
 **Zen and scheduling**
 
+- A rule carries a **`conditionOverride`** as well as a condition, and it wins.
+  AOSP's `setManualZenMode` stamps `OVERRIDE_DEACTIVATE` on every active rule
+  whenever zen goes off other than by the user in SystemUI — **a reboot
+  qualifies**. The rule then reads `STATE_TRUE` in the config, reports
+  `STATE_FALSE` through `getAutomaticZenRuleState`, and filters nothing. Pushing
+  `STATE_TRUE` does not help: `reconsiderConditionOverride` drops an
+  `OVERRIDE_DEACTIVATE` only when the condition goes **FALSE**. Push FALSE then
+  TRUE. Measured 1 Sep 2026; it cost a whole window and looked like nothing was
+  wrong.
 - `updateAutomaticZenRule` **clears the rule's condition**, so rewriting a live
   rule switches it off. Any path that rewrites mid-window must re-assert the
   state afterwards, and `setActive` must decide by asking

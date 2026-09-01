@@ -211,13 +211,18 @@ object Scheduler {
     /**
      * Rebuilds both alarms and brings the zen rule in line with the present moment.
      * Safe to call repeatedly; it is idempotent.
+     *
+     * [force] re-asserts the zen state even when the system already claims it.
+     * Boot and upgrade pass it, because the world moved underneath us while we
+     * were not running - see the reboot note in ZenController.setActive. The UI
+     * does NOT, since re-asserting on a live rule re-applies its device effects.
      */
-    fun rescheduleAll(ctx: Context, p: Prefs) {
+    fun rescheduleAll(ctx: Context, p: Prefs, force: Boolean = false) {
         cancelAll(ctx)
 
         if (!p.enabled) {
             p.activeDay = Prefs.NO_DAY
-            ZenController.setActive(ctx, p, false)
+            ZenController.setActive(ctx, p, false, force)
             logPlan(ctx, p, "off")
             return
         }
@@ -232,7 +237,7 @@ object Scheduler {
                 p.activeDay = openUntil.minus(duration(p.startTime, p.endTime))
                     .toLocalDate().toEpochDay()
             }
-            ZenController.setActive(ctx, p, true)
+            ZenController.setActive(ctx, p, true, force)
             setExact(ctx, openUntil, ACTION_END, 101)
             // A one-off queues no following night; END switches the app off.
             if (!isOneOff(p.days)) {
@@ -243,7 +248,7 @@ object Scheduler {
                 (if (isOneOff(p.days)) " (once)" else ""))
         } else {
             p.activeDay = Prefs.NO_DAY
-            ZenController.setActive(ctx, p, false)
+            ZenController.setActive(ctx, p, false, force)
             val start = nextStart(p.startTime, p.endTime, p.days, now)
             if (start == null) {
                 logPlan(ctx, p, "nothing to schedule")

@@ -176,6 +176,7 @@ fun Home(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 PermissionSection(dnd, exact)
+            LaunchSetupSection(s)
                 BootNoticeSection(s)
             BackgroundNoticeSection(s)
             MissedAlarmSection(s)
@@ -266,6 +267,41 @@ private fun BootNoticeSection(s: HomeState) {
                     stringResource(R.string.boot_missed_why),
                     granted = false,
                     icon = R.drawable.ic_restart, tint = IconTint.Boot
+                ) { haptics.open(); BootWatch.openAutoStart(ctx) }
+            })
+        }
+    }
+}
+
+/**
+ * Told BEFORE anything is lost, on phones that can stop an app running.
+ *
+ * The other two cards here are reports: something already went wrong. This one
+ * is a warning, and it exists because waiting for the evidence costs a whole
+ * night in Do Not Disturb - which is exactly what happened, once, and is not a
+ * reasonable way to find out.
+ *
+ * It is honest about its own uncertainty. The app cannot read auto-launch, and a
+ * background appop reading `allow` is indistinguishable from one never
+ * configured, so this does NOT claim anything is wrong - only that this phone
+ * can interfere and has not yet been seen to behave. The first END that arrives
+ * settles it and the card never returns.
+ */
+@Composable
+private fun LaunchSetupSection(s: HomeState) {
+    val ctx = LocalContext.current
+    val g = gloam
+    val haptics = s.haptics
+    val card = g.raise
+
+    if (s.unproven) {
+        Section(stringResource(R.string.launch_setup_title), rule = false) {
+            GroupedList(card, listOf {
+                PermissionCard(
+                    stringResource(R.string.launch_setup_row),
+                    stringResource(R.string.launch_setup_why),
+                    granted = false,
+                    icon = R.drawable.ic_gloaming, tint = IconTint.Blocked
                 ) { haptics.open(); BootWatch.openAutoStart(ctx) }
             })
         }

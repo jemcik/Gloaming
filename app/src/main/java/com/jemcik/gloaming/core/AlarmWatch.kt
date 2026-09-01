@@ -60,6 +60,16 @@ object AlarmWatch {
      */
     fun missed(p: Prefs): Boolean = p.alarmMissed
 
+    /**
+     * True until one END has actually been handled on this phone.
+     *
+     * This is what lets a WARNING be given before any damage, and still clear
+     * itself: a completed window is proof the path works, and no amount of
+     * reading vendor settings could have established that. Until then the app
+     * genuinely does not know whether it will be allowed to finish.
+     */
+    fun neverCompleted(p: Prefs): Boolean = p.endSeen == Prefs.NO_DUE
+
     /** The raw comparison, only meaningful before the next arming lands. */
     private fun overdue(p: Prefs, now: Long): Boolean {
         val due = p.endDue

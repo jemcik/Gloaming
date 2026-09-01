@@ -91,6 +91,20 @@ object BootWatch {
         )
     )
 
+    /**
+     * Does this phone ship a launch manager at all?
+     *
+     * A CAPABILITY probe, not a vendor test: it asks whether the screen we would
+     * send someone to actually resolves. Present on the Honor, absent on the
+     * OnePlus, and it will be right about a vendor nobody here has seen. That is
+     * the same shape as AmbientCapability, and the reason this is not a
+     * Build.MANUFACTURER check - the codebase keeps exactly one of those.
+     */
+    fun hasLaunchManager(ctx: Context): Boolean =
+        VENDOR_SCREENS.any {
+            ctx.packageManager.resolveActivity(Intent().setComponent(it), 0) != null
+        }
+
     fun openAutoStart(ctx: Context) {
         for (screen in VENDOR_SCREENS) {
             val i = Intent().setComponent(screen)

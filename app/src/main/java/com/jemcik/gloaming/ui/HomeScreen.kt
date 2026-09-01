@@ -294,7 +294,10 @@ private fun BackgroundNoticeSection(s: HomeState) {
                     stringResource(R.string.bg_blocked_row),
                     stringResource(R.string.bg_blocked_why),
                     granted = false,
-                    icon = R.drawable.ic_alarm, tint = IconTint.Alarm
+                    // The app's own mark, not a clock. An alarm-clock icon here
+                    // says "this wakes you up", which is the exact misreading the
+                    // wording of this card was rewritten to avoid.
+                    icon = R.drawable.ic_gloaming, tint = IconTint.Blocked
                 ) { haptics.open(); BackgroundLimit.openSettings(ctx) }
             })
         }

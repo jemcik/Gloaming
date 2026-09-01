@@ -69,9 +69,17 @@ enum class IconTint(private val dark: Color, private val light: Color) {
     Cal(Color(0xFFFFB075), Color(0xFFB15B00)),
     /** media - pink */
     Media(Color(0xFFF2A8F1), Color(0xFFA551AB)),
-    /** alarms - red, the one thing never silenced */
     /** a restart that went unhandled - violet, clear of the two reds beside it */
     Boot(Color(0xFFCCB5FF), Color(0xFF7E5ECD)),
+    /**
+     * The phone refusing to let the app run - deliberately Boot's violet again.
+     * Both notices say the same KIND of thing, that the phone is interfering, so
+     * they share the notice colour and the icon is what tells them apart. Naming
+     * it rather than writing Boot at the call site keeps the reason readable, and
+     * Call/Allowed already set the precedent for two names on one pair.
+     */
+    Blocked(Color(0xFFCCB5FF), Color(0xFF7E5ECD)),
+    /** alarms - red, the one thing never silenced */
     Alarm(Color(0xFFFFABA2), Color(0xFFDD2524));
 
     /** On the card behind it: Dusk takes the pale member, Dawn the deep one. */

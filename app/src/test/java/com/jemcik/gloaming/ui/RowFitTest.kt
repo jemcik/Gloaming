@@ -2,7 +2,7 @@ package com.jemcik.gloaming.ui
 
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.Icon
-import androidx.compose.material3.OutlinedIconButton
+import androidx.compose.material3.FilledIconButton
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
@@ -230,7 +230,7 @@ class RowFitTest {
                             )
                         },
                         trailing = {
-                            OutlinedIconButton(onClick = {}) {
+                            FilledIconButton(onClick = {}) {
                                 Icon(painterResource(R.drawable.ic_check), null)
                             }
                         }

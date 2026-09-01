@@ -680,33 +680,39 @@ private fun EndsSection(s: HomeState) {
                             )
                         },
                         trailing = {
-                            // A tick in an outline, not the word "Move". The
-                            // outline is the time picker's - a bare button gives
-                            // the words no container to aim at, which is what
-                            // put outlines on the dialog's buttons. But the word
-                            // itself cost a third of the row: "Перенести" is
-                            // nine characters, and the supporting line that
-                            // names both times is what had to give way for it.
-                            // M3's icon-only button is the same container at a
-                            // fixed 40dp, so the sentence keeps its width in
+                            // A tick, not the word "Move": the word cost a
+                            // third of the row - "Перенести" is nine characters,
+                            // and the supporting line that names both times is
+                            // what had to give way for it. M3's icon-only button
+                            // is a fixed 40dp, so the sentence keeps its width in
                             // every language.
+                            //
+                            // FILLED, in the switch's own two colours rather than
+                            // an outline in the accent. This row sits directly
+                            // under that switch and the two are the only controls
+                            // in the section; an outlined tick beside a filled
+                            // track read as the weaker of a pair that are not a
+                            // pair at all. Taking switchTrack and switchThumb by
+                            // name is what stops them drifting apart later - the
+                            // point is that it is the SAME fill, not a matching
+                            // one.
                             //
                             // Icon-only means the LABEL becomes the description,
                             // and it has to stand alone: focus lands on the
                             // button by itself, so "Move" would be announced
                             // with nothing to say what moves. The headline says
                             // it in full and is already translated.
-                            OutlinedIconButton(
+                            FilledIconButton(
                                 onClick = {
                                     haptics.confirm()
                                     s.end = alarm.toLocalTime()
                                     s.commit()
                                 },
                                 shape = CircleShape,
-                                colors = IconButtonDefaults.outlinedIconButtonColors(
-                                    contentColor = gloam.stateOn
-                                ),
-                                border = BorderStroke(1.dp, gloam.outline)
+                                colors = IconButtonDefaults.filledIconButtonColors(
+                                    containerColor = gloam.switchTrack,
+                                    contentColor = gloam.switchThumb
+                                )
                             ) {
                                 Icon(
                                     painterResource(R.drawable.ic_check),

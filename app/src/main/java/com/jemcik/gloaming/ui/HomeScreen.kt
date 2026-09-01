@@ -436,6 +436,29 @@ private fun WindowBlock(s: HomeState, now: LocalTime, runningNow: Boolean) {
     val ground = g.surface
     val locale = LocalLocale.current.platformLocale
 
+    // WHAT TONIGHT ACTUALLY ENDS AT, which is not always the wake handle.
+    //
+    // With "at your alarm" on and an alarm inside the window, the night ends
+    // at the alarm, and every reading on this screen has to say so - the
+    // numeral, the arc, the handle, the countdown, the sentence. Shipping
+    // the alarm to some of them and not others produced one screen giving
+    // two answers to when tonight ends, which is what was reported, twice.
+    //
+    // Null when nothing overrides, so the callers below can tell "tonight is
+    // the schedule" from "tonight is shorter" without recomputing it.
+    val endTonight = remember(s.tick, s.start, s.end, s.days, s.endAtAlarm, s.enabled) {
+        val alarm = if (s.endAtAlarm) Scheduler.nextAlarm(ctx) else null
+        if (alarm == null) null else {
+            val dur = Scheduler.duration(s.start, s.end)
+            val scheduled = Scheduler.liveWindowEnd(prefs, s.start, s.end, s.days)
+                ?: Scheduler.nextStart(s.start, s.end, s.days)?.plus(dur)
+            scheduled?.let { end ->
+                Scheduler.endAt(end.minus(dur), end, alarm, exitAtAlarm = true)
+                    .takeIf { it != end }?.toLocalTime()
+            }
+        }
+    }
+
     // One block: the two times, the crown that spans them, and the
     // dial that edits them. Nothing here is separable from the rest.
     Column(
@@ -514,7 +537,10 @@ private fun WindowBlock(s: HomeState, now: LocalTime, runningNow: Boolean) {
                         PhaseGlyph(moon = false, tint = Arc.dawn, ground = ground)
                     }
                     Spacer(Modifier.height(4.dp))
-                    WindowTime(ctx, s.end, color = g.onSurfaceMid)
+                    // Tonight's end, not the setting behind it. "I see 8:30 in
+                    // the top right, how can this be correct" - it could not:
+                    // every other reading on the screen said 7:30.
+                    WindowTime(ctx, endTonight ?: s.end, color = g.onSurfaceMid)
 
                 }
             }
@@ -529,12 +555,9 @@ private fun WindowBlock(s: HomeState, now: LocalTime, runningNow: Boolean) {
             buildList {
                 if (runningNow) {
                     // WITH the alarm, and the hour read off the answer rather
-                    // than off the wake handle. Both halves were wrong together:
-                    // the countdown ran to 8:30 and the caption named 8:30, while
-                    // the app bar and the alarm row both said 7:30 - one screen
-                    // giving two answers to "when does tonight end". The handle
-                    // keeps showing 8:30 because it is the SETTING and dragging
-                    // it edits the setting; this line is a claim about tonight.
+                    // than off the wake handle - both halves had been wrong
+                    // together, so the number and the caption agreed with each
+                    // other and with nothing else on the screen.
                     val alarm = if (s.endAtAlarm) Scheduler.nextAlarm(ctx) else null
                     val endsAt = Scheduler.liveWindowEnd(
                         prefs, s.start, s.end, s.days, alarm = alarm
@@ -586,7 +609,7 @@ private fun WindowBlock(s: HomeState, now: LocalTime, runningNow: Boolean) {
                     placeable.place(0, -trim)
                 }
             },
-            start = s.start, end = s.end, now = now,
+            start = s.start, end = s.end, endTonight = endTonight, now = now,
             running = runningNow,
             track = card, enabled = s.enabled,
             centreValue = readings[centreIndex].first,

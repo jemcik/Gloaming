@@ -50,7 +50,6 @@ object BackgroundProbe {
     const val DELAY_MS = 11 * 60_000L
 
     /** Generous, for the same reason the missed-alarm tolerance is. */
-    private const val TOLERANCE_MS = 120_000L
 
     /**
      * The verdict, latched. NOT derived live from probeDue: arming the next
@@ -65,9 +64,7 @@ object BackgroundProbe {
 
     /** Read the outstanding probe before anything overwrites it. */
     fun check(p: Prefs, now: Long = System.currentTimeMillis()) {
-        val due = p.probeDue
-        if (due == Prefs.NO_DUE || p.probeSeen == due) return
-        if (now > due + TOLERANCE_MS) p.probeFailed = true
+        if (Delivery.missed(p.probeDue, p.probeSeen, now)) p.probeFailed = true
     }
 
     /**
@@ -115,6 +112,6 @@ object BackgroundProbe {
      */
     fun handled(p: Prefs, now: Long = System.currentTimeMillis()) {
         p.probeSeen = p.probeDue
-        p.probeFailed = now > p.probeDue + TOLERANCE_MS
+        p.probeFailed = Delivery.late(p.probeDue, now)
     }
 }

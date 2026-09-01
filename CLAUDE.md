@@ -43,6 +43,11 @@ indefinitely is background restriction — see `core/BackgroundLimit.kt`.
     core/ZenStatusReceiver.kt    the platform's hint that our rule changed; a
                                  hint only, we decide from getAutomaticZenRule
     core/BootWatch.kt            detects a reboot whose broadcast never arrived
+    core/Doors.kt                the system screens we can send someone to, and
+                                 whether they exist here. Capability probes, so
+                                 a door that opens onto nothing is never drawn
+    core/Delivery.kt             the one rule AlarmWatch and BackgroundProbe
+                                 share: delivered means ARRIVED ON TIME
     core/ScreenEffects.kt        does this phone APPLY the rule's device
                                  effects. The one question here with no probe,
                                  so a manufacturer prior that a measured
@@ -283,6 +288,8 @@ in a method — they were in an assumption.
                           Home's rows, the allowlist's, and Settings', which
                           have the least room of the three
     ScreensTest           interactions, never appearance
+    AlarmWatchTest        did our own END arrive, and ON TIME - the case the
+                          notice exists for, which it could not report
     BootWatchTest         the withheld-boot detection
     BackgroundProbeTest   the delivery probe: lateness rather than arrival is
                           the verdict, and the latch that stops its own retest

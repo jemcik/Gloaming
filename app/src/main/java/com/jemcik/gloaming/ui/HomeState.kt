@@ -13,6 +13,7 @@ import com.jemcik.gloaming.core.AlarmWatch
 import com.jemcik.gloaming.core.BackgroundLimit
 import com.jemcik.gloaming.core.BackgroundProbe
 import com.jemcik.gloaming.core.BootWatch
+import com.jemcik.gloaming.core.Doors
 import com.jemcik.gloaming.core.Prefs
 import com.jemcik.gloaming.core.ScreenEffects
 import com.jemcik.gloaming.core.Scheduler
@@ -112,7 +113,7 @@ class HomeState(
      * card SAYS - Honor's own switches by name where they exist, the general
      * app-details route where they do not. It never decides whether to show it.
      */
-    val hasLaunchManager = BootWatch.hasLaunchManager(ctx)
+    val hasLaunchManager = Doors.hasLaunchManager(ctx)
 
     /**
      * The one-time offer has been answered. Held as state as well as in prefs so

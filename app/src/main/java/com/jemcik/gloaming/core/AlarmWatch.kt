@@ -26,15 +26,20 @@ package com.jemcik.gloaming.core
 object AlarmWatch {
 
     /** Two minutes: far past any scheduling jitter, far short of a real failure. */
-    private const val TOLERANCE_MS = 120_000L
 
     /** Called when an END is armed for [dueMs]. */
     fun arming(p: Prefs, dueMs: Long) { p.endDue = dueMs }
 
     /** Called when that END actually reaches us: proof the path works again. */
-    fun handled(p: Prefs) {
+    /**
+     * It arrived - and whether that counts depends on WHEN, not that it
+     * happened. See [Delivery]: an END released only by the app being opened is
+     * the original report, not a success, and clearing the flag here
+     * unconditionally is what made that report undetectable.
+     */
+    fun handled(p: Prefs, now: Long = System.currentTimeMillis()) {
         p.endSeen = p.endDue
-        p.alarmMissed = false
+        p.alarmMissed = Delivery.late(p.endDue, now)
     }
 
     /**
@@ -46,9 +51,20 @@ object AlarmWatch {
     }
 
     /** Nothing is armed, so nothing can be owed. */
+    /**
+     * Nothing is scheduled, so nothing can be late - and the verdict goes with
+     * it, deliberately.
+     *
+     * Only the two branches that mean "there is no END pending" call this:
+     * bedtime switched off, and a schedule with nothing to run. Leaving the
+     * latch set there stranded the notice for good, because the only thing that
+     * clears it is a punctual END and none was ever coming. The user would have
+     * been told bedtime did not end on time, for ever, with bedtime off.
+     */
     fun clear(p: Prefs) {
         p.endDue = Prefs.NO_DUE
         p.endSeen = Prefs.NO_DUE
+        p.alarmMissed = false
     }
 
     /**
@@ -61,10 +77,6 @@ object AlarmWatch {
     fun missed(p: Prefs): Boolean = p.alarmMissed
 
     /** The raw comparison, only meaningful before the next arming lands. */
-    private fun overdue(p: Prefs, now: Long): Boolean {
-        val due = p.endDue
-        if (due == Prefs.NO_DUE) return false
-        if (p.endSeen == due) return false
-        return now > due + TOLERANCE_MS
-    }
+    private fun overdue(p: Prefs, now: Long): Boolean =
+        Delivery.missed(p.endDue, p.endSeen, now)
 }

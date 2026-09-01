@@ -268,7 +268,7 @@ private fun BootNoticeSection(s: HomeState) {
                     stringResource(R.string.boot_missed_why),
                     granted = false,
                     icon = R.drawable.ic_restart, tint = IconTint.Boot
-                ) { haptics.open(); BootWatch.openAutoStart(ctx) }
+                ) { haptics.open(); Doors.openAutoStart(ctx) }
             })
         }
     }
@@ -316,7 +316,7 @@ private fun LaunchSetupSection(s: HomeState) {
                 stringResource(row), stringResource(why),
                 granted = false,
                 icon = R.drawable.ic_gloaming, tint = IconTint.Blocked
-            ) { haptics.open(); s.retestBackground(); BootWatch.openAutoStart(ctx) }
+            ) { haptics.open(); s.retestBackground(); Doors.openAutoStart(ctx) }
         })
     }
 }
@@ -348,7 +348,7 @@ private fun LaunchTipSection(s: HomeState) {
                 stringResource(R.string.launch_tip_action),
                 onDismiss = { haptics.select(); s.closeLaunchTip() },
                 onAction = {
-                    haptics.open(); s.closeLaunchTip(); BootWatch.openAutoStart(ctx)
+                    haptics.open(); s.closeLaunchTip(); Doors.openAutoStart(ctx)
                 }
             )
         })

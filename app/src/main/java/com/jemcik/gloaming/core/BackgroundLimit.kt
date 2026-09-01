@@ -35,5 +35,5 @@ object BackgroundLimit {
      * and "Run in background" are two rows of one dialog there - so this
      * deliberately reuses it rather than inventing a second guess at the path.
      */
-    fun openSettings(ctx: Context) = BootWatch.openAutoStart(ctx)
+    fun openSettings(ctx: Context) = Doors.openAutoStart(ctx)
 }

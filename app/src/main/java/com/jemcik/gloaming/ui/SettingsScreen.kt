@@ -21,6 +21,7 @@ import com.jemcik.gloaming.R
 import com.jemcik.gloaming.ui.LinkRow
 import com.jemcik.gloaming.ui.RadioRow
 import com.jemcik.gloaming.core.BootWatch
+import com.jemcik.gloaming.core.Doors
 import com.jemcik.gloaming.core.Prefs
 
 /**
@@ -118,8 +119,8 @@ fun SettingsScreen(themeMode: Int, onThemeMode: (Int) -> Unit, onBack: () -> Uni
         //
         // Hidden where no launch manager resolves, on the same capability probe
         // the notices use - never a Build.MANUFACTURER test.
-        val launchManager = BootWatch.hasLaunchManager(ctx)
-        val systemBedtime = BootWatch.hasSystemBedtime(ctx)
+        val launchManager = Doors.hasLaunchManager(ctx)
+        val systemBedtime = Doors.hasSystemBedtime(ctx)
         if (launchManager || systemBedtime) {
             Section(stringResource(R.string.section_this_phone)) {
                 SettingsCard {
@@ -135,7 +136,7 @@ fun SettingsScreen(themeMode: Int, onThemeMode: (Int) -> Unit, onBack: () -> Uni
                                     modifier = Modifier.size(24.dp)
                                 )
                             }
-                        ) { haptics.open(); BootWatch.openAutoStart(ctx) }
+                        ) { haptics.open(); Doors.openAutoStart(ctx) }
                     }
                     if (systemBedtime) {
                         LinkRow(
@@ -149,7 +150,7 @@ fun SettingsScreen(themeMode: Int, onThemeMode: (Int) -> Unit, onBack: () -> Uni
                                     modifier = Modifier.size(24.dp)
                                 )
                             }
-                        ) { haptics.open(); BootWatch.openSystemBedtime(ctx) }
+                        ) { haptics.open(); Doors.openSystemBedtime(ctx) }
                     }
                 }
             }

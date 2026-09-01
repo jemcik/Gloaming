@@ -61,8 +61,38 @@ class Prefs(ctx: Context) {
         get() = sp.getLong("bootStamp", NO_BOOT)
         set(v) = sp.edit { putLong("bootStamp", v) }
 
+    /**
+     * The instant the currently armed END is due, and the instant of the last
+     * END we actually handled. [NO_DUE] when nothing is armed.
+     *
+     * The pair is the whole detector: arming writes [endDue], the receiver
+     * copies it into [endSeen], and a due time that has passed without ever
+     * being seen is an alarm the phone ate. See [AlarmWatch].
+     */
+    var endDue: Long
+        get() = sp.getLong("endDue", NO_DUE)
+        set(v) = sp.edit { putLong("endDue", v) }
+
+    var endSeen: Long
+        get() = sp.getLong("endSeen", NO_DUE)
+        set(v) = sp.edit { putLong("endSeen", v) }
+
+    /**
+     * Latched: an END went missing, and stays reported until one arrives.
+     *
+     * It has to be sticky. Re-arming overwrites [endDue] with the NEXT window,
+     * and re-arming is the first thing that happens when the app comes back -
+     * so comparing the pair at the moment the screen asks would always find a
+     * fresh, innocent-looking due time. The evidence is destroyed by the act of
+     * recovering, which cost a whole test to discover.
+     */
+    var alarmMissed: Boolean
+        get() = sp.getBoolean("alarmMissed", false)
+        set(v) = sp.edit { putBoolean("alarmMissed", v) }
+
     companion object {
         const val NO_BOOT = Long.MIN_VALUE
+        const val NO_DUE = Long.MIN_VALUE
         const val NO_DAY = Long.MIN_VALUE
         const val THEME_SYSTEM = 0
         const val THEME_LIGHT = 1

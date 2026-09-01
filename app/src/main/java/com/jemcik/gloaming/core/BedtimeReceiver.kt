@@ -18,7 +18,16 @@ class BedtimeReceiver : BroadcastReceiver() {
                 ZenController.setActive(ctx, p, true, force = true)
             }
             Scheduler.ACTION_END -> {
-                Journal.write(ctx, "END fired")
+                // How late, not just that it happened. Punctual is the norm - the
+                // scheduled second, measured in forced light and deep idle - so a
+                // number here at all is the interesting case.
+                val late = (System.currentTimeMillis() - p.endDue) / 1000
+                Journal.write(
+                    ctx,
+                    if (p.endDue != Prefs.NO_DUE && late > 2) "END fired ${late}s late"
+                    else "END fired"
+                )
+                AlarmWatch.handled(p)
                 // Drop the pin first: if the alarm lands a hair early, a live
                 // pin would reopen the window and rearm END for the same
                 // instant, over and over.

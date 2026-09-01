@@ -53,7 +53,10 @@
     <string name="boot_missed_why">Дозволяє сну знову вмикатися після перезавантаження. Без цього нічого не було заплановано, доки ви не відкрили застосунок</string>
     <string name="bg_blocked_title">Gloaming не дозволено працювати у фоні</string>
     <string name="bg_blocked_row">Робота у фоні</string>
-    <string name="bg_blocked_why">Дозволяє режиму сну починатися й завершуватися, поки застосунок закрито. Без цього нічого не станеться, доки ви знову не відкриєте Gloaming</string>
+    <string name="bg_blocked_why">Дозволяє режиму сну починатися й завершуватися, поки застосунок закрито. Без цього нічого не станеться, доки ви знову не відкриєте Gloaming. На деяких телефонах цей перемикач з’являється лише після вибору «Керувати вручну» для Gloaming</string>
+    <string name="missed_alarm_title">Режим сну завершився не вчасно</string>
+    <string name="missed_alarm_row">Дозвольте Gloaming працювати у фоні</string>
+    <string name="missed_alarm_why">Телефон зупинив Gloaming, поки застосунок був закритий, тому режим сну не вимкнувся, доки ви його не відкрили</string>
 
     <!-- ============ Home: the window ============ -->
     <!-- Overlines, uppercased in code. Keep short: they sit above the times. -->

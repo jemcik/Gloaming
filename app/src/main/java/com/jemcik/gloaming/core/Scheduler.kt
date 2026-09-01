@@ -209,6 +209,10 @@ object Scheduler {
 
     private fun setExact(ctx: Context, at: LocalDateTime, action: String, code: Int) {
         val ms = at.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+        // Only END is watched. A missed START is visible - bedtime simply does
+        // not begin - while a missed END leaves the phone silent all morning and
+        // says nothing, which is the failure worth catching.
+        if (action == ACTION_END) AlarmWatch.arming(Prefs(ctx), ms)
         try {
             am(ctx).setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, ms, pending(ctx, action, code))
         } catch (e: SecurityException) {
@@ -234,10 +238,16 @@ object Scheduler {
      * does NOT, since re-asserting on a live rule re-applies its device effects.
      */
     fun rescheduleAll(ctx: Context, p: Prefs, force: Boolean = false) {
+        // BEFORE anything is armed: arming overwrites the due instant, so this is
+        // the last moment the previous one can still be judged.
+        AlarmWatch.check(p)
         cancelAll(ctx)
 
         if (!p.enabled) {
             p.activeDay = Prefs.NO_DAY
+            // Nothing armed, so nothing can be owed - otherwise the END we just
+            // cancelled would come due and read as eaten.
+            AlarmWatch.clear(p)
             ZenController.setActive(ctx, p, false, force)
             logPlan(ctx, p, "off")
             return
@@ -267,6 +277,7 @@ object Scheduler {
             ZenController.setActive(ctx, p, false, force)
             val start = nextStart(p.startTime, p.endTime, p.days, now)
             if (start == null) {
+                AlarmWatch.clear(p)
                 logPlan(ctx, p, "nothing to schedule")
                 return
             }

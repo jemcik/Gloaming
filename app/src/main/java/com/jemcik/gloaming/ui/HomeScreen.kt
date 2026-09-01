@@ -178,6 +178,7 @@ fun Home(
                 PermissionSection(dnd, exact)
                 BootNoticeSection(s)
             BackgroundNoticeSection(s)
+            MissedAlarmSection(s)
                 WindowBlock(s, now, runningNow)
                 DaysSection(s)
                 WakeSection(s, runningNow, onOpenInterruptions)
@@ -297,6 +298,39 @@ private fun BackgroundNoticeSection(s: HomeState) {
                     // The app's own mark, not a clock. An alarm-clock icon here
                     // says "this wakes you up", which is the exact misreading the
                     // wording of this card was rewritten to avoid.
+                    icon = R.drawable.ic_gloaming, tint = IconTint.Blocked
+                ) { haptics.open(); BackgroundLimit.openSettings(ctx) }
+            })
+        }
+    }
+}
+
+/**
+ * The phone ate an alarm. This is the backstop for everything BackgroundLimit
+ * cannot see: measured on an Honor, a merely FROZEN app misses its END entirely
+ * while isBackgroundRestricted still reports false, so a card keyed on the
+ * restriction alone would have stayed silent through the exact failure it exists
+ * for. This one asks a question no vendor can hide the answer to - did our own
+ * alarm arrive? - and so it catches the freezer, the restriction, a process
+ * killer, and whatever ships next.
+ *
+ * Both cards can appear together, and that is correct rather than redundant: one
+ * names a switch to fix, the other reports what already went wrong.
+ */
+@Composable
+private fun MissedAlarmSection(s: HomeState) {
+    val ctx = LocalContext.current
+    val g = gloam
+    val haptics = s.haptics
+    val card = g.raise
+
+    if (s.missedAlarm) {
+        Section(stringResource(R.string.missed_alarm_title), rule = false) {
+            GroupedList(card, listOf {
+                PermissionCard(
+                    stringResource(R.string.missed_alarm_row),
+                    stringResource(R.string.missed_alarm_why),
+                    granted = false,
                     icon = R.drawable.ic_gloaming, tint = IconTint.Blocked
                 ) { haptics.open(); BackgroundLimit.openSettings(ctx) }
             })

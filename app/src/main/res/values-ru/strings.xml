@@ -53,7 +53,10 @@
     <string name="boot_missed_why">Позволяет сну снова включаться после перезагрузки. Без этого ничего не было запланировано, пока вы не открыли приложение</string>
     <string name="bg_blocked_title">Gloaming не разрешено работать в фоне</string>
     <string name="bg_blocked_row">Работа в фоне</string>
-    <string name="bg_blocked_why">Позволяет режиму сна начинаться и заканчиваться, пока приложение закрыто. Без этого ничего не произойдёт, пока вы снова не откроете Gloaming</string>
+    <string name="bg_blocked_why">Позволяет режиму сна начинаться и заканчиваться, пока приложение закрыто. Без этого ничего не произойдёт, пока вы снова не откроете Gloaming. На некоторых телефонах этот переключатель появляется только после выбора «Управлять вручную» для Gloaming</string>
+    <string name="missed_alarm_title">Режим сна закончился не вовремя</string>
+    <string name="missed_alarm_row">Разрешите Gloaming работать в фоне</string>
+    <string name="missed_alarm_why">Телефон остановил Gloaming, пока приложение было закрыто, поэтому режим сна не выключился, пока вы его не открыли</string>
 
     <!-- ============ Home: the window ============ -->
     <!-- Overlines, uppercased in code. Keep short: they sit above the times. -->

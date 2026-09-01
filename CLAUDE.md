@@ -38,7 +38,15 @@ indefinitely is background restriction — see `core/BackgroundLimit.kt`.
                                  INSIDE the window. The day-of-week
                                  selection is the MORNING a window ENDS on, and
                                  Scheduler works backwards to the evening that
-                                 reaches it
+                                 reaches it. `endingAlarm` is the gate the alarm
+                                 passes through - the next alarm, but only where
+                                 the switch lets it act. It is one line and it
+                                 has a name because six callers were writing it
+                                 out and two forgot
+    core/Bedtime.kt              the master switch, as one function. The tile
+                                 has no HomeState to borrow, so `set` and
+                                 `runningNow` live here and both callers share
+                                 them rather than agreeing by coincidence
     core/ZenController.kt        owns the AutomaticZenRule: policy + device
                                  effects, plus reconcile and the orphan sweep
     core/BedtimeReceiver.kt      START / END / BOOT_COMPLETED /
@@ -122,6 +130,22 @@ is in DECISIONS.md.
   reschedule walks back into the night and switches zen on again. `SchedulerTest`
   pins it.
 
+- **The wake handle and "end at your alarm" are ONE state.** On means the wake
+  time EQUALS the alarm: switching on moves the handle there, and setting the
+  handle there switches it on. Two controls for one value is what produced three
+  separate "it is lying" reports - the screen held a wake time of 8:30 and an
+  effective end of 7:30 at once and had to show both somewhere. `commitWake` is
+  deliberately NOT folded into `commit`: the switch commits too, and re-deriving
+  there reads "the handle still equals the alarm" one instant after the user
+  switched it OFF and turns it straight back on.
+- **Every number that describes TONIGHT takes the alarm-shortened end**, and the
+  list is longer than it looks: the wake numeral, the arc, the handle, the
+  countdown, its caption, the sleep-window total, the sentence, the row and the
+  app bar. It reached the phone twice with some of them converted and some not,
+  and a screen answering one question two ways is worse than either answer being
+  wrong. `endsTonight` is derived ONCE in `WindowBlock` for that reason. The wake
+  handle itself still shows the SETTING while it is being dragged, or it freezes
+  under the finger - the alarm has not moved, so the redraw would not follow.
 - A rule carries a **`conditionOverride`** as well as a condition, and it wins.
   AOSP's `setManualZenMode` stamps `OVERRIDE_DEACTIVATE` on every active rule
   whenever zen goes off other than by the user in SystemUI — **a reboot
@@ -282,23 +306,35 @@ compileSdk 37, targetSdk 36, minSdk 35.
 
 ## Tests
 
-`app/src/test/`, 107 cases, no device. They are written as the QUESTION the code
+`app/src/test/`, 140 cases, no device. They are written as the QUESTION the code
 answers rather than as coverage of a method, because none of the bugs were ever
 in a method — they were in an assumption.
 
     SchedulerTest         the scheduling core: midnight wrap, days-as-mornings,
-                          the one-off, the activeDay pin
+                          the one-off, the activeDay pin, and `endAt` - the
+                          alarm ends the night only from INSIDE the window
     SentencesTest         the sentence builders, driven directly
-    WindowSentenceTest    the window in words, per locale, through Home
+    WindowSentenceTest    the window in words, per locale, through Home, plus
+                          the alarm-shortened end, driven through a real
+                          setAlarmClock so it exercises getNextAlarmClock
     PlanNoteTest          the "not in effect" note, through Home
     InterruptionsTest     the allowlist sentence, per locale
     ClockTest             12/24-hour formatting
-    PrefsMigrationTest    the one-shot days migration - the only code here that
-                          can corrupt data silently
+    PrefsMigrationTest    the one-shot days migrations - the only code here
+                          that can corrupt data silently. Two of them now: days
+                          as mornings, and the screen effects that used to
+                          default ON, where an install that predates the change
+                          must keep them
     RowFitTest            does the text fit, in en/ru/uk, by MEASURING -
-                          Home's rows, the allowlist's, and Settings', which
-                          have the least room of the three
-    ScreensTest           interactions, never appearance
+                          Home's rows, the allowlist's, Settings', and the
+                          alarm section's row AND heading. AT HOME'S OWN WIDTH:
+                          a row built bare gets a 360dp card and the real one
+                          is 311, and those 49dp are six characters this test
+                          passed for a fortnight
+    ScreensTest           interactions, never appearance - including the
+                          wake handle and "at your alarm" moving each other,
+                          and the dial following a moved alarm rather than the
+                          handle left behind
     AlarmWatchTest        did our own END arrive, and ON TIME - the case the
                           notice exists for, which it could not report
     BootWatchTest         the withheld-boot detection
@@ -306,10 +342,11 @@ in a method — they were in an assumption.
                           the verdict, and the latch that stops its own retest
                           erasing it
 
-Coverage: **74% of instructions, 59% of branches**. The shape is the point — what
+Coverage: **75% of instructions, 59% of branches**. The shape is the point — what
 is covered is what can be reasoned about without a phone; what is not is what
-talks to the platform (`BedtimeReceiver` 4%, `AmbientControl` 22%, `Journal` 33%,
-`BootWatch` 34%, `ZenController` 71%). That gap is what the journal is for.
+talks to the platform (`BedtimeTile` 0%, `BedtimeReceiver` 1%,
+`AmbientControl` 18%, `Doors` 25%, `Journal` 33%, `ZenController` 71%). That gap
+is what the journal is for.
 
 Three things worth knowing before adding tests:
 
@@ -327,5 +364,9 @@ Three things worth knowing before adding tests:
 
 - `note_unscheduled` is **unreachable**: `nextStart` cannot return null. The
   fallback stays because the signature is nullable; see `SentencesTest`.
+- `BedtimeTile` is at **0%** and stays there for now. It is a `TileService`, so
+  every branch needs a bound `Tile` the framework owns; what it decides -
+  `Bedtime.runningNow` for the icon, `statusLine` for the subtitle - is covered
+  where those live, and the tile itself is three assignments over them.
 - Dynamic colour, Shizuku and a scheduled always-on for Honor are all considered
   and rejected, with reasons, in DECISIONS.md. Read those before proposing them.

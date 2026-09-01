@@ -95,7 +95,7 @@ class BedtimeTile : TileService() {
         tile.subtitle = statusLine(
             this, resources, p.enabled, p.activeDay,
             p.startTime, p.endTime, p.days,
-            alarm = if (p.exitAtAlarm) Scheduler.nextAlarm(this) else null,
+            alarm = Scheduler.endingAlarm(this, p.exitAtAlarm),
             exitAtAlarm = p.exitAtAlarm
         )
         tile.updateTile()

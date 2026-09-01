@@ -393,6 +393,30 @@ class ScreensTest {
     }
 
     @Test
+    fun `an alarm that moved leaves the dial showing tonight, not the handle`() {
+        // The reported bug, and the one state where the wake handle and the
+        // alarm can still differ: the switch is ON, so the handle was equal to
+        // the alarm when it was set, but the alarm has moved since - while the
+        // app was closed, say - and nothing has touched the handle to re-derive
+        // it. Every reading that describes TONIGHT has to follow the alarm, or
+        // the screen answers "when does it end" two ways at once. It did: the
+        // countdown and the numeral said one hour while the app bar and the
+        // alarm row said another.
+        val p = armed()
+        val alarm = LocalTime.now().plusMinutes(30).withSecond(0).withNano(0)
+        p.endTime = LocalTime.now().plusHours(1)
+        p.exitAtAlarm = true
+        setAlarm(alarm)
+        home()
+
+        // The dial uppercases its caption, so match what is drawn.
+        compose.onNodeWithText(
+            ctx().getString(R.string.dial_until, hhmm(ctx(), alarm.hour, alarm.minute))
+                .uppercase()
+        ).assertExists()
+    }
+
+    @Test
     fun `switching it off leaves the wake time where it is`() {
         // Off does not restore anything, and must not: there is nothing to
         // restore to, and inventing a previous wake time would be a schedule

@@ -5,7 +5,6 @@
     <!-- ============ Home: the master card ============ -->
     <string name="bedtime_mode">Bedtime mode</string>
     <string name="bedtime_off">Off</string>
-    <string name="state_on_now">On now</string>
     <!-- BUDGET-EACH 22 state_on_until state_starts_in state_nothing_scheduled
          These are the second line of the app bar's title, under "Bedtime mode".
          Measured on a 359dp screen: the title column runs x147..878, which is

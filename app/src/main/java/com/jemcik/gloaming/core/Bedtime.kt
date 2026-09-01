@@ -36,6 +36,6 @@ object Bedtime {
      * once its night has begun.
      */
     fun runningNow(ctx: Context, p: Prefs): Boolean = Scheduler.isActiveNow(
-        p, alarm = if (p.exitAtAlarm) Scheduler.nextAlarm(ctx) else null
+        p, alarm = Scheduler.endingAlarm(ctx, p.exitAtAlarm)
     )
 }

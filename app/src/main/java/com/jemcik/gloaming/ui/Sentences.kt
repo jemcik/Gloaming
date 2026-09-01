@@ -84,7 +84,7 @@ internal fun windowSentence(
     // AM today" while the app bar and the alarm row both said 7:30 - the same
     // screen answering "when does tonight end" two ways. endAt is the rule
     // itself, so a 2pm alarm outside the window still changes nothing here.
-    val alarm = if (prefs.exitAtAlarm) Scheduler.nextAlarm(ctx) else null
+    val alarm = Scheduler.endingAlarm(ctx, prefs.exitAtAlarm)
     val to = Scheduler.endAt(
         from, from.plus(Scheduler.duration(start, end)), alarm, prefs.exitAtAlarm
     )

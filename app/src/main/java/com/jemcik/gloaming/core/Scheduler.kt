@@ -110,6 +110,19 @@ object Scheduler {
      * is the same thing this reads, so it is not tied to a particular clock app
      * or vendor: measured on Honor's own deskclock and on Samsung's.
      */
+    /**
+     * The next alarm, but only where it is allowed to end the night.
+     *
+     * `if (exitAtAlarm) nextAlarm(ctx) else null` was written out at six call
+     * sites across five files, which is six chances to forget the gate - and
+     * forgetting to pass the alarm at all is exactly the bug that reached the
+     * phone twice, once in the dial and once in the sentence beneath it. One
+     * name for the rule, so a seventh reader asks for it rather than rebuilding
+     * it.
+     */
+    fun endingAlarm(ctx: Context, exitAtAlarm: Boolean): LocalDateTime? =
+        if (exitAtAlarm) nextAlarm(ctx) else null
+
     fun nextAlarm(ctx: Context): LocalDateTime? =
         am(ctx).nextAlarmClock?.triggerTime?.let {
             LocalDateTime.ofInstant(Instant.ofEpochMilli(it), ZoneId.systemDefault())

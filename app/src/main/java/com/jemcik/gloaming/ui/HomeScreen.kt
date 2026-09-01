@@ -445,20 +445,25 @@ private fun WindowBlock(s: HomeState, now: LocalTime, runningNow: Boolean) {
     // the alarm to some of them and not others produced one screen giving
     // two answers to when tonight ends, which is what was reported, twice.
     //
-    // Null when nothing overrides, so the callers below can tell "tonight is
-    // the schedule" from "tonight is shorter" without recomputing it.
-    val endTonight = remember(s.tick, s.start, s.end, s.days, s.endAtAlarm, s.enabled) {
-        val alarm = if (s.endAtAlarm) Scheduler.nextAlarm(ctx) else null
-        if (alarm == null) null else {
-            val dur = Scheduler.duration(s.start, s.end)
-            val scheduled = Scheduler.liveWindowEnd(prefs, s.start, s.end, s.days)
-                ?: Scheduler.nextStart(s.start, s.end, s.days)?.plus(dur)
-            scheduled?.let { end ->
-                Scheduler.endAt(end.minus(dur), end, alarm, exitAtAlarm = true)
-                    .takeIf { it != end }?.toLocalTime()
-            }
+    // Derived ONCE, as an instant, because the readings below need different
+    // things from it - the numeral and the arc want a clock time, the countdown
+    // wants a duration - and computing it twice is how the two halves of the
+    // dial centre came to disagree in the first place.
+    val endsTonight = remember(s.tick, s.start, s.end, s.days, s.endAtAlarm, s.enabled) {
+        val dur = Scheduler.duration(s.start, s.end)
+        val scheduled = Scheduler.liveWindowEnd(prefs, s.start, s.end, s.days)
+            ?: Scheduler.nextStart(s.start, s.end, s.days)?.plus(dur)
+        scheduled?.let {
+            Scheduler.endAt(
+                it.minus(dur), it,
+                Scheduler.endingAlarm(ctx, s.endAtAlarm), s.endAtAlarm
+            )
         }
     }
+
+    // Null when nothing overrides, so the dial can tell "tonight is the
+    // schedule" from "tonight is shorter" without asking again.
+    val endTonight = endsTonight?.toLocalTime()?.takeIf { it != s.end }
 
     // One block: the two times, the crown that spans them, and the
     // dial that edits them. Nothing here is separable from the rest.
@@ -560,17 +565,15 @@ private fun WindowBlock(s: HomeState, now: LocalTime, runningNow: Boolean) {
             val total = span(res, secs / 60L) to res.getString(R.string.dial_sleep_window)
             buildList {
                 if (runningNow) {
-                    // WITH the alarm, and the hour read off the answer rather
-                    // than off the wake handle - both halves had been wrong
-                    // together, so the number and the caption agreed with each
-                    // other and with nothing else on the screen.
-                    val alarm = if (s.endAtAlarm) Scheduler.nextAlarm(ctx) else null
-                    val endsAt = Scheduler.liveWindowEnd(
-                        prefs, s.start, s.end, s.days, alarm = alarm
-                    )
-                    val left = if (endsAt != null)
-                        Duration.between(LocalDateTime.now(), endsAt).toMinutes() else 0L
-                    val endHour = endsAt ?: LocalDateTime.now().with(s.end)
+                    // The same instant the numeral and the arc are drawn from.
+                    // Both halves of this reading had been wrong together - the
+                    // countdown ran to the wake handle and the caption named it
+                    // - so they agreed with each other and with nothing else on
+                    // the screen.
+                    val left = endsTonight
+                        ?.let { Duration.between(LocalDateTime.now(), it).toMinutes() }
+                        ?: 0L
+                    val endHour = endsTonight ?: LocalDateTime.now().with(s.end)
                     add(
                         span(res, left) to
                             res.getString(
@@ -1257,7 +1260,7 @@ private fun HomeBar(
         // the same three things with no Compose around it.
         statusLine(
             ctx, res, s.enabled, prefs.activeDay, s.start, s.end, s.days,
-            alarm = if (s.endAtAlarm) Scheduler.nextAlarm(ctx) else null,
+            alarm = Scheduler.endingAlarm(ctx, s.endAtAlarm),
             exitAtAlarm = s.endAtAlarm
         )
     }

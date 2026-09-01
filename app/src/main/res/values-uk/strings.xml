@@ -4,7 +4,6 @@
     <!-- ============ Home: the master card ============ -->
     <string name="bedtime_mode">Режим сну</string>
     <string name="bedtime_off">Вимкнено</string>
-    <string name="state_on_now">Увімкнено</string>
     <string name="state_on_until">Увімкнено до %1$s</string>
     <string name="state_starts_in">Через %1$s</string>
     <string name="state_nothing_scheduled">Нічого не заплановано</string>

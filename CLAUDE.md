@@ -142,7 +142,9 @@ is in DECISIONS.md.
   auto-launch. `BootWatch` detects the symptom rather than the vendor.
 - Honor's auto-launch and run-in-background states are **unreadable** — absent
   from settings, appops and the package dump, measured either side of a clean
-  toggle. Run-in-background is answered by `BackgroundProbe` instead;
+  toggle. Run-in-background is answered by `BackgroundProbe` instead, whose
+  verdict is LATENESS not arrival, because a parked alarm is still delivered the
+  moment the app is opened;
   auto-launch only by a real reboot, after the fact, in `BootWatch`.
 - minSdk is **35** because `ZenDeviceEffects`, `AutomaticZenRule.Builder` and
   `getAutomaticZenRuleState` are all API 35, and a missing method raises `Error`,
@@ -228,7 +230,7 @@ compileSdk 37, targetSdk 36, minSdk 35.
 
 ## Tests
 
-`app/src/test/`, 99 cases, no device. They are written as the QUESTION the code
+`app/src/test/`, 101 cases, no device. They are written as the QUESTION the code
 answers rather than as coverage of a method, because none of the bugs were ever
 in a method — they were in an assumption.
 
@@ -244,8 +246,9 @@ in a method — they were in an assumption.
     RowFitTest            does the text fit, in en/ru/uk, by MEASURING
     ScreensTest           interactions, never appearance
     BootWatchTest         the withheld-boot detection
-    BackgroundProbeTest   the delivery probe, and the latch that stops its own
-                          retest erasing the verdict
+    BackgroundProbeTest   the delivery probe: lateness rather than arrival is
+                          the verdict, and the latch that stops its own retest
+                          erasing it
 
 Coverage: **74% of instructions, 59% of branches**. The shape is the point — what
 is covered is what can be reasoned about without a phone; what is not is what

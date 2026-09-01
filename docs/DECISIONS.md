@@ -574,6 +574,29 @@ question. It is gated behind `com.hihonor.permission.sec.MDM_APP_MANAGEMENT`,
 requires the app to be an active device admin, and is issued under a commercial
 enterprise contract. Correct, documented, and out of reach for a consumer app.
 
+**A parked alarm is still DELIVERED, so arrival cannot be the test.** The first
+version of the probe scored a blocked phone as healthy, and only the device
+caught it. With `RUN_ANY_IN_BACKGROUND` at `ignore` the probe sat in *"Pending
+user blocked background alarms"* with `origWhen=15:17:09` — exactly the symptom
+being hunted — and then arrived at 15:21:14, **244 s late**, released by the app
+being opened. `handled()` recorded a pass. The signal had been written down as
+its own opposite, which is the same shape as the report this work began with: an
+END due at 08:55 that landed at 09:07 the moment the app was foregrounded.
+So the verdict is LATENESS, never arrival. That also closes a race which made
+the answer depend on scheduling: opening the app both releases the parked alarm
+and runs `check()`, and whichever ran first decided the result — when delivery
+won, `probeSeen == probeDue` and `check()` returned early, latching nothing.
+Judging by lateness makes both orders agree. Re-measured on the fixed build:
+parked, then `background probe arrived (258s) - TOO LATE, phone is holding us`,
+`probeFailed=true`, and the card on screen.
+
+**Where the appop is readable, the probe card stands down.** Setting the appop
+makes `isBackgroundRestricted()` true, so `BackgroundNoticeSection` fires too and
+the screen carried two cards making the same accusation. The readable one wins:
+it names a setting that actually exists and clears itself the instant that
+setting changes, where the probe has to be re-run before it will believe a fix.
+Read it if you can; measure it only when you cannot.
+
 So run-in-background is answered by experiment instead: `BackgroundProbe` arms
 one throwaway exact alarm eleven minutes out and shows nothing. Arriving is the
 whole answer — the background path works on this phone, permanently. Never

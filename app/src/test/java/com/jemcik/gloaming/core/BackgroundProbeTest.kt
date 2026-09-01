@@ -127,6 +127,30 @@ class BackgroundProbeTest {
     }
 
     @Test
+    fun `a reboot voids the probe rather than blaming the phone for it`() {
+        // Found by rebooting a Galaxy four minutes before a probe was due. The
+        // reboot cancels every alarm, so ours was not eaten - it stopped
+        // existing. Scoring that as a failure accuses the phone on the very
+        // boot that just proved delivery works.
+        val p = prefs()
+        BackgroundProbe.arming(p, t0)
+        BackgroundProbe.voidPending(p)
+        BackgroundProbe.check(p, t0 + 60 * 60_000)
+        assertFalse("a cancelled alarm is not evidence", BackgroundProbe.blocked(p))
+        assertTrue("and the question must be asked again", BackgroundProbe.needsArming(p))
+    }
+
+    @Test
+    fun `a reboot does not throw away an answer already earned`() {
+        val p = prefs()
+        BackgroundProbe.arming(p, t0)
+        BackgroundProbe.handled(p, t0 + 500)
+        BackgroundProbe.voidPending(p)
+        assertTrue("the pass was earned before the reboot", BackgroundProbe.answered(p))
+        assertFalse(BackgroundProbe.needsArming(p))
+    }
+
+    @Test
     fun `the verdict survives the retest that overwrites its evidence`() {
         // The one that matters. `blocked` cannot be computed from probeDue,
         // because arming the next probe REPLACES the instant that proves the

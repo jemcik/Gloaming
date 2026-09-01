@@ -60,6 +60,11 @@ class BedtimeReceiver : BroadcastReceiver() {
                 // one edited from Settings. Boot and upgrade force a push.
                 p.ruleSignature = null
                 force = true
+                // Before anything reads it: the reboot cancelled the probe's
+                // alarm, so the outstanding question has no answer coming and
+                // must not be scored as one. Void it, then ask again.
+                BackgroundProbe.voidPending(p)
+                Scheduler.armProbe(ctx, p)
             }
             Scheduler.ACTION_PROBE -> {
                 // Nothing to do but notice. Arriving at all is the whole answer.

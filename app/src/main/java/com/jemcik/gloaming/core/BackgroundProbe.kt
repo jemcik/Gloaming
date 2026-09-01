@@ -70,6 +70,26 @@ object BackgroundProbe {
         if (now > due + TOLERANCE_MS) p.probeFailed = true
     }
 
+    /**
+     * A reboot or an upgrade cancelled every alarm on the phone, ours included.
+     *
+     * Any probe still in flight was not EATEN, it stopped existing - so counting
+     * it as a failure blames the phone for something the platform did, and does
+     * it at the worst possible moment, on the boot that just proved delivery
+     * works. Seen on a Galaxy S23 whose reboot happened to land four minutes
+     * before a probe was due: the alarm was gone from the queue, nothing
+     * re-armed it, and the verdict would have been "this phone is holding us".
+     *
+     * So the outstanding question is voided rather than answered, and asked
+     * again from scratch. An ANSWERED probe is left alone - that verdict was
+     * earned before the reboot and is still true.
+     */
+    fun voidPending(p: Prefs) {
+        if (p.probeDue != Prefs.NO_DUE && p.probeSeen != p.probeDue) {
+            p.probeDue = Prefs.NO_DUE
+        }
+    }
+
     /** Nothing has been asked yet, so ask. */
     fun needsArming(p: Prefs): Boolean = p.probeDue == Prefs.NO_DUE
 

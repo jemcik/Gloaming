@@ -80,6 +80,14 @@ doing it, or on any vendor doing it at all.
   with no alarms behind it. Gloaming compares the boot it handled against the
   boot it is running on, says so when one goes unreported, and offers a button
   to the screen that fixes it.
+- **It watches its own alarms.** Vendor interference is the failure this app was
+  built around, so it checks rather than assumes. One throwaway alarm, eleven
+  minutes after install, asks whether this phone delivers alarms in the
+  background at all — silent unless the answer is no. Every window's END is
+  watched too, and if it comes due and does not arrive on time you are told, with
+  a button to the setting that usually explains it. The verdict is **lateness,
+  not arrival**: a blocked alarm is not dropped but held, and released the moment
+  you open the app, which is exactly what a naive check scores as success.
 - **Two themes that were measured rather than picked.** Dusk and Dawn are
   stated in Material 3's own tone scale, and checked against what Google's apps
   actually ship on a phone rather than against the documentation — the two
@@ -118,15 +126,22 @@ into working:
   can grant from a normal settings screen, so the control is offered rather than
   hidden.
 
-Run on three phones so far, and they disagree about almost everything:
+Run on three phones so far. This table is what each **platform** does on its
+own, before the app compensates — not what Gloaming does on it:
 
 | | Honor BKQ-N49<br>MagicOS 10 | OnePlus CPH2653<br>LineageOS 23 | Galaxy S23<br>One UI 8 |
 |---|---|---|---|
-| exact alarms, closed app | yes | yes | yes |
+| exact alarms reach a closed app | yes | yes | yes |
 | `BOOT_COMPLETED` delivered | only if auto-launch is on | yes | yes |
-| DND survives a reboot mid-window | yes | **no** — needs the fix below | yes |
-| screen effects applied | yes | yes | **none of them** |
-| always-on suppressed by the platform | no — vendor route instead | yes | no — vendor route instead |
+| DND survives a reboot mid-window | yes | **no** — the rule comes back deactivated | yes |
+| the zen rule's screen effects applied | yes | yes | **none of them** |
+| always-on display suppressed on request | no | yes | no |
+
+Gloaming repairs the middle row, so bedtime does survive a restart on all three.
+It works around the second and the last — a notice for the withheld broadcast, a
+vendor route for the display. The fourth it cannot repair, and rather than leave
+switches that quietly do nothing, it hides them there and offers the phone's own
+bedtime screen instead.
 
 None of that is looked up in a device list. Each row is a question the app asks
 at runtime, and the answers shape what it draws: a switch that cannot move is
@@ -252,8 +267,10 @@ None of these ask which phone you have.
 
 They cover the scheduling core (pure functions of times, days and an injected
 `now`), the sentence assembly in all three languages, the screen interactions,
-the boot detection, and the one-shot preferences migration — the only code here
-that could corrupt data without saying anything. Some of them measure real text
+the boot detection, the two delivery watches — including the case that matters
+most, an alarm that arrives only because the app was opened — and the one-shot
+preferences migration, the only code here that could corrupt data without saying
+anything. Some of them measure real text
 layout at each locale's own widths, because a row that fits in English and wraps
 in Ukrainian is a bug you cannot see from the source.
 

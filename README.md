@@ -118,15 +118,22 @@ into working:
   can grant from a normal settings screen, so the control is offered rather than
   hidden.
 
-Run on three phones so far, and they disagree about almost everything:
+Run on three phones so far. This table is what each **platform** does on its
+own, before the app compensates — not what Gloaming does on it:
 
 | | Honor BKQ-N49<br>MagicOS 10 | OnePlus CPH2653<br>LineageOS 23 | Galaxy S23<br>One UI 8 |
 |---|---|---|---|
-| exact alarms, closed app | yes | yes | yes |
+| exact alarms reach a closed app | yes | yes | yes |
 | `BOOT_COMPLETED` delivered | only if auto-launch is on | yes | yes |
-| DND survives a reboot mid-window | yes | **no** — needs the fix below | yes |
-| screen effects applied | yes | yes | **none of them** |
-| always-on suppressed by the platform | no — vendor route instead | yes | no — vendor route instead |
+| DND survives a reboot mid-window | yes | **no** — the rule comes back deactivated | yes |
+| the zen rule's screen effects applied | yes | yes | **none of them** |
+| always-on display suppressed on request | no | yes | no |
+
+Gloaming repairs the middle row, so bedtime does survive a restart on all three.
+It works around the second and the last — a notice for the withheld broadcast, a
+vendor route for the display. The fourth it cannot repair, and rather than leave
+switches that quietly do nothing, it hides them there and offers the phone's own
+bedtime screen instead.
 
 None of that is looked up in a device list. Each row is a question the app asks
 at runtime, and the answers shape what it draws: a switch that cannot move is

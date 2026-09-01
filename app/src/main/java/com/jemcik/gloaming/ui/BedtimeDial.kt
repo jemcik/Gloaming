@@ -22,6 +22,9 @@ import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -91,6 +94,17 @@ private fun angularDistance(a: Float, b: Float): Float {
 fun BedtimeDial(
     start: LocalTime,
     end: LocalTime,
+    /**
+     * Where the night will ACTUALLY end tonight, when an alarm is cutting it
+     * short; null when nothing overrides [end].
+     *
+     * The dial draws this and edits [end]. They are the same value almost
+     * always, and when they are not it is because "at your alarm" is on with an
+     * alarm inside the window - in which case the arc, the handle and the
+     * numeral above all have to show the shorter night, or the screen contains
+     * a window that is not going to happen. Reported exactly that way.
+     */
+    endTonight: LocalTime? = null,
     now: LocalTime,
     running: Boolean,
     // The track is a container like the cards, and it sits on the same page, so
@@ -106,12 +120,16 @@ fun BedtimeDial(
     onCentreCycle: ((Int) -> Unit)? = null,
     onStartChange: (LocalTime) -> Unit,
     onEndChange: (LocalTime) -> Unit,
-    onDragFinished: () -> Unit
+    /** True when it was the WAKE handle that moved - see HomeState.commitWake. */
+    onDragFinished: (endMoved: Boolean) -> Unit
 ) {
     val g = gloam
     val haptics = rememberHaptics()
     val curStart by rememberUpdatedState(start)
     val curEnd by rememberUpdatedState(end)
+    // The wake handle is grabbed where it is DRAWN. Mirrored for the same
+    // reason curEnd is: pointerInput(Unit) freezes whatever it captures.
+    val curDrawnEnd by rememberUpdatedState(endTonight ?: end)
     // pointerInput(Unit) runs its block once and keeps it, so a lambda captured
     // there is frozen at the first composition - the callback closes over the
     // index it was built with and every tap repeats the same transition.
@@ -125,7 +143,15 @@ fun BedtimeDial(
         label = "arcAlpha"
     )
 
-    val windowSecs = ((end.toSecondOfDay() - start.toSecondOfDay() + DAY) % DAY)
+    // Which handle is under the finger: 0 none, 1 bedtime, 2 wake. Hoisted out
+    // of the gesture block, where it was a plain local, because the DRAWING
+    // needs it: while the wake handle is being dragged it must follow the
+    // finger, and the finger is setting `end`. Let go and it returns to showing
+    // what tonight will really do.
+    var target by remember { mutableIntStateOf(0) }
+
+    val drawnEnd = if (target == 2) end else endTonight ?: end
+    val windowSecs = ((drawnEnd.toSecondOfDay() - start.toSecondOfDay() + DAY) % DAY)
 
     Box(modifier.size(260.dp), contentAlignment = Alignment.Center) {
         Canvas(
@@ -187,7 +213,6 @@ fun BedtimeDial(
                         return LocalTime.ofSecondOfDay(snapped.toLong())
                     }
 
-                    var target = 0
                     var last: LocalTime? = null
 
                     detectDragGestures(
@@ -196,8 +221,11 @@ fun BedtimeDial(
                             // grab only near the ring, never in the centre well
                             target = if (d < R_WELL_TOUCH * k) 0 else {
                                 val a = angleAt(pos)
+                                // curDrawnEnd, not curEnd: the wake handle is
+                                // grabbed where it is drawn, which is the alarm
+                                // while one is overriding.
                                 if (angularDistance(a, curStart.faceDegrees()) <=
-                                    angularDistance(a, curEnd.faceDegrees())
+                                    angularDistance(a, curDrawnEnd.faceDegrees())
                                 ) 1 else 2
                             }
                             if (target != 0) haptics.grab()
@@ -218,7 +246,7 @@ fun BedtimeDial(
                             change.consume()
                         },
                         onDragEnd = {
-                            if (target != 0) { haptics.release(); onDragFinished() }
+                            if (target != 0) { haptics.release(); onDragFinished(target == 2) }
                             target = 0; last = null
                         },
                         onDragCancel = { target = 0; last = null }
@@ -334,7 +362,7 @@ fun BedtimeDial(
             // handles - 31dp circle with a surface-coloured ring so they sit above the arc
             val hr = (HANDLE / 2f) * k
             drawHandle(at(startDeg, rTrack), hr, HANDLE_RING * k, Arc.night, g.surface, moon = true)
-            drawHandle(at(end.faceDegrees(), rTrack), hr, HANDLE_RING * k, Arc.dawn, g.surface, moon = false)
+            drawHandle(at(drawnEnd.faceDegrees(), rTrack), hr, HANDLE_RING * k, Arc.dawn, g.surface, moon = false)
         }
 
         // No hit area on the readout itself - the gesture lives on the canvas

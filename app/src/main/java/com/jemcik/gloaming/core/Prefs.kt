@@ -9,6 +9,12 @@ class Prefs(ctx: Context) {
     private val sp = ctx.getSharedPreferences("gloaming", Context.MODE_PRIVATE)
 
     init {
+        // Read BEFORE anything below writes, which is what makes it usable: the
+        // days migration puts a key in on every first construction, fresh
+        // install included, so after this line "empty" is no longer available as
+        // a signal. Empty means the app has never run here.
+        val fresh = sp.all.isEmpty()
+
         // `days` used to mean the evening a window started on; it now means the
         // morning it ends on. Without this, an existing overnight schedule
         // would quietly shift by a day on upgrade.
@@ -21,6 +27,35 @@ class Prefs(ctx: Context) {
                 }
             }
             sp.edit { putBoolean("daysAreMornings", true) }
+        }
+
+        // Grayscale and wallpaper dim used to be ON out of the box. They are the
+        // two effects a person notices the instant bedtime starts, and turning
+        // the screen grey is not something to do to someone who has just
+        // installed an app and switched it on to see what it does. Off now, like
+        // the other two, so the first night is quiet and every visible change is
+        // one they asked for.
+        //
+        // Changing a read-through default changes it RETROACTIVELY - the value
+        // is only ever in the code, so an install that never touched these rows
+        // would have lost grayscale overnight with nothing to say why. So the
+        // old defaults are written down for anyone who was already here, and
+        // only a genuinely new install gets the new ones. `fresh` is the whole
+        // distinction; the keys being absent is not, because they are absent in
+        // both cases.
+        // Latched, exactly like the days migration above, and for a sharper
+        // reason: `fresh` is only true on the FIRST construction, because that
+        // construction is what stops the store being empty. Keyed on freshness
+        // alone, the second Prefs of a new install would see a non-empty store
+        // with the keys absent, read that as an upgrade, and write the old
+        // defaults straight back in. Caught by its own test rather than by a
+        // phone, which is the only reason it is not in the release.
+        if (!sp.getBoolean("fxDefaultsOff", false)) {
+            if (!fresh) {
+                if (!sp.contains("fxGrayscale")) sp.edit { putBoolean("fxGrayscale", true) }
+                if (!sp.contains("fxDimWallpaper")) sp.edit { putBoolean("fxDimWallpaper", true) }
+            }
+            sp.edit { putBoolean("fxDefaultsOff", true) }
         }
     }
 
@@ -136,6 +171,19 @@ class Prefs(ctx: Context) {
         set(v) = sp.edit { putBoolean("effectsSeen", v) }
 
     /**
+     * Let the morning alarm end the window early.
+     *
+     * AOSP's own schedule rules carry exactly this, as `exitAtAlarm` in the
+     * condition URI, and Settings shows it as "Alarm can override end time";
+     * Google's Bedtime mode calls it "Turn off Bedtime mode at next alarm". Off
+     * by default, as it is there - silently moving when bedtime ends is not
+     * something to spring on someone.
+     */
+    var exitAtAlarm: Boolean
+        get() = sp.getBoolean("exitAtAlarm", false)
+        set(v) = sp.edit { putBoolean("exitAtAlarm", v) }
+
+    /**
      * The one-time launch-setup tip has been answered, either way.
      *
      * Not a verdict and not a measurement - just "we have offered this once".
@@ -205,11 +253,11 @@ class Prefs(ctx: Context) {
         set(v) = sp.edit { putBoolean("fxDnd", v) }
 
     var fxGrayscale: Boolean
-        get() = sp.getBoolean("fxGrayscale", true)
+        get() = sp.getBoolean("fxGrayscale", false)
         set(v) = sp.edit { putBoolean("fxGrayscale", v) }
 
     var fxDimWallpaper: Boolean
-        get() = sp.getBoolean("fxDimWallpaper", true)
+        get() = sp.getBoolean("fxDimWallpaper", false)
         set(v) = sp.edit { putBoolean("fxDimWallpaper", v) }
 
     var fxDarkTheme: Boolean

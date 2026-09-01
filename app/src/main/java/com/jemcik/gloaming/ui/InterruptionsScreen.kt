@@ -140,7 +140,7 @@ fun InterruptionsScreen(onBack: () -> Unit, onChanged: () -> Unit) {
         prefs.allowRepeatCallers = repeatCallers
         prefs.allowReminders = reminders; prefs.allowEvents = events
         prefs.allowMedia = media
-        if (Bedtime.runningNow(prefs)) dirty = true else onChanged()
+        if (Bedtime.runningNow(ctx, prefs)) dirty = true else onChanged()
     }
 
     val wake: LocalTime = prefs.endTime

@@ -71,13 +71,23 @@ internal fun windowSentence(
     // begins immediately, because liveWindowEnd treats a one-off as running the
     // moment the switch is on. The sentence would have promised tomorrow and
     // the app would have started that second.
+    // Deliberately asked WITHOUT the alarm, because this answer is only used to
+    // find where the window BEGAN - and an alarm-shortened end minus the full
+    // duration is not a start time, it is nonsense an hour before the real one.
     val endsAt = Scheduler.liveWindowEnd(
         enabled = true, activeDay = prefs.activeDay,
         start = start, end = end, days = days, from = now
     )
     val from = (endsAt?.minus(Scheduler.duration(start, end))
         ?: Scheduler.nextStart(start, end, days, now)) ?: return null
-    val to = from.plus(Scheduler.duration(start, end))
+    // The alarm belongs on the OTHER end. Without it this sentence said "to 8:30
+    // AM today" while the app bar and the alarm row both said 7:30 - the same
+    // screen answering "when does tonight end" two ways. endAt is the rule
+    // itself, so a 2pm alarm outside the window still changes nothing here.
+    val alarm = Scheduler.endingAlarm(ctx, prefs.exitAtAlarm)
+    val to = Scheduler.endAt(
+        from, from.plus(Scheduler.duration(start, end)), alarm, prefs.exitAtAlarm
+    )
 
     fun day(at: LocalDateTime): String = dayWord(ctx, at, now, DaySlot.SPAN)
     // One day word when both ends fall on it. "From 2:40 AM tomorrow to 8:40 AM
@@ -204,10 +214,16 @@ fun statusLine(
     start: LocalTime,
     end: LocalTime,
     days: Set<DayOfWeek>,
-    now: LocalDateTime = LocalDateTime.now()
+    now: LocalDateTime = LocalDateTime.now(),
+    alarm: LocalDateTime? = null,
+    exitAtAlarm: Boolean = false
 ): String {
     if (!enabled) return res.getString(R.string.bedtime_off)
-    val ends = Scheduler.liveWindowEnd(enabled, activeDay, start, end, days, now)
+    // The end the alarm actually produces, so the bar and the rule agree - and
+    // so flipping the switch changes the headline reading, not just a subtitle.
+    val ends = Scheduler.liveWindowEnd(
+        enabled, activeDay, start, end, days, now, alarm, exitAtAlarm
+    )
     if (ends != null) {
         return res.getString(R.string.state_on_until, hhmm(ctx, ends.hour, ends.minute))
     }

@@ -2,6 +2,7 @@ package com.jemcik.gloaming.core
 
 import android.content.BroadcastReceiver
 import android.content.Context
+import android.app.AlarmManager
 import android.content.Intent
 import com.jemcik.gloaming.ui.BedtimeTile
 
@@ -41,6 +42,13 @@ class BedtimeReceiver : BroadcastReceiver() {
                     Journal.write(ctx, "one-off finished - switching off")
                 }
                 ZenController.setActive(ctx, p, false, force = true)
+            }
+            AlarmManager.ACTION_NEXT_ALARM_CLOCK_CHANGED -> {
+                // Only interesting when the alarm is allowed to end the night.
+                // Re-deriving costs a reschedule; doing it for everyone would
+                // rewrite the rule every time any clock app is touched.
+                if (!p.exitAtAlarm) return
+                Journal.write(ctx, "next alarm changed - re-deriving the end")
             }
             Intent.ACTION_BOOT_COMPLETED,
             Intent.ACTION_MY_PACKAGE_REPLACED -> {

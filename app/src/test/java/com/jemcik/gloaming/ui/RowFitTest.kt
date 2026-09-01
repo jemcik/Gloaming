@@ -1,6 +1,12 @@
 package com.jemcik.gloaming.ui
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.Modifier
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material3.Icon
+import androidx.compose.material3.FilledIconButton
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasClickAction
@@ -75,6 +81,10 @@ class RowFitTest {
         val titles = listOf(
             R.string.dnd_title, R.string.what_is_allowed,
             R.string.fx_grayscale, R.string.fx_dim, R.string.fx_dark, R.string.fx_ambient
+            // "At your alarm" is NOT here, and deliberately: its section draws
+            // only when the phone has a next alarm, and Robolectric has none, so
+            // listing it would skip silently and read as coverage it is not.
+            // Measured directly instead - see the ends-section test below.
         ).map { ctx.getString(it) }
 
         compose.setContent {
@@ -184,4 +194,81 @@ class RowFitTest {
 
     @Test
     fun `allowlist fits in Ukrainian`() = allowlistFitsIn("uk")
+
+    /**
+     * The one row of the ends section, held to a STRICTER rule than [threeLine].
+     *
+     * Everything else here may spend a second line on a long Cyrillic name,
+     * because a wrapped HEADLINE still leaves the switch centred. This row may
+     * not: its subtitle names two times inside a sentence, which is the shape
+     * most likely to wrap, and a wrapped subtitle is exactly what makes an item
+     * three-line and lifts the switch off its own row's centre.
+     *
+     * It cannot be reached through Home - the section draws only when
+     * `getNextAlarmClock` returns an alarm, and Robolectric has none, so
+     * `EndsSection` correctly draws nothing. So it is built here as EndsSection
+     * builds it.
+     *
+     * WITH HOME'S SIDE PADDING, which is the whole difficulty and was missing.
+     * A row built bare on a 360dp screen gets a 360dp card; on Home it gets 311,
+     * because the page insets 24dp either side. That is 49dp the real row does
+     * not have - about six characters - so this test passed a subtitle that
+     * wrapped on the phone the moment it was looked at. A measurement taken at
+     * the wrong width is not a measurement.
+     */
+    private fun endsSectionFitsIn(locale: String) {
+        RuntimeEnvironment.setQualifiers("+$locale-w360dp-h800dp")
+        val ctx = ApplicationProvider.getApplicationContext<android.content.Context>()
+        // The row shows the hour and nothing else now, so the thing that can
+        // still wrap is the HEADING, which carries the whole purpose and is the
+        // longest string in the section in ru and uk.
+        val headline = "12:30 AM"
+
+        val heading = ctx.getString(R.string.section_end_at_alarm)
+
+        compose.setContent {
+            GloamingTheme(dark = false) {
+                Box(Modifier.padding(horizontal = 24.dp)) {
+                Section(heading) {
+                GroupedList(gloam.raise, listOf {
+                    SwitchRow(
+                        headline = headline,
+                        checked = false,
+                        leading = { RowIcon(R.drawable.ic_alarm, IconTint.Alarm) }
+                    ) {}
+                })
+                }
+                }
+            }
+        }
+
+        // The HEADING is the long string here now - it carries the whole purpose
+        // of the section, and in ru and uk that is thirty characters. It is
+        // labelSmall across the full card, so it wraps rather than truncates,
+        // which is untidy rather than broken - but a two-line heading over a
+        // one-line row reads as a paragraph, not a label.
+        val head = compose.onNode(hasText(heading.uppercase(), substring = true))
+            .getUnclippedBoundsInRoot()
+        val hh = (head.bottom - head.top).value
+        assertTrue("in '$locale' the heading wrapped: ${hh}dp", hh < 24f)
+
+        val b = compose.onNode(hasText(headline, substring = true))
+            .getUnclippedBoundsInRoot()
+        val h = (b.bottom - b.top).value
+        assertTrue(
+            "in '$locale' the ends row is ${h}dp: its subtitle wrapped, and M3 " +
+                "then top-aligns the switch instead of centring it on the row",
+            h < twoLineCeiling.value
+        )
+    }
+
+    /**
+     * A two-line M3 list item is 72dp. One extra wrapped line takes it to 88,
+     * measured on the phone, so 80 separates them with room for rounding.
+     */
+    private val twoLineCeiling = 80.dp
+
+    @Test fun `ends section fits in English`() = endsSectionFitsIn("en")
+    @Test fun `ends section fits in Russian`() = endsSectionFitsIn("ru")
+    @Test fun `ends section fits in Ukrainian`() = endsSectionFitsIn("uk")
 }

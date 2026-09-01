@@ -220,4 +220,110 @@ class SchedulerTest {
             Scheduler.isActiveNow(true, pinnedToFriday, bedtime, wake, emptySet(), at(sat, 9))
         )
     }
+
+    // ---------- ending at the morning alarm ----------
+    //
+    // AOSP's semantics, copied not invented: ScheduleCalendar.shouldExitForAlarm
+    // exits early ONLY when the alarm falls inside the window. Every case below
+    // is one of the awkward questions that condition answers for free.
+
+    private val alarmBed = LocalTime.of(22, 30)
+    private val alarmWake = LocalTime.of(8, 55)
+    private val everyNight = DayOfWeek.entries.toSet()
+
+    /** The window that begins on Friday 2026-08-28 at 22:30 and ends 08:55. */
+    private fun began() = LocalDateTime.of(2026, 8, 28, 22, 30)
+    private fun scheduledEnd() = LocalDateTime.of(2026, 8, 29, 8, 55)
+
+    @Test
+    fun `an alarm inside the window brings the end forward to it`() {
+        val alarm = LocalDateTime.of(2026, 8, 29, 7, 30)
+        assertEquals(
+            alarm,
+            Scheduler.endAt(began(), scheduledEnd(), alarm, exitAtAlarm = true)
+        )
+    }
+
+    @Test
+    fun `an alarm after the window ends is not allowed to extend it`() {
+        // 2pm tomorrow. Without the inside-the-window condition this would be
+        // an absurd end, and it is exactly why no arbitrary cap is needed.
+        val alarm = LocalDateTime.of(2026, 8, 29, 14, 0)
+        assertEquals(
+            scheduledEnd(),
+            Scheduler.endAt(began(), scheduledEnd(), alarm, exitAtAlarm = true)
+        )
+    }
+
+    @Test
+    fun `an alarm before bedtime starts is not this night's alarm`() {
+        val alarm = LocalDateTime.of(2026, 8, 28, 7, 30)
+        assertEquals(
+            scheduledEnd(),
+            Scheduler.endAt(began(), scheduledEnd(), alarm, exitAtAlarm = true)
+        )
+    }
+
+    @Test
+    fun `no alarm leaves the configured end alone`() {
+        assertEquals(
+            scheduledEnd(),
+            Scheduler.endAt(began(), scheduledEnd(), null, exitAtAlarm = true)
+        )
+    }
+
+    @Test
+    fun `switched off, an alarm inside the window changes nothing`() {
+        val alarm = LocalDateTime.of(2026, 8, 29, 7, 30)
+        assertEquals(
+            scheduledEnd(),
+            Scheduler.endAt(began(), scheduledEnd(), alarm, exitAtAlarm = false)
+        )
+    }
+
+    @Test
+    fun `after the alarm the night is OVER, not merely un-alarmed`() {
+        // The trap this feature nearly shipped with. Shortening only the END
+        // alarm would leave the WINDOW still containing `now`, so the next
+        // reschedule would walk straight back into the night and switch zen on
+        // again. The window itself has to end.
+        val alarm = LocalDateTime.of(2026, 8, 29, 7, 30)
+        val justAfter = LocalDateTime.of(2026, 8, 29, 7, 31)
+        assertNull(
+            "07:31 is past the alarm, so no window is running",
+            Scheduler.liveWindowEnd(
+                enabled = true, activeDay = LocalDate.of(2026, 8, 28).toEpochDay(),
+                start = alarmBed, end = alarmWake, days = everyNight, from = justAfter,
+                alarm = alarm, exitAtAlarm = true
+            )
+        )
+    }
+
+    @Test
+    fun `before the alarm the night is still running, and ends at the alarm`() {
+        val alarm = LocalDateTime.of(2026, 8, 29, 7, 30)
+        val justBefore = LocalDateTime.of(2026, 8, 29, 7, 29)
+        assertEquals(
+            alarm,
+            Scheduler.liveWindowEnd(
+                enabled = true, activeDay = LocalDate.of(2026, 8, 28).toEpochDay(),
+                start = alarmBed, end = alarmWake, days = everyNight, from = justBefore,
+                alarm = alarm, exitAtAlarm = true
+            )
+        )
+    }
+
+    @Test
+    fun `with the setting off the same night runs to its configured end`() {
+        val alarm = LocalDateTime.of(2026, 8, 29, 7, 30)
+        val justAfter = LocalDateTime.of(2026, 8, 29, 7, 31)
+        assertEquals(
+            scheduledEnd(),
+            Scheduler.liveWindowEnd(
+                enabled = true, activeDay = LocalDate.of(2026, 8, 28).toEpochDay(),
+                start = alarmBed, end = alarmWake, days = everyNight, from = justAfter,
+                alarm = alarm, exitAtAlarm = false
+            )
+        )
+    }
 }

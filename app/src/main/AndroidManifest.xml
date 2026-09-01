@@ -81,6 +81,9 @@
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <!-- The morning alarm may move, and the end of the night moves
+                     with it when "end at the next alarm" is on. -->
+                <action android:name="android.app.action.NEXT_ALARM_CLOCK_CHANGED" />
             </intent-filter>
         </receiver>
         <!-- The master switch in the shade. It is the same control as the app

@@ -735,6 +735,30 @@ confirming on real hardware.
 
 ## Gotchas that cost real time
 
+- **Lowering a read-through default lowers it RETROACTIVELY.** Every setting in
+  `Prefs` is `sp.getBoolean(key, default)`, so the default lives only in the
+  code and applies to every install that never wrote the key. Changing
+  `fxGrayscale` and `fxDimWallpaper` from `true` to `false` on 2 Sep 2026 —
+  "all screen looks must be off by default", and correct: they are the two
+  effects a person sees the instant bedtime starts, and the first night should
+  not change the screen in a way nobody asked for — would therefore have taken
+  grayscale away from everyone already running it, overnight, with nothing on
+  screen to say why. So the old values are written down once for anyone who was
+  already here, and only a genuinely new install gets the new defaults.
+  The distinction is NOT "are the keys absent" — they are absent in both cases.
+  It is whether the store was empty before this construction, captured as
+  `val fresh = sp.all.isEmpty()` on the first line of `init`, ahead of the days
+  migration, which writes a key on every first construction and so destroys the
+  signal.
+  And `fresh` is not by itself a one-shot, which is the part that actually bit:
+  it is true only on the FIRST construction, because that construction is what
+  stops the store being empty. The second `Prefs` of a brand-new install then
+  saw a non-empty store with the keys absent, read that as an upgrade, and wrote
+  the old defaults straight back in — the change undoing itself on the second
+  screen. It needs its own latch (`fxDefaultsOff`) exactly as `daysAreMornings`
+  does. Caught by `PrefsMigrationTest`, not by a phone: on the device the keys
+  were already written either way, so every manual check passed.
+
 - **`pm clear` strands a live zen rule, and the screen stays grey.** Clearing
   the app's data wipes prefs but leaves the `AutomaticZenRule` registered with
   the system, enabled, and still carrying `deviceEffects=[grayscale,

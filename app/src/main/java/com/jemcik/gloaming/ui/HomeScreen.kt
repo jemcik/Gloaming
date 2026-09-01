@@ -29,7 +29,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.*
@@ -46,6 +45,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.painterResource
@@ -182,7 +182,8 @@ fun Home(
             MissedAlarmSection(s)
         LaunchTipSection(s)
                 WindowBlock(s, now, runningNow)
-                DaysSection(s)
+                EndsSection(s)
+        DaysSection(s)
                 WakeSection(s, runningNow, onOpenInterruptions)
                 ScreenEffectsSection(s, runningNow)
             }
@@ -436,6 +437,34 @@ private fun WindowBlock(s: HomeState, now: LocalTime, runningNow: Boolean) {
     val ground = g.surface
     val locale = LocalLocale.current.platformLocale
 
+    // WHAT TONIGHT ACTUALLY ENDS AT, which is not always the wake handle.
+    //
+    // With "at your alarm" on and an alarm inside the window, the night ends
+    // at the alarm, and every reading on this screen has to say so - the
+    // numeral, the arc, the handle, the countdown, the sentence. Shipping
+    // the alarm to some of them and not others produced one screen giving
+    // two answers to when tonight ends, which is what was reported, twice.
+    //
+    // Derived ONCE, as an instant, because the readings below need different
+    // things from it - the numeral and the arc want a clock time, the countdown
+    // wants a duration - and computing it twice is how the two halves of the
+    // dial centre came to disagree in the first place.
+    val endsTonight = remember(s.tick, s.start, s.end, s.days, s.endAtAlarm, s.enabled) {
+        val dur = Scheduler.duration(s.start, s.end)
+        val scheduled = Scheduler.liveWindowEnd(prefs, s.start, s.end, s.days)
+            ?: Scheduler.nextStart(s.start, s.end, s.days)?.plus(dur)
+        scheduled?.let {
+            Scheduler.endAt(
+                it.minus(dur), it,
+                Scheduler.endingAlarm(ctx, s.endAtAlarm), s.endAtAlarm
+            )
+        }
+    }
+
+    // Null when nothing overrides, so the dial can tell "tonight is the
+    // schedule" from "tonight is shorter" without asking again.
+    val endTonight = endsTonight?.toLocalTime()?.takeIf { it != s.end }
+
     // One block: the two times, the crown that spans them, and the
     // dial that edits them. Nothing here is separable from the rest.
     Column(
@@ -514,7 +543,10 @@ private fun WindowBlock(s: HomeState, now: LocalTime, runningNow: Boolean) {
                         PhaseGlyph(moon = false, tint = Arc.dawn, ground = ground)
                     }
                     Spacer(Modifier.height(4.dp))
-                    WindowTime(ctx, s.end, color = g.onSurfaceMid)
+                    // Tonight's end, not the setting behind it. "I see 8:30 in
+                    // the top right, how can this be correct" - it could not:
+                    // every other reading on the screen said 7:30.
+                    WindowTime(ctx, endTonight ?: s.end, color = g.onSurfaceMid)
 
                 }
             }
@@ -523,17 +555,31 @@ private fun WindowBlock(s: HomeState, now: LocalTime, runningNow: Boolean) {
         // Everything the centre could truthfully say right now, most useful
         // first. Tapping it walks the list; states with only one true thing
         // to say are not tappable and show no dots.
-        val readings = remember(s.tick, s.enabled, runningNow, s.start, s.end, s.days) {
-            val secs = ((s.end.toSecondOfDay() - s.start.toSecondOfDay() + 86400) % 86400)
+        val readings = remember(s.tick, s.enabled, runningNow, s.start, s.end, s.days, s.endAtAlarm) {
+            // endTonight here too. This is the "sleep window" reading, and it
+            // read 13h 30m - the full schedule - while the numeral above it read
+            // the alarm's 7:30. Every number that describes tonight takes the
+            // same end; the list of them is longer than it looks.
+            val shownEnd = endTonight ?: s.end
+            val secs = ((shownEnd.toSecondOfDay() - s.start.toSecondOfDay() + 86400) % 86400)
             val total = span(res, secs / 60L) to res.getString(R.string.dial_sleep_window)
             buildList {
                 if (runningNow) {
-                    val endsAt = Scheduler.liveWindowEnd(prefs, s.start, s.end, s.days)
-                    val left = if (endsAt != null)
-                        Duration.between(LocalDateTime.now(), endsAt).toMinutes() else 0L
+                    // The same instant the numeral and the arc are drawn from.
+                    // Both halves of this reading had been wrong together - the
+                    // countdown ran to the wake handle and the caption named it
+                    // - so they agreed with each other and with nothing else on
+                    // the screen.
+                    val left = endsTonight
+                        ?.let { Duration.between(LocalDateTime.now(), it).toMinutes() }
+                        ?: 0L
+                    val endHour = endsTonight ?: LocalDateTime.now().with(s.end)
                     add(
                         span(res, left) to
-                            res.getString(R.string.dial_until, hhmm(ctx, s.end.hour, s.end.minute))
+                            res.getString(
+                                R.string.dial_until,
+                                hhmm(ctx, endHour.hour, endHour.minute)
+                            )
                     )
                     add(total)
                 } else {
@@ -572,7 +618,7 @@ private fun WindowBlock(s: HomeState, now: LocalTime, runningNow: Boolean) {
                     placeable.place(0, -trim)
                 }
             },
-            start = s.start, end = s.end, now = now,
+            start = s.start, end = s.end, endTonight = endTonight, now = now,
             running = runningNow,
             track = card, enabled = s.enabled,
             centreValue = readings[centreIndex].first,
@@ -585,7 +631,7 @@ private fun WindowBlock(s: HomeState, now: LocalTime, runningNow: Boolean) {
             },
             onStartChange = { s.start = it },
             onEndChange = { s.end = it },
-            onDragFinished = { s.commit() }
+            onDragFinished = { endMoved -> if (endMoved) s.commitWake() else s.commit() }
         )
 
         // The window in words, under the dial. The dial says this
@@ -600,6 +646,72 @@ private fun WindowBlock(s: HomeState, now: LocalTime, runningNow: Boolean) {
                 textAlign = TextAlign.Center
             )
         }
+    }
+}
+
+/**
+ * Whether the morning alarm may end the night early.
+ *
+ * AOSP's own schedule rules carry this as `exitAtAlarm` and Settings calls it
+ * "Alarm can override end time"; Google's Bedtime mode calls it "Turn off at
+ * next alarm". Both apply it only when the alarm falls INSIDE the window, and
+ * so does this - see [Scheduler.endAt].
+ *
+ * THE SECTION ONLY EXISTS WHEN AN ALARM DOES. With none set there is nothing
+ * for the night to end at, so a heading called "when it ends" has no subject and
+ * the switch under it no object; what it drew instead was the wake time, which
+ * the dial, the countdown, the span sentence and the app bar are all already
+ * showing, phrased - "No alarm; ends 8:30 AM" - as though something were wrong.
+ * Reported from the phone as an inconsistent state, and it was.
+ *
+ * That the switch is a STANDING preference is true and does not save it:
+ * `BedtimeReceiver` returns early on NEXT_ALARM_CLOCK_CHANGED unless it is set,
+ * so leaving it on really does arm the app for an alarm that appears later. But
+ * it costs nothing to leave on, changes nothing while no alarm exists, and the
+ * section comes back by itself the moment one does - through that same
+ * broadcast. So there is nothing to reach it FOR in the meantime, and the same
+ * rule the screen-effects section already follows applies: a control that cannot
+ * act is worse than an absent one.
+ *
+ * The subtitle names the fallback hour rather than describing the rule in the
+ * abstract, and appears only while the switch is ON, because the sentence it
+ * carries is a claim about tonight.
+ */
+@Composable
+private fun EndsSection(s: HomeState) {
+    val ctx = LocalContext.current
+    val card = gloam.raise
+    val res = LocalResources.current
+
+    val alarm = remember(s.tick) { Scheduler.nextAlarm(ctx) }
+    // No alarm, no section: nothing for the night to end AT, so a heading called
+    // "when it ends" has no subject and the switch under it no object.
+    val alarmAt = alarm?.let { hhmm(ctx, it.hour, it.minute) } ?: return
+
+    // The HEADING carries the purpose - "end bedtime at your alarm" - because a
+    // heading that only categorises left the section looking like a stray switch
+    // beside a time. "When it ends" was worse than vague, it was wrong: with the
+    // switch off the night ends at the wake handle, not the alarm, so the
+    // heading asked a question the section answered incorrectly half the time.
+    Section(stringResource(R.string.section_end_at_alarm)) {
+        GroupedList(card, listOf {
+            SwitchRow(
+                // With the purpose in the heading, the row is the hour and
+                // nothing else - anything more repeated the line above it.
+                headline = alarmAt,
+                // Which leaves TalkBack with "7:30 AM, switch, off" and no idea
+                // what it switches: a heading is not read as part of the row.
+                // So the row SPEAKS the whole sentence even though it shows one
+                // hour. If state is visible it must be in the semantics, and
+                // this is the same rule from the other side.
+                modifier = Modifier.semantics {
+                    contentDescription =
+                        res.getString(R.string.row_end_at_alarm, alarmAt)
+                },
+                checked = s.endAtAlarm,
+                leading = { RowIcon(R.drawable.ic_alarm, IconTint.Alarm) }
+            ) { s.followAlarm(it) }
+        })
     }
 }
 
@@ -1081,8 +1193,10 @@ private fun TimePickerDialog(s: HomeState) {
                     onClick = {
                         haptics.confirm()
                         val t = LocalTime.of(state.hour, state.minute)
-                        if (s.picking == "start") s.start = t else s.end = t
-                        s.picking = null; s.commit()
+                        val wake = s.picking != "start"
+                        if (wake) s.end = t else s.start = t
+                        s.picking = null
+                        if (wake) s.commitWake() else s.commit()
                     },
                     shape = CircleShape
                 ) { Text(stringResource(R.string.action_set)) }
@@ -1144,7 +1258,11 @@ private fun HomeBar(
     val status = remember(s.tick, s.enabled, runningNow, s.start, s.end, s.days) {
         // Said in Sentences, because the Quick Settings tile has to say exactly
         // the same three things with no Compose around it.
-        statusLine(ctx, res, s.enabled, prefs.activeDay, s.start, s.end, s.days)
+        statusLine(
+            ctx, res, s.enabled, prefs.activeDay, s.start, s.end, s.days,
+            alarm = Scheduler.endingAlarm(ctx, s.endAtAlarm),
+            exitAtAlarm = s.endAtAlarm
+        )
     }
 
     TopAppBar(

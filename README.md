@@ -13,7 +13,7 @@ it — driven by exact alarms, so it fires with the app closed.
 [![Android](https://img.shields.io/badge/Android-15%2B%20(API%2035)-3DDC84)](#requirements)
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.3.21-7F52FF)](https://kotlinlang.org)
 [![Compose](https://img.shields.io/badge/Jetpack%20Compose-Material%203-4285F4)](https://developer.android.com/jetpack/compose)
-[![Tests](https://img.shields.io/badge/tests-115-success)](#tests)
+[![Tests](https://img.shields.io/badge/tests-140-success)](#tests)
 
 <img src="docs/screenshots/home.png" width="19%" alt="Home, mid-window">
 <img src="docs/screenshots/home-dark.png" width="19%" alt="Home, dark, mid-window">
@@ -64,6 +64,19 @@ doing it, or on any vendor doing it at all.
   twelve hours; Apple's Sleep ring makes the same choice. Days are chosen as the
   **mornings** you want the window to end on, so asking for the weekend means
   Saturday and Sunday, not Friday night.
+- **End bedtime at your alarm.** AOSP's own schedules carry this rule as
+  `exitAtAlarm` and Android Settings calls it "Alarm can override end time"; both
+  apply it only when the alarm falls *inside* the window, and so does this — a
+  2 pm alarm is a real alarm and would not be a wake-up. The switch and the wake
+  handle are **one setting seen twice**: turning it on moves your wake time to
+  the alarm, and dragging the wake time onto the alarm turns it on. Two controls
+  for one value is how a screen ends up showing a wake time of 8:30 and a
+  countdown to 7:30 at the same moment. Where no alarm is set at all the section
+  is not drawn, because there is nothing for the night to end at.
+- **A Quick Settings tile**, with the same three states as the switch in the app:
+  off, a tick while armed, the moon while a window is actually running. Armed is
+  not running, and a tile that collapsed the two would be lying for most of the
+  evening. Long-press opens the app.
 - **Do Not Disturb**, with a per-night allowlist — who can call, who can
   message, conversations, repeat callers, reminders, calendar events, media. The
   screen reports what the system says is actually in effect, rather than what the
@@ -262,17 +275,20 @@ None of these ask which phone you have.
 
 ## Tests
 
-    ./gradlew test        115 tests, JVM only, seconds
+    ./gradlew test        140 tests, JVM only, seconds
     ./gradlew coverage    JaCoCo HTML at app/build/reports/jacoco/coverage
 
 They cover the scheduling core (pure functions of times, days and an injected
 `now`), the sentence assembly in all three languages, the screen interactions,
 the boot detection, the two delivery watches — including the case that matters
 most, an alarm that arrives only because the app was opened — and the one-shot
-preferences migration, the only code here that could corrupt data without saying
-anything. Some of them measure real text
+preferences migrations, the only code here that could corrupt data without saying
+anything. The alarm that ends a window early is driven through a real
+`setAlarmClock`, so the tests exercise the same `getNextAlarmClock` the app reads
+rather than a stub of it. Some of them measure real text
 layout at each locale's own widths, because a row that fits in English and wraps
-in Ukrainian is a bug you cannot see from the source.
+in Ukrainian is a bug you cannot see from the source — at the width the row
+actually has on the screen, which is not the width of the screen.
 
 What they cannot cover is everything that depends on the device: whether an
 exact alarm fires with the screen off, whether greyscale is really applied,

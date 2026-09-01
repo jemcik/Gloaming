@@ -5,7 +5,6 @@
     <!-- ============ Home: the master card ============ -->
     <string name="bedtime_mode">Bedtime mode</string>
     <string name="bedtime_off">Off</string>
-    <string name="state_on_now">On now</string>
     <!-- BUDGET-EACH 22 state_on_until state_starts_in state_nothing_scheduled
          These are the second line of the app bar's title, under "Bedtime mode".
          Measured on a 359dp screen: the title column runs x147..878, which is
@@ -125,6 +124,8 @@
 
     <!-- ============ Home: which days ============ -->
     <string name="section_which_days">which days</string>
+    <string name="section_end_at_alarm">end bedtime at your alarm</string>
+    <string name="row_end_at_alarm">End bedtime at your alarm, %1$s</string>
     <!-- A row's supporting line must not WRAP. Past one line the row becomes a
          three-line ListItem, and M3 then top-aligns the trailing content, so the
          switch stops being level with its own row. Reported as exactly that.

@@ -75,6 +75,9 @@ class HomeState(
     var fxDark by mutableStateOf(prefs.fxDarkTheme)
     var fxAmbient by mutableStateOf(prefs.fxHideAmbient)
 
+    /** Whether the morning alarm may end the night early. */
+    var endAtAlarm by mutableStateOf(prefs.exitAtAlarm)
+
     var missedBoot by mutableStateOf(BootWatch.missed(prefs))
         private set
 
@@ -165,6 +168,7 @@ class HomeState(
         prefs.fxDnd = fxDnd; prefs.fxGrayscale = fxGray
         prefs.fxDimWallpaper = fxDim; prefs.fxDarkTheme = fxDark
         prefs.fxHideAmbient = fxAmbient
+        prefs.exitAtAlarm = endAtAlarm
     }
 
     fun commit() {
@@ -201,6 +205,40 @@ class HomeState(
     }
 
     /**
+     * The wake handle and "at your alarm" are ONE state, in two directions.
+     *
+     * Turning it on sets the wake time to the alarm; setting the wake time to
+     * the alarm turns it on, and moving it away turns it off. So the dial and
+     * the switch cannot disagree, which is what all the trouble was: the screen
+     * held a wake time of 8:30 and an effective end of 7:30 at the same moment
+     * and had to show both somewhere.
+     *
+     * [followAlarm] is the switch's whole action. Unguarded on purpose - an
+     * alarm at 2pm really would make the night nineteen hours, and the row says
+     * which two times it is choosing between before the tap, so it is a visible
+     * choice rather than a surprise, and one tap back undoes it.
+     */
+    fun followAlarm(on: Boolean) {
+        haptics.toggle(on)
+        endAtAlarm = on
+        if (on) Scheduler.nextAlarm(ctx)?.let { end = it.toLocalTime() }
+        commit()
+    }
+
+    /**
+     * The other direction: a wake time that lands on the alarm IS following it.
+     *
+     * Separate from [commit] rather than folded into it, because the switch
+     * commits too - and re-deriving there would read "the wake time still equals
+     * the alarm" one instant after the user switched it OFF, and turn it back on.
+     */
+    fun commitWake() {
+        val alarm = Scheduler.nextAlarm(ctx)?.toLocalTime()
+        endAtAlarm = alarm != null && end == alarm
+        commit()
+    }
+
+    /**
      * Re-read everything on ON_RESUME.
      *
      * The rule can be deleted or switched off from the phone's own Do Not
@@ -214,6 +252,7 @@ class HomeState(
         fxDnd = prefs.fxDnd; fxGray = prefs.fxGrayscale
         fxDim = prefs.fxDimWallpaper; fxDark = prefs.fxDarkTheme
         fxAmbient = prefs.fxHideAmbient
+        endAtAlarm = prefs.exitAtAlarm
         // Re-asked here so the notice clears itself the moment a boot is
         // handled properly - the only confirmation available, since the
         // vendor's own setting cannot be read.

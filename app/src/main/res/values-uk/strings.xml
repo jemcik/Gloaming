@@ -4,7 +4,6 @@
     <!-- ============ Home: the master card ============ -->
     <string name="bedtime_mode">Режим сну</string>
     <string name="bedtime_off">Вимкнено</string>
-    <string name="state_on_now">Увімкнено</string>
     <string name="state_on_until">Увімкнено до %1$s</string>
     <string name="state_starts_in">Через %1$s</string>
     <string name="state_nothing_scheduled">Нічого не заплановано</string>
@@ -80,6 +79,8 @@
 
     <!-- ============ Home: which days ============ -->
     <string name="section_which_days">в які дні</string>
+    <string name="section_end_at_alarm">завершувати сон за будильником</string>
+    <string name="row_end_at_alarm">Завершувати сон за будильником, о %1$s</string>
     <!-- BUDGET: these four share one row, 311dp wide, and at 14sp English fills
          it with 17dp of slack between chips. Longer than ~11 characters each and
          the row overflows - see the day-row note in CLAUDE.md. -->

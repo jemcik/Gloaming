@@ -35,5 +35,7 @@ object Bedtime {
      * carries two icons. See [Scheduler.isActiveNow]: a window is running only
      * once its night has begun.
      */
-    fun runningNow(p: Prefs): Boolean = Scheduler.isActiveNow(p)
+    fun runningNow(ctx: Context, p: Prefs): Boolean = Scheduler.isActiveNow(
+        p, alarm = Scheduler.endingAlarm(ctx, p.exitAtAlarm)
+    )
 }

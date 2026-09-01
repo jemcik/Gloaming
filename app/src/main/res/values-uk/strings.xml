@@ -198,5 +198,5 @@
     <string name="settings_language_why">Відкриває налаштування</string>
     <string name="section_about">про застосунок</string>
     <string name="settings_version">Версія %1$s</string>
-    <string name="settings_about_body">Gloaming планує режим «Не турбувати» та ефекти екрана на один період щоночі, використовуючи точні будильники, щоб спрацьовувати, навіть коли застосунок закрито.</string>
+    <string name="settings_about_body">Gloaming вмикає «Не турбувати» й ефекти екрана на час сну та вимикає їх уранці. Працює із закритим застосунком.</string>
 </resources>

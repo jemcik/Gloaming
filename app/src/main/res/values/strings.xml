@@ -289,5 +289,5 @@
     <string name="settings_language_why">Opens system settings</string>
     <string name="section_about">about</string>
     <string name="settings_version">Version %1$s</string>
-    <string name="settings_about_body">Gloaming schedules Do Not Disturb and the screen effects for one window a night, using exact alarms so it fires with the app closed.</string>
+    <string name="settings_about_body">Gloaming turns on Do Not Disturb and the screen effects for the hours you sleep, and switches them off again in the morning. It works with the app closed.</string>
 </resources>

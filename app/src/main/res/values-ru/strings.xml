@@ -198,5 +198,5 @@
     <string name="settings_language_why">Открывает настройки</string>
     <string name="section_about">о приложении</string>
     <string name="settings_version">Версия %1$s</string>
-    <string name="settings_about_body">Gloaming включает режим «Не беспокоить» и эффекты экрана на одно окно за ночь, используя точные будильники, чтобы срабатывать, даже когда приложение закрыто.</string>
+    <string name="settings_about_body">Gloaming включает «Не беспокоить» и эффекты экрана на время сна и выключает их утром. Работает с закрытым приложением.</string>
 </resources>

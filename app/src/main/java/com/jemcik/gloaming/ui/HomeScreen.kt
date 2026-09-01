@@ -29,7 +29,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.*
@@ -671,24 +670,50 @@ private fun EndsSection(s: HomeState) {
                     ActionRow(
                         headline = stringResource(R.string.row_move_wake),
                         supporting = res.getString(R.string.row_move_wake_sub, alarmAt, wake),
-                        leading = { RowIcon(R.drawable.ic_bedtime, IconTint.Dark) },
+                        // The dial's own sun, in the dial's own dawn colour:
+                        // this row is about the WAKE end of the window, and a
+                        // crescent there said the opposite of what it means.
+                        leading = {
+                            PhaseGlyph(
+                                moon = false, tint = Arc.dawn,
+                                ground = card, box = 24.dp
+                            )
+                        },
                         trailing = {
-                            // The same shape the time picker's dismiss wears: a
-                            // bare TextButton gives the words no container to
-                            // aim at, which is the complaint that put outlines
-                            // on the dialog's buttons in the first place.
-                            OutlinedButton(
+                            // A tick in an outline, not the word "Move". The
+                            // outline is the time picker's - a bare button gives
+                            // the words no container to aim at, which is what
+                            // put outlines on the dialog's buttons. But the word
+                            // itself cost a third of the row: "Перенести" is
+                            // nine characters, and the supporting line that
+                            // names both times is what had to give way for it.
+                            // M3's icon-only button is the same container at a
+                            // fixed 40dp, so the sentence keeps its width in
+                            // every language.
+                            //
+                            // Icon-only means the LABEL becomes the description,
+                            // and it has to stand alone: focus lands on the
+                            // button by itself, so "Move" would be announced
+                            // with nothing to say what moves. The headline says
+                            // it in full and is already translated.
+                            OutlinedIconButton(
                                 onClick = {
                                     haptics.confirm()
                                     s.end = alarm.toLocalTime()
                                     s.commit()
                                 },
                                 shape = CircleShape,
-                                colors = ButtonDefaults.outlinedButtonColors(
+                                colors = IconButtonDefaults.outlinedIconButtonColors(
                                     contentColor = gloam.stateOn
                                 ),
                                 border = BorderStroke(1.dp, gloam.outline)
-                            ) { Text(stringResource(R.string.action_move_wake)) }
+                            ) {
+                                Icon(
+                                    painterResource(R.drawable.ic_check),
+                                    contentDescription =
+                                        stringResource(R.string.row_move_wake)
+                                )
+                            }
                         }
                     )
                 }

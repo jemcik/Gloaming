@@ -1,6 +1,9 @@
 package com.jemcik.gloaming.ui
 
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedIconButton
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasClickAction
@@ -188,4 +191,71 @@ class RowFitTest {
 
     @Test
     fun `allowlist fits in Ukrainian`() = allowlistFitsIn("uk")
+
+    /**
+     * The "move wake up" row, held to a STRICTER rule than [threeLine].
+     *
+     * Everything else here may spend a second line on a long Cyrillic name,
+     * because a wrapped HEADLINE still leaves the switch centred. This row may
+     * not, and the reason is the trailing control: an icon button is 48dp of
+     * circle, and next to three lines of text M3 lifts it to the top, where it
+     * reads as belonging to the first line rather than the row. Reported from
+     * the phone, in those words - "it looks unbalanced and ugly".
+     *
+     * It cannot be reached through Home: the row appears only when
+     * `getNextAlarmClock` returns an alarm past the window's end, and under
+     * Robolectric there is no alarm, so `EndsSection` correctly draws nothing.
+     * So the row is built here as `EndsSection` builds it - same composable,
+     * same card, same 360dp screen - and it is the COLUMN WIDTH that the
+     * measurement is really about, which that reproduces exactly.
+     */
+    private fun moveRowFitsIn(locale: String) {
+        RuntimeEnvironment.setQualifiers("+$locale-w360dp-h800dp")
+        val ctx = ApplicationProvider.getApplicationContext<android.content.Context>()
+        val headline = ctx.getString(R.string.row_move_wake)
+        // The widest times this row can name. 12-hour is what makes them long,
+        // and both are the same length, so this is the worst case in any locale.
+        val sub = ctx.getString(R.string.row_move_wake_sub, "12:30 AM", "12:30 AM")
+
+        compose.setContent {
+            GloamingTheme(dark = false) {
+                GroupedList(gloam.raise, listOf {
+                    ActionRow(
+                        headline = headline,
+                        supporting = sub,
+                        leading = {
+                            PhaseGlyph(
+                                moon = false, tint = Arc.dawn,
+                                ground = gloam.raise, box = 24.dp
+                            )
+                        },
+                        trailing = {
+                            OutlinedIconButton(onClick = {}) {
+                                Icon(painterResource(R.drawable.ic_check), null)
+                            }
+                        }
+                    )
+                })
+            }
+        }
+
+        val b = compose.onNode(hasText(headline, substring = true))
+            .getUnclippedBoundsInRoot()
+        val h = (b.bottom - b.top).value
+        assertTrue(
+            "in '$locale' the move row is ${h}dp: something wrapped, and M3 then " +
+                "top-aligns the tick instead of centring it on the row",
+            h < twoLineCeiling.value
+        )
+    }
+
+    /**
+     * A two-line M3 list item is 72dp. One extra wrapped line takes it to 88,
+     * measured on the phone, so 80 separates them with room for rounding.
+     */
+    private val twoLineCeiling = 80.dp
+
+    @Test fun `move row fits in English`() = moveRowFitsIn("en")
+    @Test fun `move row fits in Russian`() = moveRowFitsIn("ru")
+    @Test fun `move row fits in Ukrainian`() = moveRowFitsIn("uk")
 }

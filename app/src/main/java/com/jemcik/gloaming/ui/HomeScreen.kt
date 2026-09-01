@@ -683,9 +683,8 @@ private fun EndsSection(s: HomeState) {
     // No alarm, no section: nothing for the night to end AT, so a heading called
     // "when it ends" has no subject and the switch under it no object.
     val alarmAt = alarm?.let { hhmm(ctx, it.hour, it.minute) } ?: return
-    val wake = hhmm(ctx, s.end.hour, s.end.minute)
 
-    Section(stringResource(R.string.section_when_it_ends)) {
+    Section(stringResource(R.string.section_your_alarm)) {
         GroupedList(card, listOf {
             SwitchRow(
                 // The alarm's hour lives in the HEADLINE, which is what stops
@@ -694,21 +693,6 @@ private fun EndsSection(s: HomeState) {
                 // subtitle broke onto a third line, top-aligning the switch.
                 // One time per line, and neither has to wrap.
                 headline = res.getString(R.string.row_end_at_alarm, alarmAt),
-                // What the tap would DO, and only while it would do something.
-                //
-                // This is the old second row, folded in. That row existed because
-                // the switch could be on and still change nothing, so it offered a
-                // separate "move wake up" button to fix the mismatch by hand - a
-                // whole extra row, icon and button to repair a state the switch
-                // should never have been able to reach. Now the switch IS the
-                // move, so the sentence it needed is just this one's subtitle.
-                //
-                // Silent when it is on, because then the wake time already equals
-                // the alarm and the dial above is showing it; naming it again
-                // would be the fifth place on this screen saying one hour.
-                supporting = if (!s.endAtAlarm && alarm.toLocalTime() != s.end)
-                    res.getString(R.string.row_end_at_alarm_instead, wake)
-                else null,
                 checked = s.endAtAlarm,
                 leading = { RowIcon(R.drawable.ic_alarm, IconTint.Alarm) }
             ) { s.followAlarm(it) }

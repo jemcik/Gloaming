@@ -219,11 +219,10 @@ class RowFitTest {
     private fun endsSectionFitsIn(locale: String) {
         RuntimeEnvironment.setQualifiers("+$locale-w360dp-h800dp")
         val ctx = ApplicationProvider.getApplicationContext<android.content.Context>()
-        // The widest time a 12-hour locale can produce, on BOTH lines - the
-        // headline names the alarm and the subtitle the wake time, so each has
-        // to hold one of these on its own.
+        // The widest time a 12-hour locale can produce. One line now: the wake
+        // time left with the subtitle, which was repeating the dial directly
+        // above it.
         val headline = ctx.getString(R.string.row_end_at_alarm, "12:30 AM")
-        val sub = ctx.getString(R.string.row_end_at_alarm_instead, "12:30 AM")
 
         compose.setContent {
             GloamingTheme(dark = false) {
@@ -231,7 +230,6 @@ class RowFitTest {
                 GroupedList(gloam.raise, listOf {
                     SwitchRow(
                         headline = headline,
-                        supporting = sub,
                         checked = false,
                         leading = { RowIcon(R.drawable.ic_alarm, IconTint.Alarm) }
                     ) {}

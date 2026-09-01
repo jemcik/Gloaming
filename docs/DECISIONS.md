@@ -228,6 +228,58 @@ nothing even holding `WRITE_SECURE_SETTINGS` (which an app CAN be granted over
 adb, tested): the service reads those keys at init and on `ACTION_SETTING_RESTORED`
 only, with no `ContentObserver` on them, so a raw write is never noticed.
 
+**A reboot mid-window silently lost Do Not Disturb, 1 Sep 2026 — and the third
+piece of zen state nobody knew about.** Reported from the phone: enable a
+schedule, let the window run, restart, and bedtime reads "on" with DND off.
+Reproduced on a OnePlus/LineageOS first try. NOT vendor-specific.
+
+A rule carries a `conditionOverride` as well as a condition, and the override
+wins. AOSP's `setManualZenMode` stamps `OVERRIDE_DEACTIVATE` on every active
+rule whenever zen goes off other than by the user in SystemUI — and a reboot
+qualifies. That leaves the rule in a state this project had no vocabulary for:
+
+| reading | says |
+|---|---|
+| the zen config | `state=STATE_TRUE` |
+| `getAutomaticZenRuleState` | `STATE_FALSE` — the override winning |
+| `currentInterruptionFilter` | `ALL` — nothing is being filtered |
+| this app | "running", `activeDay` pinned, alarms armed |
+
+Every indicator the app owns said running while the phone filtered nothing, and
+`reconcile` on resume could not repair it because it lands on the same code.
+
+Two attempts failed before the right one, both worth keeping because each looked
+obviously correct:
+
+- **`force = true` alone does nothing.** Re-asserting `STATE_TRUE` on a rule
+  whose condition is already `STATE_TRUE` is not a transition, so the platform
+  has nothing to act on. Measured on the stuck rule itself.
+- **Keying the repair on `ruleState == want` never fires.** The API reports the
+  EFFECTIVE state and the config stores the CONDITION; under an override they
+  disagree by construction. The first fix tested the wrong one of the two and
+  ran zero times.
+
+What works, from `ZenRule.reconsiderConditionOverride` in AOSP: an
+`OVERRIDE_DEACTIVATE` is dropped only when the condition goes **FALSE**. So push
+`STATE_FALSE` to clear the override, then `STATE_TRUE` to activate for real —
+and trigger that on the INTERRUPTION FILTER, the only reading that says what the
+phone is actually doing. Guarded so it happens solely in the stuck case, because
+a needless off/on is the visible blink the rest of `ZenController` avoids.
+
+Also fixed alongside: `force` now threads through `Scheduler.rescheduleAll`, so
+boot and upgrade re-assert. CLAUDE.md already claimed "force = true exists for
+alarms and boot"; boot reaches `setActive` only via `rescheduleAll`, which never
+passed it, so that half had never been true.
+
+Verified end to end: reboot mid-window, app never opened, zen comes back on with
+`conditionOverride` reset to `OVERRIDE_NONE` and END re-armed. Before the fix the
+same sequence left zen at 0 permanently.
+
+One method note. The first reading of `conditionOverride` was taken by grepping
+all of `dumpsys notification`, which includes the `Zen Log:` history — the trap
+this file already documents. It happened to agree with the live config, but it
+was luck; cut at `Zen Log:` before believing any of it.
+
 **Ambient suppression is ignored on the Honor — and establishing that took
 three witnesses that turned out to measure nothing.** The old claim in
 `AmbientCapability`, "there is no way to observe this the way night mode can be

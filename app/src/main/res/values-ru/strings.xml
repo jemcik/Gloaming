@@ -80,11 +80,9 @@
 
     <!-- ============ Home: which days ============ -->
     <string name="section_which_days">в какие дни</string>
-    <string name="section_when_it_ends">когда он заканчивается</string>
+    <string name="section_when_it_ends">когда заканчивается</string>
     <string name="row_end_at_alarm">По будильнику</string>
-    <string name="row_end_at_alarm_at">Закончится в %1$s</string>
-    <string name="row_end_at_alarm_after">Будильник в %1$s — позже</string>
-    <string name="row_end_at_alarm_instead">%1$s, а не %2$s</string>
+    <string name="row_end_at_alarm_instead">%1$s, а не в %2$s</string>
     <!-- BUDGET: these four share one row, 311dp wide, and at 14sp English fills
          it with 17dp of slack between chips. Longer than ~11 characters each and
          the row overflows - see the day-row note in CLAUDE.md. -->

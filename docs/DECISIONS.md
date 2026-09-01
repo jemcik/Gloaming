@@ -574,6 +574,32 @@ question. It is gated behind `com.hihonor.permission.sec.MDM_APP_MANAGEMENT`,
 requires the app to be an active device admin, and is issued under a commercial
 enterprise contract. Correct, documented, and out of reach for a consumer app.
 
+**Samsung's always-on display IS reachable, and the namespace is why.** Found
+by the technique that cracked Honor's AOD: diff every Settings namespace across
+a toggle of the vendor's own feature - here One UI's Sleep mode, Galaxy S23 /
+One UI 8, 1 Sep 2026. Greyscale changed NO key at all, which is what proves it
+is applied inside system_server through `ColorDisplayManager` and is not
+reachable. But every AOD key on that phone lives in **`Settings.System`**, not
+`Settings.Secure` - and that is the whole difference, because `Settings.System`
+is guarded by WRITE_SETTINGS, which the USER can grant on an ordinary settings
+screen. `aod_mode` is the one that decides, proved end to end: written 1 the
+phone reports `aod_show_state=1` while dozing, written 0 it reports 0. Then
+through the app itself, with the permission granted the normal way:
+`ambient off (was aod_mode=1)` at the start of a window and
+`ambient restored (aod_mode=1)` at the end.
+So `AmbientControl` now carries two routes - Honor's four keys in Secure behind
+an adb-only grant, Samsung's one key in System behind a user-grantable one - and
+`needsGrant` is true only where the grant is actually askable, so no phone is
+ever offered a button that cannot work.
+
+**The other three effects were each chased to a dead end, and each verdict is a
+measurement:** grayscale has no settings key (the diff above) and
+`ColorDisplayManager` is signature; wallpaper dim needs
+`WallpaperManager.setWallpaperDimAmount`, which is `@hide` and does not compile;
+dark theme via `UiModeManager.setNightMode` compiles, throws nothing, and
+changes nothing - a silent no-op without MODIFY_DAY_NIGHT_MODE, verified by
+reading `cmd uimode night` either side. Do not re-derive these.
+
 **One UI 8 stores `ZenDeviceEffects` and applies NONE of them.** Measured on a
 Galaxy S23, One UI 8 / Android 16, 1 Sep 2026. The rule reads `state=STATE_TRUE`
 with `deviceEffects=[grayscale, dimWallpaper, nightMode]`, `zen_mode` is 1 and

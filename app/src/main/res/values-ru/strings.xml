@@ -111,6 +111,7 @@
     <string name="fx_dim_sub">Обои темнеют</string>
     <string name="fx_dark_sub">При разблокировке</string>
     <string name="fx_ambient_sub">Экран не светится</string>
+    <string name="fx_ambient_grant">Требуется разрешение на изменение системных настроек. Нажмите, чтобы разрешить</string>
 
     <!-- ============ Home: end-bedtime dialog ============ -->
     <string name="action_set">Задать</string>

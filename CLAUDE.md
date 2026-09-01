@@ -58,8 +58,10 @@ indefinitely is background restriction — see `core/BackgroundLimit.kt`.
                                  isBackgroundRestricted. Off, the phone parks
                                  our alarms until the app is next opened
     core/Interruptions.kt        the allowlist as a sentence
-    core/AmbientControl.kt       the vendor's own always-on keys, behind an
-                                 adb-only permission; inert and hidden without it
+    core/AmbientControl.kt       the vendor's own always-on keys. TWO routes:
+                                 Honor's in Settings.Secure behind an adb-only
+                                 grant, Samsung's in Settings.System behind
+                                 WRITE_SETTINGS, which the user can grant
     core/AmbientCapability.kt    can this phone hide its always-on display
     core/Clock.kt                clock times in the phone's own 12/24 format
     core/Prefs.kt                SharedPreferences, plus one migration
@@ -146,6 +148,10 @@ is in DECISIONS.md.
   against a published APK; it now says so rather than printing placeholders.
 - **MagicOS withholds `ACTION_BOOT_COMPLETED`** unless the app is set to
   auto-launch. `BootWatch` detects the symptom rather than the vendor.
+- Samsung's always-on display IS controllable in-app: its AOD keys are in
+  `Settings.System`, so WRITE_SETTINGS - user-grantable - is enough. Grayscale,
+  wallpaper dim and dark theme are NOT, and each was chased to a measured dead
+  end; see DECISIONS before trying again.
 - The screen-effects section is HIDDEN where the phone throws the effects away
   (`ScreenEffects`). A switch that lies is worse than an absent one. This is the
   one manufacturer test besides `AmbientControl`, and only because the readbacks

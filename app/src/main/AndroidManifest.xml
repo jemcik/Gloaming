@@ -8,6 +8,11 @@
     <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
+    <!-- Samsung keeps its always-on keys in Settings.System, where WRITE_SETTINGS
+         is the guard - and unlike WRITE_SECURE_SETTINGS the user can grant that
+         themselves, on a normal settings screen. See AmbientControl. -->
+    <uses-permission android:name="android.permission.WRITE_SETTINGS" />
+
     <!-- Not grantable at install and there is no runtime prompt for it: this is
          signature|privileged, so only adb can grant it, and AmbientControl is
          inert without it. Declared so a user who wants the vendor always-on

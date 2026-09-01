@@ -51,17 +51,80 @@ object AmbientControl {
         "aod_display_type" to "0"
     )
 
+    /**
+     * Samsung, and the namespace is the whole story.
+     *
+     * Found the same way as Honor's, by diffing every Settings namespace across
+     * a toggle - here One UI's own Sleep mode, on a Galaxy S23 / One UI 8,
+     * 1 Sep 2026. Every AOD key on that phone lives in `Settings.System`, not
+     * `Settings.Secure`, and that is the difference between an adb-only feature
+     * and one an ordinary person can turn on: `Settings.System` is guarded by
+     * WRITE_SETTINGS, which the user grants on a normal settings screen.
+     *
+     * `aod_mode` is the one that decides, proved end to end rather than
+     * assumed: written to 1 the phone reports `aod_show_state=1` while dozing,
+     * written to 0 it reports 0. `aod_tap_to_show_mode` is deliberately NOT
+     * touched - it chooses between always-on and tap-to-show, which is the
+     * user's preference about their own display, and we are only borrowing the
+     * off switch for the night.
+     */
+    private val SAMSUNG_OFF = linkedMapOf("aod_mode" to "0")
+
+    /** Which table the keys live in, and therefore who is allowed to write. */
+    private enum class Table { SECURE, SYSTEM }
+
+    private class Route(val off: Map<String, String>, val table: Table)
+
     /** Null on any device whose keys have not been confirmed by hand. */
-    private fun offValues(): Map<String, String>? = when {
+    private fun route(): Route? = when {
         Build.MANUFACTURER.equals("HONOR", true) ||
-            Build.MANUFACTURER.equals("HUAWEI", true) -> HONOR_OFF
+            Build.MANUFACTURER.equals("HUAWEI", true) -> Route(HONOR_OFF, Table.SECURE)
+        Build.MANUFACTURER.equals("samsung", true) -> Route(SAMSUNG_OFF, Table.SYSTEM)
         else -> null
     }
 
-    fun canControl(ctx: Context): Boolean =
-        offValues() != null &&
-            ctx.checkSelfPermission(Manifest.permission.WRITE_SECURE_SETTINGS) ==
+    private fun read(ctx: Context, r: Route, key: String): String? = when (r.table) {
+        Table.SECURE -> Settings.Secure.getString(ctx.contentResolver, key)
+        Table.SYSTEM -> Settings.System.getString(ctx.contentResolver, key)
+    }
+
+    private fun write(ctx: Context, r: Route, key: String, value: String) {
+        when (r.table) {
+            Table.SECURE -> Settings.Secure.putString(ctx.contentResolver, key, value)
+            Table.SYSTEM -> Settings.System.putString(ctx.contentResolver, key, value)
+        }
+    }
+
+    private fun permitted(ctx: Context, r: Route): Boolean = when (r.table) {
+        Table.SECURE -> ctx.checkSelfPermission(Manifest.permission.WRITE_SECURE_SETTINGS) ==
             PackageManager.PERMISSION_GRANTED
+        Table.SYSTEM -> Settings.System.canWrite(ctx)
+    }
+
+    fun canControl(ctx: Context): Boolean = route()?.let { permitted(ctx, it) } == true
+
+    /**
+     * The phone has a route we could use and the user has not granted it yet -
+     * true only where the grant is actually ASKABLE. On the Secure route it is
+     * not: WRITE_SECURE_SETTINGS has no prompt, so offering one would be a
+     * button that cannot work.
+     */
+    fun needsGrant(ctx: Context): Boolean {
+        val r = route() ?: return false
+        return r.table == Table.SYSTEM && !permitted(ctx, r)
+    }
+
+    /** The system's own screen for granting WRITE_SETTINGS. */
+    fun requestGrant(ctx: Context) {
+        runCatching {
+            ctx.startActivity(
+                android.content.Intent(
+                    Settings.ACTION_MANAGE_WRITE_SETTINGS,
+                    ("package:" + ctx.packageName).let(android.net.Uri::parse)
+                ).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+            )
+        }
+    }
 
     /**
      * Called from [ZenController.setActive], which every path funnels through -
@@ -70,35 +133,31 @@ object AmbientControl {
      * without needing a case of its own.
      */
     fun sync(ctx: Context, p: Prefs, windowActive: Boolean) {
-        val off = offValues() ?: return
-        if (!canControl(ctx)) return
-        if (windowActive && p.fxHideAmbient) suppress(ctx, p, off) else restore(ctx, p)
+        val r = route() ?: return
+        if (!permitted(ctx, r)) return
+        if (windowActive && p.fxHideAmbient) suppress(ctx, p, r) else restore(ctx, p, r)
     }
 
-    private fun suppress(ctx: Context, p: Prefs, off: Map<String, String>) {
+    private fun suppress(ctx: Context, p: Prefs, r: Route) {
         if (p.ambientSaved != null) return // already ours; do not save over it
-        val cr = ctx.contentResolver
-        val prior = off.keys.mapNotNull { k ->
-            Settings.Secure.getString(cr, k)?.let { "$k=$it" }
-        }
+        val prior = r.off.keys.mapNotNull { k -> read(ctx, r, k)?.let { "$k=$it" } }
         // Recorded BEFORE the first write, deliberately. A write that fails
         // halfway with no record behind it would leave the display off with
         // nothing able to put it back.
         p.ambientSaved = prior.joinToString(SEP)
         try {
-            off.forEach { (k, v) -> Settings.Secure.putString(cr, k, v) }
+            r.off.forEach { (k, v) -> write(ctx, r, k, v) }
             Journal.write(ctx, "ambient off (was " + prior.joinToString(" ") + ")")
         } catch (e: Exception) {
             Journal.write(ctx, "ambient off failed: " + e)
         }
     }
 
-    private fun restore(ctx: Context, p: Prefs) {
+    private fun restore(ctx: Context, p: Prefs, r: Route) {
         val saved = p.ambientSaved ?: return
-        val cr = ctx.contentResolver
         try {
             saved.split(SEP).filter { it.isNotEmpty() }.forEach {
-                Settings.Secure.putString(cr, it.substringBefore('='), it.substringAfter('='))
+                write(ctx, r, it.substringBefore('='), it.substringAfter('='))
             }
             // Cleared only on success, so a failed restore is retried by the next
             // sync rather than forgotten with the display still off.

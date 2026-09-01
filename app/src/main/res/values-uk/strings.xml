@@ -111,6 +111,7 @@
     <string name="fx_dim_sub">Шпалери темнішають</string>
     <string name="fx_dark_sub">При розблокуванні</string>
     <string name="fx_ambient_sub">Екран не світиться</string>
+    <string name="fx_ambient_grant">Потрібен дозвіл змінювати системні налаштування. Натисніть, щоб дозволити</string>
 
     <!-- ============ Home: end-bedtime dialog ============ -->
     <string name="action_set">Установити</string>

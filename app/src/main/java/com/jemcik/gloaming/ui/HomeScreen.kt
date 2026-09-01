@@ -943,12 +943,6 @@ private fun WakeSection(s: HomeState, runningNow: Boolean, onOpenInterruptions: 
 @Composable
 private fun ScreenEffectsSection(s: HomeState, runningNow: Boolean) {
     val ctx = LocalContext.current
-    // Nothing here moves on a phone that throws the effects away, and a switch
-    // that lies is worse than an absent one - see ScreenEffects for what was
-    // measured and why the manufacturer is a prior rather than the verdict.
-    // Settings still offers that phone the system's own bedtime screen, which is
-    // where its grayscale actually lives.
-    if (!ScreenEffects.applied(ctx)) return
     val g = gloam
     val haptics = s.haptics
     val card = g.raise
@@ -958,8 +952,20 @@ private fun ScreenEffectsSection(s: HomeState, runningNow: Boolean) {
     // display at all - and then the row is not drawn, because a control that
     // neither toggles anything nor opens the right screen is only noise. Keyed
     // on tick so an adb grant is picked up on the next resume.
-    val ambientZen = remember(s.tick) { AmbientCapability.isSupported(ctx) }
-    val ambientRow = remember(s.tick) { ambientZen || AmbientControl.canControl(ctx) }
+    //
+    // `zenEffects` is the fourth state this grew: a phone that stores the rule's
+    // device effects and applies NONE of them. Grayscale, dimming and the dark
+    // theme have no other route - measured, every readback and every writable
+    // key checked - so those three rows go, because a switch that lies is worse
+    // than an absent one. The always-on row survives on its own, because the
+    // vendor route reaches it even there.
+    val zenEffects = remember(s.tick) { ScreenEffects.applied(ctx) }
+    val ambientZen = remember(s.tick) { zenEffects && AmbientCapability.isSupported(ctx) }
+    val ambientGrant = remember(s.tick) { AmbientControl.needsGrant(ctx) }
+    val ambientRow = remember(s.tick) {
+        ambientZen || AmbientControl.canControl(ctx) || ambientGrant
+    }
+    if (!zenEffects && !ambientRow) return
 
     // A card of rows, the same shape as "What can wake you" above it,
     // because it is the same kind of thing: a list of switches with
@@ -988,19 +994,19 @@ private fun ScreenEffectsSection(s: HomeState, runningNow: Boolean) {
             if (!runningNow) add {
                 NoticeStrip(planNote(ctx, s.enabled, s.start, s.end, s.days, loc))
             }
-            add {
+            if (zenEffects) add {
                 EffectRow(
                     Fx.Grayscale, stringResource(R.string.fx_grayscale),
                     stringResource(R.string.fx_grayscale_sub), s.fxGray
                 ) { s.fxGray = !s.fxGray; haptics.toggle(s.fxGray); s.commit() }
             }
-            add {
+            if (zenEffects) add {
                 EffectRow(
                     Fx.Dim, stringResource(R.string.fx_dim),
                     stringResource(R.string.fx_dim_sub), s.fxDim
                 ) { s.fxDim = !s.fxDim; haptics.toggle(s.fxDim); s.commit() }
             }
-            add {
+            if (zenEffects) add {
                 // The one subtitle that is load-bearing rather than
                 // descriptive: the platform defers the theme change
                 // until the screen goes off, so tapping this while
@@ -1015,8 +1021,21 @@ private fun ScreenEffectsSection(s: HomeState, runningNow: Boolean) {
             if (ambientRow) add {
                 EffectRow(
                     Fx.Ambient, stringResource(R.string.fx_ambient),
-                    stringResource(R.string.fx_ambient_sub), s.fxAmbient
-                ) { s.fxAmbient = !s.fxAmbient; haptics.toggle(s.fxAmbient); s.commit() }
+                    // The subtitle carries the ask where the permission is
+                    // missing, so the row explains itself rather than failing
+                    // silently when tapped.
+                    if (ambientGrant) stringResource(R.string.fx_ambient_grant)
+                    else stringResource(R.string.fx_ambient_sub),
+                    s.fxAmbient && !ambientGrant
+                ) {
+                    if (ambientGrant) {
+                        // Nothing to toggle yet - it cannot be honoured. Send
+                        // them to the one screen that can change that.
+                        haptics.open(); AmbientControl.requestGrant(ctx)
+                    } else {
+                        s.fxAmbient = !s.fxAmbient; haptics.toggle(s.fxAmbient); s.commit()
+                    }
+                }
             }
         })
     }

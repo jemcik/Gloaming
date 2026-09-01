@@ -190,6 +190,7 @@
     <string name="fx_dim_sub">The wallpaper darkens</string>
     <string name="fx_dark_sub">At the next unlock</string>
     <string name="fx_ambient_sub">The screen stays dark</string>
+    <string name="fx_ambient_grant">Needs permission to change system settings. Tap to allow</string>
 
     <!-- ============ Home: end-bedtime dialog ============ -->
     <string name="action_set">Set</string>

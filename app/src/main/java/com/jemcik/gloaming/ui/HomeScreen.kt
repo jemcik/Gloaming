@@ -623,16 +623,32 @@ private fun EndsSection(s: HomeState) {
     val haptics = s.haptics
     val card = gloam.raise
 
-    val alarm = remember(s.tick) { Scheduler.nextAlarm(ctx) }
-    val wake = hhmm(ctx, s.end.hour, s.end.minute)
+    // What will actually happen tonight, not what the rule says in the abstract.
+    // The alarm only counts if it falls inside the window, so asking endAt is the
+    // only honest way to know which sentence is true - a 2pm alarm is real, and
+    // naming it here would promise something that will not happen.
+    val subtitle = remember(s.tick, s.start, s.end, s.days) {
+        val alarm = Scheduler.nextAlarm(ctx)
+        val now = LocalDateTime.now()
+        val scheduledEnd = Scheduler.liveWindowEnd(s.prefs, s.start, s.end, s.days, now)
+            ?: Scheduler.nextStart(s.start, s.end, s.days, now)
+                ?.plus(Scheduler.duration(s.start, s.end))
+        val began = scheduledEnd?.minus(Scheduler.duration(s.start, s.end))
+        val effective = if (began != null && scheduledEnd != null)
+            Scheduler.endAt(began, scheduledEnd, alarm, exitAtAlarm = true) else null
+        if (effective != null && effective == alarm)
+            ctx.getString(R.string.row_end_at_alarm_at, hhmm(ctx, alarm.hour, alarm.minute))
+        else ctx.getString(
+            R.string.row_end_at_alarm_none,
+            hhmm(ctx, (scheduledEnd ?: now).hour, (scheduledEnd ?: now).minute)
+        )
+    }
 
     Section(stringResource(R.string.section_when_it_ends)) {
         GroupedList(card, listOf {
             SwitchRow(
                 headline = stringResource(R.string.row_end_at_alarm),
-                supporting = if (alarm == null)
-                    stringResource(R.string.row_end_at_alarm_none, wake)
-                else stringResource(R.string.row_end_at_alarm_sub, wake),
+                supporting = subtitle,
                 checked = s.endAtAlarm,
                 leading = { RowIcon(R.drawable.ic_alarm, IconTint.Alarm) }
             ) {

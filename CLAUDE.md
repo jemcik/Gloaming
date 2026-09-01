@@ -43,6 +43,9 @@ indefinitely is background restriction — see `core/BackgroundLimit.kt`.
     core/ZenStatusReceiver.kt    the platform's hint that our rule changed; a
                                  hint only, we decide from getAutomaticZenRule
     core/BootWatch.kt            detects a reboot whose broadcast never arrived
+    core/BackgroundProbe.kt      one throwaway alarm that asks whether this
+                                 phone delivers alarms at all. Silent unless
+                                 the answer is no
     core/AlarmWatch.kt           did our own END actually arrive? The backstop
                                  for every cause BackgroundLimit cannot see - a
                                  frozen app misses its alarm with the appop still
@@ -115,7 +118,9 @@ is in DECISIONS.md.
   gates that; `force = true` exists for alarms and boot.
 - `Prefs.ruleId` is the app's only handle on its rule. Losing it strands the rule
   forever — hence `sweepOrphans`, which runs after `addAutomaticZenRule` and in
-  `reconcile`.
+  `reconcile`. It must NOT return early when `ruleId` is null: that is exactly
+  the case where every rule is an orphan, and returning left a live rule greying
+  the screen with nothing on screen to explain it.
 - `Prefs.activeDay` pins only the DATE a night began on. Pinning an instant
   breaks a handle; this was got wrong twice, in opposite directions.
 - Log what a call **answered**, not that it did not throw.
@@ -135,6 +140,10 @@ is in DECISIONS.md.
   against a published APK; it now says so rather than printing placeholders.
 - **MagicOS withholds `ACTION_BOOT_COMPLETED`** unless the app is set to
   auto-launch. `BootWatch` detects the symptom rather than the vendor.
+- Honor's auto-launch and run-in-background states are **unreadable** — absent
+  from settings, appops and the package dump, measured either side of a clean
+  toggle. Run-in-background is answered by `BackgroundProbe` instead;
+  auto-launch only by a real reboot, after the fact, in `BootWatch`.
 - minSdk is **35** because `ZenDeviceEffects`, `AutomaticZenRule.Builder` and
   `getAutomaticZenRuleState` are all API 35, and a missing method raises `Error`,
   which none of the `runCatching` here would catch.
@@ -142,6 +151,7 @@ is in DECISIONS.md.
   correctly. Test through real alarms.
 - `dumpsys notification` prints a `Zen Log:` history as well as live config, so
   `sed '/Zen Log:/q'` before grepping or long-deleted rules read as present.
+  It also prints the live config TWICE, so count rules by id, not occurrence.
   The live config holds SEVERAL `ZenRule[` records and ours is rarely first, so
   a pattern that runs `.*?` from `ZenRule[` to `name=Gloaming` reads id, state
   and enabled off a stranger's rule while still picking up OUR effects and
@@ -218,7 +228,7 @@ compileSdk 37, targetSdk 36, minSdk 35.
 
 ## Tests
 
-`app/src/test/`, 93 cases, no device. They are written as the QUESTION the code
+`app/src/test/`, 99 cases, no device. They are written as the QUESTION the code
 answers rather than as coverage of a method, because none of the bugs were ever
 in a method — they were in an assumption.
 
@@ -234,6 +244,8 @@ in a method — they were in an assumption.
     RowFitTest            does the text fit, in en/ru/uk, by MEASURING
     ScreensTest           interactions, never appearance
     BootWatchTest         the withheld-boot detection
+    BackgroundProbeTest   the delivery probe, and the latch that stops its own
+                          retest erasing the verdict
 
 Coverage: **74% of instructions, 59% of branches**. The shape is the point — what
 is covered is what can be reasoned about without a phone; what is not is what

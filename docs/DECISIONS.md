@@ -554,6 +554,43 @@ once a boot is handled, which is the only confirmation available when the settin
 cannot be read. Confirmed both ways on the Honor - the notice appears with
 auto-launch off and is gone after a boot that reached us.
 
+**The launch state cannot be READ, so it is MEASURED.** Two questions hide
+behind Honor's "App launch" screen: auto-launch, which decides whether
+`BOOT_COMPLETED` reaches us, and run-in-background, which decides whether our
+alarms are delivered while the app is closed. Neither is readable. A clean
+before/after diff on 1 Sep 2026 — both switches off, both switches on, captured
+either side — showed NO change in `settings list global/secure/system`, none in
+`appops get com.jemcik.gloaming`, and none in `dumpsys package
+com.jemcik.gloaming`. The state lives inside `com.hihonor.systemmanager` behind
+providers gated by `com.hihonor.permission.ACCESS_INTERFACE`, which is
+`signature|privileged`.
+
+Honor does document a real API for it, and the reason it took two attempts to
+find is worth recording: searching in English returns nothing, and the first
+conclusion here — "no developer documentation exists" — was simply wrong.
+Searching in Chinese finds the Honor MDM SDK, where
+`getDisallowCloseBootCompletedApps(ComponentName admin)` answers exactly this
+question. It is gated behind `com.hihonor.permission.sec.MDM_APP_MANAGEMENT`,
+requires the app to be an active device admin, and is issued under a commercial
+enterprise contract. Correct, documented, and out of reach for a consumer app.
+
+So run-in-background is answered by experiment instead: `BackgroundProbe` arms
+one throwaway exact alarm eleven minutes out and shows nothing. Arriving is the
+whole answer — the background path works on this phone, permanently. Never
+arriving means the phone is holding us, and only then does a card appear. The
+first design instead INFERRED it, from "has a launch manager AND has never
+finished a window", which nagged correctly-configured Honors and could not
+distinguish a broken phone from one that had merely never run.
+The probe is armed on EVERY phone, deliberately. The assumption that vendors
+misbehave and AOSP does not was tested in both directions the same day and
+failed in both: the reboot bug that silently lost a whole window was on the
+OnePlus running LineageOS and did NOT reproduce on the Honor. Only the WORDING
+is vendor-aware — where a launch manager resolves the card names Honor's own
+switches, and where it does not it uses the general copy whose button lands on
+app details.
+Auto-launch is not probeable and no amount of cleverness makes it so: the only
+test is a real reboot, which is what `BootWatch` above catches after the fact.
+
 The door is named as a COMPONENT, not by action, and that is deliberate: two
 activities answer `hihonor.intent.action.HSM_STARTUPAPP_MANAGER`, and
 `.appcontrol.activity.StartupAppControlActivity` is gated behind
@@ -596,6 +633,33 @@ anyway.
 confirming on real hardware.
 
 ## Gotchas that cost real time
+
+- **`pm clear` strands a live zen rule, and the screen stays grey.** Clearing
+  the app's data wipes prefs but leaves the `AutomaticZenRule` registered with
+  the system, enabled, and still carrying `deviceEffects=[grayscale,
+  dimWallpaper]`. The app then has no `ruleId`, so the rule is invisible to it:
+  Home reads bedtime OFF, `zen_mode` reads 0, and the panel is still grayscale
+  with nothing on screen to explain it. Reported on the Honor 1 Sep 2026 and
+  reproduced the same afternoon.
+  `sweepOrphans` is the code meant to catch exactly this and it could not,
+  because it opened `val keep = p.ruleId ?: return` — so in the ONE case where
+  every rule is an orphan it swept nothing. The only escape was to switch
+  bedtime on, which minted a fresh `ruleId` and finally let the sweep run; that
+  is what the user did by hand and what the journal recorded at 14:38.
+  `keep` is nullable now and the sweep runs regardless; the existing filter
+  already removes only rules carrying our own `conditionId`. Verified end to
+  end: rule `d3df8da2` left behind by `pm clear`, then merely OPENING the app
+  removed it, no toggle.
+  Two smaller traps came out of the same session. `dumpsys notification` prints
+  the whole zen config TWICE, so counting `ZenRule[` occurrences double-counts
+  even after the documented `sed '/Zen Log:/q'` — dedupe by rule id. And
+  `ruleId` is a String pref, stored as `<string name="ruleId">…</string>`, so a
+  grep for `value="…"` misses it and makes a present rule id look absent.
+  Finally, the sweep needs notification policy access to enumerate rules at all,
+  so after a data clear nothing can be cleaned up until DND is granted again —
+  which is the first thing the app asks for, so in practice the repair lands on
+  the first run.
+
 
 - **Logcat is encrypted** for third-party apps on MagicOS — entries come back as
   `(HKS)...(HKE)`. Hence `Journal.kt`. Never swallow an exception; three bugs

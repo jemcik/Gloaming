@@ -97,9 +97,17 @@ class HomeState(
      * that actually arrives.
      */
     var unproven by mutableStateOf(
-        BootWatch.hasLaunchManager(ctx) && AlarmWatch.neverCompleted(prefs)
+        BootWatch.hasLaunchManager(ctx) &&
+            AlarmWatch.neverCompleted(prefs) &&
+            !prefs.launchAcknowledged
     )
         private set
+
+    /** The card was tapped: they have been sent to the screen, so stop asking. */
+    fun acknowledgeLaunchSetup() {
+        prefs.launchAcknowledged = true
+        unproven = false
+    }
 
     /** The minute ticker, and anything else that only needs a redraw. */
     fun bump() { tick++ }
@@ -158,7 +166,9 @@ class HomeState(
         missedBoot = BootWatch.missed(prefs)
         restricted = BackgroundLimit.isRestricted(ctx)
         missedAlarm = AlarmWatch.missed(prefs)
-        unproven = BootWatch.hasLaunchManager(ctx) && AlarmWatch.neverCompleted(prefs)
+        unproven = BootWatch.hasLaunchManager(ctx) &&
+            AlarmWatch.neverCompleted(prefs) &&
+            !prefs.launchAcknowledged
         tick++
     }
 

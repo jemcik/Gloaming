@@ -302,7 +302,7 @@ private fun LaunchSetupSection(s: HomeState) {
                     stringResource(R.string.launch_setup_why),
                     granted = false,
                     icon = R.drawable.ic_gloaming, tint = IconTint.Blocked
-                ) { haptics.open(); BootWatch.openAutoStart(ctx) }
+                ) { haptics.open(); s.acknowledgeLaunchSetup(); BootWatch.openAutoStart(ctx) }
             })
         }
     }

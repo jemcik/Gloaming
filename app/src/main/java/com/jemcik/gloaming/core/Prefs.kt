@@ -90,6 +90,20 @@ class Prefs(ctx: Context) {
         get() = sp.getBoolean("alarmMissed", false)
         set(v) = sp.edit { putBoolean("alarmMissed", v) }
 
+    /**
+     * The user has been sent to the vendor's launch screen at least once.
+     *
+     * Set when they tap the card, not when they finish - because whether they
+     * finished is not knowable. Toggling both of Honor's switches off and on
+     * again changes NOTHING readable: no key in secure, system or global, no
+     * appop recorded, nothing in the package dump. Measured by doing exactly
+     * that, twice. So the card is told once and then trusts the person, and the
+     * missed-alarm notice catches it if the trust was misplaced.
+     */
+    var launchAcknowledged: Boolean
+        get() = sp.getBoolean("launchAcknowledged", false)
+        set(v) = sp.edit { putBoolean("launchAcknowledged", v) }
+
     companion object {
         const val NO_BOOT = Long.MIN_VALUE
         const val NO_DUE = Long.MIN_VALUE

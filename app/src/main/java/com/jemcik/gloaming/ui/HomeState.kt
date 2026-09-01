@@ -9,8 +9,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import com.jemcik.gloaming.core.AlarmWatch
+import com.jemcik.gloaming.core.BackgroundLimit
+import com.jemcik.gloaming.core.BackgroundProbe
 import com.jemcik.gloaming.core.BootWatch
+import com.jemcik.gloaming.core.Doors
 import com.jemcik.gloaming.core.Prefs
+import com.jemcik.gloaming.core.ScreenEffects
 import com.jemcik.gloaming.core.Scheduler
 import com.jemcik.gloaming.core.ZenController
 
@@ -72,6 +77,83 @@ class HomeState(
     var missedBoot by mutableStateOf(BootWatch.missed(prefs))
         private set
 
+    /**
+     * Re-read on every resume, because it is a SETTING rather than an event:
+     * the user may have just come back from fixing it, and an app update resets
+     * it on MagicOS. Cheap - one appop read.
+     */
+    var restricted by mutableStateOf(BackgroundLimit.isRestricted(ctx))
+        private set
+
+    /**
+     * An END that came due and never reached us. Re-read on resume, because the
+     * moment the user is looking at the screen is exactly when it became
+     * knowable - the alarm was eaten while nobody was watching.
+     */
+    var missedAlarm by mutableStateOf(AlarmWatch.missed(prefs))
+        private set
+
+    /**
+     * This phone was measured holding one of our alarms, so bedtime cannot be
+     * promised to end on time.
+     *
+     * MEASURED, not guessed. It was previously inferred - "this phone has a
+     * launch manager AND has never finished a window" - which showed the card to
+     * every Honor owner including the ones already set up correctly, and could
+     * not tell a phone that was broken from one that had simply never run yet.
+     * The vendor setting cannot be read to settle it either, so [BackgroundProbe]
+     * settles it by experiment instead. Nothing is shown until the phone has
+     * actually failed to deliver.
+     */
+    var blocked by mutableStateOf(BackgroundProbe.blocked(prefs))
+        private set
+
+    /**
+     * This phone can hold apps in the first place, which decides only what the
+     * card SAYS - Honor's own switches by name where they exist, the general
+     * app-details route where they do not. It never decides whether to show it.
+     */
+    val hasLaunchManager = Doors.hasLaunchManager(ctx)
+
+    /**
+     * The one-time offer has been answered. Held as state as well as in prefs so
+     * the card leaves the moment it is answered, without waiting for a resume.
+     */
+    var tipSeen by mutableStateOf(prefs.launchTipSeen)
+        private set
+
+    /**
+     * Offer the launch setup ONCE, at the moment bedtime is first switched on.
+     *
+     * Not on install: at install nothing has been promised yet, and a phone the
+     * user is only looking at does not need to survive the night. Switching
+     * bedtime on is the moment they start relying on it, which is the moment the
+     * advice is worth anything - the just-in-time rule, applied to a setting
+     * rather than a permission.
+     *
+     * Silent when either measured notice is up. Both of those report something
+     * that IS wrong and carry the same instruction; a suggestion stacked on top
+     * would be a third card saying a version of the same thing, and the weakest
+     * of the three.
+     */
+    fun showLaunchTip(): Boolean =
+        hasLaunchManager && enabled && !tipSeen && !blocked && !restricted
+
+    /** Answered, either way, and it never comes back. */
+    fun closeLaunchTip() {
+        prefs.launchTipSeen = true
+        tipSeen = true
+    }
+
+    /**
+     * They have gone to fix it, so ask the question again. Without this the
+     * verdict would be permanent: the latch is what stops the card flickering,
+     * and a fix would never be believed.
+     */
+    fun retestBackground() {
+        Scheduler.armProbe(ctx, prefs, retest = true)
+    }
+
     /** The minute ticker, and anything else that only needs a redraw. */
     fun bump() { tick++ }
 
@@ -127,11 +209,33 @@ class HomeState(
         // handled properly - the only confirmation available, since the
         // vendor's own setting cannot be read.
         missedBoot = BootWatch.missed(prefs)
+        restricted = BackgroundLimit.isRestricted(ctx)
+        missedAlarm = AlarmWatch.missed(prefs)
+        // Resume is when an overdue probe becomes knowable, exactly as for a
+        // missed END - the alarm was eaten while nobody was watching.
+        BackgroundProbe.check(prefs)
+        blocked = BackgroundProbe.blocked(prefs)
+        // Free evidence: if the screen is dark WHILE our rule asks for it, this
+        // phone applies device effects after all, whatever the prior says.
+        ScreenEffects.observeApplied(ctx, wantsNight = fxDark, ruleActive = runningNow())
+        // And ask again here, not only on first composition. Arming needs
+        // SCHEDULE_EXACT_ALARM, so on a fresh install the first attempt THROWS
+        // and records nothing - correctly, since an alarm we never set cannot
+        // be evidence about the phone. Granting that permission returns the user
+        // to a RESUME rather than a new composition, so without this the probe
+        // would sit unasked until the app was next restarted from cold.
+        // Measured on a Galaxy S23, One UI 8: "probe not armed: SecurityException".
+        // Self-gating - needsArming is false once one is in flight.
+        Scheduler.armProbe(ctx, prefs)
         tick++
     }
 
     /** On first composition: re-arm, in case an alarm was lost. */
     fun rearmIfEnabled() {
+        // Unconditional, and deliberately not tied to `enabled`: the question is
+        // whether this PHONE delivers alarms, which is worth answering before
+        // the first bedtime rather than after the first one is lost.
+        Scheduler.armProbe(ctx, prefs)
         if (prefs.enabled) { Scheduler.rescheduleAll(ctx, prefs); tick++ }
     }
 

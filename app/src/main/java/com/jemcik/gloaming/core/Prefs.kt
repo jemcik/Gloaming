@@ -61,8 +61,104 @@ class Prefs(ctx: Context) {
         get() = sp.getLong("bootStamp", NO_BOOT)
         set(v) = sp.edit { putLong("bootStamp", v) }
 
+    /**
+     * The instant the currently armed END is due, and the instant of the last
+     * END we actually handled. [NO_DUE] when nothing is armed.
+     *
+     * The pair is the whole detector: arming writes [endDue], the receiver
+     * copies it into [endSeen], and a due time that has passed without ever
+     * being seen is an alarm the phone ate. See [AlarmWatch].
+     */
+    var endDue: Long
+        get() = sp.getLong("endDue", NO_DUE)
+        set(v) = sp.edit { putLong("endDue", v) }
+
+    var endSeen: Long
+        get() = sp.getLong("endSeen", NO_DUE)
+        set(v) = sp.edit { putLong("endSeen", v) }
+
+    /**
+     * Latched: an END went missing, and stays reported until one arrives.
+     *
+     * It has to be sticky. Re-arming overwrites [endDue] with the NEXT window,
+     * and re-arming is the first thing that happens when the app comes back -
+     * so comparing the pair at the moment the screen asks would always find a
+     * fresh, innocent-looking due time. The evidence is destroyed by the act of
+     * recovering, which cost a whole test to discover.
+     */
+    var alarmMissed: Boolean
+        get() = sp.getBoolean("alarmMissed", false)
+        set(v) = sp.edit { putBoolean("alarmMissed", v) }
+
+    /**
+     * The user has been sent to the vendor's launch screen at least once.
+     *
+     * Set when they tap the card, not when they finish - because whether they
+     * finished is not knowable. Toggling both of Honor's switches off and on
+     * again changes NOTHING readable: no key in secure, system or global, no
+     * appop recorded, nothing in the package dump. Measured by doing exactly
+     * that, twice. So the card is told once and then trusts the person, and the
+     * missed-alarm notice catches it if the trust was misplaced.
+     */
+    /**
+     * The probe: when a throwaway alarm was due, and when one was last handled.
+     *
+     * [NO_DUE] on both means no probe has ever been armed. Same shape as
+     * endDue/endSeen, and for the same reason - a due instant that passed
+     * unhandled is the evidence.
+     */
+    var probeDue: Long
+        get() = sp.getLong("probeDue", NO_DUE)
+        set(v) = sp.edit { putLong("probeDue", v) }
+
+    var probeSeen: Long
+        get() = sp.getLong("probeSeen", NO_DUE)
+        set(v) = sp.edit { putLong("probeSeen", v) }
+
+    /**
+     * What night mode read the last time our rule was NOT active: 1, 0, or -1
+     * for never seen. The baseline half of the transition test in
+     * [ScreenEffects.observeApplied].
+     */
+    var nightWhenIdle: Int
+        get() = sp.getInt("nightWhenIdle", -1)
+        set(v) = sp.edit { putInt("nightWhenIdle", v) }
+
+    /**
+     * We have SEEN the zen rule's device effects actually take hold here.
+     *
+     * One-directional and permanent: it overrules the manufacturer prior in
+     * [ScreenEffects], so a phone that starts out assumed broken can prove
+     * itself without an app update.
+     */
+    var effectsSeen: Boolean
+        get() = sp.getBoolean("effectsSeen", false)
+        set(v) = sp.edit { putBoolean("effectsSeen", v) }
+
+    /**
+     * The one-time launch-setup tip has been answered, either way.
+     *
+     * Not a verdict and not a measurement - just "we have offered this once".
+     * It exists because the offer must never repeat: a suggestion shown twice
+     * reads as a demand, and this one cannot be confirmed, so it can never
+     * dismiss itself the way a readable setting does.
+     */
+    var launchTipSeen: Boolean
+        get() = sp.getBoolean("launchTipSeen", false)
+        set(v) = sp.edit { putBoolean("launchTipSeen", v) }
+
+    /**
+     * Latched: a probe came due and never arrived. Sticky for the same reason
+     * `alarmMissed` is - the evidence is destroyed by the next arming, so the
+     * verdict has to outlive the measurement that produced it.
+     */
+    var probeFailed: Boolean
+        get() = sp.getBoolean("probeFailed", false)
+        set(v) = sp.edit { putBoolean("probeFailed", v) }
+
     companion object {
         const val NO_BOOT = Long.MIN_VALUE
+        const val NO_DUE = Long.MIN_VALUE
         const val NO_DAY = Long.MIN_VALUE
         const val THEME_SYSTEM = 0
         const val THEME_LIGHT = 1

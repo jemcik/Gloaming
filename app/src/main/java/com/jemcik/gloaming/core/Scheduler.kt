@@ -20,6 +20,22 @@ import java.time.ZoneId
  * Magic8 Pro (MagicOS 10.0.0.199): fired 149ms after the scheduled instant with
  * the app swiped from recents and the screen off.
  *
+ * READ THAT MEASUREMENT NARROWLY. A screen that is off is not a device in doze:
+ * light idle takes about half an hour of stillness and deep idle longer, so the
+ * 149ms says nothing about the state the app actually spends the night in. It
+ * was quoted for a year as proof the overnight path works, which it never was.
+ *
+ * The overnight path IS now measured, 1 Sep 2026, by forcing the states rather
+ * than waiting for them - `dumpsys battery unplug` then
+ * `dumpsys deviceidle force-idle [light|deep]`, with a window ending a few
+ * minutes out. Both arms fired at the scheduled SECOND, in forced light idle and
+ * in forced deep idle. Doze is not the problem.
+ *
+ * What does hold an alarm, indefinitely, is the app being background-restricted:
+ * AlarmManager parks it in a queue named "Pending user blocked background
+ * alarms" and only foregrounding the app frees it. That is not visible from
+ * here - see BackgroundLimit, which reads the appop and says so.
+ *
  * A window is treated as a single span (start + duration), never as two
  * independent times.
  *
@@ -36,6 +52,12 @@ object Scheduler {
 
     const val ACTION_START = "com.jemcik.gloaming.START"
     const val ACTION_END = "com.jemcik.gloaming.END"
+
+    /**
+     * A throwaway alarm that exists only to be waited for. See [BackgroundProbe]
+     * - nothing happens when it fires except the note that it did.
+     */
+    const val ACTION_PROBE = "com.jemcik.gloaming.PROBE"
 
     private fun am(ctx: Context) = ctx.getSystemService(AlarmManager::class.java)
 
@@ -193,6 +215,10 @@ object Scheduler {
 
     private fun setExact(ctx: Context, at: LocalDateTime, action: String, code: Int) {
         val ms = at.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+        // Only END is watched. A missed START is visible - bedtime simply does
+        // not begin - while a missed END leaves the phone silent all morning and
+        // says nothing, which is the failure worth catching.
+        if (action == ACTION_END) AlarmWatch.arming(Prefs(ctx), ms)
         try {
             am(ctx).setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, ms, pending(ctx, action, code))
         } catch (e: SecurityException) {
@@ -211,13 +237,53 @@ object Scheduler {
     /**
      * Rebuilds both alarms and brings the zen rule in line with the present moment.
      * Safe to call repeatedly; it is idempotent.
+     *
+     * [force] re-asserts the zen state even when the system already claims it.
+     * Boot and upgrade pass it, because the world moved underneath us while we
+     * were not running - see the reboot note in ZenController.setActive. The UI
+     * does NOT, since re-asserting on a live rule re-applies its device effects.
      */
-    fun rescheduleAll(ctx: Context, p: Prefs) {
+    /**
+     * Arm the background probe if this phone has never answered.
+     *
+     * Deliberately NOT cancelled by [cancelAll]: it is not part of the window,
+     * it survives the app being switched off, and it must be allowed to run to
+     * its own conclusion once - otherwise turning bedtime off and on would keep
+     * restarting the question and it would never get answered.
+     */
+    fun armProbe(ctx: Context, p: Prefs, retest: Boolean = false) {
+        // Latch first. Arming rewrites probeDue, which IS the evidence that the
+        // outstanding probe was missed - read the verdict before destroying it.
+        BackgroundProbe.check(p)
+        if (!retest && !BackgroundProbe.needsArming(p)) return
+        val at = System.currentTimeMillis() + BackgroundProbe.DELAY_MS
+        try {
+            am(ctx).setExactAndAllowWhileIdle(
+                AlarmManager.RTC_WAKEUP, at, pending(ctx, ACTION_PROBE, 102)
+            )
+            // Recorded only once the alarm EXISTS. The other way round, a
+            // refused permission leaves a due instant with nothing behind it,
+            // and the probe then reports the phone holding an alarm that was
+            // never scheduled - an accusation manufactured out of our own
+            // failure to ask. Nothing scheduled means nothing measured.
+            BackgroundProbe.arming(p, at)
+        } catch (e: SecurityException) {
+            Journal.write(ctx, "probe not armed: " + e)
+        }
+    }
+
+    fun rescheduleAll(ctx: Context, p: Prefs, force: Boolean = false) {
+        // BEFORE anything is armed: arming overwrites the due instant, so this is
+        // the last moment the previous one can still be judged.
+        AlarmWatch.check(p)
         cancelAll(ctx)
 
         if (!p.enabled) {
             p.activeDay = Prefs.NO_DAY
-            ZenController.setActive(ctx, p, false)
+            // Nothing armed, so nothing can be owed - otherwise the END we just
+            // cancelled would come due and read as eaten.
+            AlarmWatch.clear(p)
+            ZenController.setActive(ctx, p, false, force)
             logPlan(ctx, p, "off")
             return
         }
@@ -232,7 +298,7 @@ object Scheduler {
                 p.activeDay = openUntil.minus(duration(p.startTime, p.endTime))
                     .toLocalDate().toEpochDay()
             }
-            ZenController.setActive(ctx, p, true)
+            ZenController.setActive(ctx, p, true, force)
             setExact(ctx, openUntil, ACTION_END, 101)
             // A one-off queues no following night; END switches the app off.
             if (!isOneOff(p.days)) {
@@ -243,9 +309,10 @@ object Scheduler {
                 (if (isOneOff(p.days)) " (once)" else ""))
         } else {
             p.activeDay = Prefs.NO_DAY
-            ZenController.setActive(ctx, p, false)
+            ZenController.setActive(ctx, p, false, force)
             val start = nextStart(p.startTime, p.endTime, p.days, now)
             if (start == null) {
+                AlarmWatch.clear(p)
                 logPlan(ctx, p, "nothing to schedule")
                 return
             }

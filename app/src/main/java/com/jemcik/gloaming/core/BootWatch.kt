@@ -1,11 +1,6 @@
 package com.jemcik.gloaming.core
 
-import android.content.ComponentName
-import android.content.Context
-import android.content.Intent
 import android.os.SystemClock
-import android.provider.Settings
-import androidx.core.net.toUri
 import kotlin.math.abs
 
 /**
@@ -65,46 +60,5 @@ object BootWatch {
             return false
         }
         return abs(stamp() - seen) > TOLERANCE_MS
-    }
-
-    /**
-     * The vendor's own auto-launch screen, resolved rather than assumed.
-     *
-     * Only actions confirmed on hardware belong here, and the manifest has to
-     * declare a matching <queries> entry or package visibility hides the
-     * activity and resolve returns null. Honor's
-     * StartupNormalAppListActivity is exported with no permission attribute,
-     * read from HnSystemManager.apk's manifest - unlike its AOD screens, which
-     * are all locked. Everywhere else, app details is the closest we can get.
-     */
-    private val VENDOR_SCREENS = listOf(
-        // Honor MagicOS 10, BKQ-N49. Named explicitly rather than by action:
-        // TWO activities answer HSM_STARTUPAPP_MANAGER, and the other one -
-        // .appcontrol.activity.StartupAppControlActivity - is gated behind
-        // com.hihonor.permission.external_app_settings.USE_COMPONENT, which we
-        // do not hold. Resolving the action therefore lands on Honor's chooser,
-        // where one of the two choices simply fails. This one is exported with
-        // no permission attribute at all.
-        ComponentName(
-            "com.hihonor.systemmanager",
-            "com.hihonor.systemmanager.startupmgr.ui.StartupNormalAppListActivity"
-        )
-    )
-
-    fun openAutoStart(ctx: Context) {
-        for (screen in VENDOR_SCREENS) {
-            val i = Intent().setComponent(screen)
-            if (ctx.packageManager.resolveActivity(i, 0) != null) {
-                if (runCatching { ctx.startActivity(i) }.isSuccess) return
-            }
-        }
-        runCatching {
-            ctx.startActivity(
-                Intent(
-                    Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                    ("package:" + ctx.packageName).toUri()
-                )
-            )
-        }
     }
 }

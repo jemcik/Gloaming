@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The parser logs as XmlParser[condition]: its start tag is "condition",
+     from RawConditionMeta.TABLE_NAME. It rejected <configuration>/<parameters>
+     as unrecognized children, so the condition is attributes only. -->
+<conditions>
+    <condition
+        category="device"
+        icon="@drawable/ic_gloaming"
+        label="@string/app_name"
+        tag="bedtime_active"
+        triggerType="event" />
+</conditions>

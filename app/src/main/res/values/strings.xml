@@ -94,6 +94,25 @@
     <string name="boot_missed_title">Your phone restarted without Gloaming</string>
     <string name="boot_missed_row">Auto-launch</string>
     <string name="boot_missed_why">Lets bedtime start again after a restart. Without it nothing was scheduled until you opened the app</string>
+    <string name="bg_blocked_title">Gloaming is not allowed to run in the background</string>
+    <string name="bg_blocked_row">Run in background</string>
+    <string name="bg_blocked_why">Lets bedtime start and end while the app is closed. Without it nothing happens until you next open Gloaming. On some phones the switch appears only after setting Gloaming to &#8220;Manage manually&#8221;</string>
+    <string name="missed_alarm_title">Bedtime did not end on time</string>
+    <string name="missed_alarm_row">Let Gloaming run in the background</string>
+    <string name="missed_alarm_why">The phone stopped Gloaming while it was closed, so bedtime stayed on until you opened the app</string>
+    <string name="launch_setup_title">This phone needs two more switches</string>
+    <string name="launch_setup_row">App launch</string>
+    <string name="launch_setup_why">Search for Gloaming, set it to &#8220;Manage manually&#8221;, then turn on Auto-launch and Run in background</string>
+    <!-- The always-available door: a link in Settings, never a notice. -->
+    <string name="section_this_phone">this phone</string>
+    <string name="launch_link_why">Start after a restart, and keep running while closed</string>
+    <string name="bedtime_settings_row">System bedtime mode</string>
+    <string name="bedtime_settings_why">Your phone has its own bedtime settings, with screen options of its own</string>
+    <!-- Said once, when bedtime is first switched on. Not an accusation. -->
+    <string name="launch_tip_title">Make bedtime reliable</string>
+    <string name="launch_tip_why">This phone can stop apps while they are closed, which is what leaves bedtime running in the morning. Two switches in App launch prevent it: Auto-launch and Run in background.</string>
+    <string name="launch_tip_action">Set up</string>
+    <string name="launch_tip_skip">Skip</string>
 
     <!-- ============ Home: the window ============ -->
     <!-- Overlines, uppercased in code. Keep short: they sit above the times. -->
@@ -171,6 +190,7 @@
     <string name="fx_dim_sub">The wallpaper darkens</string>
     <string name="fx_dark_sub">At the next unlock</string>
     <string name="fx_ambient_sub">The screen stays dark</string>
+    <string name="fx_ambient_grant">Needs permission to change system settings. Tap to allow</string>
 
     <!-- ============ Home: end-bedtime dialog ============ -->
     <string name="action_set">Set</string>
@@ -269,5 +289,5 @@
     <string name="settings_language_why">Opens system settings</string>
     <string name="section_about">about</string>
     <string name="settings_version">Version %1$s</string>
-    <string name="settings_about_body">Gloaming schedules Do Not Disturb and the screen effects for one window a night, using exact alarms so it fires with the app closed.</string>
+    <string name="settings_about_body">Gloaming turns on Do Not Disturb and the screen effects for the hours you sleep, and switches them off again in the morning. It works with the app closed.</string>
 </resources>

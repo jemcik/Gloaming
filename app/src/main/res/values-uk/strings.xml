@@ -51,6 +51,23 @@
     <string name="boot_missed_title">Телефон перезапустився без Gloaming</string>
     <string name="boot_missed_row">Автозапуск</string>
     <string name="boot_missed_why">Дозволяє сну знову вмикатися після перезавантаження. Без цього нічого не було заплановано, доки ви не відкрили застосунок</string>
+    <string name="bg_blocked_title">Gloaming не дозволено працювати у фоні</string>
+    <string name="bg_blocked_row">Робота у фоні</string>
+    <string name="bg_blocked_why">Дозволяє режиму сну починатися й завершуватися, поки застосунок закрито. Без цього нічого не станеться, доки ви знову не відкриєте Gloaming. На деяких телефонах цей перемикач з’являється лише після вибору «Керувати вручну» для Gloaming</string>
+    <string name="missed_alarm_title">Режим сну завершився не вчасно</string>
+    <string name="missed_alarm_row">Дозвольте Gloaming працювати у фоні</string>
+    <string name="missed_alarm_why">Телефон зупинив Gloaming, поки застосунок був закритий, тому режим сну не вимкнувся, доки ви його не відкрили</string>
+    <string name="launch_setup_title">Цьому телефону потрібні ще два перемикачі</string>
+    <string name="launch_setup_row">Запуск застосунків</string>
+    <string name="launch_setup_why">Знайдіть Gloaming через пошук, виберіть «Керувати вручну», потім увімкніть автозапуск і роботу у фоні</string>
+    <string name="section_this_phone">цей телефон</string>
+    <string name="launch_link_why">Запуск після перезавантаження й робота у фоні</string>
+    <string name="bedtime_settings_row">Системний режим сну</string>
+    <string name="bedtime_settings_why">Телефон має власні налаштування сну з окремими параметрами екрана</string>
+    <string name="launch_tip_title">Зробіть сон надійним</string>
+    <string name="launch_tip_why">Цей телефон може зупиняти застосунки, поки вони закриті, — через це сон залишається ввімкненим уранці. Два перемикачі в розділі «Запуск застосунків» цьому запобігають: автозапуск і робота у фоні.</string>
+    <string name="launch_tip_action">Налаштувати</string>
+    <string name="launch_tip_skip">Пропустити</string>
 
     <!-- ============ Home: the window ============ -->
     <!-- Overlines, uppercased in code. Keep short: they sit above the times. -->
@@ -94,6 +111,7 @@
     <string name="fx_dim_sub">Шпалери темнішають</string>
     <string name="fx_dark_sub">При розблокуванні</string>
     <string name="fx_ambient_sub">Екран не світиться</string>
+    <string name="fx_ambient_grant">Потрібен дозвіл змінювати системні налаштування. Натисніть, щоб дозволити</string>
 
     <!-- ============ Home: end-bedtime dialog ============ -->
     <string name="action_set">Установити</string>
@@ -180,5 +198,5 @@
     <string name="settings_language_why">Відкриває налаштування</string>
     <string name="section_about">про застосунок</string>
     <string name="settings_version">Версія %1$s</string>
-    <string name="settings_about_body">Gloaming планує режим «Не турбувати» та ефекти екрана на один період щоночі, використовуючи точні будильники, щоб спрацьовувати, навіть коли застосунок закрито.</string>
+    <string name="settings_about_body">Gloaming вмикає «Не турбувати» й ефекти екрана на час сну та вимикає їх уранці. Працює із закритим застосунком.</string>
 </resources>

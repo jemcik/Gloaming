@@ -7,13 +7,28 @@ import android.content.Intent
 class BedtimeReceiver : BroadcastReceiver() {
     override fun onReceive(ctx: Context, intent: Intent) {
         val p = Prefs(ctx)
+        // Boot and upgrade re-assert the zen state rather than trusting what the
+        // rule claims: across a reboot the rule's condition survives as
+        // STATE_TRUE while zen_mode is reset to 0, so believing it loses the
+        // window. START and END force for their own reasons, below.
+        var force = false
         when (intent.action) {
             Scheduler.ACTION_START -> {
                 Journal.write(ctx, "START fired")
                 ZenController.setActive(ctx, p, true, force = true)
             }
             Scheduler.ACTION_END -> {
-                Journal.write(ctx, "END fired")
+                // How late, not just that it happened. Punctual is the norm - the
+                // scheduled second, measured in forced light and deep idle - so a
+                // number here at all is the interesting case.
+                val endNow = System.currentTimeMillis()
+                val late = (endNow - p.endDue) / 1000
+                Journal.write(
+                    ctx,
+                    if (p.endDue != Prefs.NO_DUE && late > 2) "END fired ${late}s late"
+                    else "END fired"
+                )
+                AlarmWatch.handled(p, endNow)
                 // Drop the pin first: if the alarm lands a hair early, a live
                 // pin would reopen the window and rearm END for the same
                 // instant, over and over.
@@ -45,10 +60,28 @@ class BedtimeReceiver : BroadcastReceiver() {
                 // syncRule skips identical rules, so nothing would ever repair
                 // one edited from Settings. Boot and upgrade force a push.
                 p.ruleSignature = null
+                force = true
+                // Before anything reads it: the reboot cancelled the probe's
+                // alarm, so the outstanding question has no answer coming and
+                // must not be scored as one. Void it, then ask again.
+                BackgroundProbe.voidPending(p)
+                Scheduler.armProbe(ctx, p)
+            }
+            Scheduler.ACTION_PROBE -> {
+                // Nothing to do but notice. Arriving at all is the whole answer.
+                val now = System.currentTimeMillis()
+                val late = (now - p.probeDue) / 1000
+                BackgroundProbe.handled(p, now)
+                Journal.write(
+                    ctx,
+                    "background probe arrived (${late}s)" +
+                        if (BackgroundProbe.blocked(p)) " - TOO LATE, phone is holding us" else ""
+                )
+                return
             }
             else -> return
         }
         // Always rearm: exact alarms are one-shot.
-        Scheduler.rescheduleAll(ctx, p)
+        Scheduler.rescheduleAll(ctx, p, force)
     }
 }

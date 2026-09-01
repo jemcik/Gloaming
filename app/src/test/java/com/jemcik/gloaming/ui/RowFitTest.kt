@@ -98,6 +98,45 @@ class RowFitTest {
     }
 
     /**
+     * Settings' rows carry a leading icon AND a trailing chevron, so their
+     * supporting text has the least room in the app - and both of these rows
+     * exist to explain a handoff to a system screen, which is exactly the kind
+     * of sentence that runs long in ru and uk.
+     */
+    private fun settingsRowsFitIn(locale: String) {
+        RuntimeEnvironment.setQualifiers("+$locale-w360dp-h800dp")
+        val ctx = ApplicationProvider.getApplicationContext<android.content.Context>()
+        val titles = listOf(
+            R.string.settings_language, R.string.launch_setup_row,
+            R.string.bedtime_settings_row
+        )
+            .map { ctx.getString(it) }
+
+        compose.setContent {
+            GloamingTheme(dark = false) {
+                SettingsScreen(themeMode = 0, onThemeMode = {}, onBack = {})
+            }
+        }
+
+        val tall = titles.mapNotNull { title ->
+            val match = hasText(title, substring = true)
+            if (compose.onAllNodes(match).fetchSemanticsNodes().isEmpty()) return@mapNotNull null
+            val b = compose.onNode(match).getUnclippedBoundsInRoot()
+            val h = b.bottom - b.top
+            if (h >= threeLine) "$title is ${h.value}dp" else null
+        }
+        assertTrue(
+            "in '$locale' these Settings rows wrapped to three lines, which " +
+                "top-aligns the chevron: $tall",
+            tall.isEmpty()
+        )
+    }
+
+    @Test fun `settings rows fit in English`() = settingsRowsFitIn("en")
+    @Test fun `settings rows fit in Russian`() = settingsRowsFitIn("ru")
+    @Test fun `settings rows fit in Ukrainian`() = settingsRowsFitIn("uk")
+
+    /**
      * The allowlist's rows have LESS room than Home's - a leading icon and a
      * trailing control both - so they are the likeliest to wrap. Alarms is
      * excluded deliberately: it is three lines on purpose, it carries no

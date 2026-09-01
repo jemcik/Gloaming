@@ -272,15 +272,38 @@ fun InterruptionsScreen(onBack: () -> Unit, onChanged: () -> Unit) {
  */
 private const val LIST_STARRED = "com.android.contacts.action.LIST_STARRED"
 
+/**
+ * Where the stars live, best door first.
+ *
+ * LIST_STARRED lands exactly on the starred list and is what a Google Contacts
+ * phone answers - measured on the Honor, which resolves it to
+ * StarredContactsActivity. Samsung ships its own Contacts and answers it with
+ * NOTHING, so the row hid itself there and the whole shortcut was missing on
+ * one of the most common phones in the world.
+ *
+ * The fallback is CATEGORY_APP_CONTACTS: a public AOSP constant meaning "the
+ * contacts app", never a vendor name. Measured on both phones, it resolves
+ * straight to the contacts app with no chooser in between - Samsung's
+ * PeopleActivity and Google's - and favourites are the first thing on that
+ * screen. One tap further from the stars than the direct door, and infinitely
+ * closer than no row at all.
+ *
+ * Deliberately NOT a VIEW of the contacts URI, which was tried: it resolves to
+ * the system RESOLVER on both phones, so the row would open a chooser rather
+ * than an app.
+ */
+private fun starredDoors(): List<Intent> = listOf(
+    Intent(LIST_STARRED),
+    Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_APP_CONTACTS)
+)
+
 @Composable
 private fun StarredLink() {
     val ctx = LocalContext.current
     val haptics = rememberHaptics()
-    val intent = remember { Intent(LIST_STARRED) }
-    val resolves = remember {
-        ctx.packageManager.resolveActivity(intent, 0) != null
-    }
-    if (!resolves) return
+    val intent = remember {
+        starredDoors().firstOrNull { ctx.packageManager.resolveActivity(it, 0) != null }
+    } ?: return
     LinkRow(
         headline = stringResource(R.string.action_starred_contacts),
         leading = {

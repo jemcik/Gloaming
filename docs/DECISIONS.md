@@ -228,6 +228,95 @@ nothing even holding `WRITE_SECURE_SETTINGS` (which an app CAN be granted over
 adb, tested): the service reads those keys at init and on `ACTION_SETTING_RESTORED`
 only, with no `ContentObserver` on them, so a raw write is never noticed.
 
+**The founding alarm measurement was quoted far wider than it was taken,
+1 Sep 2026.** `Scheduler.kt` has said since 0.1 that the alarm "fired 149ms after
+the scheduled instant with the app swiped from recents and the screen off", and
+CLAUDE.md turned that into "the real user path, not a privileged one". A screen
+that is off is not a device in doze - light idle needs roughly half an hour of
+stillness, deep idle longer - so the number never described the state the app
+spends the night in. Nothing was wrong with the measurement; it was the
+generalisation that had no support.
+
+Now measured properly, by FORCING the states instead of waiting for them:
+
+    adb shell dumpsys battery unplug
+    adb shell dumpsys deviceidle force-idle [light|deep]
+
+with a window ending a few minutes out. That turns a twenty-hour feedback loop
+into ten minutes, which is the reason nobody had checked before. Both arms fired
+at the scheduled SECOND - forced light idle and forced deep idle. **Doze is not
+the problem and never was.**
+
+What does hold an alarm is background restriction, which is a different
+mechanism entirely and is written up under its own heading. Worth stating the
+pair together, because "the alarm was late" points at doze and that would have
+been the wrong tree: the alarm is punctual in doze and indefinitely stuck when
+the app is restricted.
+
+**A reboot mid-window silently lost Do Not Disturb, 1 Sep 2026 — and the third
+piece of zen state nobody knew about.** Reported from the phone: enable a
+schedule, let the window run, restart, and bedtime reads "on" with DND off.
+Reproduced on a OnePlus/LineageOS first try.
+
+**And absent on the Honor, which is worth stating because the first draft here
+claimed the opposite.** "Not vendor-specific - the Honor runs the same code" was
+true of our code, and was allowed to stand as a claim about behaviour that had
+not been tested. It was tested afterwards: the same reboot mid-window leaves
+`zen_mode` at 1 with `conditionOverride` at `OVERRIDE_NONE`, so MagicOS never
+stamps it and the window survives untouched. The override comes from AOSP's
+`setManualZenMode`, and MagicOS evidently does not reach that path on boot.
+
+So: reproducible on LineageOS, absent on MagicOS, unknown everywhere else. Two
+phones is not a survey. The fix costs nothing where the bug does not occur - the
+stuck branch simply never runs.
+
+A rule carries a `conditionOverride` as well as a condition, and the override
+wins. AOSP's `setManualZenMode` stamps `OVERRIDE_DEACTIVATE` on every active
+rule whenever zen goes off other than by the user in SystemUI — and a reboot
+qualifies. That leaves the rule in a state this project had no vocabulary for:
+
+| reading | says |
+|---|---|
+| the zen config | `state=STATE_TRUE` |
+| `getAutomaticZenRuleState` | `STATE_FALSE` — the override winning |
+| `currentInterruptionFilter` | `ALL` — nothing is being filtered |
+| this app | "running", `activeDay` pinned, alarms armed |
+
+Every indicator the app owns said running while the phone filtered nothing, and
+`reconcile` on resume could not repair it because it lands on the same code.
+
+Two attempts failed before the right one, both worth keeping because each looked
+obviously correct:
+
+- **`force = true` alone does nothing.** Re-asserting `STATE_TRUE` on a rule
+  whose condition is already `STATE_TRUE` is not a transition, so the platform
+  has nothing to act on. Measured on the stuck rule itself.
+- **Keying the repair on `ruleState == want` never fires.** The API reports the
+  EFFECTIVE state and the config stores the CONDITION; under an override they
+  disagree by construction. The first fix tested the wrong one of the two and
+  ran zero times.
+
+What works, from `ZenRule.reconsiderConditionOverride` in AOSP: an
+`OVERRIDE_DEACTIVATE` is dropped only when the condition goes **FALSE**. So push
+`STATE_FALSE` to clear the override, then `STATE_TRUE` to activate for real —
+and trigger that on the INTERRUPTION FILTER, the only reading that says what the
+phone is actually doing. Guarded so it happens solely in the stuck case, because
+a needless off/on is the visible blink the rest of `ZenController` avoids.
+
+Also fixed alongside: `force` now threads through `Scheduler.rescheduleAll`, so
+boot and upgrade re-assert. CLAUDE.md already claimed "force = true exists for
+alarms and boot"; boot reaches `setActive` only via `rescheduleAll`, which never
+passed it, so that half had never been true.
+
+Verified end to end: reboot mid-window, app never opened, zen comes back on with
+`conditionOverride` reset to `OVERRIDE_NONE` and END re-armed. Before the fix the
+same sequence left zen at 0 permanently.
+
+One method note. The first reading of `conditionOverride` was taken by grepping
+all of `dumpsys notification`, which includes the `Zen Log:` history — the trap
+this file already documents. It happened to agree with the live config, but it
+was luck; cut at `Zen Log:` before believing any of it.
+
 **Ambient suppression is ignored on the Honor — and establishing that took
 three witnesses that turned out to measure nothing.** The old claim in
 `AmbientCapability`, "there is no way to observe this the way night mode can be
@@ -465,6 +554,144 @@ once a boot is handled, which is the only confirmation available when the settin
 cannot be read. Confirmed both ways on the Honor - the notice appears with
 auto-launch off and is gone after a boot that reached us.
 
+**The launch state cannot be READ, so it is MEASURED.** Two questions hide
+behind Honor's "App launch" screen: auto-launch, which decides whether
+`BOOT_COMPLETED` reaches us, and run-in-background, which decides whether our
+alarms are delivered while the app is closed. Neither is readable. A clean
+before/after diff on 1 Sep 2026 — both switches off, both switches on, captured
+either side — showed NO change in `settings list global/secure/system`, none in
+`appops get com.jemcik.gloaming`, and none in `dumpsys package
+com.jemcik.gloaming`. The state lives inside `com.hihonor.systemmanager` behind
+providers gated by `com.hihonor.permission.ACCESS_INTERFACE`, which is
+`signature|privileged`.
+
+Honor does document a real API for it, and the reason it took two attempts to
+find is worth recording: searching in English returns nothing, and the first
+conclusion here — "no developer documentation exists" — was simply wrong.
+Searching in Chinese finds the Honor MDM SDK, where
+`getDisallowCloseBootCompletedApps(ComponentName admin)` answers exactly this
+question. It is gated behind `com.hihonor.permission.sec.MDM_APP_MANAGEMENT`,
+requires the app to be an active device admin, and is issued under a commercial
+enterprise contract. Correct, documented, and out of reach for a consumer app.
+
+**Samsung's always-on display IS reachable, and the namespace is why.** Found
+by the technique that cracked Honor's AOD: diff every Settings namespace across
+a toggle of the vendor's own feature - here One UI's Sleep mode, Galaxy S23 /
+One UI 8, 1 Sep 2026. Greyscale changed NO key at all, which is what proves it
+is applied inside system_server through `ColorDisplayManager` and is not
+reachable. But every AOD key on that phone lives in **`Settings.System`**, not
+`Settings.Secure` - and that is the whole difference, because `Settings.System`
+is guarded by WRITE_SETTINGS, which the USER can grant on an ordinary settings
+screen. `aod_mode` is the one that decides, proved end to end: written 1 the
+phone reports `aod_show_state=1` while dozing, written 0 it reports 0. Then
+through the app itself, with the permission granted the normal way:
+`ambient off (was aod_mode=1)` at the start of a window and
+`ambient restored (aod_mode=1)` at the end.
+So `AmbientControl` now carries two routes - Honor's four keys in Secure behind
+an adb-only grant, Samsung's one key in System behind a user-grantable one - and
+`needsGrant` is true only where the grant is actually askable, so no phone is
+ever offered a button that cannot work.
+
+**Dark theme on Samsung: four routes, all dead.** Worth the detail, because it
+looks reachable and is not.
+1. `UiModeManager.setNightMode` compiles, throws nothing, and changes nothing -
+   a silent no-op without MODIFY_DAY_NIGHT_MODE. Verified by reading
+   `cmd uimode night` either side.
+2. `system display_night_theme` is user-writable and is a MIRROR: written 0
+   while the phone was dark, the value changed and the theme did not.
+3. `secure ui_night_mode` is the AOSP key and is adb-only anyway - and writing
+   it live did not flip the theme either, so the state lives in the service,
+   not the table.
+4. The SCHEDULE keys - `display_night_theme_scheduled`, `_on_time`, `_off_time`,
+   in `Settings.System` and so user-writable - are mirrors too. Scheduled dark
+   for two minutes out on a light phone; two minutes past it, `night mode: no`,
+   `scheduled=1`, `display_night_theme=0`. Nothing fired.
+A toggle of the real Settings UI was diffed to be sure nothing was missed: it
+writes exactly `secure ui_night_mode` and `system display_night_theme`, and
+no third key exists.
+
+**Grayscale and wallpaper dim, for the same file:** grayscale has no settings key (the diff above) and
+`ColorDisplayManager` is signature; wallpaper dim needs
+`WallpaperManager.setWallpaperDimAmount`, which is `@hide` and does not compile;
+dark theme via `UiModeManager.setNightMode` compiles, throws nothing, and
+changes nothing - a silent no-op without MODIFY_DAY_NIGHT_MODE, verified by
+reading `cmd uimode night` either side. Do not re-derive these.
+
+**One UI 8 stores `ZenDeviceEffects` and applies NONE of them.** Measured on a
+Galaxy S23, One UI 8 / Android 16, 1 Sep 2026. The rule reads `state=STATE_TRUE`
+with `deviceEffects=[grayscale, dimWallpaper, nightMode]`, `zen_mode` is 1 and
+Do Not Disturb genuinely filters - and `Global saturation` stays `false` and
+`cmd uimode night` stays `no`, across a screen-off cycle too (checked because
+AOSP deliberately defers night mode to screen-off).
+It is NOT a capability gap, and that distinction is the whole point: turning on
+One UI's own Sleep mode flips `Global saturation` to **true** - the same
+`ColorDisplayManager` path AOSP's `DefaultDeviceEffectsApplier` uses. Samsung
+simply never wired third-party zen rules to its own applier. Our code is using
+the correct public API; the fix is Samsung's.
+
+**The Samsung Routines SDK route was tried and is closed.** One UI has a real
+integration surface - `com.samsung.android.sdk.routines.v3`, with providers at
+`<pkg>.provider.routines.v3`, an intent-filter for `ROUTINE_PROVIDER`, and
+`meta.CONDITION` pointing at a `<conditions>` XML. The contract was read
+straight out of Samsung Clock's own manifest and condition meta. A spike
+declared it verbatim. Result: `READ_ROUTINE_INFO` is `protectionLevel normal`
+and IS granted at install with no prompt, but Modes and Routines never listed
+our condition and never called our provider once, before or after a reboot -
+"Результаты не найдены". Every app implementing the SDK on the device is
+Samsung-signed and `ACCESS_ROUTINES` is `signature|privileged`, so discovery is
+almost certainly restricted to privileged packages. The SDK is also absent from
+developer.samsung.com's published Galaxy SDKs. Spike left on `samsung-spike`,
+unmerged.
+
+**What DOES work is an AOSP action: `android.settings.BEDTIME_SETTINGS`.** It
+resolves on the Galaxy - landing on One UI's `LifestyleModeEditorActivity`, the
+Sleep mode editor where greyscale actually is configurable - and resolves to
+nothing on the Honor. So it is a capability probe like every other here, not a
+vendor test, and it gives Samsung owners the one working route to a grey screen.
+The constant is hidden (`Settings.ACTION_BEDTIME_SETTINGS` does not compile
+against compileSdk 37), so the action string is written out; it is an intent
+action matched by the package manager, not a private method and not reflection.
+
+**A parked alarm is still DELIVERED, so arrival cannot be the test.** The first
+version of the probe scored a blocked phone as healthy, and only the device
+caught it. With `RUN_ANY_IN_BACKGROUND` at `ignore` the probe sat in *"Pending
+user blocked background alarms"* with `origWhen=15:17:09` — exactly the symptom
+being hunted — and then arrived at 15:21:14, **244 s late**, released by the app
+being opened. `handled()` recorded a pass. The signal had been written down as
+its own opposite, which is the same shape as the report this work began with: an
+END due at 08:55 that landed at 09:07 the moment the app was foregrounded.
+So the verdict is LATENESS, never arrival. That also closes a race which made
+the answer depend on scheduling: opening the app both releases the parked alarm
+and runs `check()`, and whichever ran first decided the result — when delivery
+won, `probeSeen == probeDue` and `check()` returned early, latching nothing.
+Judging by lateness makes both orders agree. Re-measured on the fixed build:
+parked, then `background probe arrived (258s) - TOO LATE, phone is holding us`,
+`probeFailed=true`, and the card on screen.
+
+**Where the appop is readable, the probe card stands down.** Setting the appop
+makes `isBackgroundRestricted()` true, so `BackgroundNoticeSection` fires too and
+the screen carried two cards making the same accusation. The readable one wins:
+it names a setting that actually exists and clears itself the instant that
+setting changes, where the probe has to be re-run before it will believe a fix.
+Read it if you can; measure it only when you cannot.
+
+So run-in-background is answered by experiment instead: `BackgroundProbe` arms
+one throwaway exact alarm eleven minutes out and shows nothing. Arriving is the
+whole answer — the background path works on this phone, permanently. Never
+arriving means the phone is holding us, and only then does a card appear. The
+first design instead INFERRED it, from "has a launch manager AND has never
+finished a window", which nagged correctly-configured Honors and could not
+distinguish a broken phone from one that had merely never run.
+The probe is armed on EVERY phone, deliberately. The assumption that vendors
+misbehave and AOSP does not was tested in both directions the same day and
+failed in both: the reboot bug that silently lost a whole window was on the
+OnePlus running LineageOS and did NOT reproduce on the Honor. Only the WORDING
+is vendor-aware — where a launch manager resolves the card names Honor's own
+switches, and where it does not it uses the general copy whose button lands on
+app details.
+Auto-launch is not probeable and no amount of cleverness makes it so: the only
+test is a real reboot, which is what `BootWatch` above catches after the fact.
+
 The door is named as a COMPONENT, not by action, and that is deliberate: two
 activities answer `hihonor.intent.action.HSM_STARTUPAPP_MANAGER`, and
 `.appcontrol.activity.StartupAppControlActivity` is gated behind
@@ -507,6 +734,33 @@ anyway.
 confirming on real hardware.
 
 ## Gotchas that cost real time
+
+- **`pm clear` strands a live zen rule, and the screen stays grey.** Clearing
+  the app's data wipes prefs but leaves the `AutomaticZenRule` registered with
+  the system, enabled, and still carrying `deviceEffects=[grayscale,
+  dimWallpaper]`. The app then has no `ruleId`, so the rule is invisible to it:
+  Home reads bedtime OFF, `zen_mode` reads 0, and the panel is still grayscale
+  with nothing on screen to explain it. Reported on the Honor 1 Sep 2026 and
+  reproduced the same afternoon.
+  `sweepOrphans` is the code meant to catch exactly this and it could not,
+  because it opened `val keep = p.ruleId ?: return` — so in the ONE case where
+  every rule is an orphan it swept nothing. The only escape was to switch
+  bedtime on, which minted a fresh `ruleId` and finally let the sweep run; that
+  is what the user did by hand and what the journal recorded at 14:38.
+  `keep` is nullable now and the sweep runs regardless; the existing filter
+  already removes only rules carrying our own `conditionId`. Verified end to
+  end: rule `d3df8da2` left behind by `pm clear`, then merely OPENING the app
+  removed it, no toggle.
+  Two smaller traps came out of the same session. `dumpsys notification` prints
+  the whole zen config TWICE, so counting `ZenRule[` occurrences double-counts
+  even after the documented `sed '/Zen Log:/q'` — dedupe by rule id. And
+  `ruleId` is a String pref, stored as `<string name="ruleId">…</string>`, so a
+  grep for `value="…"` misses it and makes a present rule id look absent.
+  Finally, the sweep needs notification policy access to enumerate rules at all,
+  so after a data clear nothing can be cleaned up until DND is granted again —
+  which is the first thing the app asks for, so in practice the repair lands on
+  the first run.
+
 
 - **Logcat is encrypted** for third-party apps on MagicOS — entries come back as
   `(HKS)...(HKE)`. Hence `Journal.kt`. Never swallow an exception; three bugs

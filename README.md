@@ -13,7 +13,7 @@ it — driven by exact alarms, so it fires with the app closed.
 [![Android](https://img.shields.io/badge/Android-15%2B%20(API%2035)-3DDC84)](#requirements)
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.3.21-7F52FF)](https://kotlinlang.org)
 [![Compose](https://img.shields.io/badge/Jetpack%20Compose-Material%203-4285F4)](https://developer.android.com/jetpack/compose)
-[![Tests](https://img.shields.io/badge/tests-93-success)](#tests)
+[![Tests](https://img.shields.io/badge/tests-115-success)](#tests)
 
 <img src="docs/screenshots/home.png" width="19%" alt="Home, mid-window">
 <img src="docs/screenshots/home-dark.png" width="19%" alt="Home, dark, mid-window">
@@ -47,7 +47,10 @@ The job never runs, so bedtime only ever happens while Wellbeing is in the
 foreground, and the constraint cannot be satisfied or removed even over adb.
 `setExactAndAllowWhileIdle` is not gated by it: measured firing 149 ms after the
 scheduled instant with the app swiped from recents and the screen off, on the
-ordinary user path — no battery whitelist, standby bucket 10.
+ordinary user path — no battery whitelist, standby bucket 10. **Screen off is not
+doze**, so that measurement never covered the state the app spends the night in;
+the overnight path was measured separately by forcing light and deep idle, and
+fired at the scheduled second in both.
 
 That is one vendor on one build, and it is where the app came from rather than
 what it is for. Background work being quietly dropped is a common shape across
@@ -98,26 +101,43 @@ into working:
 - Capability is **measured at runtime, not looked up in a device list**. Whether
   always-on display can be suppressed is settled by reading the AOSP key the
   effect acts on; where that key is present, the switch is simply live.
-- The single `Build.MANUFACTURER` test in the codebase returns Honor and
-  Huawei's own always-on keys and null everywhere else, and every caller stops
-  at null — so on any other phone that object does nothing at all.
+- There are **two** `Build.MANUFACTURER` tests, and both are last resorts where
+  no probe exists. One returns a vendor's own always-on keys and null everywhere
+  else, so every caller stops at null. The other decides whether a phone applies
+  the zen rule's screen effects at all — it cannot be read back, since the
+  platform's own getters are `@hide` — and it expires by itself the moment the
+  effects are observed working.
 - The one device list is an **exclusion** list, consulted only when the AOSP key
   it would otherwise read is absent — so an unrecognised phone is treated as
   capable rather than as broken.
-- There is exactly one write to `Settings.System`, `Secure` or `Global` in the
-  whole app, it is the always-on route below, and it cannot happen by accident:
-  it needs a permission Android grants only over adb, so on an ordinary install
-  the code is inert and the control is not drawn.
+- The only writes to `Settings.*` in the whole app are the always-on routes
+  below, and each is gated on a permission the app does not hold by default. On
+  Honor and Huawei the keys live in `Settings.Secure`, which needs an adb grant,
+  so that path is inert on an ordinary install. On Samsung they live in
+  `Settings.System`, where `WRITE_SETTINGS` is the guard — and that one the user
+  can grant from a normal settings screen, so the control is offered rather than
+  hidden.
 
-Run on two phones so far: the Honor above, and a OnePlus CPH2653 on LineageOS
-23.2 (Android 16). The second one installed and ran first time, in Ukrainian on
-a 12-hour clock, with no device-specific work.
+Run on three phones so far, and they disagree about almost everything:
 
-The two disagree about always-on display — the platform's request is honoured on
-the OnePlus and ignored by the Honor — and the app works that out by itself,
-showing a live switch on one and, on the other, nothing at all unless you take
-the optional route below. They agree that dark theme works, applied when the
-screen next turns off. Reports from other hardware are welcome.
+| | Honor BKQ-N49<br>MagicOS 10 | OnePlus CPH2653<br>LineageOS 23 | Galaxy S23<br>One UI 8 |
+|---|---|---|---|
+| exact alarms, closed app | yes | yes | yes |
+| `BOOT_COMPLETED` delivered | only if auto-launch is on | yes | yes |
+| DND survives a reboot mid-window | yes | **no** — needs the fix below | yes |
+| screen effects applied | yes | yes | **none of them** |
+| always-on suppressed by the platform | no — vendor route instead | yes | no — vendor route instead |
+
+None of that is looked up in a device list. Each row is a question the app asks
+at runtime, and the answers shape what it draws: a switch that cannot move is
+not shown, and a door that opens onto nothing is not offered.
+
+Two of those cells are worth calling out, because they are the opposite of what
+anyone would guess. The reboot bug is on the **AOSP-derived** phone and absent on
+both vendor ones. And One UI stores the zen rule's screen effects and applies
+none of them — not a missing capability, since its own Sleep mode drives the
+very same display saturation, but third-party rules were simply never wired to
+it. Reports from other hardware are welcome.
 
 ## Requirements
 
@@ -164,6 +184,53 @@ the permission, or never granting it, leaves the whole path inert.
 Note the app cannot undo this if you uninstall it mid-window; switch bedtime off
 first, or turn always-on back on in Settings.
 
+### Samsung: always-on display, without adb
+
+One UI keeps its always-on keys in `Settings.System` rather than
+`Settings.Secure`, and that one difference decides everything: `Settings.System`
+is guarded by **`WRITE_SETTINGS`**, which you grant on an ordinary settings
+screen. No adb, no root.
+
+The row appears with the ask written on it, sends you to Android's *Modify
+system settings* screen, and once granted the display goes off for the window
+and comes back afterwards — the previous value is recorded before anything is
+written, and restored on END, on boot, and after a crash.
+
+The keys were found by diffing every settings namespace across One UI's own
+Sleep mode, which is also how Honor's were found.
+
+### Samsung: the screen effects are not shown, and that is deliberate
+
+One UI accepts the zen rule's `ZenDeviceEffects` and applies none of them —
+greyscale, wallpaper dimming and dark theme are all inert, checked across a
+screen-off cycle because AOSP defers night mode there on purpose. A switch that
+does nothing is worse than an absent one, so those three are hidden on such a
+phone.
+
+Settings then offers **System bedtime mode**, which opens One UI's own Sleep
+mode — where its greyscale genuinely works. Every other route was chased to a
+measured dead end and the results are in
+[docs/DECISIONS.md](docs/DECISIONS.md): there is no settings key for greyscale,
+`setWallpaperDimAmount` is `@hide`, and `UiModeManager.setNightMode` compiles,
+throws nothing and changes nothing without a signature permission.
+
+### When something goes wrong, the app says so
+
+Vendor interference is the failure this app was built around, so it watches
+itself rather than assuming:
+
+- **One throwaway alarm**, eleven minutes after install, asks whether this phone
+  delivers alarms in the background at all. It is silent unless the answer is no.
+  The verdict is *lateness*, not arrival — a blocked alarm is not dropped but
+  held, and released the moment you open the app, which is exactly what a naive
+  check would score as success.
+- **Every window's END is watched.** If it comes due and does not arrive on time,
+  you are told, with a button to the setting that usually explains it.
+- **A restart that never reached the app** is detected after the fact, because no
+  vendor lets that be read in advance.
+
+None of these ask which phone you have.
+
 ## Build
 
     ./tools/build.sh      debug APK, full log at /tmp/build.log
@@ -180,7 +247,7 @@ first, or turn always-on back on in Settings.
 
 ## Tests
 
-    ./gradlew test        93 tests, JVM only, seconds
+    ./gradlew test        115 tests, JVM only, seconds
     ./gradlew coverage    JaCoCo HTML at app/build/reports/jacoco/coverage
 
 They cover the scheduling core (pure functions of times, days and an injected

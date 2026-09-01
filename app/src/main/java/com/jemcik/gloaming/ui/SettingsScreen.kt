@@ -20,6 +20,8 @@ import androidx.compose.ui.unit.dp
 import com.jemcik.gloaming.R
 import com.jemcik.gloaming.ui.LinkRow
 import com.jemcik.gloaming.ui.RadioRow
+import com.jemcik.gloaming.core.BootWatch
+import com.jemcik.gloaming.core.Doors
 import com.jemcik.gloaming.core.Prefs
 
 /**
@@ -100,6 +102,55 @@ fun SettingsScreen(themeMode: Int, onThemeMode: (Int) -> Unit, onBack: () -> Uni
                             Intent(Settings.ACTION_APP_LOCALE_SETTINGS)
                                 .setData(Uri.fromParts("package", ctx.packageName, null))
                         )
+                    }
+                }
+            }
+        }
+
+        // The door that is always open.
+        //
+        // Every other route to this screen is a NOTICE - the phone was caught
+        // holding an alarm, or a restart went unhandled - so until now the only
+        // way to reach the vendor's launch manager was to be told something was
+        // broken. That is backwards for the one setting on this phone that
+        // cannot be read: someone who simply wants to be sure had nowhere to go,
+        // and the only alternative on offer was a card that nagged everyone.
+        // A quiet link costs nothing to the people who do not need it.
+        //
+        // Hidden where no launch manager resolves, on the same capability probe
+        // the notices use - never a Build.MANUFACTURER test.
+        val launchManager = Doors.hasLaunchManager(ctx)
+        val systemBedtime = Doors.hasSystemBedtime(ctx)
+        if (launchManager || systemBedtime) {
+            Section(stringResource(R.string.section_this_phone)) {
+                SettingsCard {
+                    if (launchManager) {
+                        LinkRow(
+                            stringResource(R.string.launch_setup_row),
+                            supporting = stringResource(R.string.launch_link_why),
+                            leading = {
+                                Icon(
+                                    painterResource(R.drawable.ic_restart),
+                                    contentDescription = null,
+                                    tint = LocalContentColor.current,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                        ) { haptics.open(); Doors.openAutoStart(ctx) }
+                    }
+                    if (systemBedtime) {
+                        LinkRow(
+                            stringResource(R.string.bedtime_settings_row),
+                            supporting = stringResource(R.string.bedtime_settings_why),
+                            leading = {
+                                Icon(
+                                    painterResource(R.drawable.ic_bedtime),
+                                    contentDescription = null,
+                                    tint = LocalContentColor.current,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                        ) { haptics.open(); Doors.openSystemBedtime(ctx) }
                     }
                 }
             }

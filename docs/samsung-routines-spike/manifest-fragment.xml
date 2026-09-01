@@ -1,0 +1,28 @@
+    <uses-permission android:name="com.samsung.android.app.routines.permission.READ_ROUTINE_INFO" />
+            android:name=".core.RoutinesProbeProvider"
+            android:authorities="com.jemcik.gloaming.provider.routines.v3"
+            android:authorities="com.jemcik.gloaming.provider.routines.v3"
+            android:exported="true"
+            android:permission="com.samsung.android.permission.sdk.routines.v3.ACCESS_ROUTINES">
+            android:permission="com.samsung.android.permission.sdk.routines.v3.ACCESS_ROUTINES">
+            <intent-filter>
+                <action android:name="com.samsung.android.sdk.routines.v3.ROUTINE_PROVIDER" />
+                <action android:name="com.samsung.android.sdk.routines.v3.ROUTINE_PROVIDER" />
+            </intent-filter>
+            <meta-data android:name="com.samsung.android.sdk.routines.v3.version" android:value="3.0.0" />
+            <meta-data android:name="com.samsung.android.sdk.routines.v3.version" android:value="3.0.0" />
+            <meta-data android:name="com.samsung.android.sdk.routines.v3.version_code" android:value="3" />
+            <meta-data android:name="com.samsung.android.sdk.routines.v3.version_code" android:value="3" />
+            <!-- V2 shape as well: MetaParserV2 queries content providers for this
+                 action and then reads the meta-data off the PROVIDER, under the
+                 older singular name. Declaring both costs nothing and covers
+                 whichever collector One UI actually runs. -->
+            <intent-filter>
+                <action android:name="com.samsung.android.SDK.routine.ROUTINE_CONDITION_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="com.samsung.android.SDK.routine.meta.CONDITION"
+                android:resource="@xml/routines_conditions" />
+                android:resource="@xml/routines_conditions" />
+        </provider>
+            android:name="com.samsung.android.sdk.routines.v3.meta.CONDITION"
+            android:resource="@xml/routines_conditions" />

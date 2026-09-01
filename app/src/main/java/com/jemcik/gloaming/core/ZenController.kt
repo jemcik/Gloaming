@@ -182,8 +182,24 @@ object ZenController {
      * this is a vendor Android, and "the API returns exactly what it documents"
      * has not been a safe assumption anywhere else in this file.
      */
+    /**
+     * Remove every rule of ours that is not the one we are holding.
+     *
+     * `keep` is deliberately NULLABLE and this deliberately does not return
+     * early when it is null. With no ruleId there is nothing to preserve, so
+     * every Gloaming rule on the phone is an orphan and all of them should go.
+     *
+     * It used to `?: return` there, and that stranded a LIVE rule: clearing the
+     * app's data wipes prefs but leaves the rule registered with the system,
+     * still active, still applying its device effects. Measured on the Honor
+     * 1 Sep 2026 after a `pm clear` - the app showed bedtime off, zen_mode read
+     * 0, and the screen stayed GRAYSCALE, because an orphan nobody could see was
+     * still holding it. Nothing could clean it up either: the sweep returned at
+     * the first line every time, so the only escape was to switch bedtime on,
+     * which minted a ruleId and finally let the sweep run.
+     */
     private fun sweepOrphans(ctx: Context, p: Prefs) {
-        val keep = p.ruleId ?: return
+        val keep = p.ruleId
         val n = nm(ctx)
         val ours = runCatching { n.automaticZenRules }.getOrNull() ?: return
         ours.filter { (id, rule) -> id != keep && rule.conditionId == CONDITION }
@@ -243,8 +259,46 @@ object ZenController {
         val id = syncRule(ctx, p) ?: return false
         val want = if (active) Condition.STATE_TRUE else Condition.STATE_FALSE
         val label = if (active) "ON" else "OFF"
-        if (!force && ruleState(ctx, id) == want) return true
+        // The rule's own state is the right question to ask (never what we last
+        // wrote) - but it can LIE across a reboot, and that cost a whole window.
+        // Measured on a OnePlus/LineageOS 1 Sep 2026: reboot mid-window and the
+        // platform resets zen_mode to 0 while the rule's condition PERSISTS as
+        // STATE_TRUE in the zen config. The two disagree, the rule is the one
+        // that is wrong, and this early return believed it: boot re-armed the
+        // alarms, `activeDay` stayed pinned, every indicator said "running", and
+        // Do Not Disturb was simply off for the rest of the night. Opening the
+        // app did not repair it either, because reconcile lands here too.
+        //
+        // So when we want the rule ON, the state alone is not enough: the system
+        // must also report SOMETHING in effect. If the filter is ALL then nothing
+        // is filtering, so our rule certainly is not, whatever it claims.
+        // STUCK is that disagreement: we want it ON and yet nothing at all is
+        // being filtered. Deliberately NOT also testing ruleState here - that was
+        // the first attempt and it never fired, because getAutomaticZenRuleState
+        // reports the EFFECTIVE state (FALSE, the override winning) while the
+        // config stores the condition as TRUE. The two readings are of different
+        // things, and the filter is the only one that says what the phone is
+        // actually doing.
+        val stuck = active &&
+            currentFilter(ctx) == NotificationManager.INTERRUPTION_FILTER_ALL
+        if (!force && !stuck && ruleState(ctx, id) == want) return true
         return try {
+            // Why the extra STATE_FALSE. A reboot mid-window leaves the rule
+            // carrying conditionOverride=OVERRIDE_DEACTIVATE: AOSP's
+            // setManualZenMode sets it on every active rule when zen goes off
+            // other than by the user in SystemUI, and a reboot qualifies. The
+            // override then vetoes the condition, so the rule reads STATE_TRUE in
+            // the config, reports STATE_FALSE through the API, and filters
+            // nothing - and pushing STATE_TRUE again does not help, because
+            // ZenRule.reconsiderConditionOverride only drops an OVERRIDE_DEACTIVATE
+            // when the condition goes FALSE. So: push FALSE to clear the override,
+            // then TRUE to activate for real. Only in the stuck case - a needless
+            // off/on is the visible blink the rest of this file works to avoid.
+            if (stuck) {
+                nm(ctx).setAutomaticZenRuleState(
+                    id, Condition(CONDITION, RULE_NAME, Condition.STATE_FALSE)
+                )
+            }
             nm(ctx).setAutomaticZenRuleState(id, Condition(CONDITION, RULE_NAME, want))
             if (p.lastLoggedZen != label) {
                 Journal.write(ctx, "zen state -> " + label)

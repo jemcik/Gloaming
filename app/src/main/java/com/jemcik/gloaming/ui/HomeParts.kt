@@ -35,6 +35,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.platform.LocalLocale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -356,6 +357,72 @@ internal fun DayRow(selected: Set<DayOfWeek>, onToggle: (DayOfWeek) -> Unit) {
                         modifier = Modifier.clearAndSetSemantics { }
                     )
                 }
+            }
+        }
+    }
+}
+
+/**
+ * A suggestion, and it must not be mistaken for a fault.
+ *
+ * Every other card on this screen reports something MEASURED - a permission
+ * that is missing, an alarm that was eaten, a phone that was caught holding
+ * one. This one cannot: the setting behind it is unreadable, so the honest
+ * claim is "worth doing", never "something is wrong". Three deliberate
+ * differences carry that distinction, because tone is the only thing that can:
+ *
+ * - The icon is NOT an [IconTint]. Those are the notice colours, and Blocked
+ *   and Boot share a violet that means "the phone is interfering". Borrowing it
+ *   here would say something untrue in the one language nobody reads
+ *   consciously. Plain [onSurfaceLow] instead.
+ * - Two TEXT buttons, not one filled one. A filled button is the app asking; a
+ *   pair of text buttons is the app offering, which is what M3 gives a banner
+ *   carrying a non-blocking message.
+ * - A real way out. Dismiss sits first, is a full-weight choice, and is
+ *   permanent - the offer never comes back, because a suggestion repeated is a
+ *   demand, and because the measured card is already behind it if the phone
+ *   turns out to be broken after all.
+ */
+@Composable
+internal fun TipCard(
+    title: String,
+    why: String,
+    dismissLabel: String,
+    actionLabel: String,
+    onDismiss: () -> Unit,
+    onAction: () -> Unit
+) {
+    val g = gloam
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .padding(horizontal = CARD_PAD, vertical = 14.dp),
+        verticalArrangement = Arrangement.spacedBy(TIGHT)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                painterResource(R.drawable.ic_restart),
+                contentDescription = null,
+                tint = g.onSurfaceLow,
+                modifier = Modifier.size(24.dp)
+            )
+            Spacer(Modifier.width(16.dp))
+            Text(
+                title,
+                style = MaterialTheme.typography.titleMedium, color = g.onSurface
+            )
+        }
+        Text(why, style = MaterialTheme.typography.bodySmall, color = g.onSurfaceLow)
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.End
+        ) {
+            TextButton(onClick = onDismiss, shape = CircleShape) {
+                Text(dismissLabel, color = g.onSurfaceLow)
+            }
+            Spacer(Modifier.width(4.dp))
+            TextButton(onClick = onAction, shape = CircleShape) {
+                Text(actionLabel, color = g.stateOn)
             }
         }
     }

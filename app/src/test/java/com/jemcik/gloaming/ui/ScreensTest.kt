@@ -41,6 +41,87 @@ class ScreensTest {
 
     private fun ctx(): android.content.Context = ApplicationProvider.getApplicationContext()
 
+    /**
+     * Make this phone look like one with a vendor launch manager.
+     *
+     * `hasLaunchManager` is a CAPABILITY probe - it asks whether the activity
+     * resolves - so the way to test the behaviour is to make it resolve, not to
+     * stub a manufacturer. Robolectric's package manager answers nothing by
+     * default, which is why the tip is invisible in every other test here.
+     */
+    private fun withLaunchManager() {
+        shadowOf(ctx().packageManager).addActivityIfNotPresent(
+            android.content.ComponentName(
+                "com.hihonor.systemmanager",
+                "com.hihonor.systemmanager.startupmgr.ui.StartupNormalAppListActivity"
+            )
+        )
+    }
+
+    private fun armed(): Prefs {
+        shadowOf(ctx().getSystemService(NotificationManager::class.java))
+            .setNotificationPolicyAccessGranted(true)
+        ShadowAlarmManager.setCanScheduleExactAlarms(true)
+        val p = Prefs(ctx())
+        p.enabled = true
+        p.startTime = LocalTime.now().minusHours(1)
+        p.endTime = LocalTime.now().plusHours(1)
+        p.days = DayOfWeek.entries.toSet()
+        return p
+    }
+
+    // ---------- the one-time launch tip ----------
+
+    @Test
+    fun `the tip can be refused, and refusing it is final`() {
+        // The whole point of the redesign. The card it replaced could not be
+        // answered "no": it appeared on every phone with a launch manager,
+        // whether or not anything was wrong, and nothing the user did to their
+        // phone could clear it. This one has a real way out, and taking it must
+        // stick - a suggestion that comes back is a demand.
+        val p = armed()
+        p.launchTipSeen = false
+        withLaunchManager()
+        compose.setContent {
+            GloamingTheme(dark = false) {
+                Home(rememberScrollState(), onOpenSettings = {}, onOpenInterruptions = {})
+            }
+        }
+        val skip = ctx().getString(R.string.launch_tip_skip)
+        compose.onNodeWithText(skip).performClick()
+        compose.onNodeWithText(skip).assertDoesNotExist()
+        assertTrue("refusing must be remembered, or it returns", p.launchTipSeen)
+    }
+
+    @Test
+    fun `the tip stays away once answered`() {
+        val p = armed()
+        p.launchTipSeen = true
+        withLaunchManager()
+        compose.setContent {
+            GloamingTheme(dark = false) {
+                Home(rememberScrollState(), onOpenSettings = {}, onOpenInterruptions = {})
+            }
+        }
+        compose.onNodeWithText(ctx().getString(R.string.launch_tip_skip)).assertDoesNotExist()
+    }
+
+    @Test
+    fun `nothing is offered before bedtime is switched on`() {
+        // Just-in-time, and this is what pins it: at install nothing has been
+        // promised, so there is nothing yet worth protecting overnight.
+        val p = armed()
+        p.enabled = false
+        p.launchTipSeen = false
+        withLaunchManager()
+        compose.setContent {
+            GloamingTheme(dark = false) {
+                Home(rememberScrollState(), onOpenSettings = {}, onOpenInterruptions = {})
+            }
+        }
+        compose.onNodeWithText(ctx().getString(R.string.launch_tip_skip)).assertDoesNotExist()
+    }
+
     // ---------- Settings ----------
 
     @Test

@@ -8,6 +8,11 @@
     <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
+    <!-- Samsung keeps its always-on keys in Settings.System, where WRITE_SETTINGS
+         is the guard - and unlike WRITE_SECURE_SETTINGS the user can grant that
+         themselves, on a normal settings screen. See AmbientControl. -->
+    <uses-permission android:name="android.permission.WRITE_SETTINGS" />
+
     <!-- Not grantable at install and there is no runtime prompt for it: this is
          signature|privileged, so only adb can grant it, and AmbientControl is
          inert without it. Declared so a user who wants the vendor always-on
@@ -25,6 +30,12 @@
              itself on a phone where it would have worked. -->
         <intent>
             <action android:name="com.android.contacts.action.LIST_STARRED" />
+        </intent>
+        <!-- And the fallback door, for phones that answer neither: Samsung
+             ships its own Contacts and does not handle LIST_STARRED at all. -->
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.APP_CONTACTS" />
         </intent>
     </queries>
 

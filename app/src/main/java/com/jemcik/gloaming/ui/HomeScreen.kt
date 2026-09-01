@@ -176,7 +176,11 @@ fun Home(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 PermissionSection(dnd, exact)
+            LaunchSetupSection(s)
                 BootNoticeSection(s)
+            BackgroundNoticeSection(s)
+            MissedAlarmSection(s)
+        LaunchTipSection(s)
                 WindowBlock(s, now, runningNow)
                 DaysSection(s)
                 WakeSection(s, runningNow, onOpenInterruptions)
@@ -264,7 +268,154 @@ private fun BootNoticeSection(s: HomeState) {
                     stringResource(R.string.boot_missed_why),
                     granted = false,
                     icon = R.drawable.ic_restart, tint = IconTint.Boot
-                ) { haptics.open(); BootWatch.openAutoStart(ctx) }
+                ) { haptics.open(); Doors.openAutoStart(ctx) }
+            })
+        }
+    }
+}
+
+/**
+ * Told BEFORE anything is lost, on phones that can stop an app running.
+ *
+ * The other two cards here are reports: something already went wrong. This one
+ * is a warning, and it exists because waiting for the evidence costs a whole
+ * night in Do Not Disturb - which is exactly what happened, once, and is not a
+ * reasonable way to find out.
+ *
+ * It is honest about its own uncertainty. The app cannot read auto-launch, and a
+ * background appop reading `allow` is indistinguishable from one never
+ * configured, so this does NOT claim anything is wrong - only that this phone
+ * can interfere and has not yet been seen to behave. The first END that arrives
+ * settles it and the card never returns.
+ */
+@Composable
+private fun LaunchSetupSection(s: HomeState) {
+    val ctx = LocalContext.current
+    val g = gloam
+    val haptics = s.haptics
+    val card = g.raise
+
+    // Read it if you can; measure it only when you cannot. Where the appop is
+    // readable, BackgroundNoticeSection is already saying this in better words -
+    // it names a setting that exists, and it clears itself the moment that
+    // setting changes, where the probe has to be re-run to believe a fix. Two
+    // cards making the same accusation is worse than either alone.
+    if (!s.blocked || s.restricted) return
+
+    // Same measurement, two sets of words. Naming Honor's switches is the most
+    // useful thing that can be said WHERE THEY EXIST, and a lie anywhere else -
+    // so a phone without a launch manager gets the general wording, whose button
+    // lands on app details rather than a screen it does not have.
+    val title = if (s.hasLaunchManager) R.string.launch_setup_title else R.string.bg_blocked_title
+    val row = if (s.hasLaunchManager) R.string.launch_setup_row else R.string.bg_blocked_row
+    val why = if (s.hasLaunchManager) R.string.launch_setup_why else R.string.bg_blocked_why
+
+    Section(stringResource(title), rule = false) {
+        GroupedList(card, listOf {
+            PermissionCard(
+                stringResource(row), stringResource(why),
+                granted = false,
+                icon = R.drawable.ic_gloaming, tint = IconTint.Blocked
+            ) { haptics.open(); s.retestBackground(); Doors.openAutoStart(ctx) }
+        })
+    }
+}
+
+/**
+ * The one-time offer, shown when bedtime is first switched on.
+ *
+ * Deliberately the calmest thing on the screen, and the only card here that can
+ * be answered with "no". See [TipCard] for why it looks nothing like the notices
+ * above it: those report a measurement, this one cannot, and dressing a guess up
+ * as a finding is what made the previous version of this card unbearable - it
+ * appeared on every phone with a launch manager, said something was wrong when
+ * nothing was, and could not be cleared by fixing anything.
+ */
+@Composable
+private fun LaunchTipSection(s: HomeState) {
+    val ctx = LocalContext.current
+    val haptics = s.haptics
+    val card = gloam.raise
+
+    if (!s.showLaunchTip()) return
+
+    Section(stringResource(R.string.section_this_phone), rule = false) {
+        GroupedList(card, listOf {
+            TipCard(
+                stringResource(R.string.launch_tip_title),
+                stringResource(R.string.launch_tip_why),
+                stringResource(R.string.launch_tip_skip),
+                stringResource(R.string.launch_tip_action),
+                onDismiss = { haptics.select(); s.closeLaunchTip() },
+                onAction = {
+                    haptics.open(); s.closeLaunchTip(); Doors.openAutoStart(ctx)
+                }
+            )
+        })
+    }
+}
+
+/**
+ * The phone is holding our alarms. Unlike the boot notice this is a SETTING we
+ * can read, so the section appears exactly while it is wrong and disappears the
+ * moment it is fixed - no guessing, no measuring a symptom.
+ *
+ * It sits above the window rather than below it because it invalidates
+ * everything below: with this on, the times drawn on the dial are what the app
+ * intends, not what the phone will do.
+ */
+@Composable
+private fun BackgroundNoticeSection(s: HomeState) {
+    val ctx = LocalContext.current
+    val g = gloam
+    val haptics = s.haptics
+    val card = g.raise
+
+    if (s.restricted) {
+        Section(stringResource(R.string.bg_blocked_title), rule = false) {
+            GroupedList(card, listOf {
+                PermissionCard(
+                    stringResource(R.string.bg_blocked_row),
+                    stringResource(R.string.bg_blocked_why),
+                    granted = false,
+                    // The app's own mark, not a clock. An alarm-clock icon here
+                    // says "this wakes you up", which is the exact misreading the
+                    // wording of this card was rewritten to avoid.
+                    icon = R.drawable.ic_gloaming, tint = IconTint.Blocked
+                ) { haptics.open(); BackgroundLimit.openSettings(ctx) }
+            })
+        }
+    }
+}
+
+/**
+ * The phone ate an alarm. This is the backstop for everything BackgroundLimit
+ * cannot see: measured on an Honor, a merely FROZEN app misses its END entirely
+ * while isBackgroundRestricted still reports false, so a card keyed on the
+ * restriction alone would have stayed silent through the exact failure it exists
+ * for. This one asks a question no vendor can hide the answer to - did our own
+ * alarm arrive? - and so it catches the freezer, the restriction, a process
+ * killer, and whatever ships next.
+ *
+ * Both cards can appear together, and that is correct rather than redundant: one
+ * names a switch to fix, the other reports what already went wrong.
+ */
+@Composable
+private fun MissedAlarmSection(s: HomeState) {
+    val ctx = LocalContext.current
+    val g = gloam
+    val haptics = s.haptics
+    val card = g.raise
+
+    if (s.missedAlarm) {
+        Section(stringResource(R.string.missed_alarm_title), rule = false) {
+            GroupedList(card, listOf {
+                PermissionCard(
+                    stringResource(R.string.missed_alarm_row),
+                    stringResource(R.string.missed_alarm_why),
+                    granted = false,
+                    icon = R.drawable.ic_gloaming, tint = IconTint.Blocked
+                ) { haptics.open(); BackgroundLimit.openSettings(ctx) }
             })
         }
     }
@@ -801,8 +952,20 @@ private fun ScreenEffectsSection(s: HomeState, runningNow: Boolean) {
     // display at all - and then the row is not drawn, because a control that
     // neither toggles anything nor opens the right screen is only noise. Keyed
     // on tick so an adb grant is picked up on the next resume.
-    val ambientZen = remember(s.tick) { AmbientCapability.isSupported(ctx) }
-    val ambientRow = remember(s.tick) { ambientZen || AmbientControl.canControl(ctx) }
+    //
+    // `zenEffects` is the fourth state this grew: a phone that stores the rule's
+    // device effects and applies NONE of them. Grayscale, dimming and the dark
+    // theme have no other route - measured, every readback and every writable
+    // key checked - so those three rows go, because a switch that lies is worse
+    // than an absent one. The always-on row survives on its own, because the
+    // vendor route reaches it even there.
+    val zenEffects = remember(s.tick) { ScreenEffects.applied(ctx) }
+    val ambientZen = remember(s.tick) { zenEffects && AmbientCapability.isSupported(ctx) }
+    val ambientGrant = remember(s.tick) { AmbientControl.needsGrant(ctx) }
+    val ambientRow = remember(s.tick) {
+        ambientZen || AmbientControl.canControl(ctx) || ambientGrant
+    }
+    if (!zenEffects && !ambientRow) return
 
     // A card of rows, the same shape as "What can wake you" above it,
     // because it is the same kind of thing: a list of switches with
@@ -831,19 +994,19 @@ private fun ScreenEffectsSection(s: HomeState, runningNow: Boolean) {
             if (!runningNow) add {
                 NoticeStrip(planNote(ctx, s.enabled, s.start, s.end, s.days, loc))
             }
-            add {
+            if (zenEffects) add {
                 EffectRow(
                     Fx.Grayscale, stringResource(R.string.fx_grayscale),
                     stringResource(R.string.fx_grayscale_sub), s.fxGray
                 ) { s.fxGray = !s.fxGray; haptics.toggle(s.fxGray); s.commit() }
             }
-            add {
+            if (zenEffects) add {
                 EffectRow(
                     Fx.Dim, stringResource(R.string.fx_dim),
                     stringResource(R.string.fx_dim_sub), s.fxDim
                 ) { s.fxDim = !s.fxDim; haptics.toggle(s.fxDim); s.commit() }
             }
-            add {
+            if (zenEffects) add {
                 // The one subtitle that is load-bearing rather than
                 // descriptive: the platform defers the theme change
                 // until the screen goes off, so tapping this while
@@ -858,8 +1021,21 @@ private fun ScreenEffectsSection(s: HomeState, runningNow: Boolean) {
             if (ambientRow) add {
                 EffectRow(
                     Fx.Ambient, stringResource(R.string.fx_ambient),
-                    stringResource(R.string.fx_ambient_sub), s.fxAmbient
-                ) { s.fxAmbient = !s.fxAmbient; haptics.toggle(s.fxAmbient); s.commit() }
+                    // The subtitle carries the ask where the permission is
+                    // missing, so the row explains itself rather than failing
+                    // silently when tapped.
+                    if (ambientGrant) stringResource(R.string.fx_ambient_grant)
+                    else stringResource(R.string.fx_ambient_sub),
+                    s.fxAmbient && !ambientGrant
+                ) {
+                    if (ambientGrant) {
+                        // Nothing to toggle yet - it cannot be honoured. Send
+                        // them to the one screen that can change that.
+                        haptics.open(); AmbientControl.requestGrant(ctx)
+                    } else {
+                        s.fxAmbient = !s.fxAmbient; haptics.toggle(s.fxAmbient); s.commit()
+                    }
+                }
             }
         })
     }

@@ -294,7 +294,12 @@ private fun LaunchSetupSection(s: HomeState) {
     val haptics = s.haptics
     val card = g.raise
 
-    if (!s.blocked) return
+    // Read it if you can; measure it only when you cannot. Where the appop is
+    // readable, BackgroundNoticeSection is already saying this in better words -
+    // it names a setting that exists, and it clears itself the moment that
+    // setting changes, where the probe has to be re-run to believe a fix. Two
+    // cards making the same accusation is worse than either alone.
+    if (!s.blocked || s.restricted) return
 
     // Same measurement, two sets of words. Naming Honor's switches is the most
     // useful thing that can be said WHERE THEY EXIST, and a lie anywhere else -

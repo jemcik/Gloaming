@@ -53,7 +53,9 @@ class BackgroundProbeTest {
     fun `a probe that arrives settles it, and keeps settling it`() {
         val p = prefs()
         BackgroundProbe.arming(p, t0)
-        BackgroundProbe.handled(p)
+        BackgroundProbe.handled(p, t0 + 500)     // on time, and stated: never the
+                                                 // wall clock, which would make
+                                                 // this pass only today
         assertTrue(BackgroundProbe.answered(p))
         // Long past due, and it must STILL not read as blocked - the answer came.
         BackgroundProbe.check(p, t0 + 10 * 60_000)
@@ -77,6 +79,39 @@ class BackgroundProbeTest {
     }
 
     @Test
+    fun `an alarm released only by opening the app is a failure, not a pass`() {
+        // The one the device found. A parked alarm IS delivered - the moment the
+        // app is foregrounded - so arrival alone scores the blocked phone as
+        // healthy. Measured: the probe sat in "Pending user blocked background
+        // alarms" and landed 244 seconds late as the app came up.
+        val p = prefs()
+        BackgroundProbe.arming(p, t0)
+        BackgroundProbe.handled(p, t0 + 244_000)
+        assertTrue("244s late is the failure signature, not a pass", BackgroundProbe.blocked(p))
+    }
+
+    @Test
+    fun `either order gives the same verdict, so the race cannot decide it`() {
+        // Opening the app both releases the parked alarm and runs check(). When
+        // delivery won, probeSeen == probeDue and check() returned early, so
+        // nothing was latched and the phone read as healthy. Judging by lateness
+        // makes both orders agree.
+        val late = t0 + 244_000
+        val deliveryFirst = prefs()
+        BackgroundProbe.arming(deliveryFirst, t0)
+        BackgroundProbe.handled(deliveryFirst, late)
+        BackgroundProbe.check(deliveryFirst, late)
+
+        val checkFirst = prefs()
+        BackgroundProbe.arming(checkFirst, t0)
+        BackgroundProbe.check(checkFirst, late)
+        BackgroundProbe.handled(checkFirst, late)
+
+        assertTrue(BackgroundProbe.blocked(deliveryFirst))
+        assertTrue(BackgroundProbe.blocked(checkFirst))
+    }
+
+    @Test
     fun `the verdict survives the retest that overwrites its evidence`() {
         // The one that matters. `blocked` cannot be computed from probeDue,
         // because arming the next probe REPLACES the instant that proves the
@@ -89,10 +124,11 @@ class BackgroundProbeTest {
         BackgroundProbe.check(p, t0 + 3 * 60_000)
         assertTrue(BackgroundProbe.blocked(p))
 
-        BackgroundProbe.arming(p, t0 + 60 * 60_000)      // they went to fix it
+        val retest = t0 + 60 * 60_000
+        BackgroundProbe.arming(p, retest)                 // they went to fix it
         assertTrue("the verdict must outlive its own evidence", BackgroundProbe.blocked(p))
 
-        BackgroundProbe.handled(p)                        // and the retest lands
+        BackgroundProbe.handled(p, retest + 500)          // and the retest lands
         assertFalse("a proven fix clears it", BackgroundProbe.blocked(p))
     }
 }

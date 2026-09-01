@@ -75,9 +75,26 @@ object BackgroundProbe {
 
     fun arming(p: Prefs, dueMs: Long) { p.probeDue = dueMs }
 
-    /** It arrived: the background path works here, and now we know it. */
-    fun handled(p: Prefs) {
+    /**
+     * It arrived - which is NOT the same as arriving on time.
+     *
+     * A parked alarm is released the moment the app is foregrounded, so the
+     * blocked case delivers too, just late and only because the user opened the
+     * app. Measured on the Honor 1 Sep 2026 with RUN_ANY_IN_BACKGROUND at
+     * `ignore`: the PROBE sat in "Pending user blocked background alarms" with
+     * `origWhen=15:17:09`, then arrived at 15:21:14 - 244 seconds late - as the
+     * app came up, and an earlier version of this function scored it a PASS.
+     * That is precisely the failure this exists to catch, recorded as its
+     * opposite.
+     *
+     * It also closes a race. Opening the app both releases the alarm and runs
+     * [check], and whichever lands first used to decide the verdict: if delivery
+     * won, `probeSeen == probeDue` and [check] returned early, so nothing was
+     * ever latched. Judging by LATENESS rather than by arrival makes both orders
+     * agree.
+     */
+    fun handled(p: Prefs, now: Long = System.currentTimeMillis()) {
         p.probeSeen = p.probeDue
-        p.probeFailed = false
+        p.probeFailed = now > p.probeDue + TOLERANCE_MS
     }
 }

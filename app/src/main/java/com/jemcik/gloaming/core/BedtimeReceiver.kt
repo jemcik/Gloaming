@@ -63,9 +63,14 @@ class BedtimeReceiver : BroadcastReceiver() {
             }
             Scheduler.ACTION_PROBE -> {
                 // Nothing to do but notice. Arriving at all is the whole answer.
-                val late = (System.currentTimeMillis() - p.probeDue) / 1000
-                BackgroundProbe.handled(p)
-                Journal.write(ctx, "background probe arrived (${late}s)")
+                val now = System.currentTimeMillis()
+                val late = (now - p.probeDue) / 1000
+                BackgroundProbe.handled(p, now)
+                Journal.write(
+                    ctx,
+                    "background probe arrived (${late}s)" +
+                        if (BackgroundProbe.blocked(p)) " - TOO LATE, phone is holding us" else ""
+                )
                 return
             }
             else -> return

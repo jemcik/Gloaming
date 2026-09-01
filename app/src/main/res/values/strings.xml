@@ -96,7 +96,10 @@
     <string name="boot_missed_why">Lets bedtime start again after a restart. Without it nothing was scheduled until you opened the app</string>
     <string name="bg_blocked_title">Gloaming is not allowed to run in the background</string>
     <string name="bg_blocked_row">Run in background</string>
-    <string name="bg_blocked_why">Lets bedtime start and end while the app is closed. Without it nothing happens until you next open Gloaming</string>
+    <string name="bg_blocked_why">Lets bedtime start and end while the app is closed. Without it nothing happens until you next open Gloaming. On some phones the switch appears only after setting Gloaming to &#8220;Manage manually&#8221;</string>
+    <string name="missed_alarm_title">Bedtime did not end on time</string>
+    <string name="missed_alarm_row">Let Gloaming run in the background</string>
+    <string name="missed_alarm_why">The phone stopped Gloaming while it was closed, so bedtime stayed on until you opened the app</string>
 
     <!-- ============ Home: the window ============ -->
     <!-- Overlines, uppercased in code. Keep short: they sit above the times. -->

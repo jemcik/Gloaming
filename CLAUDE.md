@@ -39,6 +39,10 @@ the app closed and the screen off, with no battery whitelist and standby bucket
     core/ZenStatusReceiver.kt    the platform's hint that our rule changed; a
                                  hint only, we decide from getAutomaticZenRule
     core/BootWatch.kt            detects a reboot whose broadcast never arrived
+    core/AlarmWatch.kt           did our own END actually arrive? The backstop
+                                 for every cause BackgroundLimit cannot see - a
+                                 frozen app misses its alarm with the appop still
+                                 reading `allow`
     core/BackgroundLimit.kt      the one vendor restriction that can be READ:
                                  isBackgroundRestricted. Off, the phone parks
                                  our alarms until the app is next opened

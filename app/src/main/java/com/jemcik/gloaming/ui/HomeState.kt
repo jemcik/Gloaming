@@ -9,6 +9,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import com.jemcik.gloaming.core.AlarmWatch
 import com.jemcik.gloaming.core.BackgroundLimit
 import com.jemcik.gloaming.core.BootWatch
 import com.jemcik.gloaming.core.Prefs
@@ -81,6 +82,14 @@ class HomeState(
     var restricted by mutableStateOf(BackgroundLimit.isRestricted(ctx))
         private set
 
+    /**
+     * An END that came due and never reached us. Re-read on resume, because the
+     * moment the user is looking at the screen is exactly when it became
+     * knowable - the alarm was eaten while nobody was watching.
+     */
+    var missedAlarm by mutableStateOf(AlarmWatch.missed(prefs))
+        private set
+
     /** The minute ticker, and anything else that only needs a redraw. */
     fun bump() { tick++ }
 
@@ -137,6 +146,7 @@ class HomeState(
         // vendor's own setting cannot be read.
         missedBoot = BootWatch.missed(prefs)
         restricted = BackgroundLimit.isRestricted(ctx)
+        missedAlarm = AlarmWatch.missed(prefs)
         tick++
     }
 

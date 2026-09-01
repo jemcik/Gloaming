@@ -75,6 +75,9 @@ class HomeState(
     var fxDark by mutableStateOf(prefs.fxDarkTheme)
     var fxAmbient by mutableStateOf(prefs.fxHideAmbient)
 
+    /** Whether the morning alarm may end the night early. */
+    var endAtAlarm by mutableStateOf(prefs.exitAtAlarm)
+
     var missedBoot by mutableStateOf(BootWatch.missed(prefs))
         private set
 
@@ -165,6 +168,7 @@ class HomeState(
         prefs.fxDnd = fxDnd; prefs.fxGrayscale = fxGray
         prefs.fxDimWallpaper = fxDim; prefs.fxDarkTheme = fxDark
         prefs.fxHideAmbient = fxAmbient
+        prefs.exitAtAlarm = endAtAlarm
     }
 
     fun commit() {
@@ -214,6 +218,7 @@ class HomeState(
         fxDnd = prefs.fxDnd; fxGray = prefs.fxGrayscale
         fxDim = prefs.fxDimWallpaper; fxDark = prefs.fxDarkTheme
         fxAmbient = prefs.fxHideAmbient
+        endAtAlarm = prefs.exitAtAlarm
         // Re-asked here so the notice clears itself the moment a boot is
         // handled properly - the only confirmation available, since the
         // vendor's own setting cannot be read.

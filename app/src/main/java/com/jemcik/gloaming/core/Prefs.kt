@@ -136,6 +136,19 @@ class Prefs(ctx: Context) {
         set(v) = sp.edit { putBoolean("effectsSeen", v) }
 
     /**
+     * Let the morning alarm end the window early.
+     *
+     * AOSP's own schedule rules carry exactly this, as `exitAtAlarm` in the
+     * condition URI, and Settings shows it as "Alarm can override end time";
+     * Google's Bedtime mode calls it "Turn off Bedtime mode at next alarm". Off
+     * by default, as it is there - silently moving when bedtime ends is not
+     * something to spring on someone.
+     */
+    var exitAtAlarm: Boolean
+        get() = sp.getBoolean("exitAtAlarm", false)
+        set(v) = sp.edit { putBoolean("exitAtAlarm", v) }
+
+    /**
      * The one-time launch-setup tip has been answered, either way.
      *
      * Not a verdict and not a measurement - just "we have offered this once".

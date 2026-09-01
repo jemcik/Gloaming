@@ -182,7 +182,8 @@ fun Home(
             MissedAlarmSection(s)
         LaunchTipSection(s)
                 WindowBlock(s, now, runningNow)
-                DaysSection(s)
+                EndsSection(s)
+        DaysSection(s)
                 WakeSection(s, runningNow, onOpenInterruptions)
                 ScreenEffectsSection(s, runningNow)
             }
@@ -600,6 +601,44 @@ private fun WindowBlock(s: HomeState, now: LocalTime, runningNow: Boolean) {
                 textAlign = TextAlign.Center
             )
         }
+    }
+}
+
+/**
+ * Whether the morning alarm may end the night early.
+ *
+ * AOSP's own schedule rules carry this as `exitAtAlarm` and Settings calls it
+ * "Alarm can override end time"; Google's Bedtime mode calls it "Turn off at
+ * next alarm". Both apply it only when the alarm falls INSIDE the window, and
+ * so does this - see [Scheduler.endAt].
+ *
+ * The subtitle names the fallback hour rather than describing the rule in the
+ * abstract, and changes when there is no alarm to defer to, because "if it is
+ * set before 8:55" is a promise the reader cannot check and "no alarm is set"
+ * is a fact they can.
+ */
+@Composable
+private fun EndsSection(s: HomeState) {
+    val ctx = LocalContext.current
+    val haptics = s.haptics
+    val card = gloam.raise
+
+    val alarm = remember(s.tick) { Scheduler.nextAlarm(ctx) }
+    val wake = hhmm(ctx, s.end.hour, s.end.minute)
+
+    Section(stringResource(R.string.section_when_it_ends)) {
+        GroupedList(card, listOf {
+            SwitchRow(
+                headline = stringResource(R.string.row_end_at_alarm),
+                supporting = if (alarm == null)
+                    stringResource(R.string.row_end_at_alarm_none, wake)
+                else stringResource(R.string.row_end_at_alarm_sub, wake),
+                checked = s.endAtAlarm,
+                leading = { RowIcon(R.drawable.ic_alarm, IconTint.Alarm) }
+            ) {
+                haptics.toggle(it); s.endAtAlarm = it; s.commit()
+            }
+        })
     }
 }
 

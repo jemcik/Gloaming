@@ -79,7 +79,7 @@ class BedtimeTile : TileService() {
     private fun render() {
         val tile = qsTile ?: return
         val p = Prefs(this)
-        val running = Bedtime.runningNow(p)
+        val running = Bedtime.runningNow(this, p)
 
         tile.state = when {
             !ready() -> Tile.STATE_UNAVAILABLE

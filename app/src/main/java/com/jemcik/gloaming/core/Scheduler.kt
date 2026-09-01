@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import java.time.DayOfWeek
 import java.time.Duration
+import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -77,6 +78,43 @@ object Scheduler {
      */
     fun isOneOff(days: Set<DayOfWeek>) = days.isEmpty()
 
+    /**
+     * The end, as the morning alarm may bring it forward.
+     *
+     * AOSP's semantics, copied rather than invented: `ScheduleCalendar
+     * .shouldExitForAlarm` exits early only when the alarm falls INSIDE the
+     * window. That one condition answers every awkward case without a single
+     * arbitrary bound - an alarm at 2pm tomorrow is outside and ignored, an
+     * alarm before bedtime starts is outside and ignored, no alarm at all
+     * leaves the configured end alone.
+     *
+     * Applied HERE, where a window's end is decided, rather than when the END
+     * alarm is armed. Shortening only the alarm would end the night and then
+     * walk straight back into it: the window would still contain `now`, so the
+     * next reschedule would re-enter it and switch zen back on. Ending the
+     * WINDOW early is what makes the night actually over.
+     */
+    fun endAt(
+        began: LocalDateTime,
+        scheduledEnd: LocalDateTime,
+        alarm: LocalDateTime?,
+        exitAtAlarm: Boolean
+    ): LocalDateTime =
+        if (exitAtAlarm && alarm != null &&
+            alarm.isAfter(began) && alarm.isBefore(scheduledEnd)
+        ) alarm else scheduledEnd
+
+    /**
+     * The next alarm clock the USER can see - the one that puts the icon in the
+     * status bar. Any app that wants that icon must use `setAlarmClock`, which
+     * is the same thing this reads, so it is not tied to a particular clock app
+     * or vendor: measured on Honor's own deskclock and on Samsung's.
+     */
+    fun nextAlarm(ctx: Context): LocalDateTime? =
+        am(ctx).nextAlarmClock?.triggerTime?.let {
+            LocalDateTime.ofInstant(Instant.ofEpochMilli(it), ZoneId.systemDefault())
+        }
+
     /** The next start, for a repeating schedule or a one-off alike. */
     fun nextStart(
         start: LocalTime,
@@ -93,13 +131,15 @@ object Scheduler {
     private fun windowEndAnyDay(
         start: LocalTime,
         end: LocalTime,
-        from: LocalDateTime
+        from: LocalDateTime,
+        alarm: LocalDateTime? = null,
+        exitAtAlarm: Boolean = false
     ): LocalDateTime? {
         val dur = duration(start, end)
         if (dur.isZero) return null
         for (back in 0L..1L) {
             val began = LocalDateTime.of(from.toLocalDate().minusDays(back), start)
-            val ends = began.plus(dur)
+            val ends = endAt(began, began.plus(dur), alarm, exitAtAlarm)
             if (!from.isBefore(began) && from.isBefore(ends)) return ends
         }
         return null
@@ -133,7 +173,9 @@ object Scheduler {
         start: LocalTime,
         end: LocalTime,
         days: Set<DayOfWeek>,
-        from: LocalDateTime = LocalDateTime.now()
+        from: LocalDateTime = LocalDateTime.now(),
+        alarm: LocalDateTime? = null,
+        exitAtAlarm: Boolean = false
     ): LocalDateTime? {
         val dur = duration(start, end)
         if (dur.isZero || days.isEmpty()) return null
@@ -141,7 +183,7 @@ object Scheduler {
         for (back in 0L..1L) {
             val day = from.toLocalDate().minusDays(back)
             val began = LocalDateTime.of(day, start)
-            val ends = began.plus(dur)
+            val ends = endAt(began, began.plus(dur), alarm, exitAtAlarm)
             // Matched on the morning it ends, not the evening it starts.
             if (ends.toLocalDate().dayOfWeek !in days) continue
             if (!from.isBefore(began) && from.isBefore(ends)) return ends
@@ -168,12 +210,14 @@ object Scheduler {
         start: LocalTime,
         end: LocalTime,
         days: Set<DayOfWeek>,
-        from: LocalDateTime = LocalDateTime.now()
+        from: LocalDateTime = LocalDateTime.now(),
+        alarm: LocalDateTime? = null,
+        exitAtAlarm: Boolean = false
     ): LocalDateTime? {
         if (enabled && activeDay != Prefs.NO_DAY) {
             // The pinned day, described by whatever the handles say now.
             val began = LocalDateTime.of(LocalDate.ofEpochDay(activeDay), start)
-            val ends = began.plus(duration(start, end))
+            val ends = endAt(began, began.plus(duration(start, end)), alarm, exitAtAlarm)
             // Null once it is over or not yet begun: the caller clears the pin
             // rather than falling through to a fresh window.
             return if (!from.isBefore(began) && from.isBefore(ends)) ends else null
@@ -182,8 +226,8 @@ object Scheduler {
         // the switch is on; otherwise the dial would show a phantom window on
         // every day of the week.
         return if (isOneOff(days)) {
-            if (enabled) windowEndAnyDay(start, end, from) else null
-        } else currentWindowEnd(start, end, days, from)
+            if (enabled) windowEndAnyDay(start, end, from, alarm, exitAtAlarm) else null
+        } else currentWindowEnd(start, end, days, from, alarm, exitAtAlarm)
     }
 
     fun liveWindowEnd(
@@ -191,8 +235,11 @@ object Scheduler {
         start: LocalTime,
         end: LocalTime,
         days: Set<DayOfWeek>,
-        from: LocalDateTime = LocalDateTime.now()
-    ): LocalDateTime? = liveWindowEnd(p.enabled, p.activeDay, start, end, days, from)
+        from: LocalDateTime = LocalDateTime.now(),
+        alarm: LocalDateTime? = null
+    ): LocalDateTime? = liveWindowEnd(
+        p.enabled, p.activeDay, start, end, days, from, alarm, p.exitAtAlarm
+    )
 
     fun isActiveNow(
         enabled: Boolean,
@@ -203,8 +250,13 @@ object Scheduler {
         from: LocalDateTime = LocalDateTime.now()
     ): Boolean = enabled && liveWindowEnd(enabled, activeDay, start, end, days, from) != null
 
-    fun isActiveNow(p: Prefs, from: LocalDateTime = LocalDateTime.now()): Boolean =
-        isActiveNow(p.enabled, p.activeDay, p.startTime, p.endTime, p.days, from)
+    fun isActiveNow(
+        p: Prefs,
+        from: LocalDateTime = LocalDateTime.now(),
+        alarm: LocalDateTime? = null
+    ): Boolean =
+        p.enabled &&
+            liveWindowEnd(p, p.startTime, p.endTime, p.days, from, alarm) != null
 
     private fun pending(ctx: Context, action: String, code: Int): PendingIntent =
         PendingIntent.getBroadcast(
@@ -289,14 +341,22 @@ object Scheduler {
         }
 
         val now = LocalDateTime.now()
-        val openUntil = liveWindowEnd(p, p.startTime, p.endTime, p.days, now)
+        // Read once and used for both branches, so the window we open and the
+        // END we arm cannot disagree about when the morning is.
+        val alarm = if (p.exitAtAlarm) nextAlarm(ctx) else null
+        val openUntil = liveWindowEnd(p, p.startTime, p.endTime, p.days, now, alarm)
 
         if (openUntil != null) {
             // We are already inside a window: switch on now, end at the right time,
             // and queue the following night's start.
             if (p.activeDay == Prefs.NO_DAY) {
-                p.activeDay = openUntil.minus(duration(p.startTime, p.endTime))
-                    .toLocalDate().toEpochDay()
+                // From the scheduled duration, never from the shortened end: an
+                // alarm-trimmed window still BEGAN on its own night, and pinning
+                // the trimmed instant would move the night itself.
+                p.activeDay = currentWindowEnd(p.startTime, p.endTime, p.days, now)
+                    ?.minus(duration(p.startTime, p.endTime))?.toLocalDate()?.toEpochDay()
+                    ?: openUntil.minus(duration(p.startTime, p.endTime))
+                        .toLocalDate().toEpochDay()
             }
             ZenController.setActive(ctx, p, true, force)
             setExact(ctx, openUntil, ACTION_END, 101)
@@ -316,7 +376,9 @@ object Scheduler {
                 logPlan(ctx, p, "nothing to schedule")
                 return
             }
-            val ends = start.plus(duration(p.startTime, p.endTime))
+            val ends = endAt(
+                start, start.plus(duration(p.startTime, p.endTime)), alarm, p.exitAtAlarm
+            )
             setExact(ctx, start, ACTION_START, 100)
             setExact(ctx, ends, ACTION_END, 101)
             logPlan(ctx, p, "next " + start + " to " + ends +

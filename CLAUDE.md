@@ -32,7 +32,10 @@ indefinitely is background restriction — see `core/BackgroundLimit.kt`.
                                  87 lines, and it should stay small
 
     core/Scheduler.kt            exact alarms. A window is start + duration,
-                                 never two independent times. The day-of-week
+                                 never two independent times. `endAt` is AOSP's
+                                 exitAtAlarm rule, copied not invented: the
+                                 morning alarm ends the night only when it falls
+                                 INSIDE the window. The day-of-week
                                  selection is the MORNING a window ENDS on, and
                                  Scheduler works backwards to the evening that
                                  reaches it
@@ -113,6 +116,11 @@ Things that will break something if ignored. Each is short here; the measurement
 is in DECISIONS.md.
 
 **Zen and scheduling**
+
+- The alarm-shortened end belongs in the WINDOW calculation, not in the END alarm.
+  Shortening only the alarm leaves the window still containing `now`, so the next
+  reschedule walks back into the night and switches zen on again. `SchedulerTest`
+  pins it.
 
 - A rule carries a **`conditionOverride`** as well as a condition, and it wins.
   AOSP's `setManualZenMode` stamps `OVERRIDE_DEACTIVATE` on every active rule

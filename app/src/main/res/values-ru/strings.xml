@@ -80,6 +80,10 @@
 
     <!-- ============ Home: which days ============ -->
     <string name="section_which_days">в какие дни</string>
+    <string name="section_when_it_ends">когда он заканчивается</string>
+    <string name="row_end_at_alarm">Заканчивать по будильнику</string>
+    <string name="row_end_at_alarm_sub">Сон закончится по будильнику, если он раньше %1$s</string>
+    <string name="row_end_at_alarm_none">Сон закончится по будильнику. Будильник не задан, поэтому он закончится в %1$s</string>
     <!-- BUDGET: these four share one row, 311dp wide, and at 14sp English fills
          it with 17dp of slack between chips. Longer than ~11 characters each and
          the row overflows - see the day-row note in CLAUDE.md. -->

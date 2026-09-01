@@ -611,10 +611,25 @@ private fun WindowBlock(s: HomeState, now: LocalTime, runningNow: Boolean) {
  * next alarm". Both apply it only when the alarm falls INSIDE the window, and
  * so does this - see [Scheduler.endAt].
  *
+ * THE SECTION ONLY EXISTS WHEN AN ALARM DOES. With none set there is nothing
+ * for the night to end at, so a heading called "when it ends" has no subject and
+ * the switch under it no object; what it drew instead was the wake time, which
+ * the dial, the countdown, the span sentence and the app bar are all already
+ * showing, phrased - "No alarm; ends 8:30 AM" - as though something were wrong.
+ * Reported from the phone as an inconsistent state, and it was.
+ *
+ * That the switch is a STANDING preference is true and does not save it:
+ * `BedtimeReceiver` returns early on NEXT_ALARM_CLOCK_CHANGED unless it is set,
+ * so leaving it on really does arm the app for an alarm that appears later. But
+ * it costs nothing to leave on, changes nothing while no alarm exists, and the
+ * section comes back by itself the moment one does - through that same
+ * broadcast. So there is nothing to reach it FOR in the meantime, and the same
+ * rule the screen-effects section already follows applies: a control that cannot
+ * act is worse than an absent one.
+ *
  * The subtitle names the fallback hour rather than describing the rule in the
- * abstract, and changes when there is no alarm to defer to, because "if it is
- * set before 8:55" is a promise the reader cannot check and "no alarm is set"
- * is a fact they can.
+ * abstract, and appears only while the switch is ON, because the sentence it
+ * carries is a claim about tonight.
  */
 @Composable
 private fun EndsSection(s: HomeState) {
@@ -641,17 +656,26 @@ private fun EndsSection(s: HomeState) {
         ) == alarm
 
     val wake = hhmm(ctx, s.end.hour, s.end.minute)
-    val alarmAt = alarm?.let { hhmm(ctx, it.hour, it.minute) }
+    // Not `alarm?.let` at the use site: with no alarm this whole section has no
+    // subject and does not draw at all.
+    val alarmAt = alarm?.let { hhmm(ctx, it.hour, it.minute) } ?: return
 
     Section(stringResource(R.string.section_when_it_ends)) {
         GroupedList(card, buildList<@Composable () -> Unit> {
             add {
                 SwitchRow(
                     headline = stringResource(R.string.row_end_at_alarm),
+                    // Only while it is ON, which retires a quiet lie found on
+                    // the way here. `appliesTonight` asks what WOULD happen with
+                    // the switch on - it passes exitAtAlarm = true - so with the
+                    // switch OFF and an alarm inside the window the row read
+                    // "Ends 7:30 AM" while the night in fact ran on to 8:30.
+                    // Shown only when on, the question and the answer are the
+                    // same one again; off, the dial already says where it ends.
                     supporting = when {
+                        !s.endAtAlarm -> null
                         appliesTonight -> res.getString(R.string.row_end_at_alarm_at, alarmAt)
-                        alarmAt != null -> res.getString(R.string.row_end_at_alarm_after, alarmAt)
-                        else -> res.getString(R.string.row_end_at_alarm_none, wake)
+                        else -> res.getString(R.string.row_end_at_alarm_after, alarmAt)
                     },
                     checked = s.endAtAlarm,
                     leading = { RowIcon(R.drawable.ic_alarm, IconTint.Alarm) }
@@ -659,13 +683,15 @@ private fun EndsSection(s: HomeState) {
                     haptics.toggle(it); s.endAtAlarm = it; s.commit()
                 }
             }
-            // The switch has nothing to do tonight, and a control that answers a
-            // tap with nothing is the thing this app spends its time removing. So
+            // There IS an alarm - the section would not be here otherwise - but
+            // it falls past the window, so the switch has nothing to do tonight,
+            // and a control that answers a tap with nothing is the thing this
+            // app spends its time removing. So
             // offer what would actually help instead: the wake time is the guess,
             // the alarm is when this person really gets up. Only while the switch
             // is ON - unasked, this would be the app second-guessing a time
             // someone set on purpose.
-            if (s.endAtAlarm && !appliesTonight && alarm != null && alarmAt != null) {
+            if (s.endAtAlarm && !appliesTonight) {
                 add {
                     ActionRow(
                         headline = stringResource(R.string.row_move_wake),

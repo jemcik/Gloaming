@@ -77,11 +77,11 @@ class RowFitTest {
 
         val titles = listOf(
             R.string.dnd_title, R.string.what_is_allowed,
-            R.string.fx_grayscale, R.string.fx_dim, R.string.fx_dark, R.string.fx_ambient,
-            // The longest supporting line on Home, and it names a time inside a
-            // sentence - the shape most likely to wrap into a third line in ru
-            // and uk, which top-aligns the switch beside it.
-            R.string.row_end_at_alarm
+            R.string.fx_grayscale, R.string.fx_dim, R.string.fx_dark, R.string.fx_ambient
+            // "At your alarm" is NOT here, and deliberately: its section draws
+            // only when the phone has a next alarm, and Robolectric has none, so
+            // listing it would skip silently and read as coverage it is not.
+            // Measured directly instead - see the ends-section test below.
         ).map { ctx.getString(it) }
 
         compose.setContent {
@@ -209,7 +209,7 @@ class RowFitTest {
      * same card, same 360dp screen - and it is the COLUMN WIDTH that the
      * measurement is really about, which that reproduces exactly.
      */
-    private fun moveRowFitsIn(locale: String) {
+    private fun endsSectionFitsIn(locale: String) {
         RuntimeEnvironment.setQualifiers("+$locale-w360dp-h800dp")
         val ctx = ApplicationProvider.getApplicationContext<android.content.Context>()
         val headline = ctx.getString(R.string.row_move_wake)
@@ -217,9 +217,21 @@ class RowFitTest {
         // and both are the same length, so this is the worst case in any locale.
         val sub = ctx.getString(R.string.row_move_wake_sub, "12:30 AM", "12:30 AM")
 
+        // The switch row's own worst case: the sentence that names a time, at the
+        // widest a 12-hour locale can make it.
+        val switchHead = ctx.getString(R.string.row_end_at_alarm)
+        val switchSub = ctx.getString(R.string.row_end_at_alarm_after, "12:30 AM")
+
         compose.setContent {
             GloamingTheme(dark = false) {
-                GroupedList(gloam.raise, listOf {
+                GroupedList(gloam.raise, listOf({
+                    SwitchRow(
+                        headline = switchHead,
+                        supporting = switchSub,
+                        checked = true,
+                        leading = { RowIcon(R.drawable.ic_alarm, IconTint.Alarm) }
+                    ) {}
+                }, {
                     ActionRow(
                         headline = headline,
                         supporting = sub,
@@ -235,17 +247,20 @@ class RowFitTest {
                             }
                         }
                     )
-                })
+                }))
             }
         }
 
-        val b = compose.onNode(hasText(headline, substring = true))
-            .getUnclippedBoundsInRoot()
-        val h = (b.bottom - b.top).value
+        val tall = listOf(switchHead, headline).mapNotNull { title ->
+            val b = compose.onNode(hasText(title, substring = true))
+                .getUnclippedBoundsInRoot()
+            val h = (b.bottom - b.top).value
+            if (h < twoLineCeiling.value) null else "$title is ${h}dp"
+        }
         assertTrue(
-            "in '$locale' the move row is ${h}dp: something wrapped, and M3 then " +
-                "top-aligns the tick instead of centring it on the row",
-            h < twoLineCeiling.value
+            "in '$locale' these rows wrapped, and M3 then top-aligns the control " +
+                "instead of centring it on the row: $tall",
+            tall.isEmpty()
         )
     }
 
@@ -255,7 +270,7 @@ class RowFitTest {
      */
     private val twoLineCeiling = 80.dp
 
-    @Test fun `move row fits in English`() = moveRowFitsIn("en")
-    @Test fun `move row fits in Russian`() = moveRowFitsIn("ru")
-    @Test fun `move row fits in Ukrainian`() = moveRowFitsIn("uk")
+    @Test fun `ends section fits in English`() = endsSectionFitsIn("en")
+    @Test fun `ends section fits in Russian`() = endsSectionFitsIn("ru")
+    @Test fun `ends section fits in Ukrainian`() = endsSectionFitsIn("uk")
 }

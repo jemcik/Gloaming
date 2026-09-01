@@ -83,7 +83,6 @@
     <string name="section_when_it_ends">когда он заканчивается</string>
     <string name="row_end_at_alarm">По будильнику</string>
     <string name="row_end_at_alarm_at">Закончится в %1$s</string>
-    <string name="row_end_at_alarm_none">Без будильника: в %1$s</string>
     <string name="row_end_at_alarm_after">Будильник в %1$s — позже</string>
     <string name="row_move_wake">Перенести подъём</string>
     <string name="row_move_wake_sub">%1$s, а не %2$s</string>

@@ -128,7 +128,6 @@
     <string name="section_when_it_ends">when it ends</string>
     <string name="row_end_at_alarm">At your alarm</string>
     <string name="row_end_at_alarm_at">Ends %1$s</string>
-    <string name="row_end_at_alarm_none">No alarm; ends %1$s</string>
     <string name="row_end_at_alarm_after">Alarm %1$s is later</string>
     <string name="row_move_wake">Move wake up</string>
     <string name="row_move_wake_sub">%1$s, not %2$s</string>

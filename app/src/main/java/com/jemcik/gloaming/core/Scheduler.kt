@@ -53,6 +53,12 @@ object Scheduler {
     const val ACTION_START = "com.jemcik.gloaming.START"
     const val ACTION_END = "com.jemcik.gloaming.END"
 
+    /**
+     * A throwaway alarm that exists only to be waited for. See [BackgroundProbe]
+     * - nothing happens when it fires except the note that it did.
+     */
+    const val ACTION_PROBE = "com.jemcik.gloaming.PROBE"
+
     private fun am(ctx: Context) = ctx.getSystemService(AlarmManager::class.java)
 
     fun canScheduleExact(ctx: Context) = am(ctx).canScheduleExactAlarms()
@@ -237,6 +243,30 @@ object Scheduler {
      * were not running - see the reboot note in ZenController.setActive. The UI
      * does NOT, since re-asserting on a live rule re-applies its device effects.
      */
+    /**
+     * Arm the background probe if this phone has never answered.
+     *
+     * Deliberately NOT cancelled by [cancelAll]: it is not part of the window,
+     * it survives the app being switched off, and it must be allowed to run to
+     * its own conclusion once - otherwise turning bedtime off and on would keep
+     * restarting the question and it would never get answered.
+     */
+    fun armProbe(ctx: Context, p: Prefs, retest: Boolean = false) {
+        // Latch first. Arming rewrites probeDue, which IS the evidence that the
+        // outstanding probe was missed - read the verdict before destroying it.
+        BackgroundProbe.check(p)
+        if (!retest && !BackgroundProbe.needsArming(p)) return
+        val at = System.currentTimeMillis() + BackgroundProbe.DELAY_MS
+        BackgroundProbe.arming(p, at)
+        try {
+            am(ctx).setExactAndAllowWhileIdle(
+                AlarmManager.RTC_WAKEUP, at, pending(ctx, ACTION_PROBE, 102)
+            )
+        } catch (e: SecurityException) {
+            Journal.write(ctx, "probe not armed: " + e)
+        }
+    }
+
     fun rescheduleAll(ctx: Context, p: Prefs, force: Boolean = false) {
         // BEFORE anything is armed: arming overwrites the due instant, so this is
         // the last moment the previous one can still be judged.

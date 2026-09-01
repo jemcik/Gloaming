@@ -294,17 +294,24 @@ private fun LaunchSetupSection(s: HomeState) {
     val haptics = s.haptics
     val card = g.raise
 
-    if (s.unproven) {
-        Section(stringResource(R.string.launch_setup_title), rule = false) {
-            GroupedList(card, listOf {
-                PermissionCard(
-                    stringResource(R.string.launch_setup_row),
-                    stringResource(R.string.launch_setup_why),
-                    granted = false,
-                    icon = R.drawable.ic_gloaming, tint = IconTint.Blocked
-                ) { haptics.open(); s.acknowledgeLaunchSetup(); BootWatch.openAutoStart(ctx) }
-            })
-        }
+    if (!s.blocked) return
+
+    // Same measurement, two sets of words. Naming Honor's switches is the most
+    // useful thing that can be said WHERE THEY EXIST, and a lie anywhere else -
+    // so a phone without a launch manager gets the general wording, whose button
+    // lands on app details rather than a screen it does not have.
+    val title = if (s.hasLaunchManager) R.string.launch_setup_title else R.string.bg_blocked_title
+    val row = if (s.hasLaunchManager) R.string.launch_setup_row else R.string.bg_blocked_row
+    val why = if (s.hasLaunchManager) R.string.launch_setup_why else R.string.bg_blocked_why
+
+    Section(stringResource(title), rule = false) {
+        GroupedList(card, listOf {
+            PermissionCard(
+                stringResource(row), stringResource(why),
+                granted = false,
+                icon = R.drawable.ic_gloaming, tint = IconTint.Blocked
+            ) { haptics.open(); s.retestBackground(); BootWatch.openAutoStart(ctx) }
+        })
     }
 }
 

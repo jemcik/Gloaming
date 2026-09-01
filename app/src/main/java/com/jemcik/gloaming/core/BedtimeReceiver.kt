@@ -61,6 +61,13 @@ class BedtimeReceiver : BroadcastReceiver() {
                 p.ruleSignature = null
                 force = true
             }
+            Scheduler.ACTION_PROBE -> {
+                // Nothing to do but notice. Arriving at all is the whole answer.
+                val late = (System.currentTimeMillis() - p.probeDue) / 1000
+                BackgroundProbe.handled(p)
+                Journal.write(ctx, "background probe arrived (${late}s)")
+                return
+            }
             else -> return
         }
         // Always rearm: exact alarms are one-shot.

@@ -11,6 +11,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import com.jemcik.gloaming.core.AlarmWatch
 import com.jemcik.gloaming.core.BackgroundLimit
+import com.jemcik.gloaming.core.BackgroundProbe
 import com.jemcik.gloaming.core.BootWatch
 import com.jemcik.gloaming.core.Prefs
 import com.jemcik.gloaming.core.Scheduler
@@ -91,22 +92,34 @@ class HomeState(
         private set
 
     /**
-     * This phone can stop apps running, and it has never yet let us finish a
-     * window - so we cannot promise bedtime will end on time, and say so BEFORE
-     * a night is lost rather than after. Goes quiet for good on the first END
-     * that actually arrives.
+     * This phone was measured holding one of our alarms, so bedtime cannot be
+     * promised to end on time.
+     *
+     * MEASURED, not guessed. It was previously inferred - "this phone has a
+     * launch manager AND has never finished a window" - which showed the card to
+     * every Honor owner including the ones already set up correctly, and could
+     * not tell a phone that was broken from one that had simply never run yet.
+     * The vendor setting cannot be read to settle it either, so [BackgroundProbe]
+     * settles it by experiment instead. Nothing is shown until the phone has
+     * actually failed to deliver.
      */
-    var unproven by mutableStateOf(
-        BootWatch.hasLaunchManager(ctx) &&
-            AlarmWatch.neverCompleted(prefs) &&
-            !prefs.launchAcknowledged
-    )
+    var blocked by mutableStateOf(BackgroundProbe.blocked(prefs))
         private set
 
-    /** The card was tapped: they have been sent to the screen, so stop asking. */
-    fun acknowledgeLaunchSetup() {
-        prefs.launchAcknowledged = true
-        unproven = false
+    /**
+     * This phone can hold apps in the first place, which decides only what the
+     * card SAYS - Honor's own switches by name where they exist, the general
+     * app-details route where they do not. It never decides whether to show it.
+     */
+    val hasLaunchManager = BootWatch.hasLaunchManager(ctx)
+
+    /**
+     * They have gone to fix it, so ask the question again. Without this the
+     * verdict would be permanent: the latch is what stops the card flickering,
+     * and a fix would never be believed.
+     */
+    fun retestBackground() {
+        Scheduler.armProbe(ctx, prefs, retest = true)
     }
 
     /** The minute ticker, and anything else that only needs a redraw. */
@@ -166,14 +179,19 @@ class HomeState(
         missedBoot = BootWatch.missed(prefs)
         restricted = BackgroundLimit.isRestricted(ctx)
         missedAlarm = AlarmWatch.missed(prefs)
-        unproven = BootWatch.hasLaunchManager(ctx) &&
-            AlarmWatch.neverCompleted(prefs) &&
-            !prefs.launchAcknowledged
+        // Resume is when an overdue probe becomes knowable, exactly as for a
+        // missed END - the alarm was eaten while nobody was watching.
+        BackgroundProbe.check(prefs)
+        blocked = BackgroundProbe.blocked(prefs)
         tick++
     }
 
     /** On first composition: re-arm, in case an alarm was lost. */
     fun rearmIfEnabled() {
+        // Unconditional, and deliberately not tied to `enabled`: the question is
+        // whether this PHONE delivers alarms, which is worth answering before
+        // the first bedtime rather than after the first one is lost.
+        Scheduler.armProbe(ctx, prefs)
         if (prefs.enabled) { Scheduler.rescheduleAll(ctx, prefs); tick++ }
     }
 

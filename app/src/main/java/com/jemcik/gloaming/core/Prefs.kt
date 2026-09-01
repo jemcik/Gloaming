@@ -100,9 +100,29 @@ class Prefs(ctx: Context) {
      * that, twice. So the card is told once and then trusts the person, and the
      * missed-alarm notice catches it if the trust was misplaced.
      */
-    var launchAcknowledged: Boolean
-        get() = sp.getBoolean("launchAcknowledged", false)
-        set(v) = sp.edit { putBoolean("launchAcknowledged", v) }
+    /**
+     * The probe: when a throwaway alarm was due, and when one was last handled.
+     *
+     * [NO_DUE] on both means no probe has ever been armed. Same shape as
+     * endDue/endSeen, and for the same reason - a due instant that passed
+     * unhandled is the evidence.
+     */
+    var probeDue: Long
+        get() = sp.getLong("probeDue", NO_DUE)
+        set(v) = sp.edit { putLong("probeDue", v) }
+
+    var probeSeen: Long
+        get() = sp.getLong("probeSeen", NO_DUE)
+        set(v) = sp.edit { putLong("probeSeen", v) }
+
+    /**
+     * Latched: a probe came due and never arrived. Sticky for the same reason
+     * `alarmMissed` is - the evidence is destroyed by the next arming, so the
+     * verdict has to outlive the measurement that produced it.
+     */
+    var probeFailed: Boolean
+        get() = sp.getBoolean("probeFailed", false)
+        set(v) = sp.edit { putBoolean("probeFailed", v) }
 
     companion object {
         const val NO_BOOT = Long.MIN_VALUE

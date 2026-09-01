@@ -22,8 +22,6 @@
 
     <!-- Without this, resolveActivity cannot see the vendor's auto-launch
          screen at all and BootWatch would always fall back to app details. -->
-    <uses-permission android:name="com.samsung.android.app.routines.permission.READ_ROUTINE_INFO" />
-
     <queries>
         <package android:name="com.hihonor.systemmanager" />
         <!-- So resolveActivity can SEE the contacts app's starred screen. We
@@ -77,19 +75,5 @@
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
             </intent-filter>
         </receiver>
-        <!-- SPIKE: the Samsung Routines v3 contract, copied from Samsung Clock. -->
-        <provider
-            android:name=".core.RoutinesProbeProvider"
-            android:authorities="com.jemcik.gloaming.provider.routines.v3"
-            android:exported="true"
-            android:permission="com.samsung.android.permission.sdk.routines.v3.ACCESS_ROUTINES">
-            <intent-filter>
-                <action android:name="com.samsung.android.sdk.routines.v3.ROUTINE_PROVIDER" />
-            </intent-filter>
-            <meta-data android:name="com.samsung.android.sdk.routines.v3.version" android:value="3.0.0" />
-            <meta-data android:name="com.samsung.android.sdk.routines.v3.version_code" android:value="3" />
-            <meta-data android:name="com.samsung.android.sdk.routines.v3.meta.CONDITION"
-                android:resource="@xml/routines_conditions" />
-        </provider>
     </application>
 </manifest>

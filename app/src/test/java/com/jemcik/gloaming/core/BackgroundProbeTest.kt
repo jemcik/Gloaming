@@ -41,6 +41,21 @@ class BackgroundProbeTest {
     }
 
     @Test
+    fun `an alarm we were not allowed to set is not evidence about the phone`() {
+        // A fresh install cannot arm: SCHEDULE_EXACT_ALARM has not been granted
+        // yet, so setExactAndAllowWhileIdle throws. Nothing must be recorded -
+        // a due instant with no alarm behind it becomes a verdict thirteen
+        // minutes later, blaming the phone for our own failure to ask. Seen on a
+        // Galaxy S23 on first launch.
+        val p = prefs()
+        // arming() is never reached when the schedule throws, so this is the
+        // state that matters: still asking, and still accusing nobody.
+        assertTrue("it must keep wanting to ask", BackgroundProbe.needsArming(p))
+        BackgroundProbe.check(p, t0 + 60 * 60_000)
+        assertFalse("nothing was set, so nothing failed", BackgroundProbe.blocked(p))
+    }
+
+    @Test
     fun `a probe still in flight is not yet a failure`() {
         val p = prefs()
         BackgroundProbe.arming(p, t0 + BackgroundProbe.DELAY_MS)

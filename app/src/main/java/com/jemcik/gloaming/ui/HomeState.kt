@@ -213,6 +213,15 @@ class HomeState(
         // missed END - the alarm was eaten while nobody was watching.
         BackgroundProbe.check(prefs)
         blocked = BackgroundProbe.blocked(prefs)
+        // And ask again here, not only on first composition. Arming needs
+        // SCHEDULE_EXACT_ALARM, so on a fresh install the first attempt THROWS
+        // and records nothing - correctly, since an alarm we never set cannot
+        // be evidence about the phone. Granting that permission returns the user
+        // to a RESUME rather than a new composition, so without this the probe
+        // would sit unasked until the app was next restarted from cold.
+        // Measured on a Galaxy S23, One UI 8: "probe not armed: SecurityException".
+        // Self-gating - needsArming is false once one is in flight.
+        Scheduler.armProbe(ctx, prefs)
         tick++
     }
 

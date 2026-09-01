@@ -103,6 +103,14 @@
     <string name="launch_setup_title">This phone needs two more switches</string>
     <string name="launch_setup_row">App launch</string>
     <string name="launch_setup_why">Search for Gloaming, set it to &#8220;Manage manually&#8221;, then turn on Auto-launch and Run in background</string>
+    <!-- The always-available door: a link in Settings, never a notice. -->
+    <string name="section_this_phone">this phone</string>
+    <string name="launch_link_why">Start after a restart, and keep running while closed</string>
+    <!-- Said once, when bedtime is first switched on. Not an accusation. -->
+    <string name="launch_tip_title">Make bedtime reliable</string>
+    <string name="launch_tip_why">This phone can stop apps while they are closed, which is what leaves bedtime running in the morning. Two switches in App launch prevent it: Auto-launch and Run in background.</string>
+    <string name="launch_tip_action">Set up</string>
+    <string name="launch_tip_skip">Skip</string>
 
     <!-- ============ Home: the window ============ -->
     <!-- Overlines, uppercased in code. Keep short: they sit above the times. -->

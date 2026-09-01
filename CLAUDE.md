@@ -77,7 +77,9 @@ indefinitely is background restriction — see `core/BackgroundLimit.kt`.
                                  planNote, dayWord, span, hhmm. No Compose
                                  state, no side effects — the testable part
     ui/InterruptionsScreen.kt    the allowlist
-    ui/SettingsScreen.kt         theme mode, a link to the system language picker
+    ui/SettingsScreen.kt         theme mode, a link to the system language
+                                 picker, and - where one resolves - a permanent,
+                                 quiet link to the vendor's launch manager
     ui/BedtimeDial.kt            24-hour dial, draggable handles, sweep gradient
     ui/Rows.kt                   the app's one list row, on M3's ListItem:
                                  SwitchRow / LinkRow / StaticRow / ActionRow /
@@ -177,6 +179,16 @@ is in DECISIONS.md.
 
 **Design**
 
+- **Severity must match confidence.** A red notice claims a MEASUREMENT. Where
+  the thing cannot be measured - the vendor launch switches - the honest form is
+  an offer that can be refused: `TipCard`, plain icon, two text buttons, shown
+  once. The version that showed a fault card to every phone with a launch
+  manager was this app's worst UX failure, because it could not be cleared by
+  fixing anything and taught the user to ignore the real warnings too.
+- Anything the user might want to reach on purpose needs a door that is not a
+  notice. Until Settings grew its `this phone` link, the only route to the
+  launch manager was being told something was broken.
+
 - There is not one `fontSize` or `fontWeight` override outside `Theme.kt`. Keep
   it that way.
 - Tabular figures (`tnum`) belong on the **display** family only. Numerals get
@@ -230,7 +242,7 @@ compileSdk 37, targetSdk 36, minSdk 35.
 
 ## Tests
 
-`app/src/test/`, 101 cases, no device. They are written as the QUESTION the code
+`app/src/test/`, 107 cases, no device. They are written as the QUESTION the code
 answers rather than as coverage of a method, because none of the bugs were ever
 in a method — they were in an assumption.
 
@@ -243,7 +255,9 @@ in a method — they were in an assumption.
     ClockTest             12/24-hour formatting
     PrefsMigrationTest    the one-shot days migration - the only code here that
                           can corrupt data silently
-    RowFitTest            does the text fit, in en/ru/uk, by MEASURING
+    RowFitTest            does the text fit, in en/ru/uk, by MEASURING -
+                          Home's rows, the allowlist's, and Settings', which
+                          have the least room of the three
     ScreensTest           interactions, never appearance
     BootWatchTest         the withheld-boot detection
     BackgroundProbeTest   the delivery probe: lateness rather than arrival is

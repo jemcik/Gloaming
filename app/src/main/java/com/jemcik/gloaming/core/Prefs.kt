@@ -116,6 +116,18 @@ class Prefs(ctx: Context) {
         set(v) = sp.edit { putLong("probeSeen", v) }
 
     /**
+     * The one-time launch-setup tip has been answered, either way.
+     *
+     * Not a verdict and not a measurement - just "we have offered this once".
+     * It exists because the offer must never repeat: a suggestion shown twice
+     * reads as a demand, and this one cannot be confirmed, so it can never
+     * dismiss itself the way a readable setting does.
+     */
+    var launchTipSeen: Boolean
+        get() = sp.getBoolean("launchTipSeen", false)
+        set(v) = sp.edit { putBoolean("launchTipSeen", v) }
+
+    /**
      * Latched: a probe came due and never arrived. Sticky for the same reason
      * `alarmMissed` is - the evidence is destroyed by the next arming, so the
      * verdict has to outlive the measurement that produced it.

@@ -114,6 +114,36 @@ class HomeState(
     val hasLaunchManager = BootWatch.hasLaunchManager(ctx)
 
     /**
+     * The one-time offer has been answered. Held as state as well as in prefs so
+     * the card leaves the moment it is answered, without waiting for a resume.
+     */
+    var tipSeen by mutableStateOf(prefs.launchTipSeen)
+        private set
+
+    /**
+     * Offer the launch setup ONCE, at the moment bedtime is first switched on.
+     *
+     * Not on install: at install nothing has been promised yet, and a phone the
+     * user is only looking at does not need to survive the night. Switching
+     * bedtime on is the moment they start relying on it, which is the moment the
+     * advice is worth anything - the just-in-time rule, applied to a setting
+     * rather than a permission.
+     *
+     * Silent when either measured notice is up. Both of those report something
+     * that IS wrong and carry the same instruction; a suggestion stacked on top
+     * would be a third card saying a version of the same thing, and the weakest
+     * of the three.
+     */
+    fun showLaunchTip(): Boolean =
+        hasLaunchManager && enabled && !tipSeen && !blocked && !restricted
+
+    /** Answered, either way, and it never comes back. */
+    fun closeLaunchTip() {
+        prefs.launchTipSeen = true
+        tipSeen = true
+    }
+
+    /**
      * They have gone to fix it, so ask the question again. Without this the
      * verdict would be permanent: the latch is what stops the card flickering,
      * and a fix would never be believed.

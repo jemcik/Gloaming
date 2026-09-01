@@ -60,6 +60,12 @@
     <string name="launch_setup_title">Этому телефону нужны ещё два переключателя</string>
     <string name="launch_setup_row">Запуск приложений</string>
     <string name="launch_setup_why">Найдите Gloaming через поиск, выберите «Управлять вручную», затем включите автозапуск и работу в фоне</string>
+    <string name="section_this_phone">этот телефон</string>
+    <string name="launch_link_why">Запуск после перезагрузки и работа в фоне</string>
+    <string name="launch_tip_title">Сделайте сон надёжным</string>
+    <string name="launch_tip_why">Этот телефон может останавливать приложения, пока они закрыты, — из-за этого сон остаётся включённым утром. Два переключателя в разделе «Запуск приложений» это предотвращают: автозапуск и работа в фоне.</string>
+    <string name="launch_tip_action">Настроить</string>
+    <string name="launch_tip_skip">Пропустить</string>
 
     <!-- ============ Home: the window ============ -->
     <!-- Overlines, uppercased in code. Keep short: they sit above the times. -->

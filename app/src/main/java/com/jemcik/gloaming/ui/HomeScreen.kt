@@ -180,6 +180,7 @@ fun Home(
                 BootNoticeSection(s)
             BackgroundNoticeSection(s)
             MissedAlarmSection(s)
+        LaunchTipSection(s)
                 WindowBlock(s, now, runningNow)
                 DaysSection(s)
                 WakeSection(s, runningNow, onOpenInterruptions)
@@ -316,6 +317,40 @@ private fun LaunchSetupSection(s: HomeState) {
                 granted = false,
                 icon = R.drawable.ic_gloaming, tint = IconTint.Blocked
             ) { haptics.open(); s.retestBackground(); BootWatch.openAutoStart(ctx) }
+        })
+    }
+}
+
+/**
+ * The one-time offer, shown when bedtime is first switched on.
+ *
+ * Deliberately the calmest thing on the screen, and the only card here that can
+ * be answered with "no". See [TipCard] for why it looks nothing like the notices
+ * above it: those report a measurement, this one cannot, and dressing a guess up
+ * as a finding is what made the previous version of this card unbearable - it
+ * appeared on every phone with a launch manager, said something was wrong when
+ * nothing was, and could not be cleared by fixing anything.
+ */
+@Composable
+private fun LaunchTipSection(s: HomeState) {
+    val ctx = LocalContext.current
+    val haptics = s.haptics
+    val card = gloam.raise
+
+    if (!s.showLaunchTip()) return
+
+    Section(stringResource(R.string.section_this_phone), rule = false) {
+        GroupedList(card, listOf {
+            TipCard(
+                stringResource(R.string.launch_tip_title),
+                stringResource(R.string.launch_tip_why),
+                stringResource(R.string.launch_tip_skip),
+                stringResource(R.string.launch_tip_action),
+                onDismiss = { haptics.select(); s.closeLaunchTip() },
+                onAction = {
+                    haptics.open(); s.closeLaunchTip(); BootWatch.openAutoStart(ctx)
+                }
+            )
         })
     }
 }

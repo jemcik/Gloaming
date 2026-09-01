@@ -74,7 +74,11 @@ class RowFitTest {
 
         val titles = listOf(
             R.string.dnd_title, R.string.what_is_allowed,
-            R.string.fx_grayscale, R.string.fx_dim, R.string.fx_dark, R.string.fx_ambient
+            R.string.fx_grayscale, R.string.fx_dim, R.string.fx_dark, R.string.fx_ambient,
+            // The longest supporting line on Home, and it names a time inside a
+            // sentence - the shape most likely to wrap into a third line in ru
+            // and uk, which top-aligns the switch beside it.
+            R.string.row_end_at_alarm
         ).map { ctx.getString(it) }
 
         compose.setContent {

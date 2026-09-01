@@ -126,9 +126,13 @@
     <!-- ============ Home: which days ============ -->
     <string name="section_which_days">which days</string>
     <string name="section_when_it_ends">when it ends</string>
-    <string name="row_end_at_alarm">End at the next alarm</string>
-    <string name="row_end_at_alarm_at">Your next alarm is %1$s, so bedtime ends then</string>
-    <string name="row_end_at_alarm_none">No alarm during the window, so bedtime ends at %1$s</string>
+    <string name="row_end_at_alarm">At your alarm</string>
+    <string name="row_end_at_alarm_at">Ends %1$s</string>
+    <string name="row_end_at_alarm_none">No alarm; ends %1$s</string>
+    <string name="row_end_at_alarm_after">Alarm %1$s is later</string>
+    <string name="row_move_wake">Move wake up to your alarm</string>
+    <string name="row_move_wake_sub">Bedtime would end at %1$s instead of %2$s</string>
+    <string name="action_move_wake">Move</string>
     <!-- A row's supporting line must not WRAP. Past one line the row becomes a
          three-line ListItem, and M3 then top-aligns the trailing content, so the
          switch stops being level with its own row. Reported as exactly that.

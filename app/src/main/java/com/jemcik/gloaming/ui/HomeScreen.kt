@@ -622,38 +622,76 @@ private fun EndsSection(s: HomeState) {
     val ctx = LocalContext.current
     val haptics = s.haptics
     val card = gloam.raise
-
-    // What will actually happen tonight, not what the rule says in the abstract.
-    // The alarm only counts if it falls inside the window, so asking endAt is the
-    // only honest way to know which sentence is true - a 2pm alarm is real, and
-    // naming it here would promise something that will not happen.
     val res = LocalResources.current
-    val subtitle = remember(s.tick, s.start, s.end, s.days, res) {
-        val alarm = Scheduler.nextAlarm(ctx)
+
+    // What will actually happen tonight, not the rule in the abstract. The alarm
+    // counts only if it falls inside the window, so endAt is the only honest way
+    // to know which of the three sentences is true - a 2pm alarm is real, and
+    // naming it as the end would promise something that will not happen.
+    val alarm = remember(s.tick) { Scheduler.nextAlarm(ctx) }
+    val scheduledEnd = remember(s.tick, s.start, s.end, s.days) {
         val now = LocalDateTime.now()
-        val scheduledEnd = Scheduler.liveWindowEnd(s.prefs, s.start, s.end, s.days, now)
+        Scheduler.liveWindowEnd(s.prefs, s.start, s.end, s.days, now)
             ?: Scheduler.nextStart(s.start, s.end, s.days, now)
                 ?.plus(Scheduler.duration(s.start, s.end))
-        val began = scheduledEnd?.minus(Scheduler.duration(s.start, s.end))
-        val effective = if (began != null && scheduledEnd != null)
-            Scheduler.endAt(began, scheduledEnd, alarm, exitAtAlarm = true) else null
-        if (effective != null && effective == alarm)
-            res.getString(R.string.row_end_at_alarm_at, hhmm(ctx, alarm.hour, alarm.minute))
-        else res.getString(
-            R.string.row_end_at_alarm_none,
-            hhmm(ctx, (scheduledEnd ?: now).hour, (scheduledEnd ?: now).minute)
-        )
     }
+    val appliesTonight = scheduledEnd != null && alarm != null &&
+        Scheduler.endAt(
+            scheduledEnd.minus(Scheduler.duration(s.start, s.end)),
+            scheduledEnd, alarm, exitAtAlarm = true
+        ) == alarm
+
+    val wake = hhmm(ctx, s.end.hour, s.end.minute)
+    val alarmAt = alarm?.let { hhmm(ctx, it.hour, it.minute) }
 
     Section(stringResource(R.string.section_when_it_ends)) {
-        GroupedList(card, listOf {
-            SwitchRow(
-                headline = stringResource(R.string.row_end_at_alarm),
-                supporting = subtitle,
-                checked = s.endAtAlarm,
-                leading = { RowIcon(R.drawable.ic_alarm, IconTint.Alarm) }
-            ) {
-                haptics.toggle(it); s.endAtAlarm = it; s.commit()
+        GroupedList(card, buildList<@Composable () -> Unit> {
+            add {
+                SwitchRow(
+                    headline = stringResource(R.string.row_end_at_alarm),
+                    supporting = when {
+                        appliesTonight -> res.getString(R.string.row_end_at_alarm_at, alarmAt)
+                        alarmAt != null -> res.getString(R.string.row_end_at_alarm_after, alarmAt)
+                        else -> res.getString(R.string.row_end_at_alarm_none, wake)
+                    },
+                    checked = s.endAtAlarm,
+                    leading = { RowIcon(R.drawable.ic_alarm, IconTint.Alarm) }
+                ) {
+                    haptics.toggle(it); s.endAtAlarm = it; s.commit()
+                }
+            }
+            // The switch has nothing to do tonight, and a control that answers a
+            // tap with nothing is the thing this app spends its time removing. So
+            // offer what would actually help instead: the wake time is the guess,
+            // the alarm is when this person really gets up. Only while the switch
+            // is ON - unasked, this would be the app second-guessing a time
+            // someone set on purpose.
+            if (s.endAtAlarm && !appliesTonight && alarm != null && alarmAt != null) {
+                add {
+                    ActionRow(
+                        headline = stringResource(R.string.row_move_wake),
+                        supporting = res.getString(R.string.row_move_wake_sub, alarmAt, wake),
+                        leading = { RowIcon(R.drawable.ic_bedtime, IconTint.Dark) },
+                        trailing = {
+                            // The same shape the time picker's dismiss wears: a
+                            // bare TextButton gives the words no container to
+                            // aim at, which is the complaint that put outlines
+                            // on the dialog's buttons in the first place.
+                            OutlinedButton(
+                                onClick = {
+                                    haptics.confirm()
+                                    s.end = alarm.toLocalTime()
+                                    s.commit()
+                                },
+                                shape = CircleShape,
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    contentColor = gloam.stateOn
+                                ),
+                                border = BorderStroke(1.dp, gloam.outline)
+                            ) { Text(stringResource(R.string.action_move_wake)) }
+                        }
+                    )
+                }
             }
         })
     }
@@ -1200,7 +1238,11 @@ private fun HomeBar(
     val status = remember(s.tick, s.enabled, runningNow, s.start, s.end, s.days) {
         // Said in Sentences, because the Quick Settings tile has to say exactly
         // the same three things with no Compose around it.
-        statusLine(ctx, res, s.enabled, prefs.activeDay, s.start, s.end, s.days)
+        statusLine(
+            ctx, res, s.enabled, prefs.activeDay, s.start, s.end, s.days,
+            alarm = if (s.endAtAlarm) Scheduler.nextAlarm(ctx) else null,
+            exitAtAlarm = s.endAtAlarm
+        )
     }
 
     TopAppBar(

@@ -81,9 +81,13 @@
     <!-- ============ Home: which days ============ -->
     <string name="section_which_days">в какие дни</string>
     <string name="section_when_it_ends">когда он заканчивается</string>
-    <string name="row_end_at_alarm">Заканчивать по будильнику</string>
-    <string name="row_end_at_alarm_at">Следующий будильник в %1$s — сон закончится тогда</string>
-    <string name="row_end_at_alarm_none">В это время будильника нет, поэтому сон закончится в %1$s</string>
+    <string name="row_end_at_alarm">По будильнику</string>
+    <string name="row_end_at_alarm_at">Закончится в %1$s</string>
+    <string name="row_end_at_alarm_none">Без будильника: в %1$s</string>
+    <string name="row_end_at_alarm_after">Будильник в %1$s — позже</string>
+    <string name="row_move_wake">Перенести пробуждение на будильник</string>
+    <string name="row_move_wake_sub">Сон будет заканчиваться в %1$s, а не в %2$s</string>
+    <string name="action_move_wake">Перенести</string>
     <!-- BUDGET: these four share one row, 311dp wide, and at 14sp English fills
          it with 17dp of slack between chips. Longer than ~11 characters each and
          the row overflows - see the day-row note in CLAUDE.md. -->

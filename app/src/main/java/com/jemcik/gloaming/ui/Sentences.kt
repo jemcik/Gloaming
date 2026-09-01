@@ -204,10 +204,16 @@ fun statusLine(
     start: LocalTime,
     end: LocalTime,
     days: Set<DayOfWeek>,
-    now: LocalDateTime = LocalDateTime.now()
+    now: LocalDateTime = LocalDateTime.now(),
+    alarm: LocalDateTime? = null,
+    exitAtAlarm: Boolean = false
 ): String {
     if (!enabled) return res.getString(R.string.bedtime_off)
-    val ends = Scheduler.liveWindowEnd(enabled, activeDay, start, end, days, now)
+    // The end the alarm actually produces, so the bar and the rule agree - and
+    // so flipping the switch changes the headline reading, not just a subtitle.
+    val ends = Scheduler.liveWindowEnd(
+        enabled, activeDay, start, end, days, now, alarm, exitAtAlarm
+    )
     if (ends != null) {
         return res.getString(R.string.state_on_until, hhmm(ctx, ends.hour, ends.minute))
     }

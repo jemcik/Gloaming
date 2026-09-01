@@ -1,6 +1,9 @@
 package com.jemcik.gloaming.ui
 
+import android.app.AlarmManager
+import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
@@ -21,6 +24,8 @@ import org.robolectric.annotation.Config
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.GraphicsMode
 import java.time.DayOfWeek
+import java.time.LocalDateTime
+import java.time.ZoneId
 import java.time.LocalTime
 import java.time.format.TextStyle
 import java.util.Locale
@@ -47,14 +52,35 @@ class WindowSentenceTest {
 
     private fun ctx(): Context = ApplicationProvider.getApplicationContext()
 
+    /**
+     * Put a real alarm clock on the phone, the way a clock app does.
+     *
+     * `setAlarmClock` is what feeds `getNextAlarmClock`, which is the only thing
+     * the app ever asks - so this exercises the actual read rather than a stub of
+     * it.
+     */
+    private fun setAlarm(at: LocalDateTime) {
+        val am = ctx().getSystemService(AlarmManager::class.java)
+        am.setAlarmClock(
+            AlarmManager.AlarmClockInfo(
+                at.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli(), null
+            ),
+            PendingIntent.getBroadcast(
+                ctx(), 0, Intent("test.alarm"), PendingIntent.FLAG_IMMUTABLE
+            )
+        )
+    }
+
     private fun sentence(
         enabled: Boolean,
         from: LocalTime,
         to: LocalTime,
-        days: Set<DayOfWeek>
+        days: Set<DayOfWeek>,
+        exitAtAlarm: Boolean = false
     ): String {
         val p = Prefs(ctx())
         p.enabled = enabled; p.startTime = from; p.endTime = to; p.days = days
+        p.exitAtAlarm = exitAtAlarm
         p.activeDay = Prefs.NO_DAY
         compose.setContent {
             GloamingTheme(dark = false) {
@@ -96,6 +122,58 @@ class WindowSentenceTest {
     fun `a repeating schedule you are inside names today`() {
         val s = sentence(false, now.minusHours(2), now.plusHours(6), DayOfWeek.entries.toSet())
         assertTrue(s, s.contains(today))
+    }
+
+    // ---- the alarm that ends the night early ----
+
+    @Test
+    fun `an alarm inside the window is the hour the sentence ends on`() {
+        // Reported from the phone, and the sharpest kind of bug this screen has:
+        // nothing was computing the wrong answer. `Scheduler.endAt` was right and
+        // pinned by eight cases, the app bar was right, the alarm row was right -
+        // this sentence simply never asked. One screen, two answers to "when does
+        // tonight end", which is worse than either answer being wrong.
+        val alarm = LocalDateTime.now().plusHours(2).withSecond(0).withNano(0)
+        setAlarm(alarm)
+        val s = sentence(
+            enabled = true, from = now.minusHours(2), to = now.plusHours(6),
+            days = DayOfWeek.entries.toSet(), exitAtAlarm = true
+        )
+        assertTrue(
+            "the sentence must end on the alarm, not the wake handle: $s",
+            s.contains(hhmm(ctx(), alarm.hour, alarm.minute))
+        )
+    }
+
+    @Test
+    fun `an alarm PAST the window changes nothing`() {
+        // endAt's own rule, copied from AOSP: the alarm ends the night only when
+        // it falls INSIDE it. A 2pm alarm is a real alarm and naming it here
+        // would promise something that is never going to happen.
+        val wake = now.plusHours(6)
+        setAlarm(LocalDateTime.now().plusHours(9).withSecond(0).withNano(0))
+        val s = sentence(
+            enabled = true, from = now.minusHours(2), to = wake,
+            days = DayOfWeek.entries.toSet(), exitAtAlarm = true
+        )
+        assertTrue(
+            "a later alarm must leave the wake time alone: $s",
+            s.contains(hhmm(ctx(), wake.hour, wake.minute))
+        )
+    }
+
+    @Test
+    fun `with the switch off the alarm is ignored`() {
+        val wake = now.plusHours(6)
+        setAlarm(LocalDateTime.now().plusHours(2).withSecond(0).withNano(0))
+        val s = sentence(
+            enabled = true, from = now.minusHours(2), to = wake,
+            days = DayOfWeek.entries.toSet(), exitAtAlarm = false
+        )
+        assertTrue(
+            "off, the window runs to the wake handle: $s",
+            s.contains(hhmm(ctx(), wake.hour, wake.minute))
+        )
     }
 
     // ---- outside the window: it must name the NEXT one, not today ----

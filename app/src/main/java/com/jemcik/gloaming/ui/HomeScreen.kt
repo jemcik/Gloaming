@@ -523,17 +523,31 @@ private fun WindowBlock(s: HomeState, now: LocalTime, runningNow: Boolean) {
         // Everything the centre could truthfully say right now, most useful
         // first. Tapping it walks the list; states with only one true thing
         // to say are not tappable and show no dots.
-        val readings = remember(s.tick, s.enabled, runningNow, s.start, s.end, s.days) {
+        val readings = remember(s.tick, s.enabled, runningNow, s.start, s.end, s.days, s.endAtAlarm) {
             val secs = ((s.end.toSecondOfDay() - s.start.toSecondOfDay() + 86400) % 86400)
             val total = span(res, secs / 60L) to res.getString(R.string.dial_sleep_window)
             buildList {
                 if (runningNow) {
-                    val endsAt = Scheduler.liveWindowEnd(prefs, s.start, s.end, s.days)
+                    // WITH the alarm, and the hour read off the answer rather
+                    // than off the wake handle. Both halves were wrong together:
+                    // the countdown ran to 8:30 and the caption named 8:30, while
+                    // the app bar and the alarm row both said 7:30 - one screen
+                    // giving two answers to "when does tonight end". The handle
+                    // keeps showing 8:30 because it is the SETTING and dragging
+                    // it edits the setting; this line is a claim about tonight.
+                    val alarm = if (s.endAtAlarm) Scheduler.nextAlarm(ctx) else null
+                    val endsAt = Scheduler.liveWindowEnd(
+                        prefs, s.start, s.end, s.days, alarm = alarm
+                    )
                     val left = if (endsAt != null)
                         Duration.between(LocalDateTime.now(), endsAt).toMinutes() else 0L
+                    val endHour = endsAt ?: LocalDateTime.now().with(s.end)
                     add(
                         span(res, left) to
-                            res.getString(R.string.dial_until, hhmm(ctx, s.end.hour, s.end.minute))
+                            res.getString(
+                                R.string.dial_until,
+                                hhmm(ctx, endHour.hour, endHour.minute)
+                            )
                     )
                     add(total)
                 } else {

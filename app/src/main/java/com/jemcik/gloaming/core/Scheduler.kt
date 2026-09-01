@@ -20,6 +20,22 @@ import java.time.ZoneId
  * Magic8 Pro (MagicOS 10.0.0.199): fired 149ms after the scheduled instant with
  * the app swiped from recents and the screen off.
  *
+ * READ THAT MEASUREMENT NARROWLY. A screen that is off is not a device in doze:
+ * light idle takes about half an hour of stillness and deep idle longer, so the
+ * 149ms says nothing about the state the app actually spends the night in. It
+ * was quoted for a year as proof the overnight path works, which it never was.
+ *
+ * The overnight path IS now measured, 1 Sep 2026, by forcing the states rather
+ * than waiting for them - `dumpsys battery unplug` then
+ * `dumpsys deviceidle force-idle [light|deep]`, with a window ending a few
+ * minutes out. Both arms fired at the scheduled SECOND, in forced light idle and
+ * in forced deep idle. Doze is not the problem.
+ *
+ * What does hold an alarm, indefinitely, is the app being background-restricted:
+ * AlarmManager parks it in a queue named "Pending user blocked background
+ * alarms" and only foregrounding the app frees it. That is not visible from
+ * here - see BackgroundLimit, which reads the appop and says so.
+ *
  * A window is treated as a single span (start + duration), never as two
  * independent times.
  *

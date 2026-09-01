@@ -592,8 +592,25 @@ an adb-only grant, Samsung's one key in System behind a user-grantable one - and
 `needsGrant` is true only where the grant is actually askable, so no phone is
 ever offered a button that cannot work.
 
-**The other three effects were each chased to a dead end, and each verdict is a
-measurement:** grayscale has no settings key (the diff above) and
+**Dark theme on Samsung: four routes, all dead.** Worth the detail, because it
+looks reachable and is not.
+1. `UiModeManager.setNightMode` compiles, throws nothing, and changes nothing -
+   a silent no-op without MODIFY_DAY_NIGHT_MODE. Verified by reading
+   `cmd uimode night` either side.
+2. `system display_night_theme` is user-writable and is a MIRROR: written 0
+   while the phone was dark, the value changed and the theme did not.
+3. `secure ui_night_mode` is the AOSP key and is adb-only anyway - and writing
+   it live did not flip the theme either, so the state lives in the service,
+   not the table.
+4. The SCHEDULE keys - `display_night_theme_scheduled`, `_on_time`, `_off_time`,
+   in `Settings.System` and so user-writable - are mirrors too. Scheduled dark
+   for two minutes out on a light phone; two minutes past it, `night mode: no`,
+   `scheduled=1`, `display_night_theme=0`. Nothing fired.
+A toggle of the real Settings UI was diffed to be sure nothing was missed: it
+writes exactly `secure ui_night_mode` and `system display_night_theme`, and
+no third key exists.
+
+**Grayscale and wallpaper dim, for the same file:** grayscale has no settings key (the diff above) and
 `ColorDisplayManager` is signature; wallpaper dim needs
 `WallpaperManager.setWallpaperDimAmount`, which is `@hide` and does not compile;
 dark theme via `UiModeManager.setNightMode` compiles, throws nothing, and

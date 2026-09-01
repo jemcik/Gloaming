@@ -1142,25 +1142,9 @@ private fun HomeBar(
     val card = g.raise
 
     val status = remember(s.tick, s.enabled, runningNow, s.start, s.end, s.days) {
-        if (!s.enabled) res.getString(R.string.bedtime_off)
-        else if (runningNow) Scheduler.liveWindowEnd(prefs, s.start, s.end, s.days)
-            ?.let {
-                res.getString(R.string.state_on_until, hhmm(ctx, it.hour, it.minute))
-            }
-            ?: res.getString(R.string.state_on_now)
-        else Scheduler.nextStart(s.start, s.end, s.days)?.let { n ->
-            val m = Duration.between(LocalDateTime.now(), n).toMinutes()
-            // The SAME formatter the dial centre uses, on the
-            // same quantity: its "until bedtime" reading is
-            // this duration too. They were "12h 47m" there and
-            // "12 hr" here, which reads as two numbers rather
-            // than one fact. Minutes were dropped past four
-            // hours on the argument that they are noise most of
-            // a day out - but the circle was showing them the
-            // whole time, so the argument only ever cost the
-            // agreement between the two.
-            res.getString(R.string.state_starts_in, span(res, m))
-        } ?: res.getString(R.string.state_nothing_scheduled)
+        // Said in Sentences, because the Quick Settings tile has to say exactly
+        // the same three things with no Compose around it.
+        statusLine(ctx, res, s.enabled, prefs.activeDay, s.start, s.end, s.days)
     }
 
     TopAppBar(

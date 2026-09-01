@@ -183,3 +183,37 @@ internal fun span(res: Resources, minutes: Long): String =
     if (minutes < 60) res.getString(R.string.dur_minutes, minutes)
     else res.getString(R.string.dur_compact, minutes / 60, minutes % 60)
 
+
+/**
+ * The one line that says what bedtime is doing: off, armed, or running.
+ *
+ * Lives here rather than inside the app bar because it is said in two places
+ * now. The Quick Settings tile is the same control as the master switch, so it
+ * has to be able to say the same three things - and a tile that phrased them
+ * its own way would be a second vocabulary for one fact.
+ *
+ * Takes plain values rather than a `Prefs`, like the rest of this file, so the
+ * whole thing is a pure function of (state, times, days, now) and can be tested
+ * without a device or a clock.
+ */
+fun statusLine(
+    ctx: Context,
+    res: Resources,
+    enabled: Boolean,
+    activeDay: Long,
+    start: LocalTime,
+    end: LocalTime,
+    days: Set<DayOfWeek>,
+    now: LocalDateTime = LocalDateTime.now()
+): String {
+    if (!enabled) return res.getString(R.string.bedtime_off)
+    val ends = Scheduler.liveWindowEnd(enabled, activeDay, start, end, days, now)
+    if (ends != null) {
+        return res.getString(R.string.state_on_until, hhmm(ctx, ends.hour, ends.minute))
+    }
+    val next = Scheduler.nextStart(start, end, days, now)
+        ?: return res.getString(R.string.state_nothing_scheduled)
+    // The SAME formatter the dial centre uses, on the same quantity, so the two
+    // readings of one duration cannot disagree.
+    return res.getString(R.string.state_starts_in, span(res, Duration.between(now, next).toMinutes()))
+}

@@ -10,7 +10,9 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import com.jemcik.gloaming.core.Prefs
 import java.time.DayOfWeek
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.format.TextStyle
@@ -125,6 +127,45 @@ class SentencesTest {
                 DAY_SPAN[i], DAY_NOTE[i]
             )
         }
+    }
+
+    // ---------- statusLine: the one line the app bar and the tile share ----------
+
+    @Test
+    fun `switched off, the status says so and names no hour`() {
+        val s = statusLine(
+            ctx(), ctx().resources, enabled = false, activeDay = Prefs.NO_DAY,
+            start = LocalTime.of(22, 30), end = LocalTime.of(7, 0),
+            days = DayOfWeek.entries.toSet(),
+            now = LocalDateTime.of(2026, 9, 1, 20, 0)
+        )
+        assertEquals(ctx().getString(R.string.bedtime_off), s)
+    }
+
+    @Test
+    fun `armed but not yet running counts down rather than claiming to be on`() {
+        // The distinction the master switch draws with two icons, in words: a
+        // tile that said "on" here would be the lie the icons exist to avoid.
+        val s = statusLine(
+            ctx(), ctx().resources, enabled = true, activeDay = Prefs.NO_DAY,
+            start = LocalTime.of(22, 30), end = LocalTime.of(7, 0),
+            days = DayOfWeek.entries.toSet(),
+            now = LocalDateTime.of(2026, 9, 1, 20, 0)
+        )
+        assertTrue("armed should count down, not claim to be running: $s", s.contains("2h"))
+        assertNotEquals(ctx().getString(R.string.bedtime_off), s)
+    }
+
+    @Test
+    fun `running names the hour it ends, not the hour it began`() {
+        val s = statusLine(
+            ctx(), ctx().resources, enabled = true,
+            activeDay = LocalDate.of(2026, 9, 1).toEpochDay(),
+            start = LocalTime.of(22, 30), end = LocalTime.of(7, 0),
+            days = DayOfWeek.entries.toSet(),
+            now = LocalDateTime.of(2026, 9, 1, 23, 30)
+        )
+        assertTrue("a running window names its end: $s", s.contains("7:00") || s.contains("07:00"))
     }
 
     // ---------- planNote ----------

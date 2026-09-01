@@ -55,6 +55,14 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <!-- Long-pressing a custom tile opens whichever activity answers
+                 this; with nothing declared the system falls back to the App
+                 info page, which is not what a long press on a bedtime tile
+                 should mean. -->
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE_PREFERENCES" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
             <!-- Lets the system open our settings from the DND rule entry -->
             <intent-filter>
                 <action android:name="android.app.action.AUTOMATIC_ZEN_RULE" />
@@ -75,5 +83,19 @@
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
             </intent-filter>
         </receiver>
+        <!-- The master switch in the shade. It is the same control as the app
+             bar's, sharing Bedtime.set and statusLine, so the two cannot drift.
+             BIND_QUICK_SETTINGS_TILE is what lets SystemUI bind it, and is
+             declared on the service rather than requested by the app. -->
+        <service
+            android:name=".ui.BedtimeTile"
+            android:exported="true"
+            android:icon="@drawable/ic_bedtime"
+            android:label="@string/bedtime_mode"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
     </application>
 </manifest>

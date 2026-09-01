@@ -3,6 +3,7 @@ package com.jemcik.gloaming.core
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import com.jemcik.gloaming.ui.BedtimeTile
 
 class BedtimeReceiver : BroadcastReceiver() {
     override fun onReceive(ctx: Context, intent: Intent) {
@@ -83,5 +84,9 @@ class BedtimeReceiver : BroadcastReceiver() {
         }
         // Always rearm: exact alarms are one-shot.
         Scheduler.rescheduleAll(ctx, p, force)
+        // The shade cannot see any of this happen. Ask the tile to re-read, or
+        // it keeps showing the face it had when it was last looked at - a tick
+        // through the whole night that should have been a moon.
+        BedtimeTile.refresh(ctx)
     }
 }

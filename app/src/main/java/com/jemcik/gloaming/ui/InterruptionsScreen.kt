@@ -20,6 +20,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.jemcik.gloaming.R
+import com.jemcik.gloaming.core.Bedtime
 import com.jemcik.gloaming.core.Clock
 import com.jemcik.gloaming.core.Interruptions
 import com.jemcik.gloaming.core.Prefs
@@ -93,6 +94,14 @@ fun InterruptionsScreen(onBack: () -> Unit, onChanged: () -> Unit) {
     // Each rule rewrite costs a visible blink of Do Not Disturb, so flipping six
     // switches should cost one rewrite and not six. The preference is written on
     // every tap; the rule is pushed once, on the way out.
+    //
+    // But the blink is only visible while a window is actually RUNNING - rewriting
+    // an idle rule changes nothing on screen, because there is nothing on screen
+    // to change. So batching costs something exactly when it buys something, and
+    // is pure delay otherwise: the common case is someone setting this up in the
+    // evening, hours before bedtime, and making them wait for the rule until they
+    // happen to leave the screen is a staleness with nothing bought for it.
+    // Applied at once when nothing is running, batched when it would blink.
     var dirty by remember { mutableStateOf(false) }
     fun flush() {
         if (dirty) { dirty = false; onChanged() }
@@ -110,6 +119,11 @@ fun InterruptionsScreen(onBack: () -> Unit, onChanged: () -> Unit) {
                 // Leaving the app counts as leaving the screen: the change has
                 // to reach the rule without waiting for a trip back to Home.
                 Lifecycle.Event.ON_PAUSE -> flush()
+                // ON_PAUSE already covers Home and app switching, and ON_STOP
+                // fires after it. It is here as insurance rather than as a
+                // second mechanism: a flush that has already happened is free,
+                // and a rule left describing last night is not.
+                Lifecycle.Event.ON_STOP -> flush()
                 else -> {}
             }
         }
@@ -126,7 +140,7 @@ fun InterruptionsScreen(onBack: () -> Unit, onChanged: () -> Unit) {
         prefs.allowRepeatCallers = repeatCallers
         prefs.allowReminders = reminders; prefs.allowEvents = events
         prefs.allowMedia = media
-        dirty = true
+        if (Bedtime.runningNow(prefs)) dirty = true else onChanged()
     }
 
     val wake: LocalTime = prefs.endTime

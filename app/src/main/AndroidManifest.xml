@@ -75,5 +75,19 @@
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
             </intent-filter>
         </receiver>
+        <!-- The master switch in the shade. It is the same control as the app
+             bar's, sharing Bedtime.set and statusLine, so the two cannot drift.
+             BIND_QUICK_SETTINGS_TILE is what lets SystemUI bind it, and is
+             declared on the service rather than requested by the app. -->
+        <service
+            android:name=".ui.BedtimeTile"
+            android:exported="true"
+            android:icon="@drawable/ic_bedtime"
+            android:label="@string/bedtime_mode"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
     </application>
 </manifest>

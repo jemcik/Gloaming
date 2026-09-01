@@ -11,6 +11,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import com.jemcik.gloaming.core.AlarmWatch
 import com.jemcik.gloaming.core.BackgroundLimit
+import com.jemcik.gloaming.core.Bedtime
 import com.jemcik.gloaming.core.BackgroundProbe
 import com.jemcik.gloaming.core.BootWatch
 import com.jemcik.gloaming.core.Doors
@@ -157,12 +158,17 @@ class HomeState(
     /** The minute ticker, and anything else that only needs a redraw. */
     fun bump() { tick++ }
 
-    fun commit() {
+    /** Everything the screen is holding, written down. No side effects. */
+    private fun writePrefs() {
         prefs.enabled = enabled; prefs.startTime = start
         prefs.endTime = end; prefs.days = days
         prefs.fxDnd = fxDnd; prefs.fxGrayscale = fxGray
         prefs.fxDimWallpaper = fxDim; prefs.fxDarkTheme = fxDark
         prefs.fxHideAmbient = fxAmbient
+    }
+
+    fun commit() {
+        writePrefs()
         // rescheduleAll -> setActive -> syncRule, so syncing here as well
         // pushed the rule twice for every tap.
         Scheduler.rescheduleAll(ctx, prefs)
@@ -184,11 +190,13 @@ class HomeState(
     fun setBedtime(on: Boolean) {
         haptics.toggle(on)
         enabled = on
-        if (!on) {
-            Scheduler.cancelAll(ctx)
-            ZenController.setActive(ctx, prefs, false)
-        }
-        commit()
+        // Persist what the dial and the effect rows are showing before flipping,
+        // then flip through the SAME function the Quick Settings tile calls.
+        // The tile has no HomeState to borrow, so the sequence lives in Bedtime
+        // and both callers share it rather than agreeing by coincidence.
+        writePrefs()
+        Bedtime.set(ctx, prefs, on)
+        tick++
     }
 
     /**

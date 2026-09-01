@@ -59,7 +59,7 @@
     <string name="missed_alarm_why">Телефон зупинив Gloaming, поки застосунок був закритий, тому режим сну не вимкнувся, доки ви його не відкрили</string>
     <string name="launch_setup_title">Цьому телефону потрібні ще два перемикачі</string>
     <string name="launch_setup_row">Запуск застосунків</string>
-    <string name="launch_setup_why">Виберіть для Gloaming «Керувати вручну», потім увімкніть автозапуск і роботу у фоні. Без них режим сну не зможе вмикатися й вимикатися сам</string>
+    <string name="launch_setup_why">Знайдіть Gloaming через пошук, виберіть «Керувати вручну», потім увімкніть автозапуск і роботу у фоні</string>
 
     <!-- ============ Home: the window ============ -->
     <!-- Overlines, uppercased in code. Keep short: they sit above the times. -->

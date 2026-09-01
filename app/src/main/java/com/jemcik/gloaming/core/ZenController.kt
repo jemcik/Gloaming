@@ -182,8 +182,24 @@ object ZenController {
      * this is a vendor Android, and "the API returns exactly what it documents"
      * has not been a safe assumption anywhere else in this file.
      */
+    /**
+     * Remove every rule of ours that is not the one we are holding.
+     *
+     * `keep` is deliberately NULLABLE and this deliberately does not return
+     * early when it is null. With no ruleId there is nothing to preserve, so
+     * every Gloaming rule on the phone is an orphan and all of them should go.
+     *
+     * It used to `?: return` there, and that stranded a LIVE rule: clearing the
+     * app's data wipes prefs but leaves the rule registered with the system,
+     * still active, still applying its device effects. Measured on the Honor
+     * 1 Sep 2026 after a `pm clear` - the app showed bedtime off, zen_mode read
+     * 0, and the screen stayed GRAYSCALE, because an orphan nobody could see was
+     * still holding it. Nothing could clean it up either: the sweep returned at
+     * the first line every time, so the only escape was to switch bedtime on,
+     * which minted a ruleId and finally let the sweep run.
+     */
     private fun sweepOrphans(ctx: Context, p: Prefs) {
-        val keep = p.ruleId ?: return
+        val keep = p.ruleId
         val n = nm(ctx)
         val ours = runCatching { n.automaticZenRules }.getOrNull() ?: return
         ours.filter { (id, rule) -> id != keep && rule.conditionId == CONDITION }

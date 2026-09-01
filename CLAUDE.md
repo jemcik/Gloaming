@@ -20,7 +20,11 @@ runs and bedtime only triggers when the app is foregrounded.
 `setExactAndAllowWhileIdle` is **not** gated by that constraint. Gloaming uses
 exact alarms to flip the zen rule itself: measured firing within ~150 ms with
 the app closed and the screen off, with no battery whitelist and standby bucket
-10 — the real user path, not a privileged one.
+10 — the real user path, not a privileged one. **Screen off is not doze**, so
+that measurement never covered the state the app spends the night in; the
+overnight path was measured separately on 1 Sep 2026 by forcing light and deep
+idle, and fired at the scheduled second in both. What DOES hold an alarm
+indefinitely is background restriction — see `core/BackgroundLimit.kt`.
 
 ## Architecture
 

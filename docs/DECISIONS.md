@@ -228,6 +228,31 @@ nothing even holding `WRITE_SECURE_SETTINGS` (which an app CAN be granted over
 adb, tested): the service reads those keys at init and on `ACTION_SETTING_RESTORED`
 only, with no `ContentObserver` on them, so a raw write is never noticed.
 
+**The founding alarm measurement was quoted far wider than it was taken,
+1 Sep 2026.** `Scheduler.kt` has said since 0.1 that the alarm "fired 149ms after
+the scheduled instant with the app swiped from recents and the screen off", and
+CLAUDE.md turned that into "the real user path, not a privileged one". A screen
+that is off is not a device in doze - light idle needs roughly half an hour of
+stillness, deep idle longer - so the number never described the state the app
+spends the night in. Nothing was wrong with the measurement; it was the
+generalisation that had no support.
+
+Now measured properly, by FORCING the states instead of waiting for them:
+
+    adb shell dumpsys battery unplug
+    adb shell dumpsys deviceidle force-idle [light|deep]
+
+with a window ending a few minutes out. That turns a twenty-hour feedback loop
+into ten minutes, which is the reason nobody had checked before. Both arms fired
+at the scheduled SECOND - forced light idle and forced deep idle. **Doze is not
+the problem and never was.**
+
+What does hold an alarm is background restriction, which is a different
+mechanism entirely and is written up under its own heading. Worth stating the
+pair together, because "the alarm was late" points at doze and that would have
+been the wrong tree: the alarm is punctual in doze and indefinitely stuck when
+the app is restricted.
+
 **A reboot mid-window silently lost Do Not Disturb, 1 Sep 2026 — and the third
 piece of zen state nobody knew about.** Reported from the phone: enable a
 schedule, let the window run, restart, and bedtime reads "on" with DND off.

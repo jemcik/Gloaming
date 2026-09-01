@@ -43,6 +43,10 @@ indefinitely is background restriction — see `core/BackgroundLimit.kt`.
     core/ZenStatusReceiver.kt    the platform's hint that our rule changed; a
                                  hint only, we decide from getAutomaticZenRule
     core/BootWatch.kt            detects a reboot whose broadcast never arrived
+    core/ScreenEffects.kt        does this phone APPLY the rule's device
+                                 effects. The one question here with no probe,
+                                 so a manufacturer prior that a measured
+                                 transition can overrule
     core/BackgroundProbe.kt      one throwaway alarm that asks whether this
                                  phone delivers alarms at all. Silent unless
                                  the answer is no
@@ -142,6 +146,14 @@ is in DECISIONS.md.
   against a published APK; it now says so rather than printing placeholders.
 - **MagicOS withholds `ACTION_BOOT_COMPLETED`** unless the app is set to
   auto-launch. `BootWatch` detects the symptom rather than the vendor.
+- The screen-effects section is HIDDEN where the phone throws the effects away
+  (`ScreenEffects`). A switch that lies is worse than an absent one. This is the
+  one manufacturer test besides `AmbientControl`, and only because the readbacks
+  are `@hide`: `isSaturationActivated` and `getWallpaperDimAmount` both fail to
+  compile. It expires by itself - night mode observed going OFF→ON in step with
+  our rule overrules the prior for good. Watch the TRANSITION, never the state:
+  the first version asked "is it dark while we want dark", answered yes on a
+  phone that was simply always dark, and un-hid the broken switches.
 - **One UI 8 stores `ZenDeviceEffects` and applies none of them** - grayscale and
   night mode both, across a screen-off cycle. Not a capability gap: One UI's own
   Sleep mode drives the same `Global saturation`. `BootWatch.hasSystemBedtime`

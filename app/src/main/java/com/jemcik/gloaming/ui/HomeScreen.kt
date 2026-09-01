@@ -943,6 +943,12 @@ private fun WakeSection(s: HomeState, runningNow: Boolean, onOpenInterruptions: 
 @Composable
 private fun ScreenEffectsSection(s: HomeState, runningNow: Boolean) {
     val ctx = LocalContext.current
+    // Nothing here moves on a phone that throws the effects away, and a switch
+    // that lies is worse than an absent one - see ScreenEffects for what was
+    // measured and why the manufacturer is a prior rather than the verdict.
+    // Settings still offers that phone the system's own bedtime screen, which is
+    // where its grayscale actually lives.
+    if (!ScreenEffects.applied(ctx)) return
     val g = gloam
     val haptics = s.haptics
     val card = g.raise

@@ -116,6 +116,26 @@ class Prefs(ctx: Context) {
         set(v) = sp.edit { putLong("probeSeen", v) }
 
     /**
+     * What night mode read the last time our rule was NOT active: 1, 0, or -1
+     * for never seen. The baseline half of the transition test in
+     * [ScreenEffects.observeApplied].
+     */
+    var nightWhenIdle: Int
+        get() = sp.getInt("nightWhenIdle", -1)
+        set(v) = sp.edit { putInt("nightWhenIdle", v) }
+
+    /**
+     * We have SEEN the zen rule's device effects actually take hold here.
+     *
+     * One-directional and permanent: it overrules the manufacturer prior in
+     * [ScreenEffects], so a phone that starts out assumed broken can prove
+     * itself without an app update.
+     */
+    var effectsSeen: Boolean
+        get() = sp.getBoolean("effectsSeen", false)
+        set(v) = sp.edit { putBoolean("effectsSeen", v) }
+
+    /**
      * The one-time launch-setup tip has been answered, either way.
      *
      * Not a verdict and not a measurement - just "we have offered this once".

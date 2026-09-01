@@ -14,6 +14,7 @@ import com.jemcik.gloaming.core.BackgroundLimit
 import com.jemcik.gloaming.core.BackgroundProbe
 import com.jemcik.gloaming.core.BootWatch
 import com.jemcik.gloaming.core.Prefs
+import com.jemcik.gloaming.core.ScreenEffects
 import com.jemcik.gloaming.core.Scheduler
 import com.jemcik.gloaming.core.ZenController
 
@@ -213,6 +214,9 @@ class HomeState(
         // missed END - the alarm was eaten while nobody was watching.
         BackgroundProbe.check(prefs)
         blocked = BackgroundProbe.blocked(prefs)
+        // Free evidence: if the screen is dark WHILE our rule asks for it, this
+        // phone applies device effects after all, whatever the prior says.
+        ScreenEffects.observeApplied(ctx, wantsNight = fxDark, ruleActive = runningNow())
         // And ask again here, not only on first composition. Arming needs
         // SCHEDULE_EXACT_ALARM, so on a fresh install the first attempt THROWS
         // and records nothing - correctly, since an alarm we never set cannot

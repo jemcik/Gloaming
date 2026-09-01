@@ -627,7 +627,8 @@ private fun EndsSection(s: HomeState) {
     // The alarm only counts if it falls inside the window, so asking endAt is the
     // only honest way to know which sentence is true - a 2pm alarm is real, and
     // naming it here would promise something that will not happen.
-    val subtitle = remember(s.tick, s.start, s.end, s.days) {
+    val res = LocalResources.current
+    val subtitle = remember(s.tick, s.start, s.end, s.days, res) {
         val alarm = Scheduler.nextAlarm(ctx)
         val now = LocalDateTime.now()
         val scheduledEnd = Scheduler.liveWindowEnd(s.prefs, s.start, s.end, s.days, now)
@@ -637,8 +638,8 @@ private fun EndsSection(s: HomeState) {
         val effective = if (began != null && scheduledEnd != null)
             Scheduler.endAt(began, scheduledEnd, alarm, exitAtAlarm = true) else null
         if (effective != null && effective == alarm)
-            ctx.getString(R.string.row_end_at_alarm_at, hhmm(ctx, alarm.hour, alarm.minute))
-        else ctx.getString(
+            res.getString(R.string.row_end_at_alarm_at, hhmm(ctx, alarm.hour, alarm.minute))
+        else res.getString(
             R.string.row_end_at_alarm_none,
             hhmm(ctx, (scheduledEnd ?: now).hour, (scheduledEnd ?: now).minute)
         )

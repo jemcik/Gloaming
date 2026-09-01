@@ -90,6 +90,17 @@ class HomeState(
     var missedAlarm by mutableStateOf(AlarmWatch.missed(prefs))
         private set
 
+    /**
+     * This phone can stop apps running, and it has never yet let us finish a
+     * window - so we cannot promise bedtime will end on time, and say so BEFORE
+     * a night is lost rather than after. Goes quiet for good on the first END
+     * that actually arrives.
+     */
+    var unproven by mutableStateOf(
+        BootWatch.hasLaunchManager(ctx) && AlarmWatch.neverCompleted(prefs)
+    )
+        private set
+
     /** The minute ticker, and anything else that only needs a redraw. */
     fun bump() { tick++ }
 
@@ -147,6 +158,7 @@ class HomeState(
         missedBoot = BootWatch.missed(prefs)
         restricted = BackgroundLimit.isRestricted(ctx)
         missedAlarm = AlarmWatch.missed(prefs)
+        unproven = BootWatch.hasLaunchManager(ctx) && AlarmWatch.neverCompleted(prefs)
         tick++
     }
 

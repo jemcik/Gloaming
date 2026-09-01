@@ -100,6 +100,9 @@
     <string name="missed_alarm_title">Bedtime did not end on time</string>
     <string name="missed_alarm_row">Let Gloaming run in the background</string>
     <string name="missed_alarm_why">The phone stopped Gloaming while it was closed, so bedtime stayed on until you opened the app</string>
+    <string name="launch_setup_title">This phone needs two more switches</string>
+    <string name="launch_setup_row">App launch</string>
+    <string name="launch_setup_why">Set Gloaming to &#8220;Manage manually&#8221;, then turn on Auto-launch and Run in background. Bedtime needs both to start and end on its own</string>
 
     <!-- ============ Home: the window ============ -->
     <!-- Overlines, uppercased in code. Keep short: they sit above the times. -->

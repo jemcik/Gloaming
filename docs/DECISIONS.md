@@ -574,6 +574,41 @@ question. It is gated behind `com.hihonor.permission.sec.MDM_APP_MANAGEMENT`,
 requires the app to be an active device admin, and is issued under a commercial
 enterprise contract. Correct, documented, and out of reach for a consumer app.
 
+**One UI 8 stores `ZenDeviceEffects` and applies NONE of them.** Measured on a
+Galaxy S23, One UI 8 / Android 16, 1 Sep 2026. The rule reads `state=STATE_TRUE`
+with `deviceEffects=[grayscale, dimWallpaper, nightMode]`, `zen_mode` is 1 and
+Do Not Disturb genuinely filters - and `Global saturation` stays `false` and
+`cmd uimode night` stays `no`, across a screen-off cycle too (checked because
+AOSP deliberately defers night mode to screen-off).
+It is NOT a capability gap, and that distinction is the whole point: turning on
+One UI's own Sleep mode flips `Global saturation` to **true** - the same
+`ColorDisplayManager` path AOSP's `DefaultDeviceEffectsApplier` uses. Samsung
+simply never wired third-party zen rules to its own applier. Our code is using
+the correct public API; the fix is Samsung's.
+
+**The Samsung Routines SDK route was tried and is closed.** One UI has a real
+integration surface - `com.samsung.android.sdk.routines.v3`, with providers at
+`<pkg>.provider.routines.v3`, an intent-filter for `ROUTINE_PROVIDER`, and
+`meta.CONDITION` pointing at a `<conditions>` XML. The contract was read
+straight out of Samsung Clock's own manifest and condition meta. A spike
+declared it verbatim. Result: `READ_ROUTINE_INFO` is `protectionLevel normal`
+and IS granted at install with no prompt, but Modes and Routines never listed
+our condition and never called our provider once, before or after a reboot -
+"Результаты не найдены". Every app implementing the SDK on the device is
+Samsung-signed and `ACCESS_ROUTINES` is `signature|privileged`, so discovery is
+almost certainly restricted to privileged packages. The SDK is also absent from
+developer.samsung.com's published Galaxy SDKs. Spike left on `samsung-spike`,
+unmerged.
+
+**What DOES work is an AOSP action: `android.settings.BEDTIME_SETTINGS`.** It
+resolves on the Galaxy - landing on One UI's `LifestyleModeEditorActivity`, the
+Sleep mode editor where greyscale actually is configurable - and resolves to
+nothing on the Honor. So it is a capability probe like every other here, not a
+vendor test, and it gives Samsung owners the one working route to a grey screen.
+The constant is hidden (`Settings.ACTION_BEDTIME_SETTINGS` does not compile
+against compileSdk 37), so the action string is written out; it is an intent
+action matched by the package manager, not a private method and not reflection.
+
 **A parked alarm is still DELIVERED, so arrival cannot be the test.** The first
 version of the probe scored a blocked phone as healthy, and only the device
 caught it. With `RUN_ANY_IN_BACKGROUND` at `ignore` the probe sat in *"Pending

@@ -118,21 +118,39 @@ fun SettingsScreen(themeMode: Int, onThemeMode: (Int) -> Unit, onBack: () -> Uni
         //
         // Hidden where no launch manager resolves, on the same capability probe
         // the notices use - never a Build.MANUFACTURER test.
-        if (BootWatch.hasLaunchManager(ctx)) {
+        val launchManager = BootWatch.hasLaunchManager(ctx)
+        val systemBedtime = BootWatch.hasSystemBedtime(ctx)
+        if (launchManager || systemBedtime) {
             Section(stringResource(R.string.section_this_phone)) {
                 SettingsCard {
-                    LinkRow(
-                        stringResource(R.string.launch_setup_row),
-                        supporting = stringResource(R.string.launch_link_why),
-                        leading = {
-                            Icon(
-                                painterResource(R.drawable.ic_restart),
-                                contentDescription = null,
-                                tint = LocalContentColor.current,
-                                modifier = Modifier.size(24.dp)
-                            )
-                        }
-                    ) { haptics.open(); BootWatch.openAutoStart(ctx) }
+                    if (launchManager) {
+                        LinkRow(
+                            stringResource(R.string.launch_setup_row),
+                            supporting = stringResource(R.string.launch_link_why),
+                            leading = {
+                                Icon(
+                                    painterResource(R.drawable.ic_restart),
+                                    contentDescription = null,
+                                    tint = LocalContentColor.current,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                        ) { haptics.open(); BootWatch.openAutoStart(ctx) }
+                    }
+                    if (systemBedtime) {
+                        LinkRow(
+                            stringResource(R.string.bedtime_settings_row),
+                            supporting = stringResource(R.string.bedtime_settings_why),
+                            leading = {
+                                Icon(
+                                    painterResource(R.drawable.ic_bedtime),
+                                    contentDescription = null,
+                                    tint = LocalContentColor.current,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                        ) { haptics.open(); BootWatch.openSystemBedtime(ctx) }
+                    }
                 }
             }
         }

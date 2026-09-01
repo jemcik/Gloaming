@@ -142,6 +142,12 @@ is in DECISIONS.md.
   against a published APK; it now says so rather than printing placeholders.
 - **MagicOS withholds `ACTION_BOOT_COMPLETED`** unless the app is set to
   auto-launch. `BootWatch` detects the symptom rather than the vendor.
+- **One UI 8 stores `ZenDeviceEffects` and applies none of them** - grayscale and
+  night mode both, across a screen-off cycle. Not a capability gap: One UI's own
+  Sleep mode drives the same `Global saturation`. `BootWatch.hasSystemBedtime`
+  offers the system's own bedtime screen where it resolves, which is the only
+  working route to a grey screen there. Samsung's Routines SDK was tried and its
+  discovery is closed to non-privileged apps.
 - Honor's auto-launch and run-in-background states are **unreadable** — absent
   from settings, appops and the package dump, measured either side of a clean
   toggle. Run-in-background is answered by `BackgroundProbe` instead, whose

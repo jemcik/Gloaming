@@ -106,7 +106,10 @@ class RowFitTest {
     private fun settingsRowsFitIn(locale: String) {
         RuntimeEnvironment.setQualifiers("+$locale-w360dp-h800dp")
         val ctx = ApplicationProvider.getApplicationContext<android.content.Context>()
-        val titles = listOf(R.string.settings_language, R.string.launch_setup_row)
+        val titles = listOf(
+            R.string.settings_language, R.string.launch_setup_row,
+            R.string.bedtime_settings_row
+        )
             .map { ctx.getString(it) }
 
         compose.setContent {

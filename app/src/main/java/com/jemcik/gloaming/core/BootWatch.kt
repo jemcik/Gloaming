@@ -105,6 +105,44 @@ object BootWatch {
             ctx.packageManager.resolveActivity(Intent().setComponent(it), 0) != null
         }
 
+    /**
+     * Does this phone have a bedtime screen of its own?
+     *
+     * `Settings.ACTION_BEDTIME_SETTINGS` is an AOSP action, not a vendor one, so
+     * asking whether it resolves is a capability probe like every other here -
+     * each vendor maps it to its own screen or does not answer at all. Measured
+     * 1 Sep 2026: on a Galaxy S23 it lands on One UI's Sleep mode editor, and on
+     * the Honor nothing answers it.
+     *
+     * It earns its place because of what One UI does NOT do. Samsung stores our
+     * ZenDeviceEffects on the rule and applies none of them, while its own Sleep
+     * mode drives the very same global saturation - so on that phone the only
+     * working route to a grey screen is the system's own bedtime screen. This is
+     * a door to it, never a claim that ours is broken, because that cannot be
+     * read.
+     */
+    /**
+     * Spelled out rather than taken from `Settings`, because the constant is
+     * hidden: `ACTION_BEDTIME_SETTINGS` exists in AOSP but is not exposed in the
+     * SDK, so `Settings.ACTION_BEDTIME_SETTINGS` does not compile against
+     * compileSdk 37. This is only an intent ACTION STRING, matched by the
+     * package manager like any other - not a private method, and not reflection.
+     * The resolve above is what keeps it honest: unanswered, we never send
+     * anyone anywhere.
+     */
+    private const val ACTION_BEDTIME = "android.settings.BEDTIME_SETTINGS"
+
+    fun hasSystemBedtime(ctx: Context): Boolean =
+        ctx.packageManager.resolveActivity(Intent(ACTION_BEDTIME), 0) != null
+
+    fun openSystemBedtime(ctx: Context) {
+        runCatching {
+            ctx.startActivity(
+                Intent(ACTION_BEDTIME).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            )
+        }
+    }
+
     fun openAutoStart(ctx: Context) {
         for (screen in VENDOR_SCREENS) {
             val i = Intent().setComponent(screen)

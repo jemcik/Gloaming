@@ -177,6 +177,7 @@ fun Home(
             ) {
                 PermissionSection(dnd, exact)
                 BootNoticeSection(s)
+            BackgroundNoticeSection(s)
                 WindowBlock(s, now, runningNow)
                 DaysSection(s)
                 WakeSection(s, runningNow, onOpenInterruptions)
@@ -265,6 +266,36 @@ private fun BootNoticeSection(s: HomeState) {
                     granted = false,
                     icon = R.drawable.ic_restart, tint = IconTint.Boot
                 ) { haptics.open(); BootWatch.openAutoStart(ctx) }
+            })
+        }
+    }
+}
+
+/**
+ * The phone is holding our alarms. Unlike the boot notice this is a SETTING we
+ * can read, so the section appears exactly while it is wrong and disappears the
+ * moment it is fixed - no guessing, no measuring a symptom.
+ *
+ * It sits above the window rather than below it because it invalidates
+ * everything below: with this on, the times drawn on the dial are what the app
+ * intends, not what the phone will do.
+ */
+@Composable
+private fun BackgroundNoticeSection(s: HomeState) {
+    val ctx = LocalContext.current
+    val g = gloam
+    val haptics = s.haptics
+    val card = g.raise
+
+    if (s.restricted) {
+        Section(stringResource(R.string.bg_blocked_title), rule = false) {
+            GroupedList(card, listOf {
+                PermissionCard(
+                    stringResource(R.string.bg_blocked_row),
+                    stringResource(R.string.bg_blocked_why),
+                    granted = false,
+                    icon = R.drawable.ic_alarm, tint = IconTint.Alarm
+                ) { haptics.open(); BackgroundLimit.openSettings(ctx) }
             })
         }
     }

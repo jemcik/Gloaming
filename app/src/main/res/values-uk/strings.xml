@@ -51,6 +51,9 @@
     <string name="boot_missed_title">Телефон перезапустився без Gloaming</string>
     <string name="boot_missed_row">Автозапуск</string>
     <string name="boot_missed_why">Дозволяє сну знову вмикатися після перезавантаження. Без цього нічого не було заплановано, доки ви не відкрили застосунок</string>
+    <string name="bg_blocked_title">Gloaming не дозволено працювати у фоні</string>
+    <string name="bg_blocked_row">Робота у фоні</string>
+    <string name="bg_blocked_why">Дозволяє режиму сну починатися й завершуватися, поки застосунок закрито. Без цього нічого не станеться, доки ви знову не відкриєте Gloaming</string>
 
     <!-- ============ Home: the window ============ -->
     <!-- Overlines, uppercased in code. Keep short: they sit above the times. -->

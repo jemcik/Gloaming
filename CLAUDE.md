@@ -43,6 +43,9 @@ indefinitely is background restriction — see `core/BackgroundLimit.kt`.
     core/ZenStatusReceiver.kt    the platform's hint that our rule changed; a
                                  hint only, we decide from getAutomaticZenRule
     core/BootWatch.kt            detects a reboot whose broadcast never arrived
+    core/BackgroundLimit.kt      the one vendor restriction that can be READ:
+                                 isBackgroundRestricted. Off, the phone parks
+                                 our alarms until the app is next opened
     core/Interruptions.kt        the allowlist as a sentence
     core/AmbientControl.kt       the vendor's own always-on keys, behind an
                                  adb-only permission; inert and hidden without it

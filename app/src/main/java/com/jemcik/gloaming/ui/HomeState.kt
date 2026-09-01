@@ -9,6 +9,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import com.jemcik.gloaming.core.BackgroundLimit
 import com.jemcik.gloaming.core.BootWatch
 import com.jemcik.gloaming.core.Prefs
 import com.jemcik.gloaming.core.Scheduler
@@ -72,6 +73,14 @@ class HomeState(
     var missedBoot by mutableStateOf(BootWatch.missed(prefs))
         private set
 
+    /**
+     * Re-read on every resume, because it is a SETTING rather than an event:
+     * the user may have just come back from fixing it, and an app update resets
+     * it on MagicOS. Cheap - one appop read.
+     */
+    var restricted by mutableStateOf(BackgroundLimit.isRestricted(ctx))
+        private set
+
     /** The minute ticker, and anything else that only needs a redraw. */
     fun bump() { tick++ }
 
@@ -127,6 +136,7 @@ class HomeState(
         // handled properly - the only confirmation available, since the
         // vendor's own setting cannot be read.
         missedBoot = BootWatch.missed(prefs)
+        restricted = BackgroundLimit.isRestricted(ctx)
         tick++
     }
 

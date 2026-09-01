@@ -42,7 +42,6 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.jemcik.gloaming.R
 import com.jemcik.gloaming.core.*
@@ -511,18 +510,8 @@ internal fun PermissionCard(
    The crescent is punched with the ground colour, so it has to be passed in -
    the ground changes between off, scheduled and running.                     */
 @Composable
-internal fun PhaseGlyph(
-    moon: Boolean,
-    tint: Color,
-    ground: Color,
-    // 13dp is the handle's size. A row icon is 24, and the wake row borrows this
-    // sun rather than importing a new one - the dial already taught the reader
-    // what it means, and a second sun drawn differently would be a second
-    // vocabulary for one idea.
-    box: Dp = 13.dp
-) {
-    // Not named `size`: inside a Canvas that shadows DrawScope's own.
-    Canvas(Modifier.size(box)) {
+internal fun PhaseGlyph(moon: Boolean, tint: Color, ground: Color) {
+    Canvas(Modifier.size(13.dp)) {
         val r = size.minDimension / 2f
         val c = Offset(r, r)
         if (moon) {

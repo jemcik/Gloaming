@@ -84,8 +84,7 @@
     <string name="row_end_at_alarm">За будильником</string>
     <string name="row_end_at_alarm_at">Завершиться о %1$s</string>
     <string name="row_end_at_alarm_after">Будильник о %1$s — пізніше</string>
-    <string name="row_move_wake">Перенести підйом</string>
-    <string name="row_move_wake_sub">%1$s, а не %2$s</string>
+    <string name="row_end_at_alarm_instead">%1$s, а не %2$s</string>
     <!-- BUDGET: these four share one row, 311dp wide, and at 14sp English fills
          it with 17dp of slack between chips. Longer than ~11 characters each and
          the row overflows - see the day-row note in CLAUDE.md. -->

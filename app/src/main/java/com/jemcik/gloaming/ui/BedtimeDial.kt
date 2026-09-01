@@ -120,7 +120,8 @@ fun BedtimeDial(
     onCentreCycle: ((Int) -> Unit)? = null,
     onStartChange: (LocalTime) -> Unit,
     onEndChange: (LocalTime) -> Unit,
-    onDragFinished: () -> Unit
+    /** True when it was the WAKE handle that moved - see HomeState.commitWake. */
+    onDragFinished: (endMoved: Boolean) -> Unit
 ) {
     val g = gloam
     val haptics = rememberHaptics()
@@ -245,7 +246,7 @@ fun BedtimeDial(
                             change.consume()
                         },
                         onDragEnd = {
-                            if (target != 0) { haptics.release(); onDragFinished() }
+                            if (target != 0) { haptics.release(); onDragFinished(target == 2) }
                             target = 0; last = null
                         },
                         onDragCancel = { target = 0; last = null }

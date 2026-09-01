@@ -193,74 +193,48 @@ class RowFitTest {
     fun `allowlist fits in Ukrainian`() = allowlistFitsIn("uk")
 
     /**
-     * The "move wake up" row, held to a STRICTER rule than [threeLine].
+     * The one row of the ends section, held to a STRICTER rule than [threeLine].
      *
      * Everything else here may spend a second line on a long Cyrillic name,
      * because a wrapped HEADLINE still leaves the switch centred. This row may
-     * not, and the reason is the trailing control: an icon button is 48dp of
-     * circle, and next to three lines of text M3 lifts it to the top, where it
-     * reads as belonging to the first line rather than the row. Reported from
-     * the phone, in those words - "it looks unbalanced and ugly".
+     * not: its subtitle names two times inside a sentence, which is the shape
+     * most likely to wrap, and a wrapped subtitle is exactly what makes an item
+     * three-line and lifts the switch off its own row's centre.
      *
-     * It cannot be reached through Home: the row appears only when
-     * `getNextAlarmClock` returns an alarm past the window's end, and under
-     * Robolectric there is no alarm, so `EndsSection` correctly draws nothing.
-     * So the row is built here as `EndsSection` builds it - same composable,
-     * same card, same 360dp screen - and it is the COLUMN WIDTH that the
-     * measurement is really about, which that reproduces exactly.
+     * It cannot be reached through Home - the section draws only when
+     * `getNextAlarmClock` returns an alarm, and Robolectric has none, so
+     * `EndsSection` correctly draws nothing. So it is built here as EndsSection
+     * builds it, on the same 360dp screen, which is what the measurement is
+     * really about.
      */
     private fun endsSectionFitsIn(locale: String) {
         RuntimeEnvironment.setQualifiers("+$locale-w360dp-h800dp")
         val ctx = ApplicationProvider.getApplicationContext<android.content.Context>()
-        val headline = ctx.getString(R.string.row_move_wake)
-        // The widest times this row can name. 12-hour is what makes them long,
-        // and both are the same length, so this is the worst case in any locale.
-        val sub = ctx.getString(R.string.row_move_wake_sub, "12:30 AM", "12:30 AM")
-
-        // The switch row's own worst case: the sentence that names a time, at the
-        // widest a 12-hour locale can make it.
-        val switchHead = ctx.getString(R.string.row_end_at_alarm)
-        val switchSub = ctx.getString(R.string.row_end_at_alarm_after, "12:30 AM")
+        val headline = ctx.getString(R.string.row_end_at_alarm)
+        // The widest pair of times this row can name: 12-hour is what makes them
+        // long, and both being the same length is the worst case in any locale.
+        val sub = ctx.getString(R.string.row_end_at_alarm_instead, "12:30 AM", "12:30 AM")
 
         compose.setContent {
             GloamingTheme(dark = false) {
-                GroupedList(gloam.raise, listOf({
+                GroupedList(gloam.raise, listOf {
                     SwitchRow(
-                        headline = switchHead,
-                        supporting = switchSub,
-                        checked = true,
-                        leading = { RowIcon(R.drawable.ic_alarm, IconTint.Alarm) }
-                    ) {}
-                }, {
-                    ActionRow(
                         headline = headline,
                         supporting = sub,
-                        leading = {
-                            PhaseGlyph(
-                                moon = false, tint = Arc.dawn,
-                                ground = gloam.raise, box = 24.dp
-                            )
-                        },
-                        trailing = {
-                            FilledIconButton(onClick = {}) {
-                                Icon(painterResource(R.drawable.ic_check), null)
-                            }
-                        }
-                    )
-                }))
+                        checked = false,
+                        leading = { RowIcon(R.drawable.ic_alarm, IconTint.Alarm) }
+                    ) {}
+                })
             }
         }
 
-        val tall = listOf(switchHead, headline).mapNotNull { title ->
-            val b = compose.onNode(hasText(title, substring = true))
-                .getUnclippedBoundsInRoot()
-            val h = (b.bottom - b.top).value
-            if (h < twoLineCeiling.value) null else "$title is ${h}dp"
-        }
+        val b = compose.onNode(hasText(headline, substring = true))
+            .getUnclippedBoundsInRoot()
+        val h = (b.bottom - b.top).value
         assertTrue(
-            "in '$locale' these rows wrapped, and M3 then top-aligns the control " +
-                "instead of centring it on the row: $tall",
-            tall.isEmpty()
+            "in '$locale' the ends row is ${h}dp: its subtitle wrapped, and M3 " +
+                "then top-aligns the switch instead of centring it on the row",
+            h < twoLineCeiling.value
         )
     }
 

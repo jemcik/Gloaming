@@ -550,7 +550,12 @@ private fun WindowBlock(s: HomeState, now: LocalTime, runningNow: Boolean) {
         // first. Tapping it walks the list; states with only one true thing
         // to say are not tappable and show no dots.
         val readings = remember(s.tick, s.enabled, runningNow, s.start, s.end, s.days, s.endAtAlarm) {
-            val secs = ((s.end.toSecondOfDay() - s.start.toSecondOfDay() + 86400) % 86400)
+            // endTonight here too. This is the "sleep window" reading, and it
+            // read 13h 30m - the full schedule - while the numeral above it read
+            // the alarm's 7:30. Every number that describes tonight takes the
+            // same end; the list of them is longer than it looks.
+            val shownEnd = endTonight ?: s.end
+            val secs = ((shownEnd.toSecondOfDay() - s.start.toSecondOfDay() + 86400) % 86400)
             val total = span(res, secs / 60L) to res.getString(R.string.dial_sleep_window)
             buildList {
                 if (runningNow) {
@@ -622,7 +627,7 @@ private fun WindowBlock(s: HomeState, now: LocalTime, runningNow: Boolean) {
             },
             onStartChange = { s.start = it },
             onEndChange = { s.end = it },
-            onDragFinished = { s.commit() }
+            onDragFinished = { endMoved -> if (endMoved) s.commitWake() else s.commit() }
         )
 
         // The window in words, under the dial. The dial says this
@@ -671,122 +676,37 @@ private fun WindowBlock(s: HomeState, now: LocalTime, runningNow: Boolean) {
 @Composable
 private fun EndsSection(s: HomeState) {
     val ctx = LocalContext.current
-    val haptics = s.haptics
     val card = gloam.raise
     val res = LocalResources.current
 
-    // What will actually happen tonight, not the rule in the abstract. The alarm
-    // counts only if it falls inside the window, so endAt is the only honest way
-    // to know which of the three sentences is true - a 2pm alarm is real, and
-    // naming it as the end would promise something that will not happen.
     val alarm = remember(s.tick) { Scheduler.nextAlarm(ctx) }
-    val scheduledEnd = remember(s.tick, s.start, s.end, s.days) {
-        val now = LocalDateTime.now()
-        Scheduler.liveWindowEnd(s.prefs, s.start, s.end, s.days, now)
-            ?: Scheduler.nextStart(s.start, s.end, s.days, now)
-                ?.plus(Scheduler.duration(s.start, s.end))
-    }
-    val appliesTonight = scheduledEnd != null && alarm != null &&
-        Scheduler.endAt(
-            scheduledEnd.minus(Scheduler.duration(s.start, s.end)),
-            scheduledEnd, alarm, exitAtAlarm = true
-        ) == alarm
-
-    val wake = hhmm(ctx, s.end.hour, s.end.minute)
-    // Not `alarm?.let` at the use site: with no alarm this whole section has no
-    // subject and does not draw at all.
+    // No alarm, no section: nothing for the night to end AT, so a heading called
+    // "when it ends" has no subject and the switch under it no object.
     val alarmAt = alarm?.let { hhmm(ctx, it.hour, it.minute) } ?: return
+    val wake = hhmm(ctx, s.end.hour, s.end.minute)
 
     Section(stringResource(R.string.section_when_it_ends)) {
-        GroupedList(card, buildList<@Composable () -> Unit> {
-            add {
-                SwitchRow(
-                    headline = stringResource(R.string.row_end_at_alarm),
-                    // Only while it is ON, which retires a quiet lie found on
-                    // the way here. `appliesTonight` asks what WOULD happen with
-                    // the switch on - it passes exitAtAlarm = true - so with the
-                    // switch OFF and an alarm inside the window the row read
-                    // "Ends 7:30 AM" while the night in fact ran on to 8:30.
-                    // Shown only when on, the question and the answer are the
-                    // same one again; off, the dial already says where it ends.
-                    supporting = when {
-                        !s.endAtAlarm -> null
-                        appliesTonight -> res.getString(R.string.row_end_at_alarm_at, alarmAt)
-                        else -> res.getString(R.string.row_end_at_alarm_after, alarmAt)
-                    },
-                    checked = s.endAtAlarm,
-                    leading = { RowIcon(R.drawable.ic_alarm, IconTint.Alarm) }
-                ) {
-                    haptics.toggle(it); s.endAtAlarm = it; s.commit()
-                }
-            }
-            // There IS an alarm - the section would not be here otherwise - but
-            // it falls past the window, so the switch has nothing to do tonight,
-            // and a control that answers a tap with nothing is the thing this
-            // app spends its time removing. So
-            // offer what would actually help instead: the wake time is the guess,
-            // the alarm is when this person really gets up. Only while the switch
-            // is ON - unasked, this would be the app second-guessing a time
-            // someone set on purpose.
-            if (s.endAtAlarm && !appliesTonight) {
-                add {
-                    ActionRow(
-                        headline = stringResource(R.string.row_move_wake),
-                        supporting = res.getString(R.string.row_move_wake_sub, alarmAt, wake),
-                        // The dial's own sun, in the dial's own dawn colour:
-                        // this row is about the WAKE end of the window, and a
-                        // crescent there said the opposite of what it means.
-                        leading = {
-                            PhaseGlyph(
-                                moon = false, tint = Arc.dawn,
-                                ground = card, box = 24.dp
-                            )
-                        },
-                        trailing = {
-                            // A tick, not the word "Move": the word cost a
-                            // third of the row - "Перенести" is nine characters,
-                            // and the supporting line that names both times is
-                            // what had to give way for it. M3's icon-only button
-                            // is a fixed 40dp, so the sentence keeps its width in
-                            // every language.
-                            //
-                            // FILLED, in the switch's own two colours rather than
-                            // an outline in the accent. This row sits directly
-                            // under that switch and the two are the only controls
-                            // in the section; an outlined tick beside a filled
-                            // track read as the weaker of a pair that are not a
-                            // pair at all. Taking switchTrack and switchThumb by
-                            // name is what stops them drifting apart later - the
-                            // point is that it is the SAME fill, not a matching
-                            // one.
-                            //
-                            // Icon-only means the LABEL becomes the description,
-                            // and it has to stand alone: focus lands on the
-                            // button by itself, so "Move" would be announced
-                            // with nothing to say what moves. The headline says
-                            // it in full and is already translated.
-                            FilledIconButton(
-                                onClick = {
-                                    haptics.confirm()
-                                    s.end = alarm.toLocalTime()
-                                    s.commit()
-                                },
-                                shape = CircleShape,
-                                colors = IconButtonDefaults.filledIconButtonColors(
-                                    containerColor = gloam.switchTrack,
-                                    contentColor = gloam.switchThumb
-                                )
-                            ) {
-                                Icon(
-                                    painterResource(R.drawable.ic_check),
-                                    contentDescription =
-                                        stringResource(R.string.row_move_wake)
-                                )
-                            }
-                        }
-                    )
-                }
-            }
+        GroupedList(card, listOf {
+            SwitchRow(
+                headline = stringResource(R.string.row_end_at_alarm),
+                // What the tap would DO, and only while it would do something.
+                //
+                // This is the old second row, folded in. That row existed because
+                // the switch could be on and still change nothing, so it offered a
+                // separate "move wake up" button to fix the mismatch by hand - a
+                // whole extra row, icon and button to repair a state the switch
+                // should never have been able to reach. Now the switch IS the
+                // move, so the sentence it needed is just this one's subtitle.
+                //
+                // Silent when it is on, because then the wake time already equals
+                // the alarm and the dial above is showing it; naming it again
+                // would be the fifth place on this screen saying one hour.
+                supporting = if (!s.endAtAlarm && alarm.toLocalTime() != s.end)
+                    res.getString(R.string.row_end_at_alarm_instead, alarmAt, wake)
+                else null,
+                checked = s.endAtAlarm,
+                leading = { RowIcon(R.drawable.ic_alarm, IconTint.Alarm) }
+            ) { s.followAlarm(it) }
         })
     }
 }
@@ -1269,8 +1189,10 @@ private fun TimePickerDialog(s: HomeState) {
                     onClick = {
                         haptics.confirm()
                         val t = LocalTime.of(state.hour, state.minute)
-                        if (s.picking == "start") s.start = t else s.end = t
-                        s.picking = null; s.commit()
+                        val wake = s.picking != "start"
+                        if (wake) s.end = t else s.start = t
+                        s.picking = null
+                        if (wake) s.commitWake() else s.commit()
                     },
                     shape = CircleShape
                 ) { Text(stringResource(R.string.action_set)) }

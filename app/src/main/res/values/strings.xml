@@ -129,8 +129,7 @@
     <string name="row_end_at_alarm">At your alarm</string>
     <string name="row_end_at_alarm_at">Ends %1$s</string>
     <string name="row_end_at_alarm_after">Alarm %1$s is later</string>
-    <string name="row_move_wake">Move wake up</string>
-    <string name="row_move_wake_sub">%1$s, not %2$s</string>
+    <string name="row_end_at_alarm_instead">%1$s, not %2$s</string>
     <!-- A row's supporting line must not WRAP. Past one line the row becomes a
          three-line ListItem, and M3 then top-aligns the trailing content, so the
          switch stops being level with its own row. Reported as exactly that.

@@ -3,6 +3,9 @@ package com.jemcik.gloaming.ui
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -313,5 +316,98 @@ class ScreensTest {
         }
         compose.onNodeWithText("Alarms and timers").assertExists()
         compose.onNodeWithText("Kept on so your alarm still wakes you").assertExists()
+    }
+    // ---------- the wake handle and "at your alarm" are one state ----------
+
+    /** Put a real alarm on the phone, the way a clock app does. */
+    private fun setAlarm(at: LocalTime) {
+        val am = ctx().getSystemService(android.app.AlarmManager::class.java)
+        val next = java.time.LocalDateTime.now().with(at).let {
+            if (it.isAfter(java.time.LocalDateTime.now())) it else it.plusDays(1)
+        }
+        am.setAlarmClock(
+            android.app.AlarmManager.AlarmClockInfo(
+                next.atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli(), null
+            ),
+            android.app.PendingIntent.getBroadcast(
+                ctx(), 0, android.content.Intent("test.alarm"),
+                android.app.PendingIntent.FLAG_IMMUTABLE
+            )
+        )
+    }
+
+    private fun home() {
+        compose.setContent {
+            GloamingTheme(dark = false) {
+                Home(rememberScrollState(), onOpenSettings = {}, onOpenInterruptions = {})
+            }
+        }
+    }
+
+    @Test
+    fun `switching it on moves the wake time onto the alarm`() {
+        // The switch IS the move. It used to be able to sit ON and change
+        // nothing, which took a second row with its own icon and button to
+        // repair - a whole control built to fix a state the switch should never
+        // have reached.
+        val p = armed()
+        val alarm = LocalTime.now().plusMinutes(30).withSecond(0).withNano(0)
+        p.endTime = LocalTime.now().plusHours(1)
+        p.exitAtAlarm = false
+        setAlarm(alarm)
+        home()
+
+        compose.onNode(
+            hasText(ctx().getString(R.string.row_end_at_alarm), substring = true)
+                and isToggleable()
+        ).performScrollTo().performClick()
+        assertEquals(
+            "switching on must set the wake time to the alarm",
+            alarm.withSecond(0).withNano(0), p.endTime
+        )
+        assertTrue(p.exitAtAlarm)
+    }
+
+    @Test
+    fun `a wake time set onto the alarm switches it on by itself`() {
+        // The "vice versa" half: a wake time that lands on the alarm IS
+        // following it, however it got there. Driven through the picker's own
+        // Set button - the wake time already equals the alarm here, so what is
+        // under test is the rule rather than the clock face.
+        val p = armed()
+        val alarm = LocalTime.now().plusMinutes(30).withSecond(0).withNano(0)
+        p.endTime = alarm
+        p.exitAtAlarm = false
+        setAlarm(alarm)
+        home()
+
+        compose.onNodeWithText(
+            ctx().getString(R.string.label_wake_up).uppercase()
+        ).performScrollTo().performClick()
+        compose.onNodeWithText(ctx().getString(R.string.action_set)).performClick()
+        assertTrue(
+            "a wake time equal to the alarm must switch it on",
+            p.exitAtAlarm
+        )
+    }
+
+    @Test
+    fun `switching it off leaves the wake time where it is`() {
+        // Off does not restore anything, and must not: there is nothing to
+        // restore to, and inventing a previous wake time would be a schedule
+        // the user never set.
+        val p = armed()
+        val alarm = LocalTime.now().plusMinutes(30).withSecond(0).withNano(0)
+        p.endTime = alarm
+        p.exitAtAlarm = true
+        setAlarm(alarm)
+        home()
+
+        compose.onNode(
+            hasText(ctx().getString(R.string.row_end_at_alarm), substring = true)
+                and isToggleable()
+        ).performScrollTo().performClick()
+        assertEquals("off must not move the handle", alarm, p.endTime)
+        assertTrue("and it must actually be off", !p.exitAtAlarm)
     }
 }

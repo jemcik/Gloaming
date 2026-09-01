@@ -1,5 +1,8 @@
 package com.jemcik.gloaming.ui
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.Modifier
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.FilledIconButton
@@ -204,19 +207,27 @@ class RowFitTest {
      * It cannot be reached through Home - the section draws only when
      * `getNextAlarmClock` returns an alarm, and Robolectric has none, so
      * `EndsSection` correctly draws nothing. So it is built here as EndsSection
-     * builds it, on the same 360dp screen, which is what the measurement is
-     * really about.
+     * builds it.
+     *
+     * WITH HOME'S SIDE PADDING, which is the whole difficulty and was missing.
+     * A row built bare on a 360dp screen gets a 360dp card; on Home it gets 311,
+     * because the page insets 24dp either side. That is 49dp the real row does
+     * not have - about six characters - so this test passed a subtitle that
+     * wrapped on the phone the moment it was looked at. A measurement taken at
+     * the wrong width is not a measurement.
      */
     private fun endsSectionFitsIn(locale: String) {
         RuntimeEnvironment.setQualifiers("+$locale-w360dp-h800dp")
         val ctx = ApplicationProvider.getApplicationContext<android.content.Context>()
-        val headline = ctx.getString(R.string.row_end_at_alarm)
-        // The widest pair of times this row can name: 12-hour is what makes them
-        // long, and both being the same length is the worst case in any locale.
-        val sub = ctx.getString(R.string.row_end_at_alarm_instead, "12:30 AM", "12:30 AM")
+        // The widest time a 12-hour locale can produce, on BOTH lines - the
+        // headline names the alarm and the subtitle the wake time, so each has
+        // to hold one of these on its own.
+        val headline = ctx.getString(R.string.row_end_at_alarm, "12:30 AM")
+        val sub = ctx.getString(R.string.row_end_at_alarm_instead, "12:30 AM")
 
         compose.setContent {
             GloamingTheme(dark = false) {
+                Box(Modifier.padding(horizontal = 24.dp)) {
                 GroupedList(gloam.raise, listOf {
                     SwitchRow(
                         headline = headline,
@@ -225,6 +236,7 @@ class RowFitTest {
                         leading = { RowIcon(R.drawable.ic_alarm, IconTint.Alarm) }
                     ) {}
                 })
+                }
             }
         }
 

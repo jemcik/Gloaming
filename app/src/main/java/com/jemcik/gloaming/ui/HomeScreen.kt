@@ -688,7 +688,12 @@ private fun EndsSection(s: HomeState) {
     Section(stringResource(R.string.section_when_it_ends)) {
         GroupedList(card, listOf {
             SwitchRow(
-                headline = stringResource(R.string.row_end_at_alarm),
+                // The alarm's hour lives in the HEADLINE, which is what stops
+                // the row wrapping: two times in one sentence needed about six
+                // characters more than the 311dp card has in Russian, and the
+                // subtitle broke onto a third line, top-aligning the switch.
+                // One time per line, and neither has to wrap.
+                headline = res.getString(R.string.row_end_at_alarm, alarmAt),
                 // What the tap would DO, and only while it would do something.
                 //
                 // This is the old second row, folded in. That row existed because
@@ -702,7 +707,7 @@ private fun EndsSection(s: HomeState) {
                 // the alarm and the dial above is showing it; naming it again
                 // would be the fifth place on this screen saying one hour.
                 supporting = if (!s.endAtAlarm && alarm.toLocalTime() != s.end)
-                    res.getString(R.string.row_end_at_alarm_instead, alarmAt, wake)
+                    res.getString(R.string.row_end_at_alarm_instead, wake)
                 else null,
                 checked = s.endAtAlarm,
                 leading = { RowIcon(R.drawable.ic_alarm, IconTint.Alarm) }

@@ -219,14 +219,17 @@ class RowFitTest {
     private fun endsSectionFitsIn(locale: String) {
         RuntimeEnvironment.setQualifiers("+$locale-w360dp-h800dp")
         val ctx = ApplicationProvider.getApplicationContext<android.content.Context>()
-        // The widest time a 12-hour locale can produce. One line now: the wake
-        // time left with the subtitle, which was repeating the dial directly
-        // above it.
-        val headline = ctx.getString(R.string.row_end_at_alarm, "12:30 AM")
+        // The row shows the hour and nothing else now, so the thing that can
+        // still wrap is the HEADING, which carries the whole purpose and is the
+        // longest string in the section in ru and uk.
+        val headline = "12:30 AM"
+
+        val heading = ctx.getString(R.string.section_end_at_alarm)
 
         compose.setContent {
             GloamingTheme(dark = false) {
                 Box(Modifier.padding(horizontal = 24.dp)) {
+                Section(heading) {
                 GroupedList(gloam.raise, listOf {
                     SwitchRow(
                         headline = headline,
@@ -235,8 +238,19 @@ class RowFitTest {
                     ) {}
                 })
                 }
+                }
             }
         }
+
+        // The HEADING is the long string here now - it carries the whole purpose
+        // of the section, and in ru and uk that is thirty characters. It is
+        // labelSmall across the full card, so it wraps rather than truncates,
+        // which is untidy rather than broken - but a two-line heading over a
+        // one-line row reads as a paragraph, not a label.
+        val head = compose.onNode(hasText(heading.uppercase(), substring = true))
+            .getUnclippedBoundsInRoot()
+        val hh = (head.bottom - head.top).value
+        assertTrue("in '$locale' the heading wrapped: ${hh}dp", hh < 24f)
 
         val b = compose.onNode(hasText(headline, substring = true))
             .getUnclippedBoundsInRoot()

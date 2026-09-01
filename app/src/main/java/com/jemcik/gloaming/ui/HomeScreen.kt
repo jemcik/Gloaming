@@ -45,6 +45,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.painterResource
@@ -684,15 +685,26 @@ private fun EndsSection(s: HomeState) {
     // "when it ends" has no subject and the switch under it no object.
     val alarmAt = alarm?.let { hhmm(ctx, it.hour, it.minute) } ?: return
 
-    Section(stringResource(R.string.section_your_alarm)) {
+    // The HEADING carries the purpose - "end bedtime at your alarm" - because a
+    // heading that only categorises left the section looking like a stray switch
+    // beside a time. "When it ends" was worse than vague, it was wrong: with the
+    // switch off the night ends at the wake handle, not the alarm, so the
+    // heading asked a question the section answered incorrectly half the time.
+    Section(stringResource(R.string.section_end_at_alarm)) {
         GroupedList(card, listOf {
             SwitchRow(
-                // The alarm's hour lives in the HEADLINE, which is what stops
-                // the row wrapping: two times in one sentence needed about six
-                // characters more than the 311dp card has in Russian, and the
-                // subtitle broke onto a third line, top-aligning the switch.
-                // One time per line, and neither has to wrap.
-                headline = res.getString(R.string.row_end_at_alarm, alarmAt),
+                // With the purpose in the heading, the row is the hour and
+                // nothing else - anything more repeated the line above it.
+                headline = alarmAt,
+                // Which leaves TalkBack with "7:30 AM, switch, off" and no idea
+                // what it switches: a heading is not read as part of the row.
+                // So the row SPEAKS the whole sentence even though it shows one
+                // hour. If state is visible it must be in the semantics, and
+                // this is the same rule from the other side.
+                modifier = Modifier.semantics {
+                    contentDescription =
+                        res.getString(R.string.row_end_at_alarm, alarmAt)
+                },
                 checked = s.endAtAlarm,
                 leading = { RowIcon(R.drawable.ic_alarm, IconTint.Alarm) }
             ) { s.followAlarm(it) }

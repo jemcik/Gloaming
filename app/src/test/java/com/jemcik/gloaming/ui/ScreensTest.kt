@@ -358,14 +358,9 @@ class ScreensTest {
         home()
 
         compose.onNode(
-            // The headline names the alarm now, so the bare resource matches
-            // nothing on screen - build the line the row actually shows.
-            hasText(
-                ctx().getString(
-                    R.string.row_end_at_alarm, hhmm(ctx(), alarm.hour, alarm.minute)
-                ),
-                substring = true
-            ) and isToggleable()
+            // The row shows only the hour now.
+            hasText(hhmm(ctx(), alarm.hour, alarm.minute), substring = true)
+                and isToggleable()
         ).performScrollTo().performClick()
         assertEquals(
             "switching on must set the wake time to the alarm",
@@ -410,14 +405,9 @@ class ScreensTest {
         home()
 
         compose.onNode(
-            // The headline names the alarm now, so the bare resource matches
-            // nothing on screen - build the line the row actually shows.
-            hasText(
-                ctx().getString(
-                    R.string.row_end_at_alarm, hhmm(ctx(), alarm.hour, alarm.minute)
-                ),
-                substring = true
-            ) and isToggleable()
+            // The row shows only the hour now.
+            hasText(hhmm(ctx(), alarm.hour, alarm.minute), substring = true)
+                and isToggleable()
         ).performScrollTo().performClick()
         assertEquals("off must not move the handle", alarm, p.endTime)
         assertTrue("and it must actually be off", !p.exitAtAlarm)

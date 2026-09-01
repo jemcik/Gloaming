@@ -125,8 +125,8 @@
 
     <!-- ============ Home: which days ============ -->
     <string name="section_which_days">which days</string>
-    <string name="section_your_alarm">your alarm</string>
-    <string name="row_end_at_alarm">End at %1$s</string>
+    <string name="section_end_at_alarm">end bedtime at your alarm</string>
+    <string name="row_end_at_alarm">End bedtime at your alarm, %1$s</string>
     <!-- A row's supporting line must not WRAP. Past one line the row becomes a
          three-line ListItem, and M3 then top-aligns the trailing content, so the
          switch stops being level with its own row. Reported as exactly that.

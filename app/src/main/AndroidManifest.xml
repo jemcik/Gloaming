@@ -33,6 +33,12 @@
         <intent>
             <action android:name="com.android.contacts.action.LIST_STARRED" />
         </intent>
+        <!-- And the fallback door, for phones that answer neither: Samsung
+             ships its own Contacts and does not handle LIST_STARRED at all. -->
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.APP_CONTACTS" />
+        </intent>
     </queries>
 
 

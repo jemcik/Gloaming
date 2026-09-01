@@ -80,6 +80,14 @@ doing it, or on any vendor doing it at all.
   with no alarms behind it. Gloaming compares the boot it handled against the
   boot it is running on, says so when one goes unreported, and offers a button
   to the screen that fixes it.
+- **It watches its own alarms.** Vendor interference is the failure this app was
+  built around, so it checks rather than assumes. One throwaway alarm, eleven
+  minutes after install, asks whether this phone delivers alarms in the
+  background at all — silent unless the answer is no. Every window's END is
+  watched too, and if it comes due and does not arrive on time you are told, with
+  a button to the setting that usually explains it. The verdict is **lateness,
+  not arrival**: a blocked alarm is not dropped but held, and released the moment
+  you open the app, which is exactly what a naive check scores as success.
 - **Two themes that were measured rather than picked.** Dusk and Dawn are
   stated in Material 3's own tone scale, and checked against what Google's apps
   actually ship on a phone rather than against the documentation — the two
@@ -259,8 +267,10 @@ None of these ask which phone you have.
 
 They cover the scheduling core (pure functions of times, days and an injected
 `now`), the sentence assembly in all three languages, the screen interactions,
-the boot detection, and the one-shot preferences migration — the only code here
-that could corrupt data without saying anything. Some of them measure real text
+the boot detection, the two delivery watches — including the case that matters
+most, an alarm that arrives only because the app was opened — and the one-shot
+preferences migration, the only code here that could corrupt data without saying
+anything. Some of them measure real text
 layout at each locale's own widths, because a row that fits in English and wraps
 in Ukrainian is a bug you cannot see from the source.
 

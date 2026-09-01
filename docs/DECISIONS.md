@@ -256,7 +256,19 @@ the app is restricted.
 **A reboot mid-window silently lost Do Not Disturb, 1 Sep 2026 — and the third
 piece of zen state nobody knew about.** Reported from the phone: enable a
 schedule, let the window run, restart, and bedtime reads "on" with DND off.
-Reproduced on a OnePlus/LineageOS first try. NOT vendor-specific.
+Reproduced on a OnePlus/LineageOS first try.
+
+**And absent on the Honor, which is worth stating because the first draft here
+claimed the opposite.** "Not vendor-specific - the Honor runs the same code" was
+true of our code, and was allowed to stand as a claim about behaviour that had
+not been tested. It was tested afterwards: the same reboot mid-window leaves
+`zen_mode` at 1 with `conditionOverride` at `OVERRIDE_NONE`, so MagicOS never
+stamps it and the window survives untouched. The override comes from AOSP's
+`setManualZenMode`, and MagicOS evidently does not reach that path on boot.
+
+So: reproducible on LineageOS, absent on MagicOS, unknown everywhere else. Two
+phones is not a survey. The fix costs nothing where the bug does not occur - the
+stuck branch simply never runs.
 
 A rule carries a `conditionOverride` as well as a condition, and the override
 wins. AOSP's `setManualZenMode` stamps `OVERRIDE_DEACTIVATE` on every active

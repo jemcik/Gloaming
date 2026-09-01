@@ -22,6 +22,20 @@ package com.jemcik.gloaming.core
  * gate would have blinded this to the worse of the two. It costs one alarm, once,
  * and on a healthy phone nothing is ever shown.
  *
+ * WHY IT IS ASKED ONCE, not forever. A pass can go stale - `adb install -r`
+ * reset exactly this switch on the Honor and cost a whole window - so the probe
+ * is not the ongoing guarantee and is not meant to be. [AlarmWatch] is: it
+ * watches the REAL END alarm every night, which is a better instrument anyway
+ * because it measures the alarm that actually matters. The probe exists only to
+ * answer the question EARLY, before the first bedtime rather than after the
+ * first one is lost. Repeating it nightly would spend alarms re-asking what the
+ * window is already answering.
+ *
+ * ITS ONE BLIND SPOT: the probe cannot fail while the app is in the foreground,
+ * because the process is alive and alarms reach a live process regardless. That
+ * is what [DELAY_MS] is for - long enough that the user has almost certainly put
+ * the phone down - and a false pass is corrected by the first real window.
+ *
  * WHAT IT CANNOT ANSWER: auto-launch. That governs whether BOOT_COMPLETED
  * reaches us, so the only test is a real reboot - see [BootWatch], which catches
  * it after the fact because nothing can catch it before.

@@ -257,11 +257,16 @@ object Scheduler {
         BackgroundProbe.check(p)
         if (!retest && !BackgroundProbe.needsArming(p)) return
         val at = System.currentTimeMillis() + BackgroundProbe.DELAY_MS
-        BackgroundProbe.arming(p, at)
         try {
             am(ctx).setExactAndAllowWhileIdle(
                 AlarmManager.RTC_WAKEUP, at, pending(ctx, ACTION_PROBE, 102)
             )
+            // Recorded only once the alarm EXISTS. The other way round, a
+            // refused permission leaves a due instant with nothing behind it,
+            // and the probe then reports the phone holding an alarm that was
+            // never scheduled - an accusation manufactured out of our own
+            // failure to ask. Nothing scheduled means nothing measured.
+            BackgroundProbe.arming(p, at)
         } catch (e: SecurityException) {
             Journal.write(ctx, "probe not armed: " + e)
         }

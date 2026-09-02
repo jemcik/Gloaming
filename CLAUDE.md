@@ -99,8 +99,11 @@ indefinitely is background restriction — see `core/BackgroundLimit.kt`.
                                  is its own composable and decides for itself
                                  whether it draws
     ui/BedtimeTile.kt            the master switch in the shade. THREE states,
-                                 not two: a tick while armed, the moon while a
-                                 window is running
+                                 not two: an hourglass while armed, a tick while
+                                 a window is running - the same two faces the
+                                 app bar's switch wears, and in that order,
+                                 because a tick sitting there all evening while
+                                 bedtime did nothing is what a tick must not mean
     ui/HomeParts.kt              what only Home draws — status pill, notice
                                  strip, day row, numerals, moon and sun glyphs
     ui/Sentences.kt              the schedule as language: windowSentence,

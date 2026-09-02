@@ -86,10 +86,12 @@ class BedtimeTile : TileService() {
             p.enabled -> Tile.STATE_ACTIVE
             else -> Tile.STATE_INACTIVE
         }
-        // The switch's own two faces: a tick for armed, the moon for running.
+        // The switch's own two faces, and it matters that they stay the same
+        // two: an hourglass while the window is only scheduled, a tick once it
+        // is in effect.
         tile.icon = Icon.createWithResource(
             this,
-            if (running) R.drawable.ic_bedtime else R.drawable.ic_check
+            if (running) R.drawable.ic_check else R.drawable.ic_hourglass
         )
         tile.label = getString(R.string.bedtime_mode)
         tile.subtitle = statusLine(

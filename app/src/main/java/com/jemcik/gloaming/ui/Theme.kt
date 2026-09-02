@@ -656,9 +656,10 @@ fun GloamSwitch(
     // has to be its own target.
     onCheckedChange: ((Boolean) -> Unit)? = null,
     // What the thumb wears when checked. Every switch in the app leaves this
-    // alone; the master switch passes a moon while a window is actually
-    // running, so armed and running are told apart by the control itself
-    // rather than by a lamp beside it saying the same thing a third time.
+    // alone; the master switch passes an hourglass while a window is only
+    // scheduled and the tick once it is running, so armed and running are told
+    // apart by the control itself rather than by a lamp beside it saying the
+    // same thing a third time.
     @DrawableRes icon: Int = R.drawable.ic_check,
     // Every switch in the app but one sits in a ROW that carries the label and
     // the gesture, so the switch is an unnamed indicator and correctly so. The

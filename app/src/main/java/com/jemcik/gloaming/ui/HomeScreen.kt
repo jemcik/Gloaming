@@ -1345,10 +1345,14 @@ private fun HomeBar(
                 checked = s.enabled, enabled = ready,
                 onCheckedChange = { s.setBedtime(it) },
                 // The one switch in the app that has three things
-                // to say. Checked is armed; checked with the moon
-                // is a window actually running.
-                icon = if (runningNow) R.drawable.ic_bedtime
-                       else R.drawable.ic_check,
+                // to say, and the pair says them in the right
+                // order: an hourglass while a window is only
+                // SCHEDULED, a tick once it is in effect. It used
+                // to be the other way about - a tick sat on the
+                // thumb all evening while bedtime was doing
+                // nothing, which is what a tick should never mean.
+                icon = if (runningNow) R.drawable.ic_check
+                       else R.drawable.ic_hourglass,
                 contentDescription = stringResource(R.string.bedtime_mode)
             )
             IconButton(onClick = { haptics.open(); onOpenSettings() }) {

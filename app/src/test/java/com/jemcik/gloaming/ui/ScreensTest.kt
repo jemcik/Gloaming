@@ -1,5 +1,6 @@
 package com.jemcik.gloaming.ui
 
+import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertIsSelected
@@ -126,6 +127,44 @@ class ScreensTest {
     }
 
     // ---------- Settings ----------
+
+    // ---------- the door that is not a notice ----------
+
+    @Test
+    fun `the launch manager is reachable from Settings, with nothing wrong`() {
+        // The tip can be refused and refusing it is FINAL, so if that card were
+        // the only route to these two switches, one "Skip" would wall off the
+        // phone's own reliability setting for good. It would also mean the only
+        // way to reach a screen you might simply want was to be told something
+        // was broken - which is exactly how the version this replaced went
+        // wrong. Nothing here is failing: no probe has fired, the tip is
+        // answered, and the row is still there.
+        val p = armed()
+        p.launchTipSeen = true
+        withLaunchManager()
+        compose.setContent {
+            GloamingTheme(dark = false) {
+                SettingsScreen(Prefs.THEME_SYSTEM, onThemeMode = {}, onBack = {})
+            }
+        }
+        compose.onNodeWithText(ctx().getString(R.string.launch_setup_row))
+            .performScrollTo()
+            .assertHasClickAction()
+    }
+
+    @Test
+    fun `no door is drawn onto a screen this phone does not have`() {
+        // Robolectric resolves nothing, which is a phone with no launch manager
+        // at all - the OnePlus, measured. A row here would send someone nowhere,
+        // and `hasLaunchManager` is a capability probe precisely so it cannot.
+        compose.setContent {
+            GloamingTheme(dark = false) {
+                SettingsScreen(Prefs.THEME_SYSTEM, onThemeMode = {}, onBack = {})
+            }
+        }
+        compose.onNodeWithText(ctx().getString(R.string.launch_setup_row))
+            .assertDoesNotExist()
+    }
 
     @Test
     fun `the chosen theme is the one shown as chosen`() {

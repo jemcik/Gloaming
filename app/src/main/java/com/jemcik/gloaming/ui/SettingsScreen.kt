@@ -6,6 +6,7 @@ import androidx.compose.material3.LocalContentColor
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
+import androidx.annotation.DrawableRes
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -92,14 +93,7 @@ fun SettingsScreen(themeMode: Int, onThemeMode: (Int) -> Unit, onBack: () -> Uni
                     // Without it this row's text started at 40dp where the radio
                     // rows above start at 80 - the same ragged left edge "what
                     // can wake you" had.
-                    leading = {
-                        Icon(
-                            painterResource(R.drawable.ic_language),
-                            contentDescription = null,
-                            tint = LocalContentColor.current,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
+                    leading = rowIcon(R.drawable.ic_language)
                 ) {
                     haptics.open()
                     runCatching {
@@ -133,28 +127,14 @@ fun SettingsScreen(themeMode: Int, onThemeMode: (Int) -> Unit, onBack: () -> Uni
                         LinkRow(
                             stringResource(R.string.launch_setup_row),
                             supporting = stringResource(R.string.launch_link_why),
-                            leading = {
-                                Icon(
-                                    painterResource(R.drawable.ic_restart),
-                                    contentDescription = null,
-                                    tint = LocalContentColor.current,
-                                    modifier = Modifier.size(24.dp)
-                                )
-                            }
+                            leading = rowIcon(R.drawable.ic_restart)
                         ) { haptics.open(); Doors.openAutoStart(ctx) }
                     }
                     if (systemBedtime) {
                         LinkRow(
                             stringResource(R.string.bedtime_settings_row),
                             supporting = stringResource(R.string.bedtime_settings_why),
-                            leading = {
-                                Icon(
-                                    painterResource(R.drawable.ic_bedtime),
-                                    contentDescription = null,
-                                    tint = LocalContentColor.current,
-                                    modifier = Modifier.size(24.dp)
-                                )
-                            }
+                            leading = rowIcon(R.drawable.ic_bedtime)
                         ) { haptics.open(); Doors.openSystemBedtime(ctx) }
                     }
                 }
@@ -170,14 +150,7 @@ fun SettingsScreen(themeMode: Int, onThemeMode: (Int) -> Unit, onBack: () -> Uni
                 LinkRow(
                     stringResource(R.string.diagnostics_row),
                     supporting = stringResource(R.string.diagnostics_why),
-                    leading = {
-                        Icon(
-                            painterResource(R.drawable.ic_share),
-                            contentDescription = null,
-                            tint = LocalContentColor.current,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
+                    leading = rowIcon(R.drawable.ic_share)
                 ) { haptics.open(); Diagnostics.share(ctx) }
             }
         }
@@ -191,14 +164,7 @@ fun SettingsScreen(themeMode: Int, onThemeMode: (Int) -> Unit, onBack: () -> Uni
                 LinkRow(
                     stringResource(R.string.reset_row),
                     supporting = stringResource(R.string.reset_why),
-                    leading = {
-                        Icon(
-                            painterResource(R.drawable.ic_reset),
-                            contentDescription = null,
-                            tint = LocalContentColor.current,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
+                    leading = rowIcon(R.drawable.ic_reset)
                 ) { haptics.open(); confirmReset = true }
             }
         }
@@ -251,6 +217,26 @@ fun SettingsScreen(themeMode: Int, onThemeMode: (Int) -> Unit, onBack: () -> Uni
             }
         )
     }
+}
+
+/**
+ * The leading icon every row on this screen carries, stated once.
+ *
+ * Five rows repeated the same six lines, which is five places to forget the
+ * tint - and the tint is what makes the icon follow the row rather than sitting
+ * at whatever colour it was drawn in. See the comment on the language row for
+ * why these rows have an icon at all: without one their text starts at 40dp
+ * where the radio rows above start at 80, and the screen grows a second left
+ * edge.
+ */
+@Composable
+private fun rowIcon(@DrawableRes id: Int): @Composable () -> Unit = {
+    Icon(
+        painterResource(id),
+        contentDescription = null,
+        tint = LocalContentColor.current,
+        modifier = Modifier.size(24.dp)
+    )
 }
 
 /** The app's card, holding a group of rows. */

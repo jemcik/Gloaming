@@ -123,18 +123,8 @@ class RowFitTest {
      * exists for were the two never measured.
      */
     private fun withVendorDoors(ctx: android.content.Context) {
-        val pm = org.robolectric.Shadows.shadowOf(ctx.packageManager)
-        pm.addActivityIfNotPresent(
-            android.content.ComponentName(
-                "com.hihonor.systemmanager",
-                "com.hihonor.systemmanager.startupmgr.ui.StartupNormalAppListActivity"
-            )
-        )
-        val bedtime = android.content.ComponentName("com.example.wellbeing", "Bedtime")
-        pm.addActivityIfNotPresent(bedtime)
-        pm.addIntentFilterForActivity(
-            bedtime, android.content.IntentFilter("android.settings.BEDTIME_SETTINGS")
-        )
+        ctx.withLaunchManager()
+        ctx.withSystemBedtime()
     }
 
     private fun settingsRowsFitIn(locale: String) {

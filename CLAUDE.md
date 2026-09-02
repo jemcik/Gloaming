@@ -351,7 +351,7 @@ compileSdk 37, targetSdk 36, minSdk 35.
 
 ## Tests
 
-`app/src/test/`, 163 cases, no device. They are written as the QUESTION the code
+`app/src/test/`, 167 cases, no device. They are written as the QUESTION the code
 answers rather than as coverage of a method, because none of the bugs were ever
 in a method — they were in an assumption.
 
@@ -395,7 +395,7 @@ in a method — they were in an assumption.
                           distinct from a deleted rule, and does the system's
                           account stay ahead of - and apart from - our own
 
-Coverage: **75% of instructions, 59% of branches**. The shape is the point — what
+Coverage: **76% of instructions, 59% of branches**. The shape is the point — what
 is covered is what can be reasoned about without a phone; what is not is what
 talks to the platform (`BedtimeTile` 0%, `BedtimeReceiver` 1%,
 `AmbientControl` 18%, `Doors` 25%, `Journal` 33%, `ZenController` 71%). That gap

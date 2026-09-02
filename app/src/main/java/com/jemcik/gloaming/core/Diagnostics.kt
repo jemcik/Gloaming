@@ -43,6 +43,8 @@ import java.time.format.DateTimeFormatter
  */
 object Diagnostics {
 
+    private const val UNKNOWN = "?"
+
     private val STAMP = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
 
     /** Chronological, oldest first - a night reads forwards. */
@@ -69,9 +71,9 @@ object Diagnostics {
         val pkg = runCatching {
             ctx.packageManager.getPackageInfo(ctx.packageName, 0)
         }.getOrNull()
-        row("version", pkg?.versionName ?: "?")
-        row("installed", pkg?.firstInstallTime?.let(::stamp) ?: "?")
-        row("updated", pkg?.lastUpdateTime?.let(::stamp) ?: "?")
+        row("version", pkg?.versionName ?: UNKNOWN)
+        row("installed", pkg?.firstInstallTime?.let(::stamp) ?: UNKNOWN)
+        row("updated", pkg?.lastUpdateTime?.let(::stamp) ?: UNKNOWN)
 
         head("PHONE")
         // Reported, never branched on - see the capability rule in CLAUDE.md.
@@ -83,30 +85,30 @@ object Diagnostics {
         // Language and region only. The full tag carries every -u- extension
         // the phone has set - "en-UA-u-fw-mon-ms-metric-mu-celsius" - which
         // wrapped onto two lines and answered nothing anyone would ask.
-        row("locale", runCatching {
+        row("locale", ask {
             ctx.resources.configuration.locales[0].toLanguageTag().substringBefore("-u-")
-        }.getOrDefault("?"))
+        })
 
         head("CAN THE APP WORK HERE")
-        row("DND access", yn(runCatching { ZenController.hasDndAccess(ctx) }.getOrNull()))
-        row("exact alarms", yn(runCatching { Scheduler.canScheduleExact(ctx) }.getOrNull()))
-        row("background", runCatching {
+        row("DND access", askYn { ZenController.hasDndAccess(ctx) })
+        row("exact alarms", askYn { Scheduler.canScheduleExact(ctx) })
+        row("background", ask {
             if (BackgroundLimit.isRestricted(ctx)) "RESTRICTED - alarms park" else "not restricted"
-        }.getOrDefault("?"))
-        row("screen effects", runCatching {
+        })
+        row("screen effects", ask {
             if (ScreenEffects.applied(ctx)) "applied" else "not applied on this phone"
-        }.getOrDefault("?"))
-        row("ambient keys", yn(runCatching { AmbientCapability.isSupported(ctx) }.getOrNull()))
-        row("launch manager", yn(runCatching { Doors.hasLaunchManager(ctx) }.getOrNull()))
-        row("system bedtime", yn(runCatching { Doors.hasSystemBedtime(ctx) }.getOrNull()))
+        })
+        row("ambient keys", askYn { AmbientCapability.isSupported(ctx) })
+        row("launch manager", askYn { Doors.hasLaunchManager(ctx) })
+        row("system bedtime", askYn { Doors.hasSystemBedtime(ctx) })
 
         // What the SYSTEM says. Asked of NotificationManager every time, never
         // recalled from prefs - "what we last wrote" is the belief that has
         // already cost this app a whole night of Do Not Disturb.
         head("WHAT THE SYSTEM REPORTS")
-        row("zen_mode", runCatching {
+        row("zen_mode", ask {
             Settings.Global.getInt(ctx.contentResolver, "zen_mode", -1).toString()
-        }.getOrDefault("?"))
+        })
         row("filter", filterName(runCatching { ZenController.currentFilter(ctx) }.getOrNull()))
         val id = p.ruleId
         if (id == null) {
@@ -138,14 +140,12 @@ object Diagnostics {
 
         head("WHAT THE APP INTENDED")
         row("bedtime", if (p.enabled) "on" else "off")
-        row("running now", yn(runCatching { Bedtime.runningNow(ctx, p) }.getOrNull()))
+        row("running now", askYn { Bedtime.runningNow(ctx, p) })
         row("window", Clock.hhmm(ctx, p.startTime) + " - " + Clock.hhmm(ctx, p.endTime))
         row("days", p.days.sortedBy { it.value }.joinToString(",") { it.name.take(2) }
             .ifEmpty { "once" })
         row("end at alarm", yn(p.exitAtAlarm))
-        row("next alarm", runCatching {
-            Scheduler.nextAlarm(ctx)?.toString() ?: "none set"
-        }.getOrDefault("?"))
+        row("next alarm", ask { Scheduler.nextAlarm(ctx)?.toString() ?: "none set" })
         // As a DATE. It went out as "20698", which is the pin working
         // correctly and is unreadable to the person being asked about it.
         row("active day", if (p.activeDay == Prefs.NO_DAY) "-"
@@ -173,19 +173,19 @@ object Diagnostics {
         ).joinToString(", ").ifEmpty { "nothing else" })
 
         head("OVERNIGHT CHECKS")
-        row("END alarm", runCatching {
+        row("END alarm", ask {
             if (AlarmWatch.missed(p)) "MISSED - did not arrive on time" else "no miss recorded"
-        }.getOrDefault("?"))
-        row("delivery probe", runCatching {
+        })
+        row("delivery probe", ask {
             when {
                 BackgroundProbe.blocked(p) -> "LATE - this phone holds alarms"
                 BackgroundProbe.answered(p) -> "alarms arrive on time"
                 else -> "not answered yet"
             }
-        }.getOrDefault("?"))
-        row("restart", runCatching {
+        })
+        row("restart", ask {
             if (BootWatch.missed(p)) "MISSED - no boot broadcast" else "none missed"
-        }.getOrDefault("?"))
+        })
 
         // Last, because it is the longest and the only part that is read rather
         // than scanned.
@@ -198,6 +198,19 @@ object Diagnostics {
         }
     }
 
+    /**
+     * Ask the platform something and never throw.
+     *
+     * Written out twenty-one times before this: every line of the report is a
+     * call that can fail on the phones the report exists for, and a diagnostics
+     * report that crashes is worse than none. "?" is deliberately distinct from
+     * a "no" - not answering and answering in the negative are different
+     * findings, and [yn] keeps that distinction for booleans too.
+     */
+    private fun ask(f: () -> String): String = runCatching(f).getOrDefault(UNKNOWN)
+
+    private fun askYn(f: () -> Boolean): String = yn(runCatching(f).getOrNull())
+
     private fun stamp(ms: Long): String =
         LocalDateTime.ofInstant(Instant.ofEpochMilli(ms), ZoneId.systemDefault()).format(STAMP)
 
@@ -205,7 +218,7 @@ object Diagnostics {
     private fun yn(b: Boolean?): String = when (b) {
         true -> "yes"
         false -> "no"
-        null -> "?"
+        null -> UNKNOWN
     }
 
     /** [Interruptions]' own constants, so this cannot drift from the screen. */
@@ -229,7 +242,7 @@ object Diagnostics {
         NotificationManager.INTERRUPTION_FILTER_PRIORITY -> "PRIORITY"
         NotificationManager.INTERRUPTION_FILTER_ALARMS -> "ALARMS"
         NotificationManager.INTERRUPTION_FILTER_NONE -> "NONE"
-        null -> "?"
+        null -> UNKNOWN
         else -> "unknown(" + f + ")"
     }
 
@@ -238,7 +251,7 @@ object Diagnostics {
         Condition.STATE_FALSE -> "FALSE"
         Condition.STATE_ERROR -> "ERROR"
         Condition.STATE_UNKNOWN -> "UNKNOWN"
-        null -> "?"
+        null -> UNKNOWN
         else -> "unknown(" + s + ")"
     }
 

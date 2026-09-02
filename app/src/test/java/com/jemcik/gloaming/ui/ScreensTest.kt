@@ -64,14 +64,7 @@ class ScreensTest {
      * stub a manufacturer. Robolectric's package manager answers nothing by
      * default, which is why the tip is invisible in every other test here.
      */
-    private fun withLaunchManager() {
-        shadowOf(ctx().packageManager).addActivityIfNotPresent(
-            android.content.ComponentName(
-                "com.hihonor.systemmanager",
-                "com.hihonor.systemmanager.startupmgr.ui.StartupNormalAppListActivity"
-            )
-        )
-    }
+    private fun withLaunchManager() = ctx().withLaunchManager()
 
     private fun armed(): Prefs {
         shadowOf(ctx().getSystemService(NotificationManager::class.java))

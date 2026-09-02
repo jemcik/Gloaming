@@ -96,6 +96,84 @@ class DiagnosticsTest {
     }
 
     @Test
+    fun `the allowlist is reported in words, not ZenPolicy's numbering`() {
+        // The report is read by someone trying to work out why a night went
+        // wrong. "calls=3" makes them hold an enum in their head to do it, and
+        // an enum printed wrong is worse than one not printed at all - it is a
+        // confident, legible, incorrect answer.
+        val p = Prefs(ctx())
+        val words = mapOf(
+            Interruptions.PEOPLE_ANYONE to "anyone",
+            Interruptions.PEOPLE_CONTACTS to "contacts",
+            Interruptions.PEOPLE_STARRED to "starred contacts",
+            Interruptions.PEOPLE_NONE to "no one"
+        )
+        for ((value, word) in words) {
+            p.allowCalls = value
+            val line = Diagnostics.report(ctx()).lines().first { it.contains("allows calls") }
+            assertTrue("calls=$value printed as: $line", line.endsWith(word))
+        }
+        val convs = mapOf(
+            Interruptions.CONV_ANYONE to "all",
+            Interruptions.CONV_IMPORTANT to "important",
+            Interruptions.CONV_NONE to "none"
+        )
+        for ((value, word) in convs) {
+            p.allowConversations = value
+            val line = Diagnostics.report(ctx()).lines()
+                .first { it.contains("allows conversations") }
+            assertTrue("convs=$value printed as: $line", line.endsWith(word))
+        }
+    }
+
+    @Test
+    fun `a value the enum does not cover is named, not silently mapped`() {
+        // ZenPolicy could gain a sender type. Falling through to "no one" would
+        // report a policy the phone is not applying; naming the number says
+        // which line of the report to distrust.
+        Prefs(ctx()).allowCalls = 99
+        assertTrue(
+            "an unknown sender type was quietly mapped to a real one",
+            Diagnostics.report(ctx()).contains("unknown(99)")
+        )
+    }
+
+    @Test
+    fun `the overnight verdicts each have their own words`() {
+        // Three checks, three distinguishable answers. They are the first thing
+        // read in a report, and "no miss recorded" and "MISSED" being one line
+        // apart is the whole point of printing them.
+        val p = Prefs(ctx())
+        p.alarmMissed = true
+        p.probeFailed = true
+        assertTrue("a missed END was not called out", Diagnostics.report(ctx()).contains("MISSED"))
+        assertTrue(
+            "a phone that holds alarms was not called out",
+            Diagnostics.report(ctx()).contains("LATE - this phone holds alarms")
+        )
+
+        p.alarmMissed = false
+        p.probeFailed = false
+        p.probeSeen = System.currentTimeMillis()
+        val clean = Diagnostics.report(ctx())
+        assertTrue("a clean END read as a miss", clean.contains("no miss recorded"))
+        assertTrue("a working phone read as blocked", clean.contains("alarms arrive on time"))
+    }
+
+    @Test
+    fun `the filter is named rather than numbered`() {
+        // currentInterruptionFilter is an int, and ALL is the one that matters:
+        // it means nothing is being filtered, whatever our rule believes. That
+        // reading is what catches a rule the platform has quietly overridden.
+        val nm = ctx().getSystemService(NotificationManager::class.java)
+        shadowOf(nm).setNotificationPolicyAccessGranted(true)
+        assertTrue(
+            "the interruption filter was left as a number",
+            Diagnostics.report(ctx()).contains("ALL (nothing filtered)")
+        )
+    }
+
+    @Test
     fun `it carries no mailbox or account, only what the app can defend`() {
         // It leaves the device, so what it may contain is a decision, not an
         // accident. The app never reads accounts and this pins that it stays so.

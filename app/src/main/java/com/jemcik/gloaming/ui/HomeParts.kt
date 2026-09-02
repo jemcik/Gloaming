@@ -89,7 +89,7 @@ internal fun StatusPill(text: String, fill: Color, ink: Color) {
         modifier = Modifier
             .clip(CircleShape)
             .background(fill)
-            .then(border?.let { Modifier.border(1.dp, it, CircleShape) } ?: Modifier)
+            .border(1.dp, border, CircleShape)
             .padding(horizontal = 12.dp, vertical = 5.dp)
     )
 }

@@ -182,21 +182,10 @@ fun SettingsScreen(themeMode: Int, onThemeMode: (Int) -> Unit, onBack: () -> Uni
             }
         }
 
-        Section(stringResource(R.string.section_about)) {
-            Text(
-                stringResource(R.string.settings_about_body),
-                style = MaterialTheme.typography.bodyLarge, color = g.onSurfaceLow
-            )
-            Text(
-                stringResource(R.string.settings_version, version),
-                style = MaterialTheme.typography.bodyLarge, color = g.onSurfaceLow
-            )
-        }
-
-        // Last on the screen, after everything it would undo. The route a user
-        // would otherwise take - Android's own "Clear storage" - leaves this
-        // app's zen rule behind, live and unreachable, so this is not a
-        // convenience: it is the only safe way to start over. See Reset.
+        // The last thing that DOES anything, with only About below it. The
+        // route a user would otherwise take - Android's own "Clear storage" -
+        // leaves this app's zen rule behind, live and unreachable, so this is
+        // not a convenience: it is the only safe way to start over. See Reset.
         Section(stringResource(R.string.section_reset)) {
             SettingsCard {
                 LinkRow(
@@ -212,6 +201,17 @@ fun SettingsScreen(themeMode: Int, onThemeMode: (Int) -> Unit, onBack: () -> Uni
                     }
                 ) { haptics.open(); confirmReset = true }
             }
+        }
+
+        Section(stringResource(R.string.section_about)) {
+            Text(
+                stringResource(R.string.settings_about_body),
+                style = MaterialTheme.typography.bodyLarge, color = g.onSurfaceLow
+            )
+            Text(
+                stringResource(R.string.settings_version, version),
+                style = MaterialTheme.typography.bodyLarge, color = g.onSurfaceLow
+            )
         }
     }
     }

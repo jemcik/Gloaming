@@ -127,6 +127,14 @@ class HomeState(
         private set
 
     /**
+     * They have been to the vendor screen. Not that they DID anything there -
+     * that is the unreadable part - only that the card should stop offering and
+     * start asking.
+     */
+    var tipVisited by mutableStateOf(prefs.launchTipVisited)
+        private set
+
+    /**
      * Offer the launch setup ONCE, at the moment bedtime is first switched on.
      *
      * Not on install: at install nothing has been promised yet, and a phone the
@@ -144,9 +152,25 @@ class HomeState(
         hasLaunchManager && enabled && !tipSeen && !blocked && !restricted
 
     /**
-     * Refused, and it never comes back. Called ONLY from the dismiss button:
-     * going to look at the vendor screen is not an answer, because nothing here
-     * can read whether the switches were actually changed.
+     * They have gone to look. The card cannot verify what happened there - the
+     * switches are unreadable - so on return it stops offering and ASKS.
+     */
+    fun visitLaunchTip() {
+        prefs.launchTipVisited = true
+        tipVisited = true
+    }
+
+    /** "Not yet" - back to the plain offer, which is exactly where they are. */
+    fun unvisitLaunchTip() {
+        prefs.launchTipVisited = false
+        tipVisited = false
+    }
+
+    /**
+     * Answered, and it never comes back. Reached two ways and only two: the
+     * dismiss button on the offer, and "Done" on the question afterwards.
+     * Merely going to LOOK is not an answer, because nothing here can read
+     * whether the switches were actually changed.
      */
     fun closeLaunchTip() {
         prefs.launchTipSeen = true

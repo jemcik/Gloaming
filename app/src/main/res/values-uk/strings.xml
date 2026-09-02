@@ -67,6 +67,9 @@
     <string name="launch_tip_why">Цей телефон може зупиняти застосунки, поки вони закриті, — через це сон залишається ввімкненим уранці. Два перемикачі в розділі «Запуск застосунків» цьому запобігають: автозапуск і робота у фоні.</string>
     <string name="launch_tip_action">Налаштувати</string>
     <string name="launch_tip_dismiss">Закрити</string>
+    <string name="launch_tip_check">Gloaming не може перевірити ці перемикачі сам. Ви ввімкнули автозапуск і роботу у фоні?</string>
+    <string name="launch_tip_not_yet">Ще ні</string>
+    <string name="launch_tip_done">Готово</string>
 
     <!-- ============ Home: the window ============ -->
     <!-- Overlines, uppercased in code. Keep short: they sit above the times. -->

@@ -67,6 +67,9 @@
     <string name="launch_tip_why">Этот телефон может останавливать приложения, пока они закрыты, — из-за этого сон остаётся включённым утром. Два переключателя в разделе «Запуск приложений» это предотвращают: автозапуск и работа в фоне.</string>
     <string name="launch_tip_action">Настроить</string>
     <string name="launch_tip_dismiss">Закрыть</string>
+    <string name="launch_tip_check">Gloaming не может проверить эти переключатели сам. Вы включили автозапуск и работу в фоне?</string>
+    <string name="launch_tip_not_yet">Ещё нет</string>
+    <string name="launch_tip_done">Готово</string>
 
     <!-- ============ Home: the window ============ -->
     <!-- Overlines, uppercased in code. Keep short: they sit above the times. -->

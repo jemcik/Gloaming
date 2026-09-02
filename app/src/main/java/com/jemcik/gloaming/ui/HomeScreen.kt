@@ -350,14 +350,36 @@ private fun LaunchTipSection(s: HomeState) {
 
     Section(stringResource(R.string.section_this_phone), rule = false) {
         GroupedList(card, listOf {
-            TipCard(
-                stringResource(R.string.launch_tip_title),
-                stringResource(R.string.launch_tip_why),
-                stringResource(R.string.launch_tip_dismiss),
-                stringResource(R.string.launch_tip_action),
-                onDismiss = { haptics.select(); s.closeLaunchTip() },
-                onAction = { haptics.open(); Doors.openAutoStart(ctx) }
-            )
+            // Two faces, and the second exists because the first cannot be
+            // checked. Before you have been: an offer, refusable. After you
+            // have been: the question the app has no way to answer for itself.
+            // Asking is the honest move where measuring is impossible - and it
+            // is what replaces the accidental dismissal that "Set up" used to
+            // perform, which was wrong for treating a visit as an answer.
+            if (s.tipVisited) {
+                TipCard(
+                    stringResource(R.string.launch_tip_title),
+                    stringResource(R.string.launch_tip_check),
+                    stringResource(R.string.launch_tip_not_yet),
+                    stringResource(R.string.launch_tip_done),
+                    // Not yet is not a refusal - it is "I have not done it",
+                    // which puts them back where they were, still able to
+                    // dismiss the offer outright.
+                    onDismiss = { haptics.select(); s.unvisitLaunchTip() },
+                    onAction = { haptics.confirm(); s.closeLaunchTip() }
+                )
+            } else {
+                TipCard(
+                    stringResource(R.string.launch_tip_title),
+                    stringResource(R.string.launch_tip_why),
+                    stringResource(R.string.launch_tip_dismiss),
+                    stringResource(R.string.launch_tip_action),
+                    onDismiss = { haptics.select(); s.closeLaunchTip() },
+                    onAction = {
+                        haptics.open(); s.visitLaunchTip(); Doors.openAutoStart(ctx)
+                    }
+                )
+            }
         })
     }
 }

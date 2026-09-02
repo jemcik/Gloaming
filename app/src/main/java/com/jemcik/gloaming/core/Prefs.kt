@@ -191,6 +191,16 @@ class Prefs(ctx: Context) {
      * reads as a demand, and this one cannot be confirmed, so it can never
      * dismiss itself the way a readable setting does.
      */
+    /**
+     * Has the user gone to LOOK at the vendor's switches? Not whether they set
+     * them - nothing here can read that, which is the whole problem. It only
+     * changes what the card asks: before, an offer; after, the question the app
+     * cannot answer itself.
+     */
+    var launchTipVisited: Boolean
+        get() = sp.getBoolean("launchTipVisited", false)
+        set(v) = sp.edit { putBoolean("launchTipVisited", v) }
+
     var launchTipSeen: Boolean
         get() = sp.getBoolean("launchTipSeen", false)
         set(v) = sp.edit { putBoolean("launchTipSeen", v) }

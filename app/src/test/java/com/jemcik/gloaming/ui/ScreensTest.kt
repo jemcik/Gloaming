@@ -165,7 +165,50 @@ class ScreensTest {
             "opening the vendor screen must not answer the offer",
             p.launchTipSeen
         )
+        // Still there, but no longer OFFERING - it asks now, because the one
+        // thing it needs to know is the one thing it cannot read.
+        compose.onNodeWithText(ctx().getString(R.string.launch_tip_done)).assertExists()
+    }
+
+    @Test
+    fun `Done answers it, and that is final`() {
+        // The whole point of the second face. Someone who has actually set the
+        // switches gets one tap to say so - which is the only way this app will
+        // ever know, since it cannot look.
+        val p = armed()
+        p.launchTipSeen = false
+        withLaunchManager()
+        compose.setContent {
+            GloamingTheme(dark = false) {
+                Home(rememberScrollState(), onOpenSettings = {}, onOpenInterruptions = {})
+            }
+        }
+        compose.onNodeWithText(ctx().getString(R.string.launch_tip_action)).performClick()
+        compose.onNodeWithText(ctx().getString(R.string.launch_tip_done)).performClick()
+        compose.onNodeWithText(ctx().getString(R.string.launch_tip_done)).assertDoesNotExist()
+        assertTrue("Done did not answer the offer", p.launchTipSeen)
+    }
+
+    @Test
+    fun `Not yet puts the offer back rather than refusing it`() {
+        // "I have not done it" is not "stop asking". It returns to the plain
+        // offer, where dismissing outright is still available - conflating the
+        // two would take the refusal away from someone who only meant to say
+        // they had not got round to it.
+        val p = armed()
+        p.launchTipSeen = false
+        withLaunchManager()
+        compose.setContent {
+            GloamingTheme(dark = false) {
+                Home(rememberScrollState(), onOpenSettings = {}, onOpenInterruptions = {})
+            }
+        }
+        compose.onNodeWithText(ctx().getString(R.string.launch_tip_action)).performClick()
+        compose.onNodeWithText(ctx().getString(R.string.launch_tip_not_yet)).performClick()
+
         compose.onNodeWithText(ctx().getString(R.string.launch_tip_dismiss)).assertExists()
+        compose.onNodeWithText(ctx().getString(R.string.launch_tip_action)).assertExists()
+        assertFalse("\"not yet\" must not answer the offer", p.launchTipSeen)
     }
 
     @Test

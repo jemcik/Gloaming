@@ -164,6 +164,15 @@ is in DECISIONS.md.
   Nothing but a real difference should push the rule.
 - Pushing an **identical** rule re-applies its device effects. `Prefs.ruleSignature`
   gates that; `force = true` exists for alarms and boot.
+- The seven **visual effects are pinned, not inherited** — an unset one is filled
+  from the phone's own default DND policy, and that default is NOT the same
+  everywhere: measured 156 on MagicOS and LineageOS but **20** on One UI 8, which
+  left our rule permitting the notification light and the always-on display at
+  3am. Three of the seven (`statusBar`, `badge`, `notificationList`) are **inert**
+  on Android 16 — the record carries `suppressedVisualEffects=511` and both
+  SystemUIs draw the notification anyway — so they must NEVER get a switch, and
+  nothing may claim bedtime hides a notification. Google's Bedtime pins all seven
+  too, and is equally unable to hide one.
 - `Prefs.ruleId` is the app's only handle on its rule. Losing it strands the rule
   forever — hence `sweepOrphans`, which runs after `addAutomaticZenRule` and in
   `reconcile`. It must NOT return early when `ruleId` is null: that is exactly

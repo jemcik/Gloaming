@@ -86,12 +86,20 @@ class BedtimeTile : TileService() {
             p.enabled -> Tile.STATE_ACTIVE
             else -> Tile.STATE_INACTIVE
         }
-        // The switch's own two faces, and it matters that they stay the same
-        // two: an hourglass while the window is only scheduled, a tick once it
-        // is in effect.
+        // The switch's two faces - an hourglass while the window is only
+        // scheduled, a tick once it is in effect - and a THIRD the switch does
+        // not need. M3 draws no thumb icon at all while a switch is off, so
+        // "off" has no glyph to keep in step; a tile always shows one. Neither
+        // of the two will do there: a tick off means nothing, and an hourglass
+        // off announces a countdown that is not running. The app's own mark
+        // says the honest thing, which is only that this is Gloaming.
         tile.icon = Icon.createWithResource(
             this,
-            if (running) R.drawable.ic_check else R.drawable.ic_hourglass
+            when {
+                !p.enabled -> R.drawable.ic_gloaming
+                running -> R.drawable.ic_check
+                else -> R.drawable.ic_hourglass
+            }
         )
         tile.label = getString(R.string.bedtime_mode)
         tile.subtitle = statusLine(

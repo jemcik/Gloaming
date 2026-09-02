@@ -161,10 +161,18 @@ internal fun NoticeStrip(text: String) {
  * maxLines = 1 on the numerals is the backstop: if some locale still cannot
  * fit, it must clip rather than reflow, because this block sits directly above
  * the dial and anything that changes its height moves the whole page.
+ *
+ * TAKES THE READING, does not fetch it. It used to take (ctx, time) and call
+ * Clock.reading itself, and that is a fourth way for this screen to go stale:
+ * 12-or-24-hour is a SYSTEM setting, not Compose state, so when it changed
+ * under an open screen none of this composable's parameters moved and Compose
+ * correctly skipped it. The sentence below the dial updated - it is built
+ * inside a remember(s.tick) - and the numerals above it did not, so the screen
+ * read "20:40" over "From 8:40 PM". Reported exactly that way. Hoisting the
+ * read to the caller puts it on the same ticker as everything else here.
  */
 @Composable
-internal fun WindowTime(ctx: Context, t: java.time.LocalTime, color: Color) {
-    val r = Clock.reading(ctx, t)
+internal fun WindowTime(r: Clock.Reading, color: Color) {
     if (r.period == null) {
         Text(
             r.time,

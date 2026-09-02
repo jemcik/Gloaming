@@ -249,10 +249,17 @@ is in DECISIONS.md.
 
 **Compose**
 
-- Compose state goes stale three ways: the receiver writes prefs while
+- Compose state goes stale FOUR ways: the receiver writes prefs while
   backgrounded (re-read on `ON_RESUME`), `now` goes stale on an open screen (one-
-  minute ticker), and `pointerInput(Unit)` freezes its captured lambdas (wrap in
-  `rememberUpdatedState`).
+  minute ticker), `pointerInput(Unit)` freezes its captured lambdas (wrap in
+  `rememberUpdatedState`), and a **SYSTEM setting read inside a skippable
+  composable never re-runs**. `WindowTime` took `(ctx, time, colour)` and called
+  `Clock.reading` itself; when the phone's 12/24-hour setting changed under an
+  open screen none of those three moved, so Compose skipped it - while the
+  sentence under the dial, which is called straight from `WindowBlock`'s body,
+  re-executed. The screen read "20:40" above "From 8:40 PM". Read a system
+  setting where the ticker is, inside `remember(s.tick, ...)`, and pass the
+  ANSWER down.
 - Put a `@Composable` slot **before** any click lambda, or a trailing lambda at
   the call site binds to the slot and Compose runs it as content.
 
@@ -344,7 +351,7 @@ compileSdk 37, targetSdk 36, minSdk 35.
 
 ## Tests
 
-`app/src/test/`, 157 cases, no device. They are written as the QUESTION the code
+`app/src/test/`, 158 cases, no device. They are written as the QUESTION the code
 answers rather than as coverage of a method, because none of the bugs were ever
 in a method — they were in an assumption.
 

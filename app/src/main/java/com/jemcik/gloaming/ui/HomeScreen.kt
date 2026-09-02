@@ -514,7 +514,9 @@ private fun WindowBlock(
                     }
                     Spacer(Modifier.height(4.dp))
                     WindowTime(
-                        ctx, s.start,
+                        // s.tick, so a change to the phone's 12/24 setting
+                        // reaches the numerals. Nothing else here would move.
+                        remember(s.tick, s.start) { Clock.reading(ctx, s.start) },
                         // dimmed once it is behind you, but never near-black
                         color = if (runningNow) g.onSurfaceMid.copy(alpha = 0.62f)
                         else g.onSurfaceMid
@@ -557,7 +559,12 @@ private fun WindowBlock(
                     // Tonight's end, not the setting behind it. "I see 8:30 in
                     // the top right, how can this be correct" - it could not:
                     // every other reading on the screen said 7:30.
-                    WindowTime(ctx, endTonight ?: s.end, color = g.onSurfaceMid)
+                    WindowTime(
+                        remember(s.tick, endTonight, s.end) {
+                            Clock.reading(ctx, endTonight ?: s.end)
+                        },
+                        color = g.onSurfaceMid
+                    )
 
                 }
             }

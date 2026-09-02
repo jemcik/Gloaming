@@ -22,6 +22,8 @@ import androidx.compose.ui.test.swipe
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performSemanticsAction
 import android.app.NotificationManager
+import androidx.compose.ui.test.onAllNodesWithText
+import android.provider.Settings
 import androidx.test.core.app.ApplicationProvider
 import java.time.DayOfWeek
 import java.time.LocalTime
@@ -159,6 +161,49 @@ class ScreensTest {
     }
 
     // ---------- Settings ----------
+
+    @Test
+    fun `the numerals follow a change to the phone's clock format`() {
+        // Reported: the screen read "20:40" above "From 8:40 PM". 12-or-24-hour
+        // is a SYSTEM setting rather than Compose state, so when it changed
+        // under an open screen nothing WindowTime took as a parameter moved and
+        // Compose correctly skipped it - while the sentence, built inside a
+        // remember(s.tick), updated. One value, two answers, on one screen.
+        //
+        // A formatting test would not have caught this: the formatting was
+        // right the whole time, and a cold start showed it right. What has to
+        // be exercised is the CHANGE arriving while the screen is up.
+        val p = armed()
+        p.startTime = LocalTime.of(20, 40)
+        p.endTime = LocalTime.of(6, 40)
+        Settings.System.putString(ctx().contentResolver, Settings.System.TIME_12_24, "24")
+        compose.setContent {
+            GloamingTheme(dark = false) {
+                Home(rememberScrollState(), onOpenSettings = {}, onOpenInterruptions = {})
+            }
+        }
+        // EXACT, not substring. The sentence under the dial contains "20:40"
+        // too - "From 20:40 Wednesday to 06:40 today" - and it is the half that
+        // was never broken, so a substring match passes with the bug still in.
+        // It did: this test was written that way first and stayed green with
+        // the fix reverted, which is the only reason the vacuity was caught.
+        // The numeral is its own node and its whole text is the time; the day
+        // period is a separate Text beside it.
+        assertTrue(
+            "the 24-hour numeral was not drawn to begin with",
+            compose.onAllNodesWithText("20:40").fetchSemanticsNodes().isNotEmpty()
+        )
+
+        Settings.System.putString(ctx().contentResolver, Settings.System.TIME_12_24, "12")
+        // The minute ticker is what carries a system setting into an open
+        // screen - the same one that keeps `now` from going stale.
+        compose.mainClock.advanceTimeBy(61_000)
+        compose.waitForIdle()
+        assertTrue(
+            "the numerals kept the old clock format after the phone changed it",
+            compose.onAllNodesWithText("8:40").fetchSemanticsNodes().isNotEmpty()
+        )
+    }
 
     // ---------- the dial, and the page it sits on ----------
 

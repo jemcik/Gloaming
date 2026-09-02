@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The app's own mark, adapted for a quick settings tile.
+
+     This is ic_launcher_monochrome's geometry, unchanged - the same crescent and
+     the same sweeping arc, at the same numbers - and NOT ic_gloaming, which is a
+     bare crescent. That mattered: on the shade the bare crescent sat two tiles
+     from the system's own Do Not Disturb, which is also a crescent, and the two
+     read as twins. The arc is what makes this one ours at a glance.
+
+     The only change is scale, and it is done with a group transform rather than
+     by recomputing any coordinate. The launcher draws on a 108dp canvas with a
+     72dp safe zone, so the artwork - the arc's outer edge at r=31.1 plus half
+     its 3.0 stroke - reaches r=32.6 of a 54 half-canvas and would come out
+     around two thirds empty at tile size. 1.38 lifts it to r=45, which is the
+     proportion a Material 24dp icon keeps: glyph to about 20 of 24. Stroke width
+     scales with the group, so the arc keeps its weight against the crescent.
+
+     Viewport stays 108 for the same reason - every number below is the launcher's
+     own, and none of them had to be touched. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp" android:height="24dp"
+    android:viewportWidth="108" android:viewportHeight="108"
+    android:tint="?android:attr/colorControlNormal">
+    <group android:scaleX="1.38" android:scaleY="1.38"
+           android:pivotX="54" android:pivotY="54">
+        <group android:rotation="-32" android:pivotX="54" android:pivotY="54">
+            <clip-path android:pathData="M33.00,54.00 a21.00,21.00 0 1,0 42.00,0 a21.00,21.00 0 1,0 -42.00,0 Z" />
+            <path android:fillType="evenOdd" android:fillColor="#FFFFFFFF"
+                android:pathData="M33.00,54.00 a21.00,21.00 0 1,0 42.00,0 a21.00,21.00 0 1,0 -42.00,0 Z M42.66,50.22 a19.74,19.74 0 1,0 39.48,0 a19.74,19.74 0 1,0 -39.48,0 Z" />
+        </group>
+        <group android:rotation="90.95" android:pivotX="54" android:pivotY="54">
+            <path
+                android:pathData="M71.10,79.98 A31.1,31.1 0 0 1 30.57,74.45 A31.1,31.1 0 0 1 30.57,33.55 A31.1,31.1 0 0 1 71.10,28.02"
+                android:strokeWidth="3.0" android:strokeLineCap="round"
+                android:strokeColor="#FFFFFFFF" android:fillColor="#00000000" />
+        </group>
+    </group>
+</vector>

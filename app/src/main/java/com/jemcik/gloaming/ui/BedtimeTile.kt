@@ -92,11 +92,14 @@ class BedtimeTile : TileService() {
         // "off" has no glyph to keep in step; a tile always shows one. Neither
         // of the two will do there: a tick off means nothing, and an hourglass
         // off announces a countdown that is not running. The app's own mark
-        // says the honest thing, which is only that this is Gloaming.
+        // says the honest thing, which is only that this is Gloaming - and it
+        // is the LAUNCHER's mark, crescent and arc together, not ic_gloaming's
+        // bare crescent, which on the shade sat two tiles from the system's own
+        // Do Not Disturb and read as its twin.
         tile.icon = Icon.createWithResource(
             this,
             when {
-                !p.enabled -> R.drawable.ic_gloaming
+                !p.enabled -> R.drawable.ic_gloaming_tile
                 running -> R.drawable.ic_check
                 else -> R.drawable.ic_hourglass
             }

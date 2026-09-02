@@ -197,6 +197,10 @@
     <string name="section_language">мова</string>
     <string name="settings_language">Мова застосунку</string>
     <string name="settings_language_why">Відкриває налаштування</string>
+    <string name="section_diagnostics">звіт про проблему</string>
+    <string name="diagnostics_row">Надіслати діагностику</string>
+    <string name="diagnostics_why">Для звіту про помилку</string>
+    <string name="diagnostics_subject">Діагностика Gloaming</string>
     <string name="section_about">про застосунок</string>
     <string name="settings_version">Версія %1$s</string>
     <string name="settings_about_body">Gloaming вмикає «Не турбувати» й ефекти екрана на час сну та вимикає їх уранці. Працює із закритим застосунком.</string>

@@ -118,7 +118,7 @@ class RowFitTest {
         val ctx = ApplicationProvider.getApplicationContext<android.content.Context>()
         val titles = listOf(
             R.string.settings_language, R.string.launch_setup_row,
-            R.string.bedtime_settings_row
+            R.string.bedtime_settings_row, R.string.diagnostics_row
         )
             .map { ctx.getString(it) }
 

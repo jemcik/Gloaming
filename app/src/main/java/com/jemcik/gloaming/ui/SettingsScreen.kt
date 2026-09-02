@@ -21,6 +21,7 @@ import com.jemcik.gloaming.R
 import com.jemcik.gloaming.ui.LinkRow
 import com.jemcik.gloaming.ui.RadioRow
 import com.jemcik.gloaming.core.BootWatch
+import com.jemcik.gloaming.core.Diagnostics
 import com.jemcik.gloaming.core.Doors
 import com.jemcik.gloaming.core.Prefs
 
@@ -153,6 +154,27 @@ fun SettingsScreen(themeMode: Int, onThemeMode: (Int) -> Unit, onBack: () -> Uni
                         ) { haptics.open(); Doors.openSystemBedtime(ctx) }
                     }
                 }
+            }
+        }
+
+        // Unconditional, unlike the section above it. This is the row someone
+        // is asked to tap when a night went wrong on a phone nobody here owns,
+        // so it must never sit behind a capability probe - the phones most
+        // worth hearing from are exactly the ones where a probe says no.
+        Section(stringResource(R.string.section_diagnostics)) {
+            SettingsCard {
+                LinkRow(
+                    stringResource(R.string.diagnostics_row),
+                    supporting = stringResource(R.string.diagnostics_why),
+                    leading = {
+                        Icon(
+                            painterResource(R.drawable.ic_share),
+                            contentDescription = null,
+                            tint = LocalContentColor.current,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                ) { haptics.open(); Diagnostics.share(ctx) }
             }
         }
 

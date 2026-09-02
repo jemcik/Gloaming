@@ -197,6 +197,10 @@
     <string name="section_language">язык</string>
     <string name="settings_language">Язык приложения</string>
     <string name="settings_language_why">Открывает настройки</string>
+    <string name="section_diagnostics">отчёт о проблеме</string>
+    <string name="diagnostics_row">Отправить диагностику</string>
+    <string name="diagnostics_why">Для отчёта об ошибке</string>
+    <string name="diagnostics_subject">Диагностика Gloaming</string>
     <string name="section_about">о приложении</string>
     <string name="settings_version">Версия %1$s</string>
     <string name="settings_about_body">Gloaming включает «Не беспокоить» и эффекты экрана на время сна и выключает их утром. Работает с закрытым приложением.</string>

@@ -81,6 +81,11 @@ indefinitely is background restriction — see `core/BackgroundLimit.kt`.
     core/AmbientCapability.kt    can this phone hide its always-on display
     core/Clock.kt                clock times in the phone's own 12/24 format
     core/Prefs.kt                SharedPreferences, plus one migration
+    core/Diagnostics.kt          the phone's whole answer, as text to send in
+                                 one tap. The system's account and ours kept
+                                 APART, in that order - every bug worth having
+                                 this for lives in the gap between them. It
+                                 cannot say whether a notification made a SOUND
     core/Journal.kt              on-device log; read it over adb, see Build
     core/SystemTheme.kt          the system's own light/dark answer
 
@@ -315,7 +320,7 @@ compileSdk 37, targetSdk 36, minSdk 35.
 
 ## Tests
 
-`app/src/test/`, 140 cases, no device. They are written as the QUESTION the code
+`app/src/test/`, 147 cases, no device. They are written as the QUESTION the code
 answers rather than as coverage of a method, because none of the bugs were ever
 in a method — they were in an assumption.
 
@@ -350,6 +355,10 @@ in a method — they were in an assumption.
     BackgroundProbeTest   the delivery probe: lateness rather than arrival is
                           the verdict, and the latch that stops its own retest
                           erasing it
+    DiagnosticsTest       the report a user sends: does it still speak when the
+                          phone answers nothing, is a refused lookup kept
+                          distinct from a deleted rule, and does the system's
+                          account stay ahead of - and apart from - our own
 
 Coverage: **75% of instructions, 59% of branches**. The shape is the point — what
 is covered is what can be reasoned about without a phone; what is not is what

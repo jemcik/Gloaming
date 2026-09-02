@@ -136,7 +136,7 @@
          25-character English one did not - so these are set for the widest
          script, and were checked by RENDERING the app in Ukrainian, which is
          where two of them were caught.
-         BUDGET-EACH 22 fx_grayscale_sub fx_dim_sub fx_dark_sub fx_ambient_sub settings_language_why
+         BUDGET-EACH 22 fx_grayscale_sub fx_dim_sub fx_dark_sub fx_ambient_sub settings_language_why diagnostics_why
          BUDGET-EACH 20 row_media_on row_repeat_callers_on state_allowed state_blocked -->
     <!-- BUDGET 30 preset_every_night preset_weekdays preset_weekends
          The four share one row: 311dp of content width, less 16dp of padding per
@@ -288,6 +288,10 @@
     <string name="section_language">language</string>
     <string name="settings_language">App language</string>
     <string name="settings_language_why">Opens system settings</string>
+    <string name="section_diagnostics">problem report</string>
+    <string name="diagnostics_row">Share diagnostics</string>
+    <string name="diagnostics_why">For a bug report</string>
+    <string name="diagnostics_subject">Gloaming diagnostics</string>
     <string name="section_about">about</string>
     <string name="settings_version">Version %1$s</string>
     <string name="settings_about_body">Gloaming turns on Do Not Disturb and the screen effects for the hours you sleep, and switches them off again in the morning. It works with the app closed.</string>

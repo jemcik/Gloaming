@@ -136,7 +136,7 @@
          25-character English one did not - so these are set for the widest
          script, and were checked by RENDERING the app in Ukrainian, which is
          where two of them were caught.
-         BUDGET-EACH 22 fx_grayscale_sub fx_dim_sub fx_dark_sub fx_ambient_sub settings_language_why diagnostics_why
+         BUDGET-EACH 22 fx_grayscale_sub fx_dim_sub fx_dark_sub fx_ambient_sub settings_language_why diagnostics_why reset_why
          BUDGET-EACH 20 row_media_on row_repeat_callers_on state_allowed state_blocked -->
     <!-- BUDGET 30 preset_every_night preset_weekdays preset_weekends
          The four share one row: 311dp of content width, less 16dp of padding per
@@ -292,6 +292,12 @@
     <string name="diagnostics_row">Send diagnostics</string>
     <string name="diagnostics_why">For a bug report</string>
     <string name="diagnostics_subject">Gloaming diagnostics</string>
+    <string name="section_reset">start over</string>
+    <string name="reset_row">Reset Gloaming</string>
+    <string name="reset_why">Back to a fresh start</string>
+    <string name="reset_confirm_title">Reset Gloaming?</string>
+    <string name="reset_confirm_body">Bedtime switches off, the schedule and everything you have allowed go back to their defaults, and Gloaming’s rule is removed from Do Not Disturb. The diagnostics log is kept.</string>
+    <string name="action_reset">Reset</string>
     <string name="section_about">about</string>
     <string name="settings_version">Version %1$s</string>
     <string name="settings_about_body">One switch for the whole night. Gloaming turns on Do Not Disturb and the screen effects automatically, on the schedule you set – everything a bedtime routine needs sits in one place instead of scattered through Settings. It works with the app closed.</string>

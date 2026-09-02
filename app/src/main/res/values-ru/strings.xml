@@ -201,6 +201,12 @@
     <string name="diagnostics_row">Отправить диагностику</string>
     <string name="diagnostics_why">Для отчёта об ошибке</string>
     <string name="diagnostics_subject">Диагностика Gloaming</string>
+    <string name="section_reset">начать заново</string>
+    <string name="reset_row">Сбросить Gloaming</string>
+    <string name="reset_why">Как после установки</string>
+    <string name="reset_confirm_title">Сбросить Gloaming?</string>
+    <string name="reset_confirm_body">Режим сна выключится, график и список разрешённых вернутся к исходным значениям, а правило Gloaming будет удалено из «Не беспокоить». Журнал диагностики сохранится.</string>
+    <string name="action_reset">Сбросить</string>
     <string name="section_about">о приложении</string>
     <string name="settings_version">Версия %1$s</string>
     <string name="settings_about_body">Один переключатель на всю ночь. Gloaming автоматизирует включение режима «Не беспокоить» и активацию различных эффектов экрана по заданному графику — всё, что нужно для режима сна, собрано в одном месте, а не разбросано по настройкам. Работает с закрытым приложением.</string>

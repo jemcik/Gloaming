@@ -381,8 +381,24 @@ object ZenController {
         Scheduler.rescheduleAll(ctx, p)
     }
 
+    /**
+     * Every rule of ours, gone - the one we track and any we have lost track of.
+     *
+     * The sweep is not belt and braces. `ruleId` is the app's only handle, so a
+     * rule whose id we no longer hold cannot be removed by id at all, and it is
+     * exactly what survives a wiped store: enabled, listed on the phone's own Do
+     * Not Disturb screen as a second "Gloaming", greying the screen with nothing
+     * on screen to explain it. Measured on the Honor after a `pm clear`. Nulling
+     * the id first is what makes the sweep total: with nothing to keep, every
+     * Gloaming rule is an orphan.
+     */
     fun removeRule(ctx: Context, p: Prefs) {
-        p.ruleId?.let { runCatching { nm(ctx).removeAutomaticZenRule(it) } }
+        p.ruleId?.let { id ->
+            runCatching { nm(ctx).removeAutomaticZenRule(id) }
+                .onSuccess { Journal.write(ctx, (if (it) "removed rule " else "rule refused removal ") + id) }
+                .onFailure { Journal.write(ctx, "rule removal failed: " + it) }
+        }
         p.ruleId = null
+        sweepOrphans(ctx, p)
     }
 }

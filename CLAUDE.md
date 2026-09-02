@@ -81,6 +81,11 @@ indefinitely is background restriction — see `core/BackgroundLimit.kt`.
     core/AmbientCapability.kt    can this phone hide its always-on display
     core/Clock.kt                clock times in the phone's own 12/24 format
     core/Prefs.kt                SharedPreferences, plus one migration
+    core/Reset.kt                back to a fresh install, in the one ORDER that
+                                 is safe. Android's own "Clear storage" is the
+                                 trap it exists to replace: it wipes the prefs
+                                 and leaves the rule behind, live and with no id
+                                 left to remove it by
     core/Diagnostics.kt          the phone's whole answer, as text to send in
                                  one tap. The system's account and ours kept
                                  APART, in that order - every bug worth having
@@ -339,7 +344,7 @@ compileSdk 37, targetSdk 36, minSdk 35.
 
 ## Tests
 
-`app/src/test/`, 152 cases, no device. They are written as the QUESTION the code
+`app/src/test/`, 157 cases, no device. They are written as the QUESTION the code
 answers rather than as coverage of a method, because none of the bugs were ever
 in a method — they were in an assumption.
 
@@ -374,6 +379,10 @@ in a method — they were in an assumption.
     BackgroundProbeTest   the delivery probe: lateness rather than arrival is
                           the verdict, and the latch that stops its own retest
                           erasing it
+    ResetTest             starting over: no rule survives - not even one whose
+                          id was already lost - the store comes back EMPTY so
+                          the next launch takes the fresh-install branch and not
+                          the upgrade one, and the journal outlives it
     DiagnosticsTest       the report a user sends: does it still speak when the
                           phone answers nothing, is a refused lookup kept
                           distinct from a deleted rule, and does the system's

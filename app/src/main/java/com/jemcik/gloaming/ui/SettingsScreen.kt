@@ -6,8 +6,10 @@ import androidx.compose.material3.LocalContentColor
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
@@ -24,6 +26,7 @@ import com.jemcik.gloaming.core.BootWatch
 import com.jemcik.gloaming.core.Diagnostics
 import com.jemcik.gloaming.core.Doors
 import com.jemcik.gloaming.core.Prefs
+import com.jemcik.gloaming.core.Reset
 
 /**
  * Everything that is a preference about the APP rather than about tonight.
@@ -41,6 +44,7 @@ fun SettingsScreen(themeMode: Int, onThemeMode: (Int) -> Unit, onBack: () -> Uni
     val ctx = LocalContext.current
     val g = gloam
     val haptics = rememberHaptics()
+    var confirmReset by remember { mutableStateOf(false) }
     val version = remember {
         runCatching {
             ctx.packageManager.getPackageInfo(ctx.packageName, 0).versionName
@@ -188,7 +192,64 @@ fun SettingsScreen(themeMode: Int, onThemeMode: (Int) -> Unit, onBack: () -> Uni
                 style = MaterialTheme.typography.bodyLarge, color = g.onSurfaceLow
             )
         }
+
+        // Last on the screen, after everything it would undo. The route a user
+        // would otherwise take - Android's own "Clear storage" - leaves this
+        // app's zen rule behind, live and unreachable, so this is not a
+        // convenience: it is the only safe way to start over. See Reset.
+        Section(stringResource(R.string.section_reset)) {
+            SettingsCard {
+                LinkRow(
+                    stringResource(R.string.reset_row),
+                    supporting = stringResource(R.string.reset_why),
+                    leading = {
+                        Icon(
+                            painterResource(R.drawable.ic_reset),
+                            contentDescription = null,
+                            tint = LocalContentColor.current,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                ) { haptics.open(); confirmReset = true }
+            }
+        }
     }
+    }
+
+    // Irreversible, so it is asked for twice. The body names what goes and what
+    // stays, because "reset" alone does not say whether the log survives - and
+    // the person reading it is usually mid-problem.
+    if (confirmReset) {
+        AlertDialog(
+            onDismissRequest = { confirmReset = false },
+            containerColor = g.raise,
+            shape = RoundedCornerShape(32.dp),
+            title = { Text(stringResource(R.string.reset_confirm_title)) },
+            text = { Text(stringResource(R.string.reset_confirm_body)) },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        haptics.confirm()
+                        confirmReset = false
+                        Reset.toDefaults(ctx)
+                        // Out of Settings, which is both the honest feedback -
+                        // Home redraws from an empty store on ON_RESUME - and
+                        // the only way to avoid this screen sitting on values
+                        // that no longer exist.
+                        onBack()
+                    },
+                    shape = CircleShape
+                ) { Text(stringResource(R.string.action_reset)) }
+            },
+            dismissButton = {
+                OutlinedButton(
+                    onClick = { confirmReset = false },
+                    shape = CircleShape,
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = g.onSurfaceLow),
+                    border = BorderStroke(1.dp, g.outline)
+                ) { Text(stringResource(R.string.action_cancel)) }
+            }
+        )
     }
 }
 

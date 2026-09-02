@@ -228,6 +228,18 @@ class Prefs(ctx: Context) {
         get() = sp.getInt("themeMode", THEME_SYSTEM)
         set(v) = sp.edit { putInt("themeMode", v) }
 
+    /**
+     * Every key, gone - so the next [Prefs] sees an EMPTY store and takes the
+     * fresh-install branch of the migrations above rather than the upgrade one.
+     * That is the difference between a reset and a downgrade: an upgrade path
+     * would write the old grayscale defaults back in and turn the screen grey
+     * on a first night nobody asked for.
+     *
+     * It does not touch [Journal]. Someone resetting is usually resetting
+     * because something went wrong, and the log is the only record of what.
+     */
+    fun clear() = sp.edit { clear() }
+
     var ruleId: String?
         get() = sp.getString("ruleId", null)
         set(v) = sp.edit { putString("ruleId", v) }

@@ -201,6 +201,12 @@
     <string name="diagnostics_row">Надіслати діагностику</string>
     <string name="diagnostics_why">Для звіту про помилку</string>
     <string name="diagnostics_subject">Діагностика Gloaming</string>
+    <string name="section_reset">почати спочатку</string>
+    <string name="reset_row">Скинути Gloaming</string>
+    <string name="reset_why">Як після встановлення</string>
+    <string name="reset_confirm_title">Скинути Gloaming?</string>
+    <string name="reset_confirm_body">Режим сну вимкнеться, розклад і список дозволених повернуться до початкових значень, а правило Gloaming буде вилучено з «Не турбувати». Журнал діагностики збережеться.</string>
+    <string name="action_reset">Скинути</string>
     <string name="section_about">про застосунок</string>
     <string name="settings_version">Версія %1$s</string>
     <string name="settings_about_body">Один перемикач на всю ніч. Gloaming автоматизує вмикання режиму «Не турбувати» та активацію різних ефектів екрана за заданим розкладом — усе, що потрібно для режиму сну, зібрано в одному місці, а не розкидано по налаштуваннях. Працює із закритим застосунком.</string>

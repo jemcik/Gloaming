@@ -109,6 +109,43 @@ class ScreensTest {
     }
 
     @Test
+    fun `dismissed is dismissed, including across the master switch`() {
+        // The user's own sentence: press Dismiss and it must be gone and never
+        // shown again until the app is reset. Refusing it was already pinned;
+        // what was not is the path they actually walked - switch bedtime off,
+        // switch it back on. The tip is gated on `enabled`, so that toggle is
+        // the one moment it could plausibly return, and it is the moment that
+        // got reported.
+        val p = armed()
+        p.launchTipSeen = false
+        withLaunchManager()
+        shadowOf(ctx().getSystemService(NotificationManager::class.java))
+            .setNotificationPolicyAccessGranted(true)
+        ShadowAlarmManager.setCanScheduleExactAlarms(true)
+        compose.setContent {
+            GloamingTheme(dark = false) {
+                Home(rememberScrollState(), onOpenSettings = {}, onOpenInterruptions = {})
+            }
+        }
+        val dismiss = ctx().getString(R.string.launch_tip_dismiss)
+        compose.onNodeWithText(dismiss).performClick()
+        compose.onNodeWithText(dismiss).assertDoesNotExist()
+
+        // Asserted either side of each tap, or a switch that silently ignored
+        // the click would leave this passing without ever exercising the toggle
+        // - the same vacuity as a row that was never drawn.
+        val master = compose.onNodeWithContentDescription(ctx().getString(R.string.bedtime_mode))
+        master.assertIsOn()
+        master.performClick(); compose.waitForIdle()
+        master.assertIsOff()
+        master.performClick(); compose.waitForIdle()
+        master.assertIsOn()
+
+        compose.onNodeWithText(dismiss).assertDoesNotExist()
+        assertTrue("the refusal did not survive the switch", p.launchTipSeen)
+    }
+
+    @Test
     fun `going to look at the vendor screen does not answer the offer`() {
         // Reported and reproduced on the Honor: press "Set up", change nothing,
         // press back, and the card is gone for good. It closed the tip before

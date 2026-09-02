@@ -203,5 +203,5 @@
     <string name="diagnostics_subject">Діагностика Gloaming</string>
     <string name="section_about">про застосунок</string>
     <string name="settings_version">Версія %1$s</string>
-    <string name="settings_about_body">Gloaming вмикає «Не турбувати» й ефекти екрана на час сну та вимикає їх уранці. Працює із закритим застосунком.</string>
+    <string name="settings_about_body">Один перемикач на всю ніч. Gloaming вмикає «Не турбувати» й ефекти екрана разом на час сну та вимикає їх уранці — усе, що потрібно для режиму сну, зібрано в одному місці, а не розкидано по налаштуваннях. Працює із закритим застосунком.</string>
 </resources>

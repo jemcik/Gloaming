@@ -1,19 +1,38 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Themed-icon layer (Android 13+). Same geometry, same clip; the launcher
-     tints it a single colour, so the gradients carry no meaning here and the
-     silhouette has to do all of it. -->
+<!-- Themed-icon layer (Android 13+). The launcher tints it a single colour, so
+     the gradients carry no meaning here and the silhouette has to do all of it.
+
+     EVERY NUMBER BELOW IS ic_launcher_foreground's, and it has to stay that way.
+     This file said "same geometry, same clip" while quietly holding the older,
+     WRONG geometry: a bite of 19.74 offset 0.439 R, leaving the crescent 0.499 R
+     thick. That is the exact thinness the foreground's comment records as
+     reported and fixed - "bigger AND closer is what made it thin" - and the fix
+     never reached here, so anyone running themed icons has been getting the
+     version that was already rejected once. Caught because a quick settings tile
+     built from this layer was reported as not looking like the app icon, which
+     it was not.
+
+     What that means in practice: if the foreground's crescent, arc or balance
+     numbers move, they move here in the same commit. The only differences
+     allowed are the gradients, which become a flat fill, and nothing else. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp" android:height="108dp"
     android:viewportWidth="108" android:viewportHeight="108">
-    <group android:rotation="-32" android:pivotX="54" android:pivotY="54">
-        <clip-path android:pathData="M33.00,54.00 a21.00,21.00 0 1,0 42.00,0 a21.00,21.00 0 1,0 -42.00,0 Z" />
-        <path android:fillType="evenOdd" android:fillColor="#FFFFFFFF"
-            android:pathData="M33.00,54.00 a21.00,21.00 0 1,0 42.00,0 a21.00,21.00 0 1,0 -42.00,0 Z M42.66,50.22 a19.74,19.74 0 1,0 39.48,0 a19.74,19.74 0 1,0 -39.48,0 Z" />
-    </group>
-    <group android:rotation="90.95" android:pivotX="54" android:pivotY="54">
-        <path
-            android:pathData="M71.10,79.98 A31.1,31.1 0 0 1 30.57,74.45 A31.1,31.1 0 0 1 30.57,33.55 A31.1,31.1 0 0 1 71.10,28.02"
-            android:strokeWidth="3.0" android:strokeLineCap="round"
-            android:strokeColor="#FFFFFFFF" android:fillColor="#00000000" />
+    <group
+        android:pivotX="54" android:pivotY="54"
+        android:scaleX="0.92" android:scaleY="0.92"
+        android:translateY="2.51">
+        <group android:rotation="-32" android:pivotX="54" android:pivotY="54"
+            android:scaleX="0.86" android:scaleY="0.86">
+            <clip-path android:pathData="M33.00,54.00 a21.00,21.00 0 1,0 42.00,0 a21.00,21.00 0 1,0 -42.00,0 Z" />
+            <path android:fillType="evenOdd" android:fillColor="#FFFFFFFF"
+                android:pathData="M33.00,54.00 a21.00,21.00 0 1,0 42.00,0 a21.00,21.00 0 1,0 -42.00,0 Z M46.43,45.59 a18.48,18.48 0 1,0 36.96,0 a18.48,18.48 0 1,0 -36.96,0 Z" />
+        </group>
+        <group android:rotation="90.95" android:pivotX="54" android:pivotY="54">
+            <path
+                android:pathData="M70.82,79.56 A30.60,30.60 0 0 1 30.95,74.12 A30.60,30.60 0 0 1 30.95,33.88 A30.60,30.60 0 0 1 70.82,28.44"
+                android:strokeWidth="4.0" android:strokeLineCap="round"
+                android:strokeColor="#FFFFFFFF" android:fillColor="#00000000" />
+        </group>
     </group>
 </vector>

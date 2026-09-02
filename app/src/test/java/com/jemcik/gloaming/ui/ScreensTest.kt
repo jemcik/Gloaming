@@ -12,6 +12,14 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.performClick
+import kotlin.math.sin
+import kotlin.math.cos
+import kotlin.math.PI
+import androidx.compose.foundation.ScrollState
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipe
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performSemanticsAction
 import android.app.NotificationManager
 import androidx.test.core.app.ApplicationProvider
@@ -151,6 +159,72 @@ class ScreensTest {
     }
 
     // ---------- Settings ----------
+
+    // ---------- the dial, and the page it sits on ----------
+
+    /**
+     * Where a handle is drawn, in the dial's own maths. 22:30 is 337.5 degrees
+     * and 08:00 is 120, so the LEFT edge - 270 - is far from both, and is the
+     * part of the canvas a finger crosses on its way down the page.
+     */
+    private fun handleOffset(deg: Float, width: Int, centre: Offset): Offset {
+        val r = width * (97f / 260f)
+        val rad = ((deg - 90f) * PI / 180f).toFloat()
+        return Offset(centre.x + r * cos(rad), centre.y + r * sin(rad))
+    }
+
+    @Test
+    fun `a swipe across the dial scrolls the page instead of moving bedtime`() {
+        // The reported bug: scrolling Home changed the schedule. The grab test
+        // was "anywhere outside the centre well", which is most of a 260dp
+        // square - corners included - so a finger passing over the dial was
+        // taken as a drag of whichever handle was angularly nearest.
+        val p = armed()
+        p.startTime = LocalTime.of(22, 30)
+        p.endTime = LocalTime.of(8, 0)
+        lateinit var scroll: ScrollState
+        compose.setContent {
+            scroll = rememberScrollState()
+            GloamingTheme(dark = false) {
+                Home(scroll, onOpenSettings = {}, onOpenInterruptions = {})
+            }
+        }
+        compose.onNodeWithTag(DIAL_TAG).performTouchInput {
+            val from = Offset(width * 0.12f, height * 0.5f)
+            swipe(from, Offset(from.x, from.y - height * 0.4f), 200)
+        }
+        compose.waitForIdle()
+        assertEquals("bedtime moved while the page was scrolled",
+            LocalTime.of(22, 30), p.startTime)
+        assertEquals("the wake time moved while the page was scrolled",
+            LocalTime.of(8, 0), p.endTime)
+        assertTrue("the page did not scroll, so the swipe went nowhere", scroll.value > 0)
+    }
+
+    @Test
+    fun `the handle itself still drags`() {
+        // The other half, and the one that matters more: shrinking the grab
+        // area to 24dp must not make the app's primary control unusable.
+        var moved: LocalTime? = null
+        compose.setContent {
+            GloamingTheme(dark = false) {
+                BedtimeDial(
+                    start = LocalTime.of(22, 30), end = LocalTime.of(8, 0),
+                    now = LocalTime.NOON, running = false,
+                    track = gloam.raise, enabled = true,
+                    centreValue = "9h 30m", centreLabel = "sleep window",
+                    onStartChange = { moved = it }, onEndChange = {},
+                    onDragFinished = {}
+                )
+            }
+        }
+        compose.onNodeWithTag(DIAL_TAG).performTouchInput {
+            val handle = handleOffset(337.5f, width, center)
+            swipe(handle, handleOffset(300f, width, center), 200)
+        }
+        compose.waitForIdle()
+        assertTrue("the bedtime handle no longer drags", moved != null)
+    }
 
     // ---------- the door that is not a notice ----------
 

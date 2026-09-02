@@ -247,6 +247,15 @@ is in DECISIONS.md.
   `rememberUpdatedState`).
 - Put a `@Composable` slot **before** any click lambda, or a trailing lambda at
   the call site binds to the slot and Compose runs it as content.
+
+- **A draggable control inside the scrolling page must HIT-TEST, and must not
+  use `detectDragGestures`.** That helper claims the gesture in any direction
+  once slop is crossed, so a vertical swipe over it is taken from the page. The
+  dial also grabbed "anywhere outside the centre well" - most of a 260dp square,
+  corners included - and handed it to whichever handle was angularly nearest, so
+  scrolling Home changed the schedule. It is `awaitEachGesture` now: decide from
+  the DOWN position, within `GRAB` of a handle, and consume only once it is
+  ours. The centre well already worked this way; the handles were the outlier.
 - An M3 `ListItem` top-aligns trailing content on a **three-line** item. Keep
   rows to two lines; `RowFitTest` enforces it by measuring.
 - `clip()` on a container under ~40dp tall eats content that touches the edge.
@@ -327,7 +336,7 @@ compileSdk 37, targetSdk 36, minSdk 35.
 
 ## Tests
 
-`app/src/test/`, 150 cases, no device. They are written as the QUESTION the code
+`app/src/test/`, 152 cases, no device. They are written as the QUESTION the code
 answers rather than as coverage of a method, because none of the bugs were ever
 in a method — they were in an assumption.
 

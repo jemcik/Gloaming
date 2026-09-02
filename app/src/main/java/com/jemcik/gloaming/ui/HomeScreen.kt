@@ -181,7 +181,7 @@ fun Home(
             BackgroundNoticeSection(s)
             MissedAlarmSection(s)
         LaunchTipSection(s)
-                WindowBlock(s, now, runningNow)
+                WindowBlock(s, now, runningNow, scroll)
                 EndsSection(s)
         DaysSection(s)
                 WakeSection(s, runningNow, onOpenInterruptions)
@@ -433,7 +433,12 @@ private fun MissedAlarmSection(s: HomeState) {
  * and the sentence that says it in words. Nothing here is separable from the rest.
  */
 @Composable
-private fun WindowBlock(s: HomeState, now: LocalTime, runningNow: Boolean) {
+private fun WindowBlock(
+    s: HomeState,
+    now: LocalTime,
+    runningNow: Boolean,
+    scroll: ScrollState
+) {
     val ctx = LocalContext.current
     val res = LocalResources.current
     val g = gloam
@@ -624,6 +629,7 @@ private fun WindowBlock(s: HomeState, now: LocalTime, runningNow: Boolean) {
                     placeable.place(0, -trim)
                 }
             },
+            scrollInProgress = { scroll.isScrollInProgress },
             start = s.start, end = s.end, endTonight = endTonight, now = now,
             running = runningNow,
             track = card, enabled = s.enabled,

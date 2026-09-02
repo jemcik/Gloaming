@@ -69,6 +69,34 @@ class ResetTest {
     }
 
     @Test
+    fun `a refusal the app can never re-derive survives the reset`() {
+        // Reported: the launch tip came back after a reset, on a phone where
+        // those two vendor switches were already set. The app cannot check them
+        // - that is why the card is an offer rather than a notice - and they are
+        // not the app's to reset either; they survive it untouched. So the flag
+        // describes the PHONE, and clearing it re-offers advice for something
+        // still configured, permanently unable to discover otherwise.
+        val p = Prefs(ctx())
+        p.launchTipSeen = true
+
+        Reset.toDefaults(ctx())
+
+        assertTrue("the reset re-offered a refused tip", Prefs(ctx()).launchTipSeen)
+    }
+
+    @Test
+    fun `but a reset never answers the offer on the user's behalf`() {
+        // The other direction, which matters just as much: false must stay
+        // false, or a reset would silently dismiss a card that was never seen.
+        val p = Prefs(ctx())
+        p.launchTipSeen = false
+
+        Reset.toDefaults(ctx())
+
+        assertFalse("the reset answered an offer nobody had seen", Prefs(ctx()).launchTipSeen)
+    }
+
+    @Test
     fun `the journal survives`() {
         // Someone resetting is usually resetting because something went wrong.
         // The log is the only record of what, so the reset must not be the thing

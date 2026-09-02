@@ -8,6 +8,7 @@ import android.provider.Settings
 import android.service.notification.Condition
 import com.jemcik.gloaming.R
 import java.time.Instant
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -79,8 +80,11 @@ object Diagnostics {
         row("device", Build.MANUFACTURER + " " + Build.MODEL)
         row("android", Build.VERSION.RELEASE + " (SDK " + Build.VERSION.SDK_INT + ")")
         row("build", Build.DISPLAY)
+        // Language and region only. The full tag carries every -u- extension
+        // the phone has set - "en-UA-u-fw-mon-ms-metric-mu-celsius" - which
+        // wrapped onto two lines and answered nothing anyone would ask.
         row("locale", runCatching {
-            ctx.resources.configuration.locales[0].toLanguageTag()
+            ctx.resources.configuration.locales[0].toLanguageTag().substringBefore("-u-")
         }.getOrDefault("?"))
 
         head("CAN THE APP WORK HERE")
@@ -142,7 +146,11 @@ object Diagnostics {
         row("next alarm", runCatching {
             Scheduler.nextAlarm(ctx)?.toString() ?: "none set"
         }.getOrDefault("?"))
-        row("active day", if (p.activeDay == Prefs.NO_DAY) "-" else p.activeDay.toString())
+        // As a DATE. It went out as "20698", which is the pin working
+        // correctly and is unreadable to the person being asked about it.
+        row("active day", if (p.activeDay == Prefs.NO_DAY) "-"
+            else runCatching { LocalDate.ofEpochDay(p.activeDay).toString() }
+                .getOrDefault(p.activeDay.toString()))
         row("wants", listOfNotNull(
             "dnd".takeIf { p.fxDnd },
             "grayscale".takeIf { p.fxGrayscale },
@@ -150,10 +158,19 @@ object Diagnostics {
             "dark".takeIf { p.fxDarkTheme },
             "hideAmbient".takeIf { p.fxHideAmbient }
         ).joinToString(" ").ifEmpty { "nothing" })
-        row("allows", "calls=" + p.allowCalls + " messages=" + p.allowMessages +
-            " convs=" + p.allowConversations + " repeat=" + p.allowRepeatCallers +
-            " alarms=" + p.allowAlarms + " media=" + p.allowMedia +
-            " reminders=" + p.allowReminders + " events=" + p.allowEvents)
+        // In words. "calls=3 messages=4 convs=3" is ZenPolicy's own numbering
+        // and requires the reader to hold the enum in their head - which is the
+        // reader who is already trying to work out why a night went wrong.
+        row("allows calls", people(p.allowCalls))
+        row("allows messages", people(p.allowMessages))
+        row("allows conversations", conversations(p.allowConversations))
+        row("allows", listOfNotNull(
+            "repeat callers".takeIf { p.allowRepeatCallers },
+            "alarms".takeIf { p.allowAlarms },
+            "media".takeIf { p.allowMedia },
+            "reminders".takeIf { p.allowReminders },
+            "events".takeIf { p.allowEvents }
+        ).joinToString(", ").ifEmpty { "nothing else" })
 
         head("OVERNIGHT CHECKS")
         row("END alarm", runCatching {
@@ -191,6 +208,22 @@ object Diagnostics {
         null -> "?"
     }
 
+    /** [Interruptions]' own constants, so this cannot drift from the screen. */
+    private fun people(v: Int): String = when (v) {
+        Interruptions.PEOPLE_ANYONE -> "anyone"
+        Interruptions.PEOPLE_CONTACTS -> "contacts"
+        Interruptions.PEOPLE_STARRED -> "starred contacts"
+        Interruptions.PEOPLE_NONE -> "no one"
+        else -> "unknown(" + v + ")"
+    }
+
+    private fun conversations(v: Int): String = when (v) {
+        Interruptions.CONV_ANYONE -> "all"
+        Interruptions.CONV_IMPORTANT -> "important"
+        Interruptions.CONV_NONE -> "none"
+        else -> "unknown(" + v + ")"
+    }
+
     private fun filterName(f: Int?): String = when (f) {
         NotificationManager.INTERRUPTION_FILTER_ALL -> "ALL (nothing filtered)"
         NotificationManager.INTERRUPTION_FILTER_PRIORITY -> "PRIORITY"
@@ -214,7 +247,15 @@ object Diagnostics {
         appendLine(s)
     }
 
+    /**
+     * `label: value`, NOT a padded column. The first version padded labels to
+     * 15 and lined the values up, which is right in a terminal and wrong
+     * everywhere this actually goes: mail and messaging clients render
+     * proportional text, so the padding collapsed and "delivery probe alarms
+     * arrive on time" read as a sentence with no separator in it. Read back off
+     * a real phone from a real inbox, which is the only place it could be seen.
+     */
     private fun StringBuilder.row(label: String, value: String) {
-        appendLine("  " + label.padEnd(15) + value)
+        appendLine("  " + label + ": " + value)
     }
 }

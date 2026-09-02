@@ -86,6 +86,19 @@ private const val R_WELL_TOUCH = 75f
 /** So a test can swipe exactly where a finger scrolling the page would. */
 internal const val DIAL_TAG = "bedtimeDial"
 
+/**
+ * How much the grabbed handle grows, and how far its halo reaches.
+ *
+ * Scale alone cannot answer "have I got it": a fingertip covers roughly 45dp,
+ * the handle is 31, so ALL of the growth happens underneath the finger and the
+ * first version at 1.18 was reported as almost invisible. The halo is the part
+ * that shows - a translucent disc reaching past the contact patch, which is
+ * what Material's own slider does with its pressed state layer. 2.2x a 15.5
+ * radius is 68dp across, comfortably outside a thumb.
+ */
+private const val GRAB_SCALE = 1.32f
+private const val HALO = 2.2f
+
 private const val GRAB = 24f
 private const val HANDLE = 31f
 private const val HANDLE_RING = 2.6f
@@ -171,12 +184,12 @@ fun BedtimeDial(
     // because the nearer handle is taken and at a short window the two are close
     // enough that the wrong answer is easy.
     val startScale by animateFloatAsState(
-        targetValue = if (target == 1) 1.18f else 1f,
+        targetValue = if (target == 1) GRAB_SCALE else 1f,
         animationSpec = spring(dampingRatio = 0.55f, stiffness = 900f),
         label = "startScale"
     )
     val endScale by animateFloatAsState(
-        targetValue = if (target == 2) 1.18f else 1f,
+        targetValue = if (target == 2) GRAB_SCALE else 1f,
         animationSpec = spring(dampingRatio = 0.55f, stiffness = 900f),
         label = "endScale"
     )
@@ -417,13 +430,17 @@ fun BedtimeDial(
 
             // handles - 31dp circle with a surface-coloured ring so they sit above the arc
             val hr = (HANDLE / 2f) * k
+            // 0 while resting, 1 while held - derived from the scale rather
+            // than animated a second time, so the halo and the growth cannot
+            // drift out of step.
+            fun held(scale: Float) = ((scale - 1f) / (GRAB_SCALE - 1f)).coerceIn(0f, 1f)
             drawHandle(
                 at(startDeg, rTrack), hr * startScale, HANDLE_RING * k,
-                Arc.night, g.surface, moon = true
+                Arc.night, g.surface, moon = true, held = held(startScale)
             )
             drawHandle(
                 at(drawnEnd.faceDegrees(), rTrack), hr * endScale, HANDLE_RING * k,
-                Arc.dawn, g.surface, moon = false
+                Arc.dawn, g.surface, moon = false, held = held(endScale)
             )
         }
 
@@ -475,8 +492,12 @@ fun BedtimeDial(
 }
 
 private fun DrawScope.drawHandle(
-    at: Offset, r: Float, ring: Float, fill: Color, ringColor: Color, moon: Boolean
+    at: Offset, r: Float, ring: Float, fill: Color, ringColor: Color, moon: Boolean,
+    /** 0 resting, 1 held. Drives the halo, which is the only part a finger
+        does not cover. */
+    held: Float = 0f
 ) {
+    if (held > 0f) drawCircle(fill.copy(alpha = 0.28f * held), radius = r * HALO, center = at)
     drawCircle(ringColor, radius = r + ring, center = at)
     drawCircle(fill, radius = r, center = at)
     // The sun's ink is Arc.onDawn, shared with the notice strip so the two

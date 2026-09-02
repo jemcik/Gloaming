@@ -109,7 +109,7 @@
     <string name="bedtime_settings_why">Your phone has one too</string>
     <!-- Said once, when bedtime is first switched on. Not an accusation. -->
     <string name="launch_tip_title">Make bedtime reliable</string>
-    <string name="launch_tip_why">This phone can stop apps while they are closed, which is what leaves bedtime running in the morning. Two switches in App launch prevent it: Auto-launch and Run in background.</string>
+    <string name="launch_tip_why">This phone can stop apps while they are closed. Bedtime then starts late, or never ends in the morning. Two switches in App launch prevent it: Auto-launch and Run in background.</string>
     <string name="launch_tip_action">Set up</string>
     <string name="launch_tip_dismiss">Dismiss</string>
     <string name="launch_tip_check">Gloaming cannot check those switches itself. Did you turn on Auto-launch and Run in background?</string>

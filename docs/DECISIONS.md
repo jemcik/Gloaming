@@ -2276,6 +2276,55 @@ what it is asked. It is read every composition rather than remembered, so it
 refreshes on any interaction — but it will not update on its own if Do Not
 Disturb changes from the quick settings tile while the screen is open.
 
+**Allowlist presets: investigated 3 Sep 2026, not built, and here is the
+evidence so nobody has to gather it twice.** Three phones were on the desk that
+night, so the question "what does a sensible bedtime policy look like" could be
+answered by reading what the vendors themselves ship rather than by guessing.
+Five real `ZenPolicy` records, three vendors:
+
+| | alarms | media | reminders | events | system | calls | repeat | messages | convs |
+|---|---|---|---|---|---|---|---|---|---|
+| Google Bedtime, Magic8 Pro (untouched) | yes | yes | no | no | no | starred | yes | no | no |
+| Samsung "Время сна", Galaxy S23 | yes | yes | no | no | no | **none** | **no** | no | no |
+| phone default DND, Magic8 Pro | yes | yes | no | no | no | starred | yes | starred | no |
+| phone default DND, OnePlus 15 | yes | yes | no | no | no | starred | yes | starred | important |
+| **Gloaming** | yes | yes | no | no | no | starred | yes | no | no |
+
+**Five of the eight controls are unanimous.** Alarms and media through;
+reminders, events and system blocked. Every vendor, every rule, no exceptions.
+Those are not choices anyone is making - the only real decision surface in the
+allowlist is WHO can reach you: calls, repeat callers, messages, conversations.
+Any preset worth having varies that axis and leaves the other five alone.
+
+**There are exactly two schools.** Samsung says total silence: nobody at all.
+Google says starred contacts plus repeat callers - one route deliberately left
+open, on the reasoning that a person who calls twice in a row probably means it.
+
+**Gloaming already ships Google's, byte for byte** - `allowCalls=3`,
+`allowMessages=4`, `allowConversations=3`, repeat on. Which is the argument
+against building presets: the default is already the mainstream answer, so
+presets would serve only whoever wants Samsung's silence or wants messages
+through, and that is a guess about users this app does not have yet.
+
+**The one real user signal in the data cuts the same way.** Google's Bedtime rule
+is untouched on the Magic8 Pro and carries
+`zenPolicyUserModifiedFields={FIELD_MESSAGES,FIELD_CONVERSATIONS,FIELD_PRIORITY_CATEGORY_ALARMS}`
+on the OnePlus - edited, and edited to LOOSEN messages. One data point, and it
+went toward reachability rather than away.
+
+**What would settle it, and it is already shipping.** `Diagnostics` prints the
+allowlist in words - "allows calls: starred contacts", "allows messages: no
+one". The first real reports say whether anyone changes it at all, and in which
+direction. Build the two presets people actually reach for, or none.
+
+If it is ever built: three chips - Nobody / Starred / Messages - varying only
+the four who-can-reach-you controls, on the DAY row's exact pattern
+(`selected = s.days == set`), so a chip lights only while it genuinely describes
+the toggles and goes dark the moment one changes. A preset that stays lit after
+the thing it describes has changed is the "one value, one answer" failure, and
+this screen has had that reported before. Names fit the segmented row's
+`BUDGET 30` sum: en 21, ru 23, uk 24.
+
 ## Deviations from the design brief (deliberate, worth revisiting with designer)
 
 - Master switch stays in one place across all states, and since 29 Aug 2026

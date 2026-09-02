@@ -11,9 +11,14 @@
      by recomputing any coordinate. The launcher draws on a 108dp canvas with a
      72dp safe zone, so the artwork - the arc's outer edge at r=31.1 plus half
      its 3.0 stroke - reaches r=32.6 of a 54 half-canvas and would come out
-     around two thirds empty at tile size. 1.38 lifts it to r=45, which is the
-     proportion a Material 24dp icon keeps: glyph to about 20 of 24. Stroke width
-     scales with the group, so the arc keeps its weight against the crescent.
+     around two thirds empty at tile size.
+
+     1.55 lifts it to r=50.5 of 54, so the mark spans about 22.5 of the 24dp
+     box. That is deliberately fuller than the ~20 of 24 a Material glyph keeps,
+     because this one is an outline: a ring and a crescent read optically
+     smaller than the solid shapes beside them in the shade, and at the textbook
+     proportion it sat visibly under its neighbours. Stroke width scales with the
+     group, so the arc keeps its weight against the crescent.
 
      Viewport stays 108 for the same reason - every number below is the launcher's
      own, and none of them had to be touched. -->
@@ -21,7 +26,7 @@
     android:width="24dp" android:height="24dp"
     android:viewportWidth="108" android:viewportHeight="108"
     android:tint="?android:attr/colorControlNormal">
-    <group android:scaleX="1.38" android:scaleY="1.38"
+    <group android:scaleX="1.55" android:scaleY="1.55"
            android:pivotX="54" android:pivotY="54">
         <group android:rotation="-32" android:pivotX="54" android:pivotY="54">
             <clip-path android:pathData="M33.00,54.00 a21.00,21.00 0 1,0 42.00,0 a21.00,21.00 0 1,0 -42.00,0 Z" />

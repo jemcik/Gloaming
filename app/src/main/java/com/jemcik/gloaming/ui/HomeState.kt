@@ -143,7 +143,11 @@ class HomeState(
     fun showLaunchTip(): Boolean =
         hasLaunchManager && enabled && !tipSeen && !blocked && !restricted
 
-    /** Answered, either way, and it never comes back. */
+    /**
+     * Refused, and it never comes back. Called ONLY from the dismiss button:
+     * going to look at the vendor screen is not an answer, because nothing here
+     * can read whether the switches were actually changed.
+     */
     fun closeLaunchTip() {
         prefs.launchTipSeen = true
         tipSeen = true

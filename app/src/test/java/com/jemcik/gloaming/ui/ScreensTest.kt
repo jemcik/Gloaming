@@ -21,6 +21,7 @@ import androidx.compose.foundation.rememberScrollState
 import com.jemcik.gloaming.R
 import com.jemcik.gloaming.core.Prefs
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -95,6 +96,29 @@ class ScreensTest {
         compose.onNodeWithText(skip).performClick()
         compose.onNodeWithText(skip).assertDoesNotExist()
         assertTrue("refusing must be remembered, or it returns", p.launchTipSeen)
+    }
+
+    @Test
+    fun `going to look at the vendor screen does not answer the offer`() {
+        // Reported and reproduced on the Honor: press "Set up", change nothing,
+        // press back, and the card is gone for good. It closed the tip before
+        // opening the screen, so merely LOOKING counted as having done it -
+        // and Honor's auto-launch state is unreadable, so the app could never
+        // discover it had guessed wrong. The offer stands until it is refused.
+        val p = armed()
+        p.launchTipSeen = false
+        withLaunchManager()
+        compose.setContent {
+            GloamingTheme(dark = false) {
+                Home(rememberScrollState(), onOpenSettings = {}, onOpenInterruptions = {})
+            }
+        }
+        compose.onNodeWithText(ctx().getString(R.string.launch_tip_action)).performClick()
+        assertFalse(
+            "opening the vendor screen must not answer the offer",
+            p.launchTipSeen
+        )
+        compose.onNodeWithText(ctx().getString(R.string.launch_tip_skip)).assertExists()
     }
 
     @Test

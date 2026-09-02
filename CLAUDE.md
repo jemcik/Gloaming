@@ -267,6 +267,13 @@ is in DECISIONS.md.
   notice. Until Settings grew its `this phone` link, the only route to the
   launch manager was being told something was broken.
 
+- **Going to look is not an answer.** An offer is closed by its REFUSAL only.
+  The tip used to close itself when "Set up" was pressed, so opening the vendor
+  screen, changing nothing and pressing back dismissed it for good - and since
+  Honor's auto-launch state is unreadable, the app could never discover it had
+  guessed wrong. Never let "the user saw the screen" stand in for "the user did
+  the thing", least of all where the thing cannot be read back.
+
 - There is not one `fontSize` or `fontWeight` override outside `Theme.kt`. Keep
   it that way.
 - Tabular figures (`tnum`) belong on the **display** family only. Numerals get
@@ -320,7 +327,7 @@ compileSdk 37, targetSdk 36, minSdk 35.
 
 ## Tests
 
-`app/src/test/`, 149 cases, no device. They are written as the QUESTION the code
+`app/src/test/`, 150 cases, no device. They are written as the QUESTION the code
 answers rather than as coverage of a method, because none of the bugs were ever
 in a method — they were in an assumption.
 

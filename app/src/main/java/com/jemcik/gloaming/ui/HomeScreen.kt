@@ -331,6 +331,14 @@ private fun LaunchSetupSection(s: HomeState) {
  * as a finding is what made the previous version of this card unbearable - it
  * appeared on every phone with a launch manager, said something was wrong when
  * nothing was, and could not be cleared by fixing anything.
+ *
+ * ONLY THE REFUSAL ANSWERS IT. "Set up" used to close the tip as well, so
+ * opening the vendor screen, changing nothing and pressing back left the card
+ * gone for good - reported as exactly that, and reproduced on the Honor. Nothing
+ * here can tell the difference: Honor's auto-launch state is unreadable, so an
+ * app that treats "you looked at the screen" as "you did it" has made the one
+ * claim it has no way to check, and will never find out it was wrong. Going to
+ * look is not an answer. Only "Skip" is.
  */
 @Composable
 private fun LaunchTipSection(s: HomeState) {
@@ -348,9 +356,7 @@ private fun LaunchTipSection(s: HomeState) {
                 stringResource(R.string.launch_tip_skip),
                 stringResource(R.string.launch_tip_action),
                 onDismiss = { haptics.select(); s.closeLaunchTip() },
-                onAction = {
-                    haptics.open(); s.closeLaunchTip(); Doors.openAutoStart(ctx)
-                }
+                onAction = { haptics.open(); Doors.openAutoStart(ctx) }
             )
         })
     }

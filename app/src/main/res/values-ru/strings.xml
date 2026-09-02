@@ -60,7 +60,7 @@
     <string name="launch_setup_row">Запуск приложений</string>
     <string name="launch_setup_why">Найдите Gloaming через поиск, выберите «Управлять вручную», затем включите автозапуск и работу в фоне</string>
     <string name="section_this_phone">этот телефон</string>
-    <string name="launch_link_why">Автозапуск и фон</string>
+    <string name="launch_link_why">Автозапуск и работа в фоне</string>
     <string name="bedtime_settings_row">Системный режим сна</string>
     <string name="bedtime_settings_why">У телефона есть свой</string>
     <string name="launch_tip_title">Сделайте сон надёжным</string>

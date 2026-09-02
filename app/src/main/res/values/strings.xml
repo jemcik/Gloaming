@@ -104,7 +104,7 @@
     <string name="launch_setup_why">Search for Gloaming, set it to &#8220;Manage manually&#8221;, then turn on Auto-launch and Run in background</string>
     <!-- The always-available door: a link in Settings, never a notice. -->
     <string name="section_this_phone">this phone</string>
-    <string name="launch_link_why">Autostart, background</string>
+    <string name="launch_link_why">Autostart and background</string>
     <string name="bedtime_settings_row">System bedtime mode</string>
     <string name="bedtime_settings_why">Your phone has one too</string>
     <!-- Said once, when bedtime is first switched on. Not an accusation. -->
@@ -137,7 +137,16 @@
          script, and were checked by RENDERING the app in Ukrainian, which is
          where two of them were caught.
          BUDGET-EACH 22 fx_grayscale_sub fx_dim_sub fx_dark_sub fx_ambient_sub settings_language_why diagnostics_why reset_why
-         launch_link_why bedtime_settings_why
+         A budget is ONE line: the parser's key list is [a-z0-9_ ]+, which does
+         not cross a newline, so keys wrapped onto a second line are silently in
+         no budget at all. These two sat there unmeasured until RowFitTest was
+         made to draw them.
+         BUDGET-EACH 26 launch_link_why bedtime_settings_why
+         26 rather than 22 because these rows carry a chevron where the four
+         above carry a SWITCH, which is 20dp wider - and because 26 is measured,
+         not guessed: RowFitTest draws the real screen at 360dp in all three
+         languages and is the authority here. The character count is only the
+         cheap check that runs before it.
          BUDGET-EACH 20 row_media_on row_repeat_callers_on state_allowed state_blocked -->
     <!-- BUDGET 30 preset_every_night preset_weekdays preset_weekends
          The four share one row: 311dp of content width, less 16dp of padding per

@@ -289,7 +289,7 @@
     <string name="settings_language">App language</string>
     <string name="settings_language_why">Opens system settings</string>
     <string name="section_diagnostics">problem report</string>
-    <string name="diagnostics_row">Share diagnostics</string>
+    <string name="diagnostics_row">Send diagnostics</string>
     <string name="diagnostics_why">For a bug report</string>
     <string name="diagnostics_subject">Gloaming diagnostics</string>
     <string name="section_about">about</string>

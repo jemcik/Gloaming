@@ -68,7 +68,7 @@ fun SettingsScreen(themeMode: Int, onThemeMode: (Int) -> Unit, onBack: () -> Uni
             .padding(top = 8.dp, bottom = 40.dp),
         verticalArrangement = Arrangement.spacedBy(GROUP)
     ) {
-        Section(stringResource(R.string.section_appearance), rule = false) {
+        Section(stringResource(R.string.section_theme), rule = false) {
             SettingsCard {
                 // No dividers between these: a radio group is ONE control, and
                 // the choice sheets - the same control - do not divide either.

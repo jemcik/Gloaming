@@ -190,7 +190,7 @@
 
     <!-- Settings -->
     <string name="settings_title">Налаштування</string>
-    <string name="section_appearance">вигляд</string>
+    <string name="section_theme">тема</string>
     <string name="theme_system">Як у системі</string>
     <string name="theme_light">Завжди світла</string>
     <string name="theme_dark">Завжди темна</string>

@@ -353,7 +353,7 @@ private fun LaunchTipSection(s: HomeState) {
             TipCard(
                 stringResource(R.string.launch_tip_title),
                 stringResource(R.string.launch_tip_why),
-                stringResource(R.string.launch_tip_skip),
+                stringResource(R.string.launch_tip_dismiss),
                 stringResource(R.string.launch_tip_action),
                 onDismiss = { haptics.select(); s.closeLaunchTip() },
                 onAction = { haptics.open(); Doors.openAutoStart(ctx) }

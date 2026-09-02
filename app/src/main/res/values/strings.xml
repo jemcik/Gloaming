@@ -111,7 +111,7 @@
     <string name="launch_tip_title">Make bedtime reliable</string>
     <string name="launch_tip_why">This phone can stop apps while they are closed, which is what leaves bedtime running in the morning. Two switches in App launch prevent it: Auto-launch and Run in background.</string>
     <string name="launch_tip_action">Set up</string>
-    <string name="launch_tip_skip">Skip</string>
+    <string name="launch_tip_dismiss">Dismiss</string>
 
     <!-- ============ Home: the window ============ -->
     <!-- Overlines, uppercased in code. Keep short: they sit above the times. -->

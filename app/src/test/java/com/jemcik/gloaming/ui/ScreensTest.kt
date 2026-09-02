@@ -92,7 +92,7 @@ class ScreensTest {
                 Home(rememberScrollState(), onOpenSettings = {}, onOpenInterruptions = {})
             }
         }
-        val skip = ctx().getString(R.string.launch_tip_skip)
+        val skip = ctx().getString(R.string.launch_tip_dismiss)
         compose.onNodeWithText(skip).performClick()
         compose.onNodeWithText(skip).assertDoesNotExist()
         assertTrue("refusing must be remembered, or it returns", p.launchTipSeen)
@@ -118,7 +118,7 @@ class ScreensTest {
             "opening the vendor screen must not answer the offer",
             p.launchTipSeen
         )
-        compose.onNodeWithText(ctx().getString(R.string.launch_tip_skip)).assertExists()
+        compose.onNodeWithText(ctx().getString(R.string.launch_tip_dismiss)).assertExists()
     }
 
     @Test
@@ -131,7 +131,7 @@ class ScreensTest {
                 Home(rememberScrollState(), onOpenSettings = {}, onOpenInterruptions = {})
             }
         }
-        compose.onNodeWithText(ctx().getString(R.string.launch_tip_skip)).assertDoesNotExist()
+        compose.onNodeWithText(ctx().getString(R.string.launch_tip_dismiss)).assertDoesNotExist()
     }
 
     @Test
@@ -147,7 +147,7 @@ class ScreensTest {
                 Home(rememberScrollState(), onOpenSettings = {}, onOpenInterruptions = {})
             }
         }
-        compose.onNodeWithText(ctx().getString(R.string.launch_tip_skip)).assertDoesNotExist()
+        compose.onNodeWithText(ctx().getString(R.string.launch_tip_dismiss)).assertDoesNotExist()
     }
 
     // ---------- Settings ----------

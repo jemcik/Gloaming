@@ -177,6 +177,18 @@ is in DECISIONS.md.
   `OVERRIDE_DEACTIVATE` only when the condition goes **FALSE**. Push FALSE then
   TRUE. Measured 1 Sep 2026; it cost a whole window and looked like nothing was
   wrong.
+- **"Nothing is being filtered" is only a fault where we ASKED to filter.** With
+  the Do Not Disturb switch off our rule sets `INTERRUPTION_FILTER_ALL`
+  deliberately - it is there to carry device effects and to filter nothing - so
+  the stuck-rule check read its own intent back as a fault, never took
+  `setActive`'s early return, and rewrote the rule on every call. That loops:
+  a rewrite broadcasts a status change, `ZenStatusReceiver` reconciles,
+  reconcile reschedules, and rescheduling lands back in `setActive`. Measured
+  at one push every 1-4 ms, with grayscale dropping out on a third of the
+  samples because each rewrite clears the condition. It looked from outside like
+  "the screen effects need Do Not Disturb"; effects have never depended on the
+  filter. `looksStuck` takes `wantsDnd` for this reason and `StuckRuleTest`
+  pins it.
 - `updateAutomaticZenRule` **clears the rule's condition**, so rewriting a live
   rule switches it off. Any path that rewrites mid-window must re-assert the
   state afterwards, and `setActive` must decide by asking
@@ -334,6 +346,13 @@ is in DECISIONS.md.
                          without assembling, so a green run can leave a stale
                          APK and the screenshot proving your fix shows the
                          previous build. `-f` installs it anyway
+    ./tools/battery_bench.py  is anything happening that should not be? Walks
+                         every combination of the four switches against a LIVE
+                         window with the phone untouched, and reports app CPU
+                         jiffies, rule pushes and effect flicker per row. Zero
+                         pushes is the pass mark: steady-state traffic with
+                         nobody touching the phone is a loop by definition.
+                         Debug build only - it reads the store back with run-as
     ./tools/check.sh     what the PHONE thinks: zen state, the rule, our prefs,
                          the next alarms, the journal. Read-only
     ./gradlew test       the whole suite, on the JVM, in seconds
@@ -371,6 +390,9 @@ compileSdk 37, targetSdk 36, minSdk 35.
 answers rather than as coverage of a method, because none of the bugs were ever
 in a method — they were in an assumption.
 
+    StuckRuleTest         when "the phone is not filtering" is a FAULT and when
+                          it is exactly what we asked for - the difference the
+                          rewrite loop turned on
     SchedulerTest         the scheduling core: midnight wrap, days-as-mornings,
                           the one-off, the activeDay pin, and `endAt` - the
                           alarm ends the night only from INSIDE the window

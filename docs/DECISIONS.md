@@ -1770,6 +1770,71 @@ with nothing on screen to explain it. Not taken - it needs its own decision.
   on screen the whole time, and the rule's condition still `STATE_TRUE`, so the
   re-arm after the rewrite worked. `ScreensTest` pins both halves, and both
   cases were confirmed failing without the timer.
+- **The stuck-rule check turned "we deliberately filter nothing" into an endless
+  rewrite loop, and the flicker read as "the screen effects need Do Not
+  Disturb".** Reported against 0.9: grayscale and wallpaper dimming appear to
+  work only while the Do Not Disturb switch is on.
+
+  `setActive` may take an early return when the rule already reads the state we
+  want, guarded by `stuck` — "we want zen on and yet the phone reports
+  `INTERRUPTION_FILTER_ALL`", which is the reboot disagreement that once cost a
+  whole night. But with the Do Not Disturb switch OFF our own rule sets
+  `INTERRUPTION_FILTER_ALL` on purpose: it exists to carry device effects and to
+  filter nothing. So the filter read back as ALL because that is what we asked
+  for, `stuck` was permanently true, the early return was unreachable, and every
+  call rewrote the rule.
+
+  That is not merely a wasted push, it LOOPS. A rewrite makes the system
+  broadcast `ACTION_AUTOMATIC_ZEN_RULE_STATUS_CHANGED`, `ZenStatusReceiver`
+  calls `reconcile`, reconcile calls `Scheduler.rescheduleAll`, and that lands
+  back in `setActive`. Measured on the Honor, mid-window, switch off — from the
+  `Zen Log:`, our own uid: `setAzrState` at 12:27:53.079, .084, .085, .089,
+  .139, STATE_TRUE / STATE_FALSE / STATE_TRUE without end. And because
+  `updateAutomaticZenRule` clears the condition before it is re-asserted, the
+  effects went with it each time: sampling `dumpsys color_display` gave
+  `true true false true true false true true false` — grayscale dropping out on
+  about a third of the reads. From the outside that is a screen that will not
+  stay grey unless Do Not Disturb is on.
+
+  Fixed by asking the question the check was written for: `looksStuck` requires
+  `wantsDnd` as well. Where we asked for no filtering, "nothing is filtered" is
+  agreement, not a fault. After the fix, same phone, same window, switch off:
+  the pushes are two per user action and then silence, and fourteen consecutive
+  saturation reads are all `true`.
+
+  Worth stating plainly, because the report's own wording pointed the other way:
+  **the device effects never depended on the interruption filter.** The table
+  above from 29 Aug still holds — an active rule with `INTERRUPTION_FILTER_ALL`
+  applies grayscale, and it was re-confirmed here with `state=STATE_TRUE`,
+  `zenMode=ZEN_MODE_OFF`, `deviceEffects=[grayscale, dimWallpaper]` and
+  saturation `true` at `zen_mode=0`. The dependency the user saw was ours.
+
+  **What it cost, measured rather than guessed** — `tools/battery_bench.py`,
+  Honor, live window, phone untouched, screen off, the same build either side of
+  the one-line difference:
+
+  | configuration | 0.9 | fixed |
+  |---|---|---|
+  | DND on, any effects | 1-6 jiffies / 18s, 0 pushes | 0-3 jiffies, 0 pushes |
+  | DND **off**, no effects at all | **472 jiffies (26.2%)**, 33 pushes | 3 jiffies, 0 pushes |
+  | DND **off**, grayscale + dim | **476 jiffies (26.4%)**, 21 pushes | 4 jiffies, 0 pushes |
+
+  Note the second row: **the loop has nothing to do with the screen effects.**
+  It fires whenever a window runs with the Do Not Disturb switch off, even with
+  every effect switch off — the effects only made it VISIBLE, by flickering.
+  Anyone running a schedule with DND off was paying this in silence.
+
+  In battery terms, from `dumpsys batterystats` over 200 s with the device faked
+  as unplugged: `UID u0a336` **8.78 mAh** against **0.00619 mAh** fixed, a factor
+  of about 1300. Extrapolated to an eight-hour night that is ~1160 mAh, or 16% of
+  this phone's 7100 mAh battery, every night. And the app's own UID line
+  UNDERSTATES it: the notification-manager work each rewrite causes is billed to
+  uid 1000, so what the user would have seen in Settings was the smaller half.
+
+  The push counts above are FLOORS, not totals. `Zen Log:` is a ring buffer, one
+  `dumpsys notification` takes a second or two on this phone, and under the loop
+  the buffer evicts its own history between samples. The jiffy count is the
+  honest witness; the push count only has to be non-zero to convict.
 
 ## Build
 

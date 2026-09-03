@@ -346,6 +346,13 @@ is in DECISIONS.md.
                          without assembling, so a green run can leave a stale
                          APK and the screenshot proving your fix shows the
                          previous build. `-f` installs it anyway
+    ./tools/battery_bench.py  is anything happening that should not be? Walks
+                         every combination of the four switches against a LIVE
+                         window with the phone untouched, and reports app CPU
+                         jiffies, rule pushes and effect flicker per row. Zero
+                         pushes is the pass mark: steady-state traffic with
+                         nobody touching the phone is a loop by definition.
+                         Debug build only - it reads the store back with run-as
     ./tools/check.sh     what the PHONE thinks: zen state, the rule, our prefs,
                          the next alarms, the journal. Read-only
     ./gradlew test       the whole suite, on the JVM, in seconds

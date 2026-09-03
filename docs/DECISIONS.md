@@ -1809,6 +1809,33 @@ with nothing on screen to explain it. Not taken - it needs its own decision.
   `zenMode=ZEN_MODE_OFF`, `deviceEffects=[grayscale, dimWallpaper]` and
   saturation `true` at `zen_mode=0`. The dependency the user saw was ours.
 
+  **What it cost, measured rather than guessed** — `tools/battery_bench.py`,
+  Honor, live window, phone untouched, screen off, the same build either side of
+  the one-line difference:
+
+  | configuration | 0.9 | fixed |
+  |---|---|---|
+  | DND on, any effects | 1-6 jiffies / 18s, 0 pushes | 0-3 jiffies, 0 pushes |
+  | DND **off**, no effects at all | **472 jiffies (26.2%)**, 33 pushes | 3 jiffies, 0 pushes |
+  | DND **off**, grayscale + dim | **476 jiffies (26.4%)**, 21 pushes | 4 jiffies, 0 pushes |
+
+  Note the second row: **the loop has nothing to do with the screen effects.**
+  It fires whenever a window runs with the Do Not Disturb switch off, even with
+  every effect switch off — the effects only made it VISIBLE, by flickering.
+  Anyone running a schedule with DND off was paying this in silence.
+
+  In battery terms, from `dumpsys batterystats` over 200 s with the device faked
+  as unplugged: `UID u0a336` **8.78 mAh** against **0.00619 mAh** fixed, a factor
+  of about 1300. Extrapolated to an eight-hour night that is ~1160 mAh, or 16% of
+  this phone's 7100 mAh battery, every night. And the app's own UID line
+  UNDERSTATES it: the notification-manager work each rewrite causes is billed to
+  uid 1000, so what the user would have seen in Settings was the smaller half.
+
+  The push counts above are FLOORS, not totals. `Zen Log:` is a ring buffer, one
+  `dumpsys notification` takes a second or two on this phone, and under the loop
+  the buffer evicts its own history between samples. The jiffy count is the
+  honest witness; the push count only has to be non-zero to convict.
+
 ## Build
 
     ./tools/build.sh     debug APK, full log at /tmp/build.log

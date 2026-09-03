@@ -1836,6 +1836,29 @@ with nothing on screen to explain it. Not taken - it needs its own decision.
   the buffer evicts its own history between samples. The jiffy count is the
   honest witness; the push count only has to be non-zero to convict.
 
+- **Do Not Disturb access cannot be verified by reading the setting back.**
+  `settings get secure enabled_notification_policy_access_packages` named our
+  package while `NotificationManager` was still refusing every call — the app's
+  own journal said `rule sync failed: SecurityException: Notification policy
+  access denied` at the same moment the setting listed us. The framework caches
+  the grant, and writing the setting does not always make it take.
+
+  So the two adb routes are not equivalent, and which one works depends on what
+  happened before:
+
+  | route | grants | notes |
+  |---|---|---|
+  | `settings put secure enabled_notification_policy_access_packages <pkg>` | sometimes | took on one install, silently did nothing after a reinstall |
+  | `cmd notification allow_dnd <pkg> 0` | yes here | worked when the settings write had not |
+  | `settings delete` of that key | **no** | the framework keeps the grant; revoke by hand in Settings |
+
+  **The only trustworthy check is whether a rule can actually be created.** Ask
+  for one and look for it in `dumpsys notification`; a granted-looking setting
+  proves nothing. This cost an entire verification run: a fix was measured as
+  "still broken" when what was actually broken was the grant, so the tile fell
+  to its no-permission path and opened the app instead of toggling, and the
+  measurement was of a code path nobody was testing.
+
 ## Build
 
     ./tools/build.sh     debug APK, full log at /tmp/build.log

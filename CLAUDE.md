@@ -258,6 +258,13 @@ is in DECISIONS.md.
 - minSdk is **35** because `ZenDeviceEffects`, `AutomaticZenRule.Builder` and
   `getAutomaticZenRuleState` are all API 35, and a missing method raises `Error`,
   which none of the `runCatching` here would catch.
+- **A granted-looking DND setting proves nothing.**
+  `enabled_notification_policy_access_packages` has listed this package while
+  `NotificationManager` still refused every call. `cmd notification allow_dnd`
+  took where `settings put` had not, and `settings delete` does not revoke at
+  all. Verify by CREATING A RULE and finding it in `dumpsys notification` -
+  reading the setting back once cost a whole verification run, in which a
+  working fix measured as broken.
 - `am broadcast` cannot reach `BedtimeReceiver` — it is `exported="false"`,
   correctly. Test through real alarms.
 - `dumpsys notification` prints a `Zen Log:` history as well as live config, so

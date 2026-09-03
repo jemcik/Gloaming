@@ -1676,14 +1676,18 @@ with nothing on screen to explain it. Not taken - it needs its own decision.
   `#C9DCCE` both - and still looked wrong in the hand. Nothing was broken; the
   instrument was.
   It is the same blind spot as the grayscale transform and the doze layer,
-  making three. Nothing readable answers the grayscale question either, which is
-  worth knowing before probing for it again: across a real transition on the
-  Honor - rule live, effects `[grayscale, dimWallpaper]`, panel visibly grey -
-  all three `settings` namespaces diffed to `zen_mode` and
-  `zen_mode_config_etag` and nothing else, while the two captures measured 3.18
-  against 3.51 mean chroma. So the effect is invisible to `screencap`, absent
-  from `settings`, and `isSaturationActivated` is `@hide`. Confirming it means
-  looking at the phone. The rule that follows: a screenshot may COMPARE two captures,
+  making three. The grayscale effect, though, IS readable - just not where the
+  blind spot makes you look. `dumpsys color_display` prints a
+  `Global saturation: Activated:` line that flips with the rule, measured
+  false -> true on the Honor as a window went live, and `battery_bench.py` has
+  used it as its flicker witness all along. Worth writing down because the two
+  obvious probes both come back empty and make it look unreadable: `screencap`
+  composites BEFORE the display transform, so captures either side of a real
+  transition measured 3.18 against 3.51 mean chroma while the panel was visibly
+  grey, and all three `settings` namespaces diffed to `zen_mode` and
+  `zen_mode_config_etag` alone. `isSaturationActivated` being `@hide` completes
+  the impression. Two empty probes are not an answer, and this file said they
+  were for about an hour. The rule that follows: a screenshot may COMPARE two captures,
   and may never establish that a colour is right. Hue and chroma decisions go on
   the panel, in the room the app is used in.
   A corollary learned the slow way, over four rounds on the notice strip: when

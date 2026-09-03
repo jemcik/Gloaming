@@ -191,6 +191,16 @@ class Prefs(ctx: Context) {
      * reads as a demand, and this one cannot be confirmed, so it can never
      * dismiss itself the way a readable setting does.
      */
+    /**
+     * Has the user gone to LOOK at the vendor's switches? Not whether they set
+     * them - nothing here can read that, which is the whole problem. It only
+     * changes what the card asks: before, an offer; after, the question the app
+     * cannot answer itself.
+     */
+    var launchTipVisited: Boolean
+        get() = sp.getBoolean("launchTipVisited", false)
+        set(v) = sp.edit { putBoolean("launchTipVisited", v) }
+
     var launchTipSeen: Boolean
         get() = sp.getBoolean("launchTipSeen", false)
         set(v) = sp.edit { putBoolean("launchTipSeen", v) }
@@ -227,6 +237,18 @@ class Prefs(ctx: Context) {
     var themeMode: Int
         get() = sp.getInt("themeMode", THEME_SYSTEM)
         set(v) = sp.edit { putInt("themeMode", v) }
+
+    /**
+     * Every key, gone - so the next [Prefs] sees an EMPTY store and takes the
+     * fresh-install branch of the migrations above rather than the upgrade one.
+     * That is the difference between a reset and a downgrade: an upgrade path
+     * would write the old grayscale defaults back in and turn the screen grey
+     * on a first night nobody asked for.
+     *
+     * It does not touch [Journal]. Someone resetting is usually resetting
+     * because something went wrong, and the log is the only record of what.
+     */
+    fun clear() = sp.edit { clear() }
 
     var ruleId: String?
         get() = sp.getString("ruleId", null)

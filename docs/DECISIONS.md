@@ -733,6 +733,77 @@ anyway.
 `AmbientCapability` infers from one verified key — do not add keys without
 confirming on real hardware.
 
+**ZenPolicy's seven visual effects are INHERITED unless pinned, and three of them
+do nothing.** Measured on three phones 2 Sep 2026, all Android 16: a Magic8 Pro
+(MagicOS), a OnePlus 15 (LineageOS) and a Galaxy S23 (One UI 8). `buildRule`
+never called the `show*` setters, so the system filled every unset field from the
+phone's own default Do Not Disturb policy - which is not a decision anyone made,
+and is not the same on every phone:
+
+| live default `suppressedVisualEffects` | value | lights | ambient |
+|---|---|---|---|
+| Magic8 Pro (MagicOS) | 156 | disallow | disallow |
+| OnePlus 15 (LineageOS) | 156 | disallow | disallow |
+| **Galaxy S23 (One UI 8)** | **20** | **allow** | **allow** |
+
+156 is FSI + LIGHTS + PEEK + AMBIENT; 20 is FSI + PEEK only. So on the Samsung
+our rule silently permitted the notification light and the always-on display to
+fire at 3am, from the same code that gets both suppressed elsewhere. Not a
+hypothesis: that phone's Zen Log still held a Gloaming rule from 1 Sep carrying
+`lights=allow ambient=allow`. Pinning overrides it - with the seven set
+explicitly the Samsung rule carried all seven `disallow`.
+
+Read the config BEFORE `Zen Log:` or you measure history. One UI prints its log
+far earlier in the dump than AOSP does, and a rule belonging to a package that is
+not even installed still appears there - which is how a stale Gloaming rule was
+briefly read as live on a phone that had none.
+
+**Three of the seven are inert.** Rule active, notification intercepted, the
+record carrying `suppressedVisualEffects=511` - all nine bits, `NOTIFICATION_LIST`
+(256) and `STATUS_BAR` (32) among them - and both SystemUIs drew it in the shade
+AND on the lock screen regardless. AOSP's own did; so did MagicOS. Google's
+wellbeing Bedtime rule carries the identical seven and fares no better, so this
+is the platform, not us.
+
+| effect | what was measured |
+|---|---|
+| statusBar / badge / notificationList | **inert** - 511 set, drawn anyway, MagicOS and AOSP alike |
+| peek / lights / ambient / fullScreenIntent | not isolated. Inherited `disallow` on two of three, so pinning changes nothing there; on Samsung they were inherited `allow`, which is the whole point |
+
+One UI could not be measured either way: its lock screen renders no notification
+rows with DND on OR off, and its screen-off display is identical in both, so
+there is no signal to read. This joins `ScreenEffects` in the no-probe category -
+`Ranking.getSuppressedVisualEffects` needs a NotificationListenerService grant far
+heavier than this app asks for, so there is no runtime capability test and cannot
+cheaply be one.
+
+Separately, and good news: **MagicOS's own "Wake screen when you receive a
+notification" IS gated by interception.** DND off, screen off, post: `Dozing` ->
+`Awake`. DND on: `Dozing` -> `Dozing`. That is the vendor's analogue of the
+ambient effect and it needs nothing from our rule to behave.
+
+**Hence all seven pinned, unconditionally, and NEVER a switch.** A control for the
+three inert ones would do nothing on every phone we can measure - the
+`ScreenEffects` rule, again. The four that may work are worth pinning precisely
+because the app cannot tell which phone it is on. It also lands us byte-identical
+to Google's Bedtime rule, which pins all seven too: its values differ from those
+phones' defaults, so Wellbeing is setting them explicitly rather than inheriting.
+
+On the Samsung this makes us STRICTER than the platform's own sleep mode, which is
+a choice and not a convention - there is no Wellbeing Bedtime rule there at all,
+and Samsung's Время сна pins nothing, inheriting `lights=allow ambient=allow`. A
+sleep mode that lets the always-on display light up at 3am is a bad default, not
+a feature.
+
+**What this does NOT fix.** It came from a Gmail notification found on the lock
+screen at 03:02. The phone was silent - event log `notification_alert
+[...,0,0,0,0,512]`, buzz=0 beep=0, screen `Dozing`, woken by hand 48 s later - and
+no zen rule can hide that notification on Android 16. Google's Bedtime cannot
+either. The only route that would is `Settings.Secure.lock_screen_show_notifications`,
+behind `WRITE_SECURE_SETTINGS` and so adb-only; it is also GLOBAL rather than
+owned by the rule, so an app killed mid-window would leave the lock screen blank
+with nothing on screen to explain it. Not taken - it needs its own decision.
+
 ## Gotchas that cost real time
 
 - **Lowering a read-through default lowers it RETROACTIVELY.** Every setting in
@@ -2204,6 +2275,55 @@ better authority in an app that exists because the platform does not always do
 what it is asked. It is read every composition rather than remembered, so it
 refreshes on any interaction — but it will not update on its own if Do Not
 Disturb changes from the quick settings tile while the screen is open.
+
+**Allowlist presets: investigated 3 Sep 2026, not built, and here is the
+evidence so nobody has to gather it twice.** Three phones were on the desk that
+night, so the question "what does a sensible bedtime policy look like" could be
+answered by reading what the vendors themselves ship rather than by guessing.
+Five real `ZenPolicy` records, three vendors:
+
+| | alarms | media | reminders | events | system | calls | repeat | messages | convs |
+|---|---|---|---|---|---|---|---|---|---|
+| Google Bedtime, Magic8 Pro (untouched) | yes | yes | no | no | no | starred | yes | no | no |
+| Samsung "Время сна", Galaxy S23 | yes | yes | no | no | no | **none** | **no** | no | no |
+| phone default DND, Magic8 Pro | yes | yes | no | no | no | starred | yes | starred | no |
+| phone default DND, OnePlus 15 | yes | yes | no | no | no | starred | yes | starred | important |
+| **Gloaming** | yes | yes | no | no | no | starred | yes | no | no |
+
+**Five of the eight controls are unanimous.** Alarms and media through;
+reminders, events and system blocked. Every vendor, every rule, no exceptions.
+Those are not choices anyone is making - the only real decision surface in the
+allowlist is WHO can reach you: calls, repeat callers, messages, conversations.
+Any preset worth having varies that axis and leaves the other five alone.
+
+**There are exactly two schools.** Samsung says total silence: nobody at all.
+Google says starred contacts plus repeat callers - one route deliberately left
+open, on the reasoning that a person who calls twice in a row probably means it.
+
+**Gloaming already ships Google's, byte for byte** - `allowCalls=3`,
+`allowMessages=4`, `allowConversations=3`, repeat on. Which is the argument
+against building presets: the default is already the mainstream answer, so
+presets would serve only whoever wants Samsung's silence or wants messages
+through, and that is a guess about users this app does not have yet.
+
+**The one real user signal in the data cuts the same way.** Google's Bedtime rule
+is untouched on the Magic8 Pro and carries
+`zenPolicyUserModifiedFields={FIELD_MESSAGES,FIELD_CONVERSATIONS,FIELD_PRIORITY_CATEGORY_ALARMS}`
+on the OnePlus - edited, and edited to LOOSEN messages. One data point, and it
+went toward reachability rather than away.
+
+**What would settle it, and it is already shipping.** `Diagnostics` prints the
+allowlist in words - "allows calls: starred contacts", "allows messages: no
+one". The first real reports say whether anyone changes it at all, and in which
+direction. Build the two presets people actually reach for, or none.
+
+If it is ever built: three chips - Nobody / Starred / Messages - varying only
+the four who-can-reach-you controls, on the DAY row's exact pattern
+(`selected = s.days == set`), so a chip lights only while it genuinely describes
+the toggles and goes dark the moment one changes. A preset that stays lit after
+the thing it describes has changed is the "one value, one answer" failure, and
+this screen has had that reported before. Names fit the segmented row's
+`BUDGET 30` sum: en 21, ru 23, uk 24.
 
 ## Deviations from the design brief (deliberate, worth revisiting with designer)
 

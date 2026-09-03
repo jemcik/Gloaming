@@ -81,6 +81,16 @@ indefinitely is background restriction — see `core/BackgroundLimit.kt`.
     core/AmbientCapability.kt    can this phone hide its always-on display
     core/Clock.kt                clock times in the phone's own 12/24 format
     core/Prefs.kt                SharedPreferences, plus one migration
+    core/Reset.kt                back to a fresh install, in the one ORDER that
+                                 is safe. Android's own "Clear storage" is the
+                                 trap it exists to replace: it wipes the prefs
+                                 and leaves the rule behind, live and with no id
+                                 left to remove it by
+    core/Diagnostics.kt          the phone's whole answer, as text to send in
+                                 one tap. The system's account and ours kept
+                                 APART, in that order - every bug worth having
+                                 this for lives in the gap between them. It
+                                 cannot say whether a notification made a SOUND
     core/Journal.kt              on-device log; read it over adb, see Build
     core/SystemTheme.kt          the system's own light/dark answer
 
@@ -94,8 +104,14 @@ indefinitely is background restriction — see `core/BackgroundLimit.kt`.
                                  is its own composable and decides for itself
                                  whether it draws
     ui/BedtimeTile.kt            the master switch in the shade. THREE states,
-                                 not two: a tick while armed, the moon while a
-                                 window is running
+                                 not two: an hourglass while armed, a tick while
+                                 a window is running - the same two faces the
+                                 app bar's switch wears, and in that order,
+                                 because a tick sitting there all evening while
+                                 bedtime did nothing is what a tick must not
+                                 mean. NEVER Tile.STATE_UNAVAILABLE: SystemUI
+                                 does not dispatch a click to one at all, so a
+                                 tap it cannot honour opens the APP instead
     ui/HomeParts.kt              what only Home draws — status pill, notice
                                  strip, day row, numerals, moon and sun glyphs
     ui/Sentences.kt              the schedule as language: windowSentence,
@@ -164,6 +180,15 @@ is in DECISIONS.md.
   Nothing but a real difference should push the rule.
 - Pushing an **identical** rule re-applies its device effects. `Prefs.ruleSignature`
   gates that; `force = true` exists for alarms and boot.
+- The seven **visual effects are pinned, not inherited** — an unset one is filled
+  from the phone's own default DND policy, and that default is NOT the same
+  everywhere: measured 156 on MagicOS and LineageOS but **20** on One UI 8, which
+  left our rule permitting the notification light and the always-on display at
+  3am. Three of the seven (`statusBar`, `badge`, `notificationList`) are **inert**
+  on Android 16 — the record carries `suppressedVisualEffects=511` and both
+  SystemUIs draw the notification anyway — so they must NEVER get a switch, and
+  nothing may claim bedtime hides a notification. Google's Bedtime pins all seven
+  too, and is equally unable to hide one.
 - `Prefs.ruleId` is the app's only handle on its rule. Losing it strands the rule
   forever — hence `sweepOrphans`, which runs after `addAutomaticZenRule` and in
   `reconcile`. It must NOT return early when `ruleId` is null: that is exactly
@@ -227,12 +252,28 @@ is in DECISIONS.md.
 
 **Compose**
 
-- Compose state goes stale three ways: the receiver writes prefs while
+- Compose state goes stale FOUR ways: the receiver writes prefs while
   backgrounded (re-read on `ON_RESUME`), `now` goes stale on an open screen (one-
-  minute ticker), and `pointerInput(Unit)` freezes its captured lambdas (wrap in
-  `rememberUpdatedState`).
+  minute ticker), `pointerInput(Unit)` freezes its captured lambdas (wrap in
+  `rememberUpdatedState`), and a **SYSTEM setting read inside a skippable
+  composable never re-runs**. `WindowTime` took `(ctx, time, colour)` and called
+  `Clock.reading` itself; when the phone's 12/24-hour setting changed under an
+  open screen none of those three moved, so Compose skipped it - while the
+  sentence under the dial, which is called straight from `WindowBlock`'s body,
+  re-executed. The screen read "20:40" above "From 8:40 PM". Read a system
+  setting where the ticker is, inside `remember(s.tick, ...)`, and pass the
+  ANSWER down.
 - Put a `@Composable` slot **before** any click lambda, or a trailing lambda at
   the call site binds to the slot and Compose runs it as content.
+
+- **A draggable control inside the scrolling page must HIT-TEST, and must not
+  use `detectDragGestures`.** That helper claims the gesture in any direction
+  once slop is crossed, so a vertical swipe over it is taken from the page. The
+  dial also grabbed "anywhere outside the centre well" - most of a 260dp square,
+  corners included - and handed it to whichever handle was angularly nearest, so
+  scrolling Home changed the schedule. It is `awaitEachGesture` now: decide from
+  the DOWN position, within `GRAB` of a handle, and consume only once it is
+  ours. The centre well already worked this way; the handles were the outlier.
 - An M3 `ListItem` top-aligns trailing content on a **three-line** item. Keep
   rows to two lines; `RowFitTest` enforces it by measuring.
 - `clip()` on a container under ~40dp tall eats content that touches the edge.
@@ -252,6 +293,13 @@ is in DECISIONS.md.
 - Anything the user might want to reach on purpose needs a door that is not a
   notice. Until Settings grew its `this phone` link, the only route to the
   launch manager was being told something was broken.
+
+- **Going to look is not an answer.** An offer is closed by its REFUSAL only.
+  The tip used to close itself when "Set up" was pressed, so opening the vendor
+  screen, changing nothing and pressing back dismissed it for good - and since
+  Honor's auto-launch state is unreadable, the app could never discover it had
+  guessed wrong. Never let "the user saw the screen" stand in for "the user did
+  the thing", least of all where the thing cannot be read back.
 
 - There is not one `fontSize` or `fontWeight` override outside `Theme.kt`. Keep
   it that way.
@@ -306,7 +354,7 @@ compileSdk 37, targetSdk 36, minSdk 35.
 
 ## Tests
 
-`app/src/test/`, 140 cases, no device. They are written as the QUESTION the code
+`app/src/test/`, 169 cases, no device. They are written as the QUESTION the code
 answers rather than as coverage of a method, because none of the bugs were ever
 in a method — they were in an assumption.
 
@@ -341,8 +389,16 @@ in a method — they were in an assumption.
     BackgroundProbeTest   the delivery probe: lateness rather than arrival is
                           the verdict, and the latch that stops its own retest
                           erasing it
+    ResetTest             starting over: no rule survives - not even one whose
+                          id was already lost - the store comes back EMPTY so
+                          the next launch takes the fresh-install branch and not
+                          the upgrade one, and the journal outlives it
+    DiagnosticsTest       the report a user sends: does it still speak when the
+                          phone answers nothing, is a refused lookup kept
+                          distinct from a deleted rule, and does the system's
+                          account stay ahead of - and apart from - our own
 
-Coverage: **75% of instructions, 59% of branches**. The shape is the point — what
+Coverage: **76% of instructions, 59% of branches**. The shape is the point — what
 is covered is what can be reasoned about without a phone; what is not is what
 talks to the platform (`BedtimeTile` 0%, `BedtimeReceiver` 1%,
 `AmbientControl` 18%, `Doors` 25%, `Journal` 33%, `ZenController` 71%). That gap

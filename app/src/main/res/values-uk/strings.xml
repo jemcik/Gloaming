@@ -7,6 +7,7 @@
     <string name="state_on_until">Увімкнено до %1$s</string>
     <string name="state_starts_in">Через %1$s</string>
     <string name="state_nothing_scheduled">Нічого не заплановано</string>
+    <string name="state_needs_permission">Потрібен доступ</string>
     <string name="badge_once">Один раз</string>
 
     <!-- Durations. Hours and minutes are separate so a language with more than
@@ -60,13 +61,16 @@
     <string name="launch_setup_row">Запуск застосунків</string>
     <string name="launch_setup_why">Знайдіть Gloaming через пошук, виберіть «Керувати вручну», потім увімкніть автозапуск і роботу у фоні</string>
     <string name="section_this_phone">цей телефон</string>
-    <string name="launch_link_why">Запуск після перезавантаження й робота у фоні</string>
+    <string name="launch_link_why">Автозапуск і робота у фоні</string>
     <string name="bedtime_settings_row">Системний режим сну</string>
-    <string name="bedtime_settings_why">Телефон має власні налаштування сну з окремими параметрами екрана</string>
+    <string name="bedtime_settings_why">Від виробника</string>
     <string name="launch_tip_title">Зробіть сон надійним</string>
-    <string name="launch_tip_why">Цей телефон може зупиняти застосунки, поки вони закриті, — через це сон залишається ввімкненим уранці. Два перемикачі в розділі «Запуск застосунків» цьому запобігають: автозапуск і робота у фоні.</string>
+    <string name="launch_tip_why">Цей телефон може зупиняти застосунки, поки вони закриті. Тоді режим сну вмикається пізніше або не вимикається вранці. Два перемикачі в розділі «Запуск застосунків» цьому запобігають: автозапуск і робота у фоні.</string>
     <string name="launch_tip_action">Налаштувати</string>
-    <string name="launch_tip_skip">Пропустити</string>
+    <string name="launch_tip_dismiss">Закрити</string>
+    <string name="launch_tip_check">Gloaming не може перевірити ці перемикачі сам. Ви ввімкнули автозапуск і роботу у фоні?</string>
+    <string name="launch_tip_not_yet">Ще ні</string>
+    <string name="launch_tip_done">Готово</string>
 
     <!-- ============ Home: the window ============ -->
     <!-- Overlines, uppercased in code. Keep short: they sit above the times. -->
@@ -190,14 +194,24 @@
 
     <!-- Settings -->
     <string name="settings_title">Налаштування</string>
-    <string name="section_appearance">вигляд</string>
+    <string name="section_theme">тема</string>
     <string name="theme_system">Як у системі</string>
-    <string name="theme_light">Завжди світла</string>
-    <string name="theme_dark">Завжди темна</string>
+    <string name="theme_light">Світла</string>
+    <string name="theme_dark">Темна</string>
     <string name="section_language">мова</string>
     <string name="settings_language">Мова застосунку</string>
     <string name="settings_language_why">Відкриває налаштування</string>
+    <string name="section_diagnostics">звіт про проблему</string>
+    <string name="diagnostics_row">Надіслати діагностику</string>
+    <string name="diagnostics_why">Для звіту про помилку</string>
+    <string name="diagnostics_subject">Діагностика Gloaming</string>
+    <string name="section_reset">почати спочатку</string>
+    <string name="reset_row">Скинути Gloaming</string>
+    <string name="reset_why">Як після встановлення</string>
+    <string name="reset_confirm_title">Скинути Gloaming?</string>
+    <string name="reset_confirm_body">Режим сну вимкнеться, розклад і список дозволених повернуться до початкових значень, а правило Gloaming буде вилучено з «Не турбувати». Журнал діагностики збережеться.</string>
+    <string name="action_reset">Скинути</string>
     <string name="section_about">про застосунок</string>
     <string name="settings_version">Версія %1$s</string>
-    <string name="settings_about_body">Gloaming вмикає «Не турбувати» й ефекти екрана на час сну та вимикає їх уранці. Працює із закритим застосунком.</string>
+    <string name="settings_about_body">Один перемикач на всю ніч. Gloaming автоматизує вмикання режиму «Не турбувати» та активацію різних ефектів екрана за заданим розкладом — усе, що потрібно для режиму сну, зібрано в одному місці, а не розкидано по налаштуваннях. Працює із закритим застосунком.</string>
 </resources>

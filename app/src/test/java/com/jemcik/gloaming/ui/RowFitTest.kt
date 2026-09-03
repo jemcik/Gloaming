@@ -113,12 +113,28 @@ class RowFitTest {
      * exist to explain a handoff to a system screen, which is exactly the kind
      * of sentence that runs long in ru and uk.
      */
+    /**
+     * Make this phone answer for BOTH vendor doors.
+     *
+     * Without it neither row is drawn - `Doors` resolves nothing under
+     * Robolectric - and the measurement below silently skipped them, because it
+     * skips any row it cannot find. That is how "App launch" shipped at 88dp in
+     * English and 96dp in Ukrainian with a green test: the rows the section
+     * exists for were the two never measured.
+     */
+    private fun withVendorDoors(ctx: android.content.Context) {
+        ctx.withLaunchManager()
+        ctx.withSystemBedtime()
+    }
+
     private fun settingsRowsFitIn(locale: String) {
         RuntimeEnvironment.setQualifiers("+$locale-w360dp-h800dp")
         val ctx = ApplicationProvider.getApplicationContext<android.content.Context>()
+        withVendorDoors(ctx)
         val titles = listOf(
             R.string.settings_language, R.string.launch_setup_row,
-            R.string.bedtime_settings_row
+            R.string.bedtime_settings_row, R.string.diagnostics_row,
+            R.string.reset_row
         )
             .map { ctx.getString(it) }
 
@@ -128,13 +144,24 @@ class RowFitTest {
             }
         }
 
+        val missing = mutableListOf<String>()
         val tall = titles.mapNotNull { title ->
             val match = hasText(title, substring = true)
-            if (compose.onAllNodes(match).fetchSemanticsNodes().isEmpty()) return@mapNotNull null
+            if (compose.onAllNodes(match).fetchSemanticsNodes().isEmpty()) {
+                missing += title
+                return@mapNotNull null
+            }
             val b = compose.onNode(match).getUnclippedBoundsInRoot()
             val h = b.bottom - b.top
             if (h >= threeLine) "$title is ${h.value}dp" else null
         }
+        // Absence is a FAILURE, not a pass. A row that is not on screen was not
+        // measured, and this test spent its life reporting that as a fit.
+        assertTrue(
+            "in '$locale' these Settings rows were never drawn, so nothing " +
+                "measured them: $missing",
+            missing.isEmpty()
+        )
         assertTrue(
             "in '$locale' these Settings rows wrapped to three lines, which " +
                 "top-aligns the chevron: $tall",

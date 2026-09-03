@@ -1,5 +1,6 @@
 package com.jemcik.gloaming.ui
 
+import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertIsSelected
@@ -11,8 +12,18 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.performClick
+import kotlin.math.sin
+import kotlin.math.cos
+import kotlin.math.PI
+import androidx.compose.foundation.ScrollState
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipe
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performSemanticsAction
 import android.app.NotificationManager
+import androidx.compose.ui.test.onAllNodesWithText
+import android.provider.Settings
 import androidx.test.core.app.ApplicationProvider
 import java.time.DayOfWeek
 import java.time.LocalTime
@@ -20,6 +31,7 @@ import androidx.compose.foundation.rememberScrollState
 import com.jemcik.gloaming.R
 import com.jemcik.gloaming.core.Prefs
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -52,14 +64,7 @@ class ScreensTest {
      * stub a manufacturer. Robolectric's package manager answers nothing by
      * default, which is why the tip is invisible in every other test here.
      */
-    private fun withLaunchManager() {
-        shadowOf(ctx().packageManager).addActivityIfNotPresent(
-            android.content.ComponentName(
-                "com.hihonor.systemmanager",
-                "com.hihonor.systemmanager.startupmgr.ui.StartupNormalAppListActivity"
-            )
-        )
-    }
+    private fun withLaunchManager() = ctx().withLaunchManager()
 
     private fun armed(): Prefs {
         shadowOf(ctx().getSystemService(NotificationManager::class.java))
@@ -90,10 +95,113 @@ class ScreensTest {
                 Home(rememberScrollState(), onOpenSettings = {}, onOpenInterruptions = {})
             }
         }
-        val skip = ctx().getString(R.string.launch_tip_skip)
+        val skip = ctx().getString(R.string.launch_tip_dismiss)
         compose.onNodeWithText(skip).performClick()
         compose.onNodeWithText(skip).assertDoesNotExist()
         assertTrue("refusing must be remembered, or it returns", p.launchTipSeen)
+    }
+
+    @Test
+    fun `dismissed is dismissed, including across the master switch`() {
+        // The user's own sentence: press Dismiss and it must be gone and never
+        // shown again until the app is reset. Refusing it was already pinned;
+        // what was not is the path they actually walked - switch bedtime off,
+        // switch it back on. The tip is gated on `enabled`, so that toggle is
+        // the one moment it could plausibly return, and it is the moment that
+        // got reported.
+        val p = armed()
+        p.launchTipSeen = false
+        withLaunchManager()
+        shadowOf(ctx().getSystemService(NotificationManager::class.java))
+            .setNotificationPolicyAccessGranted(true)
+        ShadowAlarmManager.setCanScheduleExactAlarms(true)
+        compose.setContent {
+            GloamingTheme(dark = false) {
+                Home(rememberScrollState(), onOpenSettings = {}, onOpenInterruptions = {})
+            }
+        }
+        val dismiss = ctx().getString(R.string.launch_tip_dismiss)
+        compose.onNodeWithText(dismiss).performClick()
+        compose.onNodeWithText(dismiss).assertDoesNotExist()
+
+        // Asserted either side of each tap, or a switch that silently ignored
+        // the click would leave this passing without ever exercising the toggle
+        // - the same vacuity as a row that was never drawn.
+        val master = compose.onNodeWithContentDescription(ctx().getString(R.string.bedtime_mode))
+        master.assertIsOn()
+        master.performClick(); compose.waitForIdle()
+        master.assertIsOff()
+        master.performClick(); compose.waitForIdle()
+        master.assertIsOn()
+
+        compose.onNodeWithText(dismiss).assertDoesNotExist()
+        assertTrue("the refusal did not survive the switch", p.launchTipSeen)
+    }
+
+    @Test
+    fun `going to look at the vendor screen does not answer the offer`() {
+        // Reported and reproduced on the Honor: press "Set up", change nothing,
+        // press back, and the card is gone for good. It closed the tip before
+        // opening the screen, so merely LOOKING counted as having done it -
+        // and Honor's auto-launch state is unreadable, so the app could never
+        // discover it had guessed wrong. The offer stands until it is refused.
+        val p = armed()
+        p.launchTipSeen = false
+        withLaunchManager()
+        compose.setContent {
+            GloamingTheme(dark = false) {
+                Home(rememberScrollState(), onOpenSettings = {}, onOpenInterruptions = {})
+            }
+        }
+        compose.onNodeWithText(ctx().getString(R.string.launch_tip_action)).performClick()
+        assertFalse(
+            "opening the vendor screen must not answer the offer",
+            p.launchTipSeen
+        )
+        // Still there, but no longer OFFERING - it asks now, because the one
+        // thing it needs to know is the one thing it cannot read.
+        compose.onNodeWithText(ctx().getString(R.string.launch_tip_done)).assertExists()
+    }
+
+    @Test
+    fun `Done answers it, and that is final`() {
+        // The whole point of the second face. Someone who has actually set the
+        // switches gets one tap to say so - which is the only way this app will
+        // ever know, since it cannot look.
+        val p = armed()
+        p.launchTipSeen = false
+        withLaunchManager()
+        compose.setContent {
+            GloamingTheme(dark = false) {
+                Home(rememberScrollState(), onOpenSettings = {}, onOpenInterruptions = {})
+            }
+        }
+        compose.onNodeWithText(ctx().getString(R.string.launch_tip_action)).performClick()
+        compose.onNodeWithText(ctx().getString(R.string.launch_tip_done)).performClick()
+        compose.onNodeWithText(ctx().getString(R.string.launch_tip_done)).assertDoesNotExist()
+        assertTrue("Done did not answer the offer", p.launchTipSeen)
+    }
+
+    @Test
+    fun `Not yet puts the offer back rather than refusing it`() {
+        // "I have not done it" is not "stop asking". It returns to the plain
+        // offer, where dismissing outright is still available - conflating the
+        // two would take the refusal away from someone who only meant to say
+        // they had not got round to it.
+        val p = armed()
+        p.launchTipSeen = false
+        withLaunchManager()
+        compose.setContent {
+            GloamingTheme(dark = false) {
+                Home(rememberScrollState(), onOpenSettings = {}, onOpenInterruptions = {})
+            }
+        }
+        compose.onNodeWithText(ctx().getString(R.string.launch_tip_action)).performClick()
+        compose.onNodeWithText(ctx().getString(R.string.launch_tip_not_yet)).performClick()
+
+        compose.onNodeWithText(ctx().getString(R.string.launch_tip_dismiss)).assertExists()
+        compose.onNodeWithText(ctx().getString(R.string.launch_tip_action)).assertExists()
+        assertFalse("\"not yet\" must not answer the offer", p.launchTipSeen)
     }
 
     @Test
@@ -106,7 +214,7 @@ class ScreensTest {
                 Home(rememberScrollState(), onOpenSettings = {}, onOpenInterruptions = {})
             }
         }
-        compose.onNodeWithText(ctx().getString(R.string.launch_tip_skip)).assertDoesNotExist()
+        compose.onNodeWithText(ctx().getString(R.string.launch_tip_dismiss)).assertDoesNotExist()
     }
 
     @Test
@@ -122,10 +230,157 @@ class ScreensTest {
                 Home(rememberScrollState(), onOpenSettings = {}, onOpenInterruptions = {})
             }
         }
-        compose.onNodeWithText(ctx().getString(R.string.launch_tip_skip)).assertDoesNotExist()
+        compose.onNodeWithText(ctx().getString(R.string.launch_tip_dismiss)).assertDoesNotExist()
     }
 
     // ---------- Settings ----------
+
+    @Test
+    fun `the numerals follow a change to the phone's clock format`() {
+        // Reported: the screen read "20:40" above "From 8:40 PM". 12-or-24-hour
+        // is a SYSTEM setting rather than Compose state, so when it changed
+        // under an open screen nothing WindowTime took as a parameter moved and
+        // Compose correctly skipped it - while the sentence, built inside a
+        // remember(s.tick), updated. One value, two answers, on one screen.
+        //
+        // A formatting test would not have caught this: the formatting was
+        // right the whole time, and a cold start showed it right. What has to
+        // be exercised is the CHANGE arriving while the screen is up.
+        val p = armed()
+        p.startTime = LocalTime.of(20, 40)
+        p.endTime = LocalTime.of(6, 40)
+        Settings.System.putString(ctx().contentResolver, Settings.System.TIME_12_24, "24")
+        compose.setContent {
+            GloamingTheme(dark = false) {
+                Home(rememberScrollState(), onOpenSettings = {}, onOpenInterruptions = {})
+            }
+        }
+        // EXACT, not substring. The sentence under the dial contains "20:40"
+        // too - "From 20:40 Wednesday to 06:40 today" - and it is the half that
+        // was never broken, so a substring match passes with the bug still in.
+        // It did: this test was written that way first and stayed green with
+        // the fix reverted, which is the only reason the vacuity was caught.
+        // The numeral is its own node and its whole text is the time; the day
+        // period is a separate Text beside it.
+        assertTrue(
+            "the 24-hour numeral was not drawn to begin with",
+            compose.onAllNodesWithText("20:40").fetchSemanticsNodes().isNotEmpty()
+        )
+
+        Settings.System.putString(ctx().contentResolver, Settings.System.TIME_12_24, "12")
+        // The minute ticker is what carries a system setting into an open
+        // screen - the same one that keeps `now` from going stale.
+        compose.mainClock.advanceTimeBy(61_000)
+        compose.waitForIdle()
+        assertTrue(
+            "the numerals kept the old clock format after the phone changed it",
+            compose.onAllNodesWithText("8:40").fetchSemanticsNodes().isNotEmpty()
+        )
+    }
+
+    // ---------- the dial, and the page it sits on ----------
+
+    /**
+     * Where a handle is drawn, in the dial's own maths. 22:30 is 337.5 degrees
+     * and 08:00 is 120, so the LEFT edge - 270 - is far from both, and is the
+     * part of the canvas a finger crosses on its way down the page.
+     */
+    private fun handleOffset(deg: Float, width: Int, centre: Offset): Offset {
+        val r = width * (97f / 260f)
+        val rad = ((deg - 90f) * PI / 180f).toFloat()
+        return Offset(centre.x + r * cos(rad), centre.y + r * sin(rad))
+    }
+
+    @Test
+    fun `a swipe across the dial scrolls the page instead of moving bedtime`() {
+        // The reported bug: scrolling Home changed the schedule. The grab test
+        // was "anywhere outside the centre well", which is most of a 260dp
+        // square - corners included - so a finger passing over the dial was
+        // taken as a drag of whichever handle was angularly nearest.
+        val p = armed()
+        p.startTime = LocalTime.of(22, 30)
+        p.endTime = LocalTime.of(8, 0)
+        lateinit var scroll: ScrollState
+        compose.setContent {
+            scroll = rememberScrollState()
+            GloamingTheme(dark = false) {
+                Home(scroll, onOpenSettings = {}, onOpenInterruptions = {})
+            }
+        }
+        compose.onNodeWithTag(DIAL_TAG).performTouchInput {
+            val from = Offset(width * 0.12f, height * 0.5f)
+            swipe(from, Offset(from.x, from.y - height * 0.4f), 200)
+        }
+        compose.waitForIdle()
+        assertEquals("bedtime moved while the page was scrolled",
+            LocalTime.of(22, 30), p.startTime)
+        assertEquals("the wake time moved while the page was scrolled",
+            LocalTime.of(8, 0), p.endTime)
+        assertTrue("the page did not scroll, so the swipe went nowhere", scroll.value > 0)
+    }
+
+    @Test
+    fun `the handle itself still drags`() {
+        // The other half, and the one that matters more: shrinking the grab
+        // area to 24dp must not make the app's primary control unusable.
+        var moved: LocalTime? = null
+        compose.setContent {
+            GloamingTheme(dark = false) {
+                BedtimeDial(
+                    start = LocalTime.of(22, 30), end = LocalTime.of(8, 0),
+                    now = LocalTime.NOON, running = false,
+                    track = gloam.raise, enabled = true,
+                    centreValue = "9h 30m", centreLabel = "sleep window",
+                    onStartChange = { moved = it }, onEndChange = {},
+                    onDragFinished = {}
+                )
+            }
+        }
+        compose.onNodeWithTag(DIAL_TAG).performTouchInput {
+            val handle = handleOffset(337.5f, width, center)
+            swipe(handle, handleOffset(300f, width, center), 200)
+        }
+        compose.waitForIdle()
+        assertTrue("the bedtime handle no longer drags", moved != null)
+    }
+
+    // ---------- the door that is not a notice ----------
+
+    @Test
+    fun `the launch manager is reachable from Settings, with nothing wrong`() {
+        // The tip can be refused and refusing it is FINAL, so if that card were
+        // the only route to these two switches, one "Skip" would wall off the
+        // phone's own reliability setting for good. It would also mean the only
+        // way to reach a screen you might simply want was to be told something
+        // was broken - which is exactly how the version this replaced went
+        // wrong. Nothing here is failing: no probe has fired, the tip is
+        // answered, and the row is still there.
+        val p = armed()
+        p.launchTipSeen = true
+        withLaunchManager()
+        compose.setContent {
+            GloamingTheme(dark = false) {
+                SettingsScreen(Prefs.THEME_SYSTEM, onThemeMode = {}, onBack = {})
+            }
+        }
+        compose.onNodeWithText(ctx().getString(R.string.launch_setup_row))
+            .performScrollTo()
+            .assertHasClickAction()
+    }
+
+    @Test
+    fun `no door is drawn onto a screen this phone does not have`() {
+        // Robolectric resolves nothing, which is a phone with no launch manager
+        // at all - the OnePlus, measured. A row here would send someone nowhere,
+        // and `hasLaunchManager` is a capability probe precisely so it cannot.
+        compose.setContent {
+            GloamingTheme(dark = false) {
+                SettingsScreen(Prefs.THEME_SYSTEM, onThemeMode = {}, onBack = {})
+            }
+        }
+        compose.onNodeWithText(ctx().getString(R.string.launch_setup_row))
+            .assertDoesNotExist()
+    }
 
     @Test
     fun `the chosen theme is the one shown as chosen`() {
@@ -134,7 +389,10 @@ class ScreensTest {
                 SettingsScreen(Prefs.THEME_DARK, onThemeMode = {}, onBack = {})
             }
         }
-        compose.onNodeWithText("Always dark").assertIsSelected()
+        // By resource, not by the English words. Hardcoding the copy makes a
+        // wording change look like a broken radio group - which is exactly what
+        // it did when "Always dark" became "Dark".
+        compose.onNodeWithText(ctx().getString(R.string.theme_dark)).assertIsSelected()
     }
 
     @Test
@@ -145,7 +403,7 @@ class ScreensTest {
                 SettingsScreen(Prefs.THEME_SYSTEM, onThemeMode = { picked = it }, onBack = {})
             }
         }
-        compose.onNodeWithText("Always light").performClick()
+        compose.onNodeWithText(ctx().getString(R.string.theme_light)).performClick()
         assertEquals(Prefs.THEME_LIGHT, picked)
     }
 
@@ -175,16 +433,16 @@ class ScreensTest {
                 InterruptionsScreen(onBack = {}, onChanged = {})
             }
         }
-        compose.onNodeWithText("Reminders").assertIsOff()
+        compose.onNodeWithText(ctx().getString(R.string.row_reminders)).assertIsOff()
         // The semantics action rather than a synthetic tap. performClick() does
         // not toggle this row under Robolectric, though it works on the
         // selectable rows in Settings; I did not chase why, because what this
         // test is really asserting is that the ROW carries the click action at
         // all - the switch is only the indicator, not the target.
-        compose.onNodeWithText("Reminders")
+        compose.onNodeWithText(ctx().getString(R.string.row_reminders))
             .performSemanticsAction(SemanticsActions.OnClick)
         compose.waitForIdle()
-        compose.onNodeWithText("Reminders").assertIsOn()
+        compose.onNodeWithText(ctx().getString(R.string.row_reminders)).assertIsOn()
     }
 
     /** A window that contains this instant, whatever hour the suite runs at. */
@@ -314,8 +572,8 @@ class ScreensTest {
                 InterruptionsScreen(onBack = {}, onChanged = {})
             }
         }
-        compose.onNodeWithText("Alarms and timers").assertExists()
-        compose.onNodeWithText("Kept on so your alarm still wakes you").assertExists()
+        compose.onNodeWithText(ctx().getString(R.string.row_alarms)).assertExists()
+        compose.onNodeWithText(ctx().getString(R.string.row_alarms_why)).assertExists()
     }
     // ---------- the wake handle and "at your alarm" are one state ----------
 

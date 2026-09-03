@@ -44,6 +44,40 @@ object ZenController {
             .allowReminders(p.allowReminders)
             .allowEvents(p.allowEvents)
             .allowSystem(false)
+            // The seven visual effects, PINNED rather than inherited. Left
+            // unset they are filled in from whatever the phone's default Do Not
+            // Disturb policy happened to be, which is not a decision anyone
+            // made. Measured identical on a OnePlus/LineageOS and a Magic8 Pro
+            // 2 Sep 2026 - luck, not a guarantee. A phone whose default allowed
+            // peek would serve heads-up banners at 3am and nothing here would
+            // know, because there is no way to read these back: the getter is
+            // on a NotificationListenerService ranking, which needs a grant far
+            // heavier than this app asks for.
+            //
+            // THREE OF THESE DO NOTHING, and the measurement matters because
+            // they were proposed as the fix for a mail found on the lock screen
+            // at 03:02 and they are not it. Measured on both phones 2 Sep 2026,
+            // Android 16: rule active, notification intercepted, the record
+            // carrying suppressedVisualEffects=511 - all nine bits, with
+            // NOTIFICATION_LIST and STATUS_BAR among them - and BOTH SystemUIs
+            // drew it on the lock screen regardless. AOSP's own did; so did
+            // MagicOS. Google's wellbeing Bedtime rule carries the identical
+            // seven and fares no better, so this is the platform, not us.
+            //
+            // They stay because the four that DO work - peek, lights, ambient,
+            // fullScreenIntent - are worth pinning, and the other three cost
+            // nothing and are what the API documents. But nothing in the UI may
+            // ever claim they hide anything. The only route that actually hides
+            // a notification overnight is Settings.Secure
+            // lock_screen_show_notifications, behind WRITE_SECURE_SETTINGS -
+            // AmbientControl's terms exactly, and adb-only.
+            .showPeeking(false)
+            .showLights(false)
+            .showInAmbientDisplay(false)
+            .showFullScreenIntent(false)
+            .showStatusBarIcons(false)
+            .showBadges(false)
+            .showInNotificationList(false)
             .build()
 
         // All four effects are public API since Android 15 and need no permission
@@ -347,8 +381,24 @@ object ZenController {
         Scheduler.rescheduleAll(ctx, p)
     }
 
+    /**
+     * Every rule of ours, gone - the one we track and any we have lost track of.
+     *
+     * The sweep is not belt and braces. `ruleId` is the app's only handle, so a
+     * rule whose id we no longer hold cannot be removed by id at all, and it is
+     * exactly what survives a wiped store: enabled, listed on the phone's own Do
+     * Not Disturb screen as a second "Gloaming", greying the screen with nothing
+     * on screen to explain it. Measured on the Honor after a `pm clear`. Nulling
+     * the id first is what makes the sweep total: with nothing to keep, every
+     * Gloaming rule is an orphan.
+     */
     fun removeRule(ctx: Context, p: Prefs) {
-        p.ruleId?.let { runCatching { nm(ctx).removeAutomaticZenRule(it) } }
+        p.ruleId?.let { id ->
+            runCatching { nm(ctx).removeAutomaticZenRule(id) }
+                .onSuccess { Journal.write(ctx, (if (it) "removed rule " else "rule refused removal ") + id) }
+                .onFailure { Journal.write(ctx, "rule removal failed: " + it) }
+        }
         p.ruleId = null
+        sweepOrphans(ctx, p)
     }
 }

@@ -7,7 +7,6 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,6 +18,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.draw.clip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.platform.LocalLocale
+import androidx.compose.ui.platform.testTag
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -73,6 +73,33 @@ private const val R_CENTRE_WELL = 88.5f
    numeral (~65dp half-width) and still leaves a 30dp annulus inside the ring
    for a loose handle grab. */
 private const val R_WELL_TOUCH = 75f
+/**
+ * How near a handle a touch has to START to count as grabbing it.
+ *
+ * 24 gives a 48dp target around a 31dp handle, which is Material's minimum and
+ * which the handles did not previously meet. It replaces "anywhere outside the
+ * centre well", which took the whole 260dp canvas - corners included, where
+ * nothing is drawn - and handed it to whichever handle was angularly nearest.
+ * That is ~14x the area, and it is why the dial moved while the page was being
+ * scrolled: every one of those touches was a grab.
+ */
+/** So a test can swipe exactly where a finger scrolling the page would. */
+internal const val DIAL_TAG = "bedtimeDial"
+
+/**
+ * How much the grabbed handle grows, and how far its halo reaches.
+ *
+ * Scale alone cannot answer "have I got it": a fingertip covers roughly 45dp,
+ * the handle is 31, so ALL of the growth happens underneath the finger and the
+ * first version at 1.18 was reported as almost invisible. The halo is the part
+ * that shows - a translucent disc reaching past the contact patch, which is
+ * what Material's own slider does with its pressed state layer. 2.2x a 15.5
+ * radius is 68dp across, comfortably outside a thumb.
+ */
+private const val GRAB_SCALE = 1.32f
+private const val HALO = 2.2f
+
+private const val GRAB = 24f
 private const val HANDLE = 31f
 private const val HANDLE_RING = 2.6f
 private const val TICK_IN = 119f
@@ -83,12 +110,6 @@ private fun LocalTime.faceDegrees(): Float =
     (toSecondOfDay() / DAY.toFloat()) * 360f
 
 private fun norm(a: Float) = ((a % 360f) + 360f) % 360f
-
-private fun angularDistance(a: Float, b: Float): Float {
-    val d = abs(norm(a) - norm(b)) % 360f
-    return if (d > 180f) 360f - d else d
-}
-
 
 @Composable
 fun BedtimeDial(
@@ -121,7 +142,13 @@ fun BedtimeDial(
     onStartChange: (LocalTime) -> Unit,
     onEndChange: (LocalTime) -> Unit,
     /** True when it was the WAKE handle that moved - see HomeState.commitWake. */
-    onDragFinished: (endMoved: Boolean) -> Unit
+    onDragFinished: (endMoved: Boolean) -> Unit,
+    /**
+     * Is the page moving under us? A touch that lands mid-fling is how you stop
+     * a scroll, not how you set a bedtime, and it arrives exactly where the
+     * finger happened to be.
+     */
+    scrollInProgress: () -> Boolean = { false }
 ) {
     val g = gloam
     val haptics = rememberHaptics()
@@ -135,6 +162,7 @@ fun BedtimeDial(
     // index it was built with and every tap repeats the same transition.
     val curCycle by rememberUpdatedState(onCentreCycle)
     val curCount by rememberUpdatedState(centreCount)
+    val curScrolling by rememberUpdatedState(scrollInProgress)
 
     // arc alpha cross-fades with state; spec: spring(.9, 380)
     val arcAlpha by animateFloatAsState(
@@ -150,10 +178,26 @@ fun BedtimeDial(
     // what tonight will really do.
     var target by remember { mutableIntStateOf(0) }
 
+    // The grabbed handle GROWS, and stays grown until you let go. A pulse that
+    // shrank back while the finger was still down would answer "did I get it"
+    // and then stop answering "which one" - and which one is the real question,
+    // because the nearer handle is taken and at a short window the two are close
+    // enough that the wrong answer is easy.
+    val startScale by animateFloatAsState(
+        targetValue = if (target == 1) GRAB_SCALE else 1f,
+        animationSpec = spring(dampingRatio = 0.55f, stiffness = 900f),
+        label = "startScale"
+    )
+    val endScale by animateFloatAsState(
+        targetValue = if (target == 2) GRAB_SCALE else 1f,
+        animationSpec = spring(dampingRatio = 0.55f, stiffness = 900f),
+        label = "endScale"
+    )
+
     val drawnEnd = if (target == 2) end else endTonight ?: end
     val windowSecs = ((drawnEnd.toSecondOfDay() - start.toSecondOfDay() + DAY) % DAY)
 
-    Box(modifier.size(260.dp), contentAlignment = Alignment.Center) {
+    Box(modifier.size(260.dp).testTag(DIAL_TAG), contentAlignment = Alignment.Center) {
         Canvas(
             Modifier
                 .size(260.dp)
@@ -200,6 +244,7 @@ fun BedtimeDial(
                     val cy = size.height / 2f
                     val k = min(size.width, size.height) / SPEC
                     val rTrack = R_TRACK * k
+                    val grab = GRAB * k
 
                     fun angleAt(p: Offset) =
                         norm(atan2(p.y - cy, p.x - cx) * 180f / PI.toFloat() + 90f)
@@ -213,30 +258,55 @@ fun BedtimeDial(
                         return LocalTime.ofSecondOfDay(snapped.toLong())
                     }
 
-                    var last: LocalTime? = null
+                    /** Where a handle is DRAWN - the same maths the canvas uses. */
+                    fun handleAt(deg: Float): Offset {
+                        val rad = (deg - 90f) * PI.toFloat() / 180f
+                        return Offset(cx + rTrack * cos(rad), cy + rTrack * sin(rad))
+                    }
 
-                    detectDragGestures(
-                        onDragStart = { pos ->
-                            val d = hypot(pos.x - cx, pos.y - cy)
-                            // grab only near the ring, never in the centre well
-                            target = if (d < R_WELL_TOUCH * k) 0 else {
-                                val a = angleAt(pos)
-                                // curDrawnEnd, not curEnd: the wake handle is
-                                // grabbed where it is drawn, which is the alarm
-                                // while one is overriding.
-                                if (angularDistance(a, curStart.faceDegrees()) <=
-                                    angularDistance(a, curDrawnEnd.faceDegrees())
-                                ) 1 else 2
-                            }
-                            if (target != 0) haptics.grab()
-                        },
-                        onDrag = { change, _ ->
-                            if (target == 0) return@detectDragGestures
+                    // Hand-rolled rather than detectDragGestures, which claims
+                    // the gesture in ANY direction once slop is crossed - so a
+                    // vertical swipe over the dial was taken from the page.
+                    // This is the shape the centre well above already uses:
+                    // decide first, consume only once it is ours.
+                    awaitEachGesture {
+                        val down = awaitFirstDown(requireUnconsumed = false)
+
+                        // Mid-fling, a touch is how you STOP the page, not how
+                        // you set a bedtime.
+                        if (curScrolling()) return@awaitEachGesture
+
+                        // curDrawnEnd, not curEnd: the wake handle is grabbed
+                        // where it is drawn, which is the alarm while one is
+                        // overriding.
+                        val dStart = hypot(
+                            down.position.x - handleAt(curStart.faceDegrees()).x,
+                            down.position.y - handleAt(curStart.faceDegrees()).y
+                        )
+                        val dEnd = hypot(
+                            down.position.x - handleAt(curDrawnEnd.faceDegrees()).x,
+                            down.position.y - handleAt(curDrawnEnd.faceDegrees()).y
+                        )
+                        if (min(dStart, dEnd) > grab) return@awaitEachGesture
+
+                        target = if (dStart <= dEnd) 1 else 2
+                        haptics.grab()
+                        // Ours from here, exactly as a slider thumb is: the
+                        // touch landed on the handle, so the page does not get
+                        // to reinterpret it halfway through.
+                        down.consume()
+                        var last: LocalTime? = null
+
+                        while (true) {
+                            val change = awaitPointerEvent().changes
+                                .firstOrNull { it.id == down.id } ?: break
+                            if (!change.pressed) break
                             val t = timeAt(change.position)
                             if (t != last) {
-                                val s = if (target == 1) t else curStart
-                                val e = if (target == 2) t else curEnd
-                                val len = (e.toSecondOfDay() - s.toSecondOfDay() + DAY) % DAY
+                                val st = if (target == 1) t else curStart
+                                val en = if (target == 2) t else curEnd
+                                val len =
+                                    (en.toSecondOfDay() - st.toSecondOfDay() + DAY) % DAY
                                 if (len in 1..MAX_WINDOW) {
                                     last = t
                                     if (t.minute == 0) haptics.hourTick() else haptics.tick()
@@ -244,13 +314,12 @@ fun BedtimeDial(
                                 }
                             }
                             change.consume()
-                        },
-                        onDragEnd = {
-                            if (target != 0) { haptics.release(); onDragFinished(target == 2) }
-                            target = 0; last = null
-                        },
-                        onDragCancel = { target = 0; last = null }
-                    )
+                        }
+
+                        haptics.release()
+                        onDragFinished(target == 2)
+                        target = 0
+                    }
                 }
         ) {
             val k = size.minDimension / SPEC
@@ -361,8 +430,18 @@ fun BedtimeDial(
 
             // handles - 31dp circle with a surface-coloured ring so they sit above the arc
             val hr = (HANDLE / 2f) * k
-            drawHandle(at(startDeg, rTrack), hr, HANDLE_RING * k, Arc.night, g.surface, moon = true)
-            drawHandle(at(drawnEnd.faceDegrees(), rTrack), hr, HANDLE_RING * k, Arc.dawn, g.surface, moon = false)
+            // 0 while resting, 1 while held - derived from the scale rather
+            // than animated a second time, so the halo and the growth cannot
+            // drift out of step.
+            fun held(scale: Float) = ((scale - 1f) / (GRAB_SCALE - 1f)).coerceIn(0f, 1f)
+            drawHandle(
+                at(startDeg, rTrack), hr * startScale, HANDLE_RING * k,
+                Arc.night, g.surface, moon = true, held = held(startScale)
+            )
+            drawHandle(
+                at(drawnEnd.faceDegrees(), rTrack), hr * endScale, HANDLE_RING * k,
+                Arc.dawn, g.surface, moon = false, held = held(endScale)
+            )
         }
 
         // No hit area on the readout itself - the gesture lives on the canvas
@@ -413,8 +492,12 @@ fun BedtimeDial(
 }
 
 private fun DrawScope.drawHandle(
-    at: Offset, r: Float, ring: Float, fill: Color, ringColor: Color, moon: Boolean
+    at: Offset, r: Float, ring: Float, fill: Color, ringColor: Color, moon: Boolean,
+    /** 0 resting, 1 held. Drives the halo, which is the only part a finger
+        does not cover. */
+    held: Float = 0f
 ) {
+    if (held > 0f) drawCircle(fill.copy(alpha = 0.28f * held), radius = r * HALO, center = at)
     drawCircle(ringColor, radius = r + ring, center = at)
     drawCircle(fill, radius = r, center = at)
     // The sun's ink is Arc.onDawn, shared with the notice strip so the two

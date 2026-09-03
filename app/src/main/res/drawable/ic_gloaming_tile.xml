@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The app's own mark, adapted for a quick settings tile.
+
+     NOT ic_gloaming, which is a bare crescent: on the shade that sat two tiles
+     from the system's own Do Not Disturb, also a crescent, and the two read as
+     twins. The arc is what makes this one ours at a glance.
+
+     GEOMETRY IS ic_launcher_foreground's, number for number - the bite of 18.48
+     offset across the disc, the 0.86 on the crescent's own group, the arc at
+     r=30.60 with a 4.0 stroke and round caps. The first version of this file
+     copied ic_launcher_monochrome instead, which was carrying the OLD bite of
+     19.74 and a 3.0 arc, so the tile drew a crescent 0.499 R thick where the
+     icon draws one 0.776 R thick. It was reported as not looking like the app
+     icon, and it did not. If those numbers move in the foreground they move
+     here, and in ic_launcher_monochrome, in the same commit.
+
+     WHAT IS DIFFERENT, and only this:
+
+     Scale. The launcher keeps only the central 72dp of its 108dp canvas and
+     scales up; a tile shows the whole box. So the launcher's balance group
+     (0.92 with translateY 2.51) is replaced rather than kept - at 1.53 the
+     artwork's outer extent, the arc's 30.60 plus half its 4.0 stroke, reaches
+     r=49.9 of 54 and the mark spans about 22 of the 24dp box.
+
+     That is essentially the ceiling. 32.6 x S must stay inside 54, so S cannot
+     pass 1.656 without the arc clipping at the viewport edge, and the optical
+     drop below spends some of what is left. There is no meaningful size left to
+     find here - a mark that still reads small wants a heavier stroke, not a
+     bigger box.
+
+     The drop. translateY 4.17 is the launcher's 2.51 carried across the change
+     of scale (2.51 x 1.53 / 0.92). It is not decoration: the arc's 113 degree
+     gap is at the BOTTOM, so the ink sits above the centre of its own bounding
+     box, and centring the box leaves the mark visibly high. The foreground's
+     comment works this out at length; the same correction applies here for the
+     same reason, scaled. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp" android:height="24dp"
+    android:viewportWidth="108" android:viewportHeight="108"
+    android:tint="?android:attr/colorControlNormal">
+    <group android:pivotX="54" android:pivotY="54"
+           android:scaleX="1.53" android:scaleY="1.53"
+           android:translateY="4.17">
+        <group android:rotation="-32" android:pivotX="54" android:pivotY="54"
+            android:scaleX="0.86" android:scaleY="0.86">
+            <clip-path android:pathData="M33.00,54.00 a21.00,21.00 0 1,0 42.00,0 a21.00,21.00 0 1,0 -42.00,0 Z" />
+            <path android:fillType="evenOdd" android:fillColor="#FFFFFFFF"
+                android:pathData="M33.00,54.00 a21.00,21.00 0 1,0 42.00,0 a21.00,21.00 0 1,0 -42.00,0 Z M46.43,45.59 a18.48,18.48 0 1,0 36.96,0 a18.48,18.48 0 1,0 -36.96,0 Z" />
+        </group>
+        <group android:rotation="90.95" android:pivotX="54" android:pivotY="54">
+            <path
+                android:pathData="M70.82,79.56 A30.60,30.60 0 0 1 30.95,74.12 A30.60,30.60 0 0 1 30.95,33.88 A30.60,30.60 0 0 1 70.82,28.44"
+                android:strokeWidth="4.0" android:strokeLineCap="round"
+                android:strokeColor="#FFFFFFFF" android:fillColor="#00000000" />
+        </group>
+    </group>
+</vector>

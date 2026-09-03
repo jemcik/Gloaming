@@ -7,6 +7,7 @@
     <string name="state_on_until">Включен до %1$s</string>
     <string name="state_starts_in">Через %1$s</string>
     <string name="state_nothing_scheduled">Нет расписания</string>
+    <string name="state_needs_permission">Нужен доступ</string>
     <string name="badge_once">Один раз</string>
 
     <!-- Durations. Hours and minutes are separate so a language with more than
@@ -60,13 +61,16 @@
     <string name="launch_setup_row">Запуск приложений</string>
     <string name="launch_setup_why">Найдите Gloaming через поиск, выберите «Управлять вручную», затем включите автозапуск и работу в фоне</string>
     <string name="section_this_phone">этот телефон</string>
-    <string name="launch_link_why">Запуск после перезагрузки и работа в фоне</string>
+    <string name="launch_link_why">Автозапуск и работа в фоне</string>
     <string name="bedtime_settings_row">Системный режим сна</string>
-    <string name="bedtime_settings_why">У телефона есть свои настройки сна с собственными параметрами экрана</string>
+    <string name="bedtime_settings_why">От производителя</string>
     <string name="launch_tip_title">Сделайте сон надёжным</string>
-    <string name="launch_tip_why">Этот телефон может останавливать приложения, пока они закрыты, — из-за этого сон остаётся включённым утром. Два переключателя в разделе «Запуск приложений» это предотвращают: автозапуск и работа в фоне.</string>
+    <string name="launch_tip_why">Этот телефон может останавливать приложения, пока они закрыты. Тогда режим сна включается позже или не выключается утром. Два переключателя в разделе «Запуск приложений» это предотвращают: автозапуск и работа в фоне.</string>
     <string name="launch_tip_action">Настроить</string>
-    <string name="launch_tip_skip">Пропустить</string>
+    <string name="launch_tip_dismiss">Закрыть</string>
+    <string name="launch_tip_check">Gloaming не может проверить эти переключатели сам. Вы включили автозапуск и работу в фоне?</string>
+    <string name="launch_tip_not_yet">Ещё нет</string>
+    <string name="launch_tip_done">Готово</string>
 
     <!-- ============ Home: the window ============ -->
     <!-- Overlines, uppercased in code. Keep short: they sit above the times. -->
@@ -190,14 +194,24 @@
 
     <!-- Settings -->
     <string name="settings_title">Настройки</string>
-    <string name="section_appearance">внешний вид</string>
+    <string name="section_theme">тема</string>
     <string name="theme_system">Как в системе</string>
     <string name="theme_light">Светлая</string>
-    <string name="theme_dark">Темная</string>
+    <string name="theme_dark">Тёмная</string>
     <string name="section_language">язык</string>
     <string name="settings_language">Язык приложения</string>
     <string name="settings_language_why">Открывает настройки</string>
+    <string name="section_diagnostics">отчёт о проблеме</string>
+    <string name="diagnostics_row">Отправить диагностику</string>
+    <string name="diagnostics_why">Для отчёта об ошибке</string>
+    <string name="diagnostics_subject">Диагностика Gloaming</string>
+    <string name="section_reset">начать заново</string>
+    <string name="reset_row">Сбросить Gloaming</string>
+    <string name="reset_why">Как после установки</string>
+    <string name="reset_confirm_title">Сбросить Gloaming?</string>
+    <string name="reset_confirm_body">Режим сна выключится, график и список разрешённых вернутся к исходным значениям, а правило Gloaming будет удалено из «Не беспокоить». Журнал диагностики сохранится.</string>
+    <string name="action_reset">Сбросить</string>
     <string name="section_about">о приложении</string>
     <string name="settings_version">Версия %1$s</string>
-    <string name="settings_about_body">Gloaming включает «Не беспокоить» и эффекты экрана на время сна и выключает их утром. Работает с закрытым приложением.</string>
+    <string name="settings_about_body">Один переключатель на всю ночь. Gloaming автоматизирует включение режима «Не беспокоить» и активацию различных эффектов экрана по заданному графику — всё, что нужно для режима сна, собрано в одном месте, а не разбросано по настройкам. Работает с закрытым приложением.</string>
 </resources>

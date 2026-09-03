@@ -181,7 +181,7 @@ fun Home(
             BackgroundNoticeSection(s)
             MissedAlarmSection(s)
         LaunchTipSection(s)
-                WindowBlock(s, now, runningNow)
+                WindowBlock(s, now, runningNow, scroll)
                 EndsSection(s)
         DaysSection(s)
                 WakeSection(s, runningNow, onOpenInterruptions)
@@ -331,6 +331,14 @@ private fun LaunchSetupSection(s: HomeState) {
  * as a finding is what made the previous version of this card unbearable - it
  * appeared on every phone with a launch manager, said something was wrong when
  * nothing was, and could not be cleared by fixing anything.
+ *
+ * ONLY THE REFUSAL ANSWERS IT. "Set up" used to close the tip as well, so
+ * opening the vendor screen, changing nothing and pressing back left the card
+ * gone for good - reported as exactly that, and reproduced on the Honor. Nothing
+ * here can tell the difference: Honor's auto-launch state is unreadable, so an
+ * app that treats "you looked at the screen" as "you did it" has made the one
+ * claim it has no way to check, and will never find out it was wrong. Going to
+ * look is not an answer. Only "Skip" is.
  */
 @Composable
 private fun LaunchTipSection(s: HomeState) {
@@ -342,16 +350,36 @@ private fun LaunchTipSection(s: HomeState) {
 
     Section(stringResource(R.string.section_this_phone), rule = false) {
         GroupedList(card, listOf {
-            TipCard(
-                stringResource(R.string.launch_tip_title),
-                stringResource(R.string.launch_tip_why),
-                stringResource(R.string.launch_tip_skip),
-                stringResource(R.string.launch_tip_action),
-                onDismiss = { haptics.select(); s.closeLaunchTip() },
-                onAction = {
-                    haptics.open(); s.closeLaunchTip(); Doors.openAutoStart(ctx)
-                }
-            )
+            // Two faces, and the second exists because the first cannot be
+            // checked. Before you have been: an offer, refusable. After you
+            // have been: the question the app has no way to answer for itself.
+            // Asking is the honest move where measuring is impossible - and it
+            // is what replaces the accidental dismissal that "Set up" used to
+            // perform, which was wrong for treating a visit as an answer.
+            if (s.tipVisited) {
+                TipCard(
+                    stringResource(R.string.launch_tip_title),
+                    stringResource(R.string.launch_tip_check),
+                    stringResource(R.string.launch_tip_not_yet),
+                    stringResource(R.string.launch_tip_done),
+                    // Not yet is not a refusal - it is "I have not done it",
+                    // which puts them back where they were, still able to
+                    // dismiss the offer outright.
+                    onDismiss = { haptics.select(); s.unvisitLaunchTip() },
+                    onAction = { haptics.confirm(); s.closeLaunchTip() }
+                )
+            } else {
+                TipCard(
+                    stringResource(R.string.launch_tip_title),
+                    stringResource(R.string.launch_tip_why),
+                    stringResource(R.string.launch_tip_dismiss),
+                    stringResource(R.string.launch_tip_action),
+                    onDismiss = { haptics.select(); s.closeLaunchTip() },
+                    onAction = {
+                        haptics.open(); s.visitLaunchTip(); Doors.openAutoStart(ctx)
+                    }
+                )
+            }
         })
     }
 }
@@ -427,7 +455,12 @@ private fun MissedAlarmSection(s: HomeState) {
  * and the sentence that says it in words. Nothing here is separable from the rest.
  */
 @Composable
-private fun WindowBlock(s: HomeState, now: LocalTime, runningNow: Boolean) {
+private fun WindowBlock(
+    s: HomeState,
+    now: LocalTime,
+    runningNow: Boolean,
+    scroll: ScrollState
+) {
     val ctx = LocalContext.current
     val res = LocalResources.current
     val g = gloam
@@ -503,7 +536,9 @@ private fun WindowBlock(s: HomeState, now: LocalTime, runningNow: Boolean) {
                     }
                     Spacer(Modifier.height(4.dp))
                     WindowTime(
-                        ctx, s.start,
+                        // s.tick, so a change to the phone's 12/24 setting
+                        // reaches the numerals. Nothing else here would move.
+                        remember(s.tick, s.start) { Clock.reading(ctx, s.start) },
                         // dimmed once it is behind you, but never near-black
                         color = if (runningNow) g.onSurfaceMid.copy(alpha = 0.62f)
                         else g.onSurfaceMid
@@ -546,7 +581,12 @@ private fun WindowBlock(s: HomeState, now: LocalTime, runningNow: Boolean) {
                     // Tonight's end, not the setting behind it. "I see 8:30 in
                     // the top right, how can this be correct" - it could not:
                     // every other reading on the screen said 7:30.
-                    WindowTime(ctx, endTonight ?: s.end, color = g.onSurfaceMid)
+                    WindowTime(
+                        remember(s.tick, endTonight, s.end) {
+                            Clock.reading(ctx, endTonight ?: s.end)
+                        },
+                        color = g.onSurfaceMid
+                    )
 
                 }
             }
@@ -618,6 +658,7 @@ private fun WindowBlock(s: HomeState, now: LocalTime, runningNow: Boolean) {
                     placeable.place(0, -trim)
                 }
             },
+            scrollInProgress = { scroll.isScrollInProgress },
             start = s.start, end = s.end, endTonight = endTonight, now = now,
             running = runningNow,
             track = card, enabled = s.enabled,
@@ -1261,7 +1302,10 @@ private fun HomeBar(
         statusLine(
             ctx, res, s.enabled, prefs.activeDay, s.start, s.end, s.days,
             alarm = Scheduler.endingAlarm(ctx, s.endAtAlarm),
-            exitAtAlarm = s.endAtAlarm
+            exitAtAlarm = s.endAtAlarm,
+            // The bar already knows - it is what disables the switch beside
+            // this line - and saying it here stops the two disagreeing.
+            ready = ready
         )
     }
 
@@ -1333,10 +1377,14 @@ private fun HomeBar(
                 checked = s.enabled, enabled = ready,
                 onCheckedChange = { s.setBedtime(it) },
                 // The one switch in the app that has three things
-                // to say. Checked is armed; checked with the moon
-                // is a window actually running.
-                icon = if (runningNow) R.drawable.ic_bedtime
-                       else R.drawable.ic_check,
+                // to say, and the pair says them in the right
+                // order: an hourglass while a window is only
+                // SCHEDULED, a tick once it is in effect. It used
+                // to be the other way about - a tick sat on the
+                // thumb all evening while bedtime was doing
+                // nothing, which is what a tick should never mean.
+                icon = if (runningNow) R.drawable.ic_check
+                       else R.drawable.ic_hourglass,
                 contentDescription = stringResource(R.string.bedtime_mode)
             )
             IconButton(onClick = { haptics.open(); onOpenSettings() }) {

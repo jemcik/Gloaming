@@ -6,8 +6,11 @@ import androidx.compose.material3.LocalContentColor
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
+import androidx.annotation.DrawableRes
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
@@ -21,8 +24,10 @@ import com.jemcik.gloaming.R
 import com.jemcik.gloaming.ui.LinkRow
 import com.jemcik.gloaming.ui.RadioRow
 import com.jemcik.gloaming.core.BootWatch
+import com.jemcik.gloaming.core.Diagnostics
 import com.jemcik.gloaming.core.Doors
 import com.jemcik.gloaming.core.Prefs
+import com.jemcik.gloaming.core.Reset
 
 /**
  * Everything that is a preference about the APP rather than about tonight.
@@ -40,6 +45,7 @@ fun SettingsScreen(themeMode: Int, onThemeMode: (Int) -> Unit, onBack: () -> Uni
     val ctx = LocalContext.current
     val g = gloam
     val haptics = rememberHaptics()
+    var confirmReset by remember { mutableStateOf(false) }
     val version = remember {
         runCatching {
             ctx.packageManager.getPackageInfo(ctx.packageName, 0).versionName
@@ -63,7 +69,7 @@ fun SettingsScreen(themeMode: Int, onThemeMode: (Int) -> Unit, onBack: () -> Uni
             .padding(top = 8.dp, bottom = 40.dp),
         verticalArrangement = Arrangement.spacedBy(GROUP)
     ) {
-        Section(stringResource(R.string.section_appearance), rule = false) {
+        Section(stringResource(R.string.section_theme), rule = false) {
             SettingsCard {
                 // No dividers between these: a radio group is ONE control, and
                 // the choice sheets - the same control - do not divide either.
@@ -87,14 +93,7 @@ fun SettingsScreen(themeMode: Int, onThemeMode: (Int) -> Unit, onBack: () -> Uni
                     // Without it this row's text started at 40dp where the radio
                     // rows above start at 80 - the same ragged left edge "what
                     // can wake you" had.
-                    leading = {
-                        Icon(
-                            painterResource(R.drawable.ic_language),
-                            contentDescription = null,
-                            tint = LocalContentColor.current,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
+                    leading = rowIcon(R.drawable.ic_language)
                 ) {
                     haptics.open()
                     runCatching {
@@ -128,31 +127,45 @@ fun SettingsScreen(themeMode: Int, onThemeMode: (Int) -> Unit, onBack: () -> Uni
                         LinkRow(
                             stringResource(R.string.launch_setup_row),
                             supporting = stringResource(R.string.launch_link_why),
-                            leading = {
-                                Icon(
-                                    painterResource(R.drawable.ic_restart),
-                                    contentDescription = null,
-                                    tint = LocalContentColor.current,
-                                    modifier = Modifier.size(24.dp)
-                                )
-                            }
+                            leading = rowIcon(R.drawable.ic_restart)
                         ) { haptics.open(); Doors.openAutoStart(ctx) }
                     }
                     if (systemBedtime) {
                         LinkRow(
                             stringResource(R.string.bedtime_settings_row),
                             supporting = stringResource(R.string.bedtime_settings_why),
-                            leading = {
-                                Icon(
-                                    painterResource(R.drawable.ic_bedtime),
-                                    contentDescription = null,
-                                    tint = LocalContentColor.current,
-                                    modifier = Modifier.size(24.dp)
-                                )
-                            }
+                            leading = rowIcon(R.drawable.ic_bedtime)
                         ) { haptics.open(); Doors.openSystemBedtime(ctx) }
                     }
                 }
+            }
+        }
+
+        // Unconditional, unlike the section above it. This is the row someone
+        // is asked to tap when a night went wrong on a phone nobody here owns,
+        // so it must never sit behind a capability probe - the phones most
+        // worth hearing from are exactly the ones where a probe says no.
+        Section(stringResource(R.string.section_diagnostics)) {
+            SettingsCard {
+                LinkRow(
+                    stringResource(R.string.diagnostics_row),
+                    supporting = stringResource(R.string.diagnostics_why),
+                    leading = rowIcon(R.drawable.ic_share)
+                ) { haptics.open(); Diagnostics.share(ctx) }
+            }
+        }
+
+        // The last thing that DOES anything, with only About below it. The
+        // route a user would otherwise take - Android's own "Clear storage" -
+        // leaves this app's zen rule behind, live and unreachable, so this is
+        // not a convenience: it is the only safe way to start over. See Reset.
+        Section(stringResource(R.string.section_reset)) {
+            SettingsCard {
+                LinkRow(
+                    stringResource(R.string.reset_row),
+                    supporting = stringResource(R.string.reset_why),
+                    leading = rowIcon(R.drawable.ic_reset)
+                ) { haptics.open(); confirmReset = true }
             }
         }
 
@@ -168,6 +181,62 @@ fun SettingsScreen(themeMode: Int, onThemeMode: (Int) -> Unit, onBack: () -> Uni
         }
     }
     }
+
+    // Irreversible, so it is asked for twice. The body names what goes and what
+    // stays, because "reset" alone does not say whether the log survives - and
+    // the person reading it is usually mid-problem.
+    if (confirmReset) {
+        AlertDialog(
+            onDismissRequest = { confirmReset = false },
+            containerColor = g.raise,
+            shape = RoundedCornerShape(32.dp),
+            title = { Text(stringResource(R.string.reset_confirm_title)) },
+            text = { Text(stringResource(R.string.reset_confirm_body)) },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        haptics.confirm()
+                        confirmReset = false
+                        Reset.toDefaults(ctx)
+                        // Out of Settings, which is both the honest feedback -
+                        // Home redraws from an empty store on ON_RESUME - and
+                        // the only way to avoid this screen sitting on values
+                        // that no longer exist.
+                        onBack()
+                    },
+                    shape = CircleShape
+                ) { Text(stringResource(R.string.action_reset)) }
+            },
+            dismissButton = {
+                OutlinedButton(
+                    onClick = { confirmReset = false },
+                    shape = CircleShape,
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = g.onSurfaceLow),
+                    border = BorderStroke(1.dp, g.outline)
+                ) { Text(stringResource(R.string.action_cancel)) }
+            }
+        )
+    }
+}
+
+/**
+ * The leading icon every row on this screen carries, stated once.
+ *
+ * Five rows repeated the same six lines, which is five places to forget the
+ * tint - and the tint is what makes the icon follow the row rather than sitting
+ * at whatever colour it was drawn in. See the comment on the language row for
+ * why these rows have an icon at all: without one their text starts at 40dp
+ * where the radio rows above start at 80, and the screen grows a second left
+ * edge.
+ */
+@Composable
+private fun rowIcon(@DrawableRes id: Int): @Composable () -> Unit = {
+    Icon(
+        painterResource(id),
+        contentDescription = null,
+        tint = LocalContentColor.current,
+        modifier = Modifier.size(24.dp)
+    )
 }
 
 /** The app's card, holding a group of rows. */

@@ -13,7 +13,7 @@ it — driven by exact alarms, so it fires with the app closed.
 [![Android](https://img.shields.io/badge/Android-15%2B%20(API%2035)-3DDC84)](#requirements)
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.3.21-7F52FF)](https://kotlinlang.org)
 [![Compose](https://img.shields.io/badge/Jetpack%20Compose-Material%203-4285F4)](https://developer.android.com/jetpack/compose)
-[![Tests](https://img.shields.io/badge/tests-140-success)](#tests)
+[![Tests](https://img.shields.io/badge/tests-163-success)](#tests)
 
 <img src="docs/screenshots/home.png" width="19%" alt="Home, mid-window">
 <img src="docs/screenshots/home-dark.png" width="19%" alt="Home, dark, mid-window">
@@ -73,10 +73,12 @@ doing it, or on any vendor doing it at all.
   for one value is how a screen ends up showing a wake time of 8:30 and a
   countdown to 7:30 at the same moment. Where no alarm is set at all the section
   is not drawn, because there is nothing for the night to end at.
-- **A Quick Settings tile**, with the same three states as the switch in the app:
-  off, a tick while armed, the moon while a window is actually running. Armed is
-  not running, and a tile that collapsed the two would be lying for most of the
-  evening. Long-press opens the app.
+- **A Quick Settings tile**, wearing the same faces as the switch in the app: an
+  hourglass while a window is only scheduled, a tick once it is actually in
+  effect, and the app's own mark when bedtime is off. Armed is not running, and a
+  tile that collapsed the two would be lying for most of the evening — a tick
+  sitting there all evening while nothing is happening is the one thing a tick
+  must not mean. Long-press opens the app.
 - **Do Not Disturb**, with a per-night allowlist — who can call, who can
   message, conversations, repeat callers, reminders, calendar events, media. The
   screen reports what the system says is actually in effect, rather than what the
@@ -110,9 +112,20 @@ doing it, or on any vendor doing it at all.
   deliberately does not.
 - **English, Russian and Ukrainian**, with a per-app language picker, and clock
   times in whichever 12- or 24-hour format the phone is set to.
-- **A journal.** The app keeps its own on-device log of every decision it makes
-  overnight. Useful anywhere, and necessary on devices that encrypt logcat for
-  third-party apps.
+- **A journal, and a way to send it.** The app keeps its own on-device log of
+  every decision it makes overnight — useful anywhere, and necessary on devices
+  that encrypt logcat for third-party apps. **Send diagnostics** turns that, the
+  schedule and the capability answers into plain text, alongside what the
+  *system* reports about the zen rule. The two are kept deliberately apart and in
+  that order, because every bug worth the feature lives in the gap between what
+  the phone says and what the app intended. It cannot tell you whether a
+  notification made a sound; nothing an ordinary app can reach can.
+- **Reset, in the one order that is safe.** Android's own *Clear storage* is a
+  trap here: the prefs are the app's only handle on its zen rule, so wiping them
+  leaves the rule live, applying its effects, and unreachable — measured. **Reset
+  Gloaming** switches bedtime off, puts the vendor's always-on keys back, removes
+  the rule and only then clears the store. The journal survives, because someone
+  resetting is usually resetting because something went wrong.
 
 ## Devices
 
@@ -190,6 +203,13 @@ Gloaming notices this by itself and offers a button straight to the right
 screen. The notice clears once a boot arrives normally, and it never asks which
 phone you have, so it works on any vendor doing this.
 
+The app also offers the setup once, when bedtime is first switched on — and
+because those two switches cannot be read back, going to look at them is not
+treated as having set them. Come back and the card asks rather than assumes:
+*did you turn them on?* One tap answers it for good. Refusing it outright is
+final too, and survives a reset, since a reset restores what the app owns and
+those switches are not among them.
+
 ### Optional: always-on display on Honor and Huawei
 
 Some phones ship their own always-on display and ignore the platform's request
@@ -259,6 +279,11 @@ itself rather than assuming:
 
 None of these ask which phone you have.
 
+When it does go wrong on a phone nobody here owns, **Settings ▸ Send
+diagnostics** is the answer: one tap produces a plain-text report — the rule as
+the system reports it, the schedule as the app intended it, every capability
+answer, and the journal — which you can read before it goes anywhere.
+
 ## Build
 
     ./tools/build.sh      debug APK, full log at /tmp/build.log
@@ -275,7 +300,7 @@ None of these ask which phone you have.
 
 ## Tests
 
-    ./gradlew test        140 tests, JVM only, seconds
+    ./gradlew test        163 tests, JVM only, seconds
     ./gradlew coverage    JaCoCo HTML at app/build/reports/jacoco/coverage
 
 They cover the scheduling core (pure functions of times, days and an injected
@@ -285,7 +310,10 @@ most, an alarm that arrives only because the app was opened — and the one-shot
 preferences migrations, the only code here that could corrupt data without saying
 anything. The alarm that ends a window early is driven through a real
 `setAlarmClock`, so the tests exercise the same `getNextAlarmClock` the app reads
-rather than a stub of it. Some of them measure real text
+rather than a stub of it. Newer ones cover the diagnostics report, the reset
+teardown — no rule survives it, not even one whose id was already lost — and the
+dial's own gesture, where a vertical swipe across the ring must scroll the page
+rather than move the schedule. Some of them measure real text
 layout at each locale's own widths, because a row that fits in English and wraps
 in Ukrainian is a bug you cannot see from the source — at the width the row
 actually has on the screen, which is not the width of the screen.

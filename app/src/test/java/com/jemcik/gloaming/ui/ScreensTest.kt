@@ -66,6 +66,37 @@ class ScreensTest {
      */
     private fun withLaunchManager() = ctx().withLaunchManager()
 
+    @Test
+    fun `the switch follows the TILE, with no resume to carry the news`() {
+        // Reported on the Honor: bedtime off, pull the shade down, tap the
+        // tile, push the shade back up - and the switch underneath still says
+        // Off while the rule is live and the alarms are armed.
+        //
+        // The tile is not a screen and does not resume anything. Measured
+        // there: `topResumedActivity` stayed MainActivity for the whole time
+        // the shade was open, so ON_RESUME - the only refresh this screen had -
+        // never fires, and no other event exists to carry the change. That is
+        // why the write itself has to be what is watched.
+        //
+        // The write goes through a SEPARATE Prefs instance on purpose. That is
+        // what the tile holds, and an instance that shares the state object's
+        // own would prove nothing about two of them agreeing.
+        val p = armed()
+        p.enabled = false
+        compose.setContent {
+            GloamingTheme(dark = false) {
+                Home(rememberScrollState(), onOpenSettings = {}, onOpenInterruptions = {})
+            }
+        }
+        val master = compose.onNodeWithContentDescription(ctx().getString(R.string.bedtime_mode))
+        master.assertIsOff()
+
+        Prefs(ctx()).enabled = true
+        compose.waitForIdle()
+
+        master.assertIsOn()
+    }
+
     private fun armed(): Prefs {
         shadowOf(ctx().getSystemService(NotificationManager::class.java))
             .setNotificationPolicyAccessGranted(true)

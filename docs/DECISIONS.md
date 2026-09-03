@@ -1715,6 +1715,35 @@ with nothing on screen to explain it. Not taken - it needs its own decision.
   to tone 14 walked the ground up towards the arc's dark end while the arc
   stayed put. If the low end ever stops reading, the fix is to lift `night` and
   `dusk` for the dark theme rather than to push the ground back down.
+- **The quick-settings shade does not pause the app underneath it, so the tile
+  could change bedtime with the switch two inches below still reading "Off".**
+  Reported on the Honor against 0.8, and reproduced there exactly: bedtime off,
+  open the shade, tap the tile, close the shade. Measured while the shade was
+  open, `topResumedActivity=com.jemcik.gloaming/.MainActivity` — the activity
+  never paused, so ON_RESUME, which was the screen's only refresh, never ran.
+  The tile had genuinely worked: the rule read `enabled=TRUE` and the alarms
+  were armed. Only the screen was wrong, which is the worst of the three
+  possible outcomes, because the app was reporting a state it was not in.
+
+  Fixed by watching the WRITE rather than any lifecycle event, since no
+  lifecycle event exists to wait for: `Prefs.watch` registers an
+  `OnSharedPreferenceChangeListener`, and the tile shares this process and this
+  file, so the callback simply arrives. Two things about it are deliberate and
+  neither is obvious. **It returns a handle rather than registering fire-and-
+  forget**: SharedPreferences holds only a WEAK reference to a listener, so one
+  that nothing else keeps alive is collected at a moment nothing explains, and
+  the bug comes back as an intermittent. **It re-reads ONE key, not everything**
+  — calling `onResume()` from the callback was the first version and is wrong
+  twice over: it reconciles the rule and re-checks the delivery probe on every
+  write the screen makes of its own (the dial commits on every drag), and it
+  would re-read the wake handle out from under a finger still moving it, which
+  is the freeze that `rememberUpdatedState` was needed for elsewhere. The tile
+  changes one value, so one value is what is followed.
+
+  `ScreensTest` pins it by writing through a SEPARATE `Prefs` instance, which is
+  what the tile actually holds — sharing the state object's own instance would
+  prove nothing about two of them agreeing. Confirmed failing without the fix
+  before it was kept.
 
 ## Build
 

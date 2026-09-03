@@ -1,6 +1,7 @@
 package com.jemcik.gloaming.core
 
 import android.content.Context
+import android.content.SharedPreferences
 import androidx.core.content.edit
 import java.time.DayOfWeek
 import java.time.LocalTime
@@ -60,8 +61,8 @@ class Prefs(ctx: Context) {
     }
 
     var enabled: Boolean
-        get() = sp.getBoolean("enabled", false)
-        set(v) = sp.edit { putBoolean("enabled", v) }
+        get() = sp.getBoolean(KEY_ENABLED, false)
+        set(v) = sp.edit { putBoolean(KEY_ENABLED, v) }
 
     /** Last values written to the journal, so unchanged state stays quiet. */
     var lastLoggedZen: String?
@@ -215,6 +216,12 @@ class Prefs(ctx: Context) {
         set(v) = sp.edit { putBoolean("probeFailed", v) }
 
     companion object {
+        /**
+         * The master switch's key, named because [watch] has to compare against
+         * it. The other keys stay as literals - nothing outside this class asks
+         * about them.
+         */
+        const val KEY_ENABLED = "enabled"
         const val NO_BOOT = Long.MIN_VALUE
         const val NO_DUE = Long.MIN_VALUE
         const val NO_DAY = Long.MIN_VALUE
@@ -249,6 +256,33 @@ class Prefs(ctx: Context) {
      * because something went wrong, and the log is the only record of what.
      */
     fun clear() = sp.edit { clear() }
+
+    /**
+     * Tell me when SOMEBODY ELSE writes to this store.
+     *
+     * The somebody is the tile, which shares this process and this file. An
+     * open screen used to learn nothing about it: the only refresh was
+     * ON_RESUME, and pulling the quick-settings shade down over an app does not
+     * pause it - measured on the Honor, where `topResumedActivity` stayed
+     * MainActivity for the whole time the shade was open. So the tile switched
+     * bedtime on, wrote it here, and the switch two inches below went on saying
+     * "Off" with no event coming that would have corrected it.
+     *
+     * The returned handle is not a courtesy. SharedPreferences keeps only a
+     * WEAK reference to a registered listener, so one that nothing else holds
+     * is collected at a moment nothing explains and the callbacks simply stop;
+     * closing over `listener` here is what keeps it alive for as long as the
+     * caller keeps the handle.
+     *
+     * `key` is null when the whole store was cleared - which is [Reset] - and
+     * callers must treat that as "everything changed" rather than "nothing did".
+     */
+    fun watch(onChange: (String?) -> Unit): AutoCloseable {
+        val listener =
+            SharedPreferences.OnSharedPreferenceChangeListener { _, key -> onChange(key) }
+        sp.registerOnSharedPreferenceChangeListener(listener)
+        return AutoCloseable { sp.unregisterOnSharedPreferenceChangeListener(listener) }
+    }
 
     var ruleId: String?
         get() = sp.getString("ruleId", null)

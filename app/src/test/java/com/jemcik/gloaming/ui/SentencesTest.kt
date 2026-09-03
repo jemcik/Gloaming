@@ -223,4 +223,44 @@ class SentencesTest {
                 || note.contains(ctx().getString(R.string.day_tomorrow))
         )
     }
+
+    @Test
+    fun `it stops counting down to something it cannot do`() {
+        // Revoke Do Not Disturb access mid-schedule and the system deletes the
+        // rule, so nothing happens at the hour. The bar went on saying "starts
+        // in 12h 51m" directly above a card explaining the permission was
+        // missing - one screen, two answers, the confident one wrong.
+        val ctx = ApplicationProvider.getApplicationContext<android.content.Context>()
+        val res = ctx.resources
+        val start = LocalTime.of(22, 30)
+        val end = LocalTime.of(8, 0)
+        val days = DayOfWeek.entries.toSet()
+        val now = LocalDateTime.of(2026, 9, 3, 9, 38)
+
+        val promising = statusLine(
+            ctx, res, true, Prefs.NO_DAY, start, end, days, now, ready = true
+        )
+        assertEquals(res.getString(R.string.state_starts_in, span(res, 772)), promising)
+
+        val honest = statusLine(
+            ctx, res, true, Prefs.NO_DAY, start, end, days, now, ready = false
+        )
+        assertEquals(res.getString(R.string.state_needs_permission), honest)
+    }
+
+    @Test
+    fun `off stays off, because off is already true`() {
+        // Readiness must not overwrite it. "Needs permission" on a switch the
+        // user has deliberately turned off would be answering a question
+        // nobody asked.
+        val ctx = ApplicationProvider.getApplicationContext<android.content.Context>()
+        assertEquals(
+            ctx.resources.getString(R.string.bedtime_off),
+            statusLine(
+                ctx, ctx.resources, false, Prefs.NO_DAY,
+                LocalTime.of(22, 30), LocalTime.of(8, 0), DayOfWeek.entries.toSet(),
+                LocalDateTime.of(2026, 9, 3, 9, 38), ready = false
+            )
+        )
+    }
 }

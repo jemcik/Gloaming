@@ -1302,7 +1302,10 @@ private fun HomeBar(
         statusLine(
             ctx, res, s.enabled, prefs.activeDay, s.start, s.end, s.days,
             alarm = Scheduler.endingAlarm(ctx, s.endAtAlarm),
-            exitAtAlarm = s.endAtAlarm
+            exitAtAlarm = s.endAtAlarm,
+            // The bar already knows - it is what disables the switch beside
+            // this line - and saying it here stops the two disagreeing.
+            ready = ready
         )
     }
 

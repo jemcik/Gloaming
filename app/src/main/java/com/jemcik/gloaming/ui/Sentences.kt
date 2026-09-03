@@ -216,9 +216,24 @@ fun statusLine(
     days: Set<DayOfWeek>,
     now: LocalDateTime = LocalDateTime.now(),
     alarm: LocalDateTime? = null,
-    exitAtAlarm: Boolean = false
+    exitAtAlarm: Boolean = false,
+    /**
+     * Can the app actually do the job - both permissions in place? Without them
+     * every path here is a promise it cannot keep.
+     */
+    ready: Boolean = true
 ): String {
     if (!enabled) return res.getString(R.string.bedtime_off)
+    // BEFORE any countdown. Revoke Do Not Disturb access mid-schedule and the
+    // system deletes the rule, so nothing will happen at the hour - but this
+    // line went on saying "starts in 12h 51m" directly above a card explaining
+    // that the permission was missing. One screen, two answers, and the more
+    // confident of them was the wrong one. Reported exactly that way.
+    //
+    // Said here rather than at either call site because the app bar and the
+    // tile both read this function, and the tile is the harder of the two to
+    // notice going stale.
+    if (!ready) return res.getString(R.string.state_needs_permission)
     // The end the alarm actually produces, so the bar and the rule agree - and
     // so flipping the switch changes the headline reading, not just a subtitle.
     val ends = Scheduler.liveWindowEnd(

@@ -5,7 +5,7 @@
     <!-- ============ Home: the master card ============ -->
     <string name="bedtime_mode">Bedtime mode</string>
     <string name="bedtime_off">Off</string>
-    <!-- BUDGET-EACH 22 state_on_until state_starts_in state_nothing_scheduled
+    <!-- BUDGET-EACH 22 state_on_until state_starts_in state_nothing_scheduled state_needs_permission
          These are the second line of the app bar's title, under "Bedtime mode".
          Measured on a 359dp screen: the title column runs x147..878, which is
          209dp, the actions starting at 878. Rendered widths there today are
@@ -24,6 +24,7 @@
     <string name="state_on_until">On now, until %1$s</string>
     <string name="state_starts_in">Starts in %1$s</string>
     <string name="state_nothing_scheduled">Nothing scheduled</string>
+    <string name="state_needs_permission">Needs permission</string>
     <string name="badge_once">Once</string>
 
     <!-- Durations. Hours and minutes are separate so a language with more than

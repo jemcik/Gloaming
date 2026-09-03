@@ -108,7 +108,9 @@ indefinitely is background restriction — see `core/BackgroundLimit.kt`.
                                  a window is running - the same two faces the
                                  app bar's switch wears, and in that order,
                                  because a tick sitting there all evening while
-                                 bedtime did nothing is what a tick must not mean
+                                 bedtime did nothing is what a tick must not mean. Never UNAVAILABLE: SystemUI
+                                 does not dispatch a click to one, so a tap
+                                 that cannot toggle OPENS THE APP instead
     ui/HomeParts.kt              what only Home draws — status pill, notice
                                  strip, day row, numerals, moon and sun glyphs
     ui/Sentences.kt              the schedule as language: windowSentence,
@@ -351,7 +353,7 @@ compileSdk 37, targetSdk 36, minSdk 35.
 
 ## Tests
 
-`app/src/test/`, 167 cases, no device. They are written as the QUESTION the code
+`app/src/test/`, 169 cases, no device. They are written as the QUESTION the code
 answers rather than as coverage of a method, because none of the bugs were ever
 in a method — they were in an assumption.
 

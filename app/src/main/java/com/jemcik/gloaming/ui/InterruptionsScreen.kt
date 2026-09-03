@@ -10,6 +10,7 @@ import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
@@ -74,6 +75,18 @@ private fun WhoIcon(kind: Who) {
     )
 }
 
+/**
+ * How long the allowlist waits for the next tap before it pushes the rule.
+ *
+ * Long enough that flipping several switches in one go is still ONE rewrite -
+ * and a rewrite of a live rule is visible, zen off and on with the system's own
+ * "Do Not Disturb is on" notification re-posted. Short enough that a single
+ * change is not something you have to leave the screen to apply, which is what
+ * it used to be: with music playing, "allow media" off did nothing you could
+ * hear until you pressed Back.
+ */
+private const val SETTLE_MS = 800L
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InterruptionsScreen(onBack: () -> Unit, onChanged: () -> Unit) {
@@ -93,18 +106,36 @@ fun InterruptionsScreen(onBack: () -> Unit, onChanged: () -> Unit) {
 
     // Each rule rewrite costs a visible blink of Do Not Disturb, so flipping six
     // switches should cost one rewrite and not six. The preference is written on
-    // every tap; the rule is pushed once, on the way out.
+    // every tap; the rule is pushed once the taps STOP.
     //
-    // But the blink is only visible while a window is actually RUNNING - rewriting
-    // an idle rule changes nothing on screen, because there is nothing on screen
-    // to change. So batching costs something exactly when it buys something, and
-    // is pure delay otherwise: the common case is someone setting this up in the
-    // evening, hours before bedtime, and making them wait for the rule until they
-    // happen to leave the screen is a staleness with nothing bought for it.
-    // Applied at once when nothing is running, batched when it would blink.
+    // The blink is only visible while a window is actually RUNNING - rewriting an
+    // idle rule changes nothing on screen, because there is nothing on screen to
+    // change. So batching costs something exactly when it buys something, and is
+    // pure delay otherwise: the common case is someone setting this up in the
+    // evening, hours before bedtime. Applied at once when nothing is running.
+    //
+    // While one IS running it settles instead of waiting for the exit, and the
+    // difference is not cosmetic. Reported: bedtime on, music playing, switch
+    // media off - and the music kept playing until the screen was left, because
+    // the push waited for ON_PAUSE. Every other row here governs something that
+    // has not happened yet, so a delayed rule reads as nothing at all; media is
+    // the one that is AUDIBLE while you change it, and a control you can hear
+    // ignoring you is a broken control. Six quick flips still cost one rewrite
+    // because each tap restarts the timer; one flip costs one, just under a
+    // second later.
     var dirty by remember { mutableStateOf(false) }
+    // Bumped per tap rather than set, so each one CANCELS the pending flush and
+    // starts a new one - a plain Boolean key would not restart the delay.
+    var pending by remember { mutableIntStateOf(0) }
     fun flush() {
         if (dirty) { dirty = false; onChanged() }
+    }
+
+    LaunchedEffect(pending) {
+        if (pending > 0) {
+            delay(SETTLE_MS)
+            flush()
+        }
     }
 
     // The readout at the foot of the screen is a live reading, not a belief, so
@@ -140,7 +171,7 @@ fun InterruptionsScreen(onBack: () -> Unit, onChanged: () -> Unit) {
         prefs.allowRepeatCallers = repeatCallers
         prefs.allowReminders = reminders; prefs.allowEvents = events
         prefs.allowMedia = media
-        if (Bedtime.runningNow(ctx, prefs)) dirty = true else onChanged()
+        if (Bedtime.runningNow(ctx, prefs)) { dirty = true; pending++ } else onChanged()
     }
 
     val wake: LocalTime = prefs.endTime

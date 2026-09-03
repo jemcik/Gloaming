@@ -916,8 +916,8 @@ with nothing on screen to explain it. Not taken - it needs its own decision.
   in `ruleSignature` and a live rule is never rewritten for them - the caption
   goes out with the next real push, or at the next START, when the rule is
   inactive and rewriting is free. `InterruptionsScreen` writes prefs per tap but
-  pushes once on ON_PAUSE or dispose, so a visit costs one rewrite rather than
-  one per switch. What remains: a screen-effect chip and either master switch
+  pushes once the taps STOP - 800 ms - so a visit costs one rewrite rather than
+  one per switch without the change waiting for the exit. What remains: a screen-effect chip and either master switch
   still blink once each, which for the switches is the honest answer anyway.
   Read the log with `dumpsys notification --noredact`, section `Zen Log:` ->
   `State Changes:`; note BSD grep has no `\s`, which silently made an early
@@ -1744,6 +1744,32 @@ with nothing on screen to explain it. Not taken - it needs its own decision.
   what the tile actually holds — sharing the state object's own instance would
   prove nothing about two of them agreeing. Confirmed failing without the fix
   before it was kept.
+- **The allowlist waited for the exit, and one row of it is AUDIBLE while you
+  change it.** Reported: bedtime running, music playing, switch media sounds off
+  — and the music kept playing until Back or Home. Batching the push until
+  ON_PAUSE was deliberate and is recorded above: every rewrite of a live rule
+  takes zen off and on and re-posts the system's "Do Not Disturb is on"
+  notification, so six switches should cost one rewrite and not six. What that
+  reasoning missed is that every OTHER row here governs something that has not
+  happened yet — a call that might come, a reminder that might fire — so a
+  delayed rule is indistinguishable from an applied one. Media is the exception:
+  it is playing while you touch the switch, so the delay is not invisible, it is
+  a control you can HEAR ignoring you.
+
+  It settles instead of waiting: 800 ms after the last tap, `SETTLE_MS`. A burst
+  of switches still collapses into one rewrite because each tap restarts the
+  timer, and a single change lands under a second later without leaving the
+  screen. Applying per tap was rejected for the reason the batching existed in
+  the first place; special-casing media alone was rejected because a rule that
+  applies at different speeds depending on which switch you touched cannot be
+  explained to anyone.
+
+  Measured on the Honor with a live window, watching the rule rather than the
+  screen: `media=disallow` before the tap, still `disallow` on a read taken
+  immediately after it, `allow` two seconds later — with "What is allowed" still
+  on screen the whole time, and the rule's condition still `STATE_TRUE`, so the
+  re-arm after the rewrite worked. `ScreensTest` pins both halves, and both
+  cases were confirmed failing without the timer.
 
 ## Build
 

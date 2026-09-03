@@ -117,7 +117,13 @@ indefinitely is background restriction — see `core/BackgroundLimit.kt`.
     ui/Sentences.kt              the schedule as language: windowSentence,
                                  planNote, dayWord, span, hhmm. No Compose
                                  state, no side effects — the testable part
-    ui/InterruptionsScreen.kt    the allowlist
+    ui/InterruptionsScreen.kt    the allowlist. Writes prefs per tap, pushes the
+                                 RULE 800ms after the last one - a rewrite of a
+                                 live rule blinks zen off and on, so six
+                                 switches must not cost six. It used to wait for
+                                 ON_PAUSE, which is invisible for every row that
+                                 governs something not yet happening and wrong
+                                 for media, which is audible while you change it
     ui/SettingsScreen.kt         theme mode, a link to the system language
                                  picker, and - where one resolves - a permanent,
                                  quiet link to the vendor's launch manager

@@ -97,6 +97,63 @@ class ScreensTest {
         master.assertIsOn()
     }
 
+    @Test
+    fun `a change made DURING a window reaches the rule without leaving the screen`() {
+        // Reported: bedtime running, music playing, switch media off - and the
+        // music kept going until Back or Home. The push waited for ON_PAUSE,
+        // which is invisible for every other row here (they all govern
+        // something that has not happened yet) and plainly wrong for the one
+        // you can HEAR while you change it.
+        val p = armed()
+        p.allowMedia = true
+        var pushes = 0
+        compose.setContent {
+            GloamingTheme(dark = false) {
+                InterruptionsScreen(onBack = {}, onChanged = { pushes++ })
+            }
+        }
+        compose.onNodeWithText(ctx().getString(R.string.row_media)).performScrollTo().performClick()
+        compose.waitForIdle()
+
+        // The tap has to have LANDED before the counter means anything. Without
+        // this the "not pushed yet" assertion below passes on a screen that
+        // never registered the click at all - which is exactly what the first
+        // version of this test did.
+        assertFalse("the tap never reached the switch", Prefs(ctx()).allowMedia)
+
+        // Still batched: the point is not to push on the tap itself, or six
+        // switches would cost six visible rewrites of a live rule.
+        assertEquals("the rule was pushed on the tap, losing the batching", 0, pushes)
+
+        compose.mainClock.advanceTimeBy(1_200)
+        assertEquals("the change never reached the rule on its own", 1, pushes)
+    }
+
+    @Test
+    fun `several switches in one go still cost ONE rewrite`() {
+        // The other half, and the reason this settles rather than pushing per
+        // tap: every rewrite of a live rule takes zen off and on and re-posts
+        // the system's "Do Not Disturb is on" notification. Each tap restarts
+        // the timer, so a burst collapses into a single push.
+        val p = armed()
+        p.allowMedia = true
+        p.allowReminders = true
+        var pushes = 0
+        compose.setContent {
+            GloamingTheme(dark = false) {
+                InterruptionsScreen(onBack = {}, onChanged = { pushes++ })
+            }
+        }
+        compose.onNodeWithText(ctx().getString(R.string.row_media)).performScrollTo().performClick()
+        compose.waitForIdle()
+        compose.mainClock.advanceTimeBy(200)
+        compose.onNodeWithText(ctx().getString(R.string.row_reminders)).performScrollTo().performClick()
+        compose.waitForIdle()
+
+        compose.mainClock.advanceTimeBy(1_200)
+        assertEquals("two taps cost two rewrites of a live rule", 1, pushes)
+    }
+
     private fun armed(): Prefs {
         shadowOf(ctx().getSystemService(NotificationManager::class.java))
             .setNotificationPolicyAccessGranted(true)

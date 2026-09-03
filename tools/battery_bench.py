@@ -79,8 +79,30 @@ def push_stamps():
     return PUSH.findall(out[cut:])
 
 
+class NotDebuggable(RuntimeError):
+    pass
+
+
 def prefs():
+    """The store, or a loud failure.
+
+    `run-as` is refused on a RELEASE build, and the refusal goes to stderr while
+    stdout comes back EMPTY - so a naive parse returns an empty dict, every
+    lookup falls through to its default, and the bench reports a configuration
+    nobody set. It did exactly that once: a running bedtime read back as
+    `enabled=false`, and `set_config` then tapped blindly at a sleeping screen
+    trying to correct a state that was never wrong. Fail here instead.
+    """
     out = sh(["run-as", PKG, "cat", "shared_prefs/gloaming.xml"])
+    if "not debuggable" in out:
+        raise NotDebuggable(
+            "cannot read the store: install the DEBUG build "
+            "(run-as is refused on a release APK, and its silence looks like data)"
+        )
+    if "<map" not in out:
+        raise NotDebuggable(
+            "the store is not there yet - launch the app once before benching"
+        )
     d = dict(re.findall(r'name="(\w+)" value="(\w+)"', out))
     return {
         "dnd": d.get("fxDnd", "true"),

@@ -108,9 +108,10 @@ indefinitely is background restriction — see `core/BackgroundLimit.kt`.
                                  a window is running - the same two faces the
                                  app bar's switch wears, and in that order,
                                  because a tick sitting there all evening while
-                                 bedtime did nothing is what a tick must not mean. Never UNAVAILABLE: SystemUI
-                                 does not dispatch a click to one, so a tap
-                                 that cannot toggle OPENS THE APP instead
+                                 bedtime did nothing is what a tick must not
+                                 mean. NEVER Tile.STATE_UNAVAILABLE: SystemUI
+                                 does not dispatch a click to one at all, so a
+                                 tap it cannot honour opens the APP instead
     ui/HomeParts.kt              what only Home draws — status pill, notice
                                  strip, day row, numerals, moon and sun glyphs
     ui/Sentences.kt              the schedule as language: windowSentence,

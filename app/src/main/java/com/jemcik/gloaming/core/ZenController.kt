@@ -279,6 +279,31 @@ object ZenController {
      * allowlist - switched the rule off, and we then declined to re-arm it
      * because we still believed it was on.
      */
+    /**
+     * Does the phone disagree with a rule we believe is ON?
+     *
+     * "Nothing is being filtered while we want zen on" is a real contradiction
+     * and worth forcing a rewrite over - see [setActive] for the reboot that
+     * costs a whole night. But it is only a contradiction WHEN WE ASKED FOR
+     * FILTERING. With the Do Not Disturb switch off our rule sets
+     * INTERRUPTION_FILTER_ALL deliberately: the rule exists to carry device
+     * effects and to filter nothing. Reading that back as "stuck" made the
+     * condition permanently true, so `setActive` could never take its early
+     * return and rewrote the rule on every call.
+     *
+     * That is not merely wasteful, it LOOPS: every rewrite makes the system
+     * broadcast a rule-status change, `ZenStatusReceiver` reconciles, reconcile
+     * reschedules, and rescheduling lands back here. Measured on the Honor with
+     * a live window and the switch off - `setAzrState` from our own uid every
+     * one to four milliseconds, STATE_TRUE / STATE_FALSE / STATE_TRUE without
+     * end, and grayscale visibly dropping out on about a third of the samples
+     * because each rewrite clears the condition before it is re-asserted.
+     * Reported as "grayscale and dim wallpaper only work if Do Not Disturb is
+     * on", which is what the flicker looks like from the outside.
+     */
+    internal fun looksStuck(active: Boolean, wantsDnd: Boolean, filter: Int): Boolean =
+        active && wantsDnd && filter == NotificationManager.INTERRUPTION_FILTER_ALL
+
     fun setActive(
         ctx: Context,
         p: Prefs,
@@ -313,8 +338,7 @@ object ZenController {
         // config stores the condition as TRUE. The two readings are of different
         // things, and the filter is the only one that says what the phone is
         // actually doing.
-        val stuck = active &&
-            currentFilter(ctx) == NotificationManager.INTERRUPTION_FILTER_ALL
+        val stuck = looksStuck(active, p.fxDnd, currentFilter(ctx))
         if (!force && !stuck && ruleState(ctx, id) == want) return true
         return try {
             // Why the extra STATE_FALSE. A reboot mid-window leaves the rule

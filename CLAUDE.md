@@ -364,7 +364,8 @@ is in DECISIONS.md.
                          the next alarms, the journal. Read-only
     ./gradlew test       the whole suite, on the JVM, in seconds
     ./gradlew coverage   JaCoCo, HTML + XML under app/build/reports/jacoco
-    ./gradlew lint       0 errors; 1 finding left is policy (targetSdk currency)
+    ./gradlew lint       0 errors; 2 findings left are policy (targetSdk currency,
+                         and one ModifierParameter in BedtimeDial)
     python3 tools/check_translation.py app/src/main/res/values-ru/strings.xml ru
     python3 tools/render_icon.py        re-render docs/icon.png from the drawable
     adb shell run-as com.jemcik.gloaming cat files/journal.log
@@ -388,12 +389,12 @@ publish an APK it cannot verify. A stable signing identity is half of an
 upgradable APK — 0.1 and 0.2 shipped under throwaway debug keys and are
 permanently stranded.
 
-Toolchain: AGP 9.3.2, Gradle 9.7.1, Compose compiler 2.3.21, BOM 2026.08.00,
+Toolchain: AGP 9.4.0, Gradle 9.7.1, Compose compiler 2.3.21, BOM 2026.08.00,
 compileSdk 37, targetSdk 36, minSdk 35.
 
 ## Tests
 
-`app/src/test/`, 169 cases, no device. They are written as the QUESTION the code
+`app/src/test/`, 176 cases, no device. They are written as the QUESTION the code
 answers rather than as coverage of a method, because none of the bugs were ever
 in a method — they were in an assumption.
 

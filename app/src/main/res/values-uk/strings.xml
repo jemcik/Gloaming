@@ -7,7 +7,7 @@
     <string name="state_on_until">Увімкнено до %1$s</string>
     <string name="state_starts_in">Через %1$s</string>
     <string name="state_nothing_scheduled">Нічого не заплановано</string>
-    <string name="state_needs_permission">Потрібен дозвіл</string>
+    <string name="state_needs_permission">Потрібен доступ</string>
     <string name="badge_once">Один раз</string>
 
     <!-- Durations. Hours and minutes are separate so a language with more than
@@ -63,7 +63,7 @@
     <string name="section_this_phone">цей телефон</string>
     <string name="launch_link_why">Автозапуск і робота у фоні</string>
     <string name="bedtime_settings_row">Системний режим сну</string>
-    <string name="bedtime_settings_why">Телефон має власний</string>
+    <string name="bedtime_settings_why">Від виробника</string>
     <string name="launch_tip_title">Зробіть сон надійним</string>
     <string name="launch_tip_why">Цей телефон може зупиняти застосунки, поки вони закриті. Тоді режим сну вмикається пізніше або не вимикається вранці. Два перемикачі в розділі «Запуск застосунків» цьому запобігають: автозапуск і робота у фоні.</string>
     <string name="launch_tip_action">Налаштувати</string>

@@ -7,7 +7,7 @@
     <string name="state_on_until">Включен до %1$s</string>
     <string name="state_starts_in">Через %1$s</string>
     <string name="state_nothing_scheduled">Нет расписания</string>
-    <string name="state_needs_permission">Нужно разрешение</string>
+    <string name="state_needs_permission">Нужен доступ</string>
     <string name="badge_once">Один раз</string>
 
     <!-- Durations. Hours and minutes are separate so a language with more than
@@ -63,7 +63,7 @@
     <string name="section_this_phone">этот телефон</string>
     <string name="launch_link_why">Автозапуск и работа в фоне</string>
     <string name="bedtime_settings_row">Системный режим сна</string>
-    <string name="bedtime_settings_why">У телефона есть свой</string>
+    <string name="bedtime_settings_why">От производителя</string>
     <string name="launch_tip_title">Сделайте сон надёжным</string>
     <string name="launch_tip_why">Этот телефон может останавливать приложения, пока они закрыты. Тогда режим сна включается позже или не выключается утром. Два переключателя в разделе «Запуск приложений» это предотвращают: автозапуск и работа в фоне.</string>
     <string name="launch_tip_action">Настроить</string>

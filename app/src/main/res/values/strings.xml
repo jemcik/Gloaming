@@ -107,7 +107,7 @@
     <string name="section_this_phone">this phone</string>
     <string name="launch_link_why">Autostart and background</string>
     <string name="bedtime_settings_row">System bedtime mode</string>
-    <string name="bedtime_settings_why">Your phone has one too</string>
+    <string name="bedtime_settings_why">From the vendor</string>
     <!-- Said once, when bedtime is first switched on. Not an accusation. -->
     <string name="launch_tip_title">Make bedtime reliable</string>
     <string name="launch_tip_why">This phone can stop apps while they are closed. Bedtime then starts late, or never ends in the morning. Two switches in App launch prevent it: Auto-launch and Run in background.</string>

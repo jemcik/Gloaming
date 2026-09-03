@@ -117,7 +117,13 @@ indefinitely is background restriction — see `core/BackgroundLimit.kt`.
     ui/Sentences.kt              the schedule as language: windowSentence,
                                  planNote, dayWord, span, hhmm. No Compose
                                  state, no side effects — the testable part
-    ui/InterruptionsScreen.kt    the allowlist
+    ui/InterruptionsScreen.kt    the allowlist. Writes prefs per tap, pushes the
+                                 RULE 800ms after the last one - a rewrite of a
+                                 live rule blinks zen off and on, so six
+                                 switches must not cost six. It used to wait for
+                                 ON_PAUSE, which is invisible for every row that
+                                 governs something not yet happening and wrong
+                                 for media, which is audible while you change it
     ui/SettingsScreen.kt         theme mode, a link to the system language
                                  picker, and - where one resolves - a permanent,
                                  quiet link to the vendor's launch manager
@@ -252,7 +258,7 @@ is in DECISIONS.md.
 
 **Compose**
 
-- Compose state goes stale FOUR ways: the receiver writes prefs while
+- Compose state goes stale FIVE ways: the receiver writes prefs while
   backgrounded (re-read on `ON_RESUME`), `now` goes stale on an open screen (one-
   minute ticker), `pointerInput(Unit)` freezes its captured lambdas (wrap in
   `rememberUpdatedState`), and a **SYSTEM setting read inside a skippable
@@ -262,7 +268,14 @@ is in DECISIONS.md.
   sentence under the dial, which is called straight from `WindowBlock`'s body,
   re-executed. The screen read "20:40" above "From 8:40 PM". Read a system
   setting where the ticker is, inside `remember(s.tick, ...)`, and pass the
-  ANSWER down.
+  ANSWER down. The fifth has no event behind it at all: **the TILE writes prefs
+  from over the top of a screen that is never paused.** Pulling the
+  quick-settings shade down does not pause what is underneath - measured on the
+  Honor, `topResumedActivity` stayed MainActivity throughout - so ON_RESUME
+  never fires and nothing else is coming. Watch the WRITE, with
+  `Prefs.watch`; and watch one key, because re-reading everything there fights
+  the screen's own commits and would re-read the wake handle out from under a
+  moving finger.
 - Put a `@Composable` slot **before** any click lambda, or a trailing lambda at
   the call site binds to the slot and Compose runs it as content.
 

@@ -133,6 +133,13 @@ fun Home(
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
+    // ON_RESUME is not enough on its own: the tile changes the same value from
+    // over the top of this screen without ever pausing it. See HomeState.watchStore.
+    DisposableEffect(s) {
+        val watch = s.watchStore()
+        onDispose { watch.close() }
+    }
+
     LaunchedEffect(Unit) { s.rearmIfEnabled() }
 
     // The page does not move with the state, and neither do the cards.

@@ -317,6 +317,30 @@ class HomeState(
 
     // ---- reads that are cheap and depend only on state held here ----
 
+    /**
+     * Follow the master switch while it is changed from OUTSIDE this screen.
+     *
+     * The fifth way this state goes stale, and the only one with no event
+     * behind it at all. The other four are in CLAUDE.md; this one is the tile,
+     * which writes [Prefs.enabled] from the same process while Home is still
+     * the resumed activity, because opening the quick-settings shade never
+     * pauses what is underneath it. [onResume] therefore never runs, and the
+     * switch keeps whatever it last drew.
+     *
+     * ONLY [enabled] is re-read, deliberately. Calling [onResume] here instead
+     * would reconcile the rule and re-check the probe on every write this
+     * screen makes of its own - the dial commits on every drag - and would
+     * re-read the wake handle out from under a finger that is still moving it.
+     * The tile changes one value, so one value is what this follows.
+     *
+     * The caller owns the returned handle and must close it; see [Prefs.watch]
+     * for why letting go of it silently stops the callbacks.
+     */
+    fun watchStore(): AutoCloseable = prefs.watch { key ->
+        // Null is a cleared store, which is Reset - "everything changed".
+        if (key == null || key == Prefs.KEY_ENABLED) enabled = prefs.enabled
+    }
+
     /** "Are we inside the window" is a different question from "is it armed". */
     fun insideWindow(): Boolean =
         Scheduler.liveWindowEnd(prefs, start, end, days) != null

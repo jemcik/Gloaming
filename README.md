@@ -23,6 +23,17 @@ it — driven by exact alarms, so it fires with the app closed.
 
 </div>
 
+> [!IMPORTANT]
+> **Here for the Google Play closed test?** Install from the Play link you were
+> sent — **not** from [Releases](https://github.com/jemcik/Gloaming/releases). A
+> hand-installed copy makes Play offer *Open* rather than *Install*, so you never
+> join the test through Play and it does not count; and if the GitHub build's
+> `versionCode` is at or above the tested one, Play has no update path at all.
+> Already sideloaded it? Uninstall first, then use the link.
+>
+> **Everyone else:** Releases is the right place and the APK there is the real
+> one, signed with the project key.
+
 ## Why it exists
 
 Android's own bedtime mode is scheduled as a **WorkManager job**, and jobs are
@@ -354,6 +365,15 @@ gh release create 0.11 --target main --generate-notes --title 0.11
 tag, builds a signed release APK and attaches it to the GitHub Release — release
 assets are downloadable without a GitHub account, which workflow artifacts are
 not.
+
+The same run also builds a signed **App Bundle**, which is what Google Play
+requires and will not do without. That one is kept as a *workflow artifact*
+rather than a release asset, for the reason above read backwards: an `.aab`
+cannot be installed by anyone, so on a public page it is only an invitation to
+download the wrong file. Whoever uploads it to Play Console has a GitHub
+account by definition. Both artefacts come from one Gradle invocation and
+therefore one `versionCode`, and both are signed with the same key — verified
+on a real run, identical certificate.
 
 Published releases start at **0.7**, and **0.10** is current; the tags before
 that have no downloadable build behind them. If a pre-0.7 Gloaming is still on a

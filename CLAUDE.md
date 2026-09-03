@@ -376,10 +376,14 @@ is in DECISIONS.md.
     python3 tools/play_assets.py        the Play store assets into docs/play/.
                          Play refuses what the README needs: an alpha channel on
                          the icon. Same geometry, `mask=False`, and Play applies
-                         its own corner mask. Screenshots are PADDED to 9:16,
-                         never cropped - the README's framing is what the app
-                         looks like, and cropping to fit a store makes the two
-                         disagree
+                         its own corner mask. Screenshots come out TWICE -
+                         captioned at the phone's own aspect, and plain padded
+                         to 9:16 - because Play's hard rule is only 320-3840px
+                         per side and the 9:16 figure is guidance. Neither set
+                         crops: the README's framing is what the app looks like,
+                         and cropping to fit a store makes the two disagree.
+                         No device frames - a bezel encodes nothing true and
+                         costs pixels these screens need
     adb shell run-as com.jemcik.gloaming cat files/journal.log
 
 Unit tests run on **JDK 21**, pinned in `app/build.gradle.kts`. The reason —

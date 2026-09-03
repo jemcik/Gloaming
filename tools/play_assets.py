@@ -19,7 +19,7 @@ rejection rather than a matter of taste:
                       guidance asks for. These are padded, not cropped - the
                       original framing is what the README shows and what the app
                       actually looks like, and cropping to fit a store would
-                      make the two disagree. Padding colour is sampled from each
+                      make the two disagree. Padding color is sampled from each
                       capture's own top-left pixel, so a Dusk shot pads dark and
                       a Dawn shot pads light.
 
@@ -74,7 +74,7 @@ def build_icon():
     """Full-bleed 512, alpha dropped. Play rounds it itself."""
     rgba = render(512, mask=False)
     rgb = Image.new('RGB', rgba.size, hx('#FFFFFF'))
-    rgb.paste(rgba, mask=None)          # mask=None: no alpha anywhere to honour
+    rgb.paste(rgba, mask=None)          # mask=None: no alpha anywhere to honor
     dest = os.path.join(OUT, 'icon-512.png')
     rgb.save(dest)
     print(dest, rgb.size, rgb.mode)
@@ -136,7 +136,7 @@ def build_feature():
 SHOTS = [
     ('home.png',      'One window a night, dragged at either end'),
     ('home-dark.png', 'Two themes, and it follows your phone'),
-    ('effects.png',   'Grey screen and dimmed wallpaper, where your phone allows it'),
+    ('effects.png',   'Gray screen and dimmed wallpaper, where your phone allows it'),
     ('allowed.png',   'Choose exactly what still gets through'),
     ('settings.png',  'Theme, language, and the vendor screens that matter'),
 ]
@@ -197,7 +197,7 @@ def build_screenshots():
         out.save(p)
         print(p, out.size, f'({name}) "{caption}"')
 
-        # Plain, padded to 9:16 from each capture's own corner colour, so a Dusk
+        # Plain, padded to 9:16 from each capture's own corner color, so a Dusk
         # shot pads dark and a Dawn shot pads light.
         want = int(round(h * 9 / 16))
         pl = im if want <= w else Image.new('RGB', (want, h), im.getpixel((0, 0)))

@@ -136,6 +136,27 @@ object ZenController {
         liveSignature(ctx, p) + COSMETIC + p.startTime + "-" + p.endTime
 
     /**
+     * What the rule CARRIES after a sync, which is not always what we asked it
+     * to carry.
+     *
+     * A cosmetic-only change to a LIVE rule is skipped on purpose - every
+     * rewrite blinks Do Not Disturb off and on - so the new caption is still
+     * OWED. Recording [sig] regardless says the opposite: the next sync compares
+     * equal, finds nothing to do, and the phone's own Do Not Disturb screen
+     * keeps the old times for good. Measured on a OnePlus on 3 Sep 2026 - the
+     * app read 18:45 to 08:00 while the rule still said "6:20 pm - 8:00 am", and
+     * a whole START activation ran back through here without repairing it,
+     * because the stored signature already claimed to be current.
+     *
+     * Keeping [was] leaves the debt visible, so the first sync after the window
+     * ends - when the rule is no longer live and the WHOLE signature is
+     * compared - pays it. A null [was] is not that case: nothing was skipped
+     * there, the rule was built from scratch and carries exactly [sig].
+     */
+    internal fun carriedSignature(pushed: Boolean, was: String?, sig: String): String =
+        if (pushed || was == null) sig else was
+
+    /**
      * Creates the rule, or updates the existing one in place. Updating matters:
      * recreating would orphan the rule id and silently drop the live schedule.
      *
@@ -181,8 +202,10 @@ object ZenController {
                     n.updateAutomaticZenRule(existing, buildRule(ctx, p))
                 }
                 // Written either way: when the rule already matched there is
-                // nothing for the next sync to compare against unless we do.
-                p.ruleSignature = sig
+                // nothing for the next sync to compare against unless we do -
+                // but written as what the rule now HOLDS, which is not `sig`
+                // when the push above was skipped.
+                p.ruleSignature = carriedSignature(changed, was, sig)
                 existing
             } else {
                 n.addAutomaticZenRule(buildRule(ctx, p)).also {

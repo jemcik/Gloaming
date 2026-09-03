@@ -922,6 +922,24 @@ with nothing on screen to explain it. Not taken - it needs its own decision.
   Read the log with `dumpsys notification --noredact`, section `Zen Log:` ->
   `State Changes:`; note BSD grep has no `\s`, which silently made an early
   version of that probe report "no churn" for everything.
+- **"The caption goes out with the next push" was a promise the code did not
+  keep.** Deferring the push is right; filing it as sent is not. `syncRule`
+  skipped the rewrite while the rule was live - correctly - and then wrote
+  `p.ruleSignature = sig` regardless, so the new times were recorded as though
+  they had gone out. Every later sync compared equal and found nothing to do,
+  and the phone's own Do Not Disturb screen kept the old schedule for good.
+  Measured on a OnePlus CPH2653 (Android 16) on 3 Sep 2026: the start was
+  dragged from 18:20 to 18:45 mid-window, every reading in the app followed, and
+  the rule stayed captioned "6:20 pm - 8:00 am" - through zen going off, through
+  the 18:45 START firing, and through the activation that ran back into
+  `syncRule` on its way. It repairs itself on reboot and on upgrade, where
+  `ruleSignature` is cleared and the rule is compared against a freshly built
+  one, which is the likeliest reason it went unseen for so long. The fix is
+  `carriedSignature`: store what the rule HOLDS, not what we wanted it to hold,
+  so the debt stays visible until the first sync with the rule inactive pays it.
+  `RuleCaptionTest` pins it - and pins it as a function of its own rather than
+  end to end, because Robolectric's shadow implements no
+  `getAutomaticZenRuleState`, so a test can never make the rule read STATE_TRUE.
 - **A needless rule rewrite can leave the phone's own Do Not Disturb icon stuck
   OFF while zen is still ON.** Reported as "the app says bedtime is on but Do Not
   Disturb clearly isn't". It was: `mZenMode=ZEN_MODE_IMPORTANT_INTERRUPTIONS`,
@@ -1658,7 +1676,18 @@ with nothing on screen to explain it. Not taken - it needs its own decision.
   `#C9DCCE` both - and still looked wrong in the hand. Nothing was broken; the
   instrument was.
   It is the same blind spot as the grayscale transform and the doze layer,
-  making three. The rule that follows: a screenshot may COMPARE two captures,
+  making three. The grayscale effect, though, IS readable - just not where the
+  blind spot makes you look. `dumpsys color_display` prints a
+  `Global saturation: Activated:` line that flips with the rule, measured
+  false -> true on the Honor as a window went live, and `battery_bench.py` has
+  used it as its flicker witness all along. Worth writing down because the two
+  obvious probes both come back empty and make it look unreadable: `screencap`
+  composites BEFORE the display transform, so captures either side of a real
+  transition measured 3.18 against 3.51 mean chroma while the panel was visibly
+  grey, and all three `settings` namespaces diffed to `zen_mode` and
+  `zen_mode_config_etag` alone. `isSaturationActivated` being `@hide` completes
+  the impression. Two empty probes are not an answer, and this file said they
+  were for about an hour. The rule that follows: a screenshot may COMPARE two captures,
   and may never establish that a colour is right. Hue and chroma decisions go on
   the panel, in the room the app is used in.
   A corollary learned the slow way, over four rounds on the notice strip: when

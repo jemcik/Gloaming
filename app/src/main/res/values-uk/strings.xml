@@ -195,8 +195,8 @@
     <string name="settings_title">Налаштування</string>
     <string name="section_theme">тема</string>
     <string name="theme_system">Як у системі</string>
-    <string name="theme_light">Завжди світла</string>
-    <string name="theme_dark">Завжди темна</string>
+    <string name="theme_light">Світла</string>
+    <string name="theme_dark">Темна</string>
     <string name="section_language">мова</string>
     <string name="settings_language">Мова застосунку</string>
     <string name="settings_language_why">Відкриває налаштування</string>

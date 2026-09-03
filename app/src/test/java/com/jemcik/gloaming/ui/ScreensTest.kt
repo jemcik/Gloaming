@@ -389,7 +389,10 @@ class ScreensTest {
                 SettingsScreen(Prefs.THEME_DARK, onThemeMode = {}, onBack = {})
             }
         }
-        compose.onNodeWithText("Always dark").assertIsSelected()
+        // By resource, not by the English words. Hardcoding the copy makes a
+        // wording change look like a broken radio group - which is exactly what
+        // it did when "Always dark" became "Dark".
+        compose.onNodeWithText(ctx().getString(R.string.theme_dark)).assertIsSelected()
     }
 
     @Test
@@ -400,7 +403,7 @@ class ScreensTest {
                 SettingsScreen(Prefs.THEME_SYSTEM, onThemeMode = { picked = it }, onBack = {})
             }
         }
-        compose.onNodeWithText("Always light").performClick()
+        compose.onNodeWithText(ctx().getString(R.string.theme_light)).performClick()
         assertEquals(Prefs.THEME_LIGHT, picked)
     }
 
@@ -430,16 +433,16 @@ class ScreensTest {
                 InterruptionsScreen(onBack = {}, onChanged = {})
             }
         }
-        compose.onNodeWithText("Reminders").assertIsOff()
+        compose.onNodeWithText(ctx().getString(R.string.row_reminders)).assertIsOff()
         // The semantics action rather than a synthetic tap. performClick() does
         // not toggle this row under Robolectric, though it works on the
         // selectable rows in Settings; I did not chase why, because what this
         // test is really asserting is that the ROW carries the click action at
         // all - the switch is only the indicator, not the target.
-        compose.onNodeWithText("Reminders")
+        compose.onNodeWithText(ctx().getString(R.string.row_reminders))
             .performSemanticsAction(SemanticsActions.OnClick)
         compose.waitForIdle()
-        compose.onNodeWithText("Reminders").assertIsOn()
+        compose.onNodeWithText(ctx().getString(R.string.row_reminders)).assertIsOn()
     }
 
     /** A window that contains this instant, whatever hour the suite runs at. */
@@ -569,8 +572,8 @@ class ScreensTest {
                 InterruptionsScreen(onBack = {}, onChanged = {})
             }
         }
-        compose.onNodeWithText("Alarms and timers").assertExists()
-        compose.onNodeWithText("Kept on so your alarm still wakes you").assertExists()
+        compose.onNodeWithText(ctx().getString(R.string.row_alarms)).assertExists()
+        compose.onNodeWithText(ctx().getString(R.string.row_alarms_why)).assertExists()
     }
     // ---------- the wake handle and "at your alarm" are one state ----------
 

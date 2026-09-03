@@ -19,3 +19,7 @@ keystore.properties
 # Release output
 *.apk
 *.aab
+
+# Python bytecode from tools/
+__pycache__/
+*.pyc

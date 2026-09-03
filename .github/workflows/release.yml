@@ -104,13 +104,19 @@ jobs:
           printf '%s' "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/gloaming.jks"
           echo "GLOAMING_KEYSTORE=$RUNNER_TEMP/gloaming.jks" >> "$GITHUB_ENV"
 
-      - name: Build the release APK
+      # BOTH artefacts, from one invocation and therefore one versionCode.
+      # Google Play requires an Android App Bundle for new apps and will not
+      # take an APK at all; the APK is still the only thing a person can tap on
+      # a phone, so neither replaces the other. Building them in separate steps
+      # would work and is a worse idea - two Gradle runs is two chances for the
+      # version properties to differ.
+      - name: Build the release APK and AAB
         env:
           GLOAMING_KEYSTORE_PASSWORD: ${{ secrets.GLOAMING_KEYSTORE_PASSWORD }}
           GLOAMING_KEY_ALIAS: ${{ secrets.GLOAMING_KEY_ALIAS }}
           GLOAMING_KEY_PASSWORD: ${{ secrets.GLOAMING_KEY_PASSWORD }}
         run: >
-          ./gradlew assembleRelease
+          ./gradlew assembleRelease bundleRelease
           -PgloamingVersionName="$VERSION"
           -PgloamingVersionCode="$CODE"
 
@@ -134,6 +140,25 @@ jobs:
           "$APKSIGNER" verify --print-certs "$APK"
           echo "APK=$APK" >> "$GITHUB_ENV"
 
+      # The same gate for the bundle, and it needs its own: an unsigned AAB is
+      # named app-release.aab exactly like a signed one, so unlike the APK the
+      # FILENAME proves nothing here and only a verification can. apksigner does
+      # not read bundles - jarsigner does, since an AAB is a jar underneath.
+      - name: Refuse to publish a bundle that is not signed
+        run: |
+          AAB=app/build/outputs/bundle/release/app-release.aab
+          if [ ! -f "$AAB" ]; then
+            echo "::error::$AAB is missing. bundleRelease did not produce a bundle."
+            ls -la app/build/outputs/bundle/release/ || true
+            exit 1
+          fi
+          if ! jarsigner -verify "$AAB" | grep -q 'jar verified'; then
+            echo "::error::$AAB is not signed. Play rejects an unsigned bundle, and an upload key that changes cannot be recovered from."
+            jarsigner -verify "$AAB" || true
+            exit 1
+          fi
+          echo "AAB=$AAB" >> "$GITHUB_ENV"
+
       # Named from VERSION rather than the raw tag, so "0.2" and "v0.2" produce
       # the same asset name.
       - name: Name it after the version
@@ -154,3 +179,19 @@ jobs:
             --generate-notes \
             --notes "Requires Android 15 (API 35) or newer. Signed with the project release key, so it installs over any earlier release of the same lineage."
           gh release upload "$TAG" dist/*.apk --clobber
+
+      # The bundle goes to the WORKFLOW's artefacts, deliberately not to the
+      # release. A release asset is public and needs no account, which is the
+      # whole reason releases are used here - and an AAB cannot be installed by
+      # anyone. Sitting next to the APK on a public page it is an invitation to
+      # download the wrong file, which is already the one thing testers have to
+      # be warned about. Downloading a workflow artefact needs a signed-in
+      # GitHub account, which is exactly the audience for this file: whoever
+      # uploads it to Play Console.
+      - name: Keep the bundle for Play Console
+        uses: actions/upload-artifact@v5
+        with:
+          name: gloaming-${{ env.VERSION }}-play-bundle
+          path: ${{ env.AAB }}
+          if-no-files-found: error
+          retention-days: 90

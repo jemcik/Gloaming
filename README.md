@@ -13,7 +13,7 @@ it — driven by exact alarms, so it fires with the app closed.
 [![Android](https://img.shields.io/badge/Android-15%2B%20(API%2035)-3DDC84)](#requirements)
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.3.21-7F52FF)](https://kotlinlang.org)
 [![Compose](https://img.shields.io/badge/Jetpack%20Compose-Material%203-4285F4)](https://developer.android.com/jetpack/compose)
-[![Tests](https://img.shields.io/badge/tests-163-success)](#tests)
+[![Tests](https://img.shields.io/badge/tests-180-success)](#tests)
 
 <img src="docs/screenshots/home.png" width="19%" alt="Home, mid-window">
 <img src="docs/screenshots/home-dark.png" width="19%" alt="Home, dark, mid-window">
@@ -300,7 +300,7 @@ answer, and the journal — which you can read before it goes anywhere.
 
 ## Tests
 
-    ./gradlew test        163 tests, JVM only, seconds
+    ./gradlew test        180 tests, JVM only, seconds
     ./gradlew coverage    JaCoCo HTML at app/build/reports/jacoco/coverage
 
 They cover the scheduling core (pure functions of times, days and an injected
@@ -313,7 +313,9 @@ anything. The alarm that ends a window early is driven through a real
 rather than a stub of it. Newer ones cover the diagnostics report, the reset
 teardown — no rule survives it, not even one whose id was already lost — and the
 dial's own gesture, where a vertical swipe across the ring must scroll the page
-rather than move the schedule. Some of them measure real text
+rather than move the schedule, and the schedule line the system's own Do Not
+Disturb screen shows, which is deliberately not pushed while a window is live and
+must therefore still be owed once it ends. Some of them measure real text
 layout at each locale's own widths, because a row that fits in English and wraps
 in Ukrainian is a bug you cannot see from the source — at the width the row
 actually has on the screen, which is not the width of the screen.
@@ -345,18 +347,19 @@ Needs `GEMINI_API_KEY` in `.env.local`, which is git-ignored.
 Tag a version and CI does the rest:
 
 ```bash
-gh release create 0.3 --target main --generate-notes --title 0.3
+gh release create 0.11 --target main --generate-notes --title 0.11
 ```
 
-`v0.3` works too. The workflow derives `versionName` and `versionCode` from the
+`v0.11` works too. The workflow derives `versionName` and `versionCode` from the
 tag, builds a signed release APK and attaches it to the GitHub Release — release
 assets are downloadable without a GitHub account, which workflow artifacts are
 not.
 
-Note that **0.1 and 0.2 cannot be upgraded from**. They were published as debug
-builds, and a CI runner generates a fresh debug key per run, so those two are
-signed by different throwaway certificates and Android will not install over
-them. If you have either, uninstall before installing anything newer.
+Published releases start at **0.7**, and **0.10** is current; the tags before
+that have no downloadable build behind them. If a pre-0.7 Gloaming is still on a
+phone, uninstall it rather than expecting an upgrade — 0.1 and 0.2 went out as
+debug builds, and a CI runner generates a fresh debug key per run, so they were
+signed by throwaway certificates Android will not install over.
 
 ## Licence
 

@@ -373,6 +373,13 @@ is in DECISIONS.md.
                          and one ModifierParameter in BedtimeDial)
     python3 tools/check_translation.py app/src/main/res/values-ru/strings.xml ru
     python3 tools/render_icon.py        re-render docs/icon.png from the drawable
+    python3 tools/play_assets.py        the Play store assets into docs/play/.
+                         Play refuses what the README needs: an alpha channel on
+                         the icon. Same geometry, `mask=False`, and Play applies
+                         its own corner mask. Screenshots are PADDED to 9:16,
+                         never cropped - the README's framing is what the app
+                         looks like, and cropping to fit a store makes the two
+                         disagree
     adb shell run-as com.jemcik.gloaming cat files/journal.log
 
 Unit tests run on **JDK 21**, pinned in `app/build.gradle.kts`. The reason —

@@ -17,31 +17,100 @@
   // viewer loads the full capture, which is the only place it is worth the
   // bytes. Escape closes, so does clicking anywhere - the whole overlay is the
   // target, because hunting for a small × is the thing people complain about.
+  //
+  // It is a GALLERY, not a single picture: once one is open the arrows and the
+  // left/right keys move through the set without closing it, because closing
+  // and reopening to see the next of three is the thing that makes a lightbox
+  // feel like a document viewer.
   document.addEventListener('DOMContentLoaded', function () {
     var viewer = document.querySelector('.viewer');
     if (viewer) {
-      var img = viewer.querySelector('img'), opener = null;
+      var img = viewer.querySelector('img');
+      var count = viewer.querySelector('.vcount');
+      var shots = [], at = -1;
+
+      // Only the shots the CURRENT THEME draws. Both themes are in the markup
+      // and one is display:none, so a naive querySelectorAll walks six and
+      // navigates into pictures that are not on the page.
+      var live = function () {
+        return [].filter.call(document.querySelectorAll('.shot'), function (b) {
+          return b.offsetParent !== null;
+        });
+      };
+      // Neighbours are fetched ahead. These are 150-240kB captures, so without
+      // this every arrow press blanks the overlay while the next one loads.
+      var warm = function (i) {
+        if (!shots.length) return;
+        [i - 1, i + 1].forEach(function (n) {
+          var b = shots[(n + shots.length) % shots.length];
+          if (b) { new Image().src = b.dataset.full; }
+        });
+      };
+      var show = function (i) {
+        at = (i + shots.length) % shots.length;
+        var b = shots[at];
+        img.src = b.dataset.full;
+        img.alt = b.getAttribute('aria-label') || '';
+        count.textContent = (at + 1) + ' / ' + shots.length;
+        warm(at);
+      };
+      var step = function (d) { if (shots.length > 1) show(at + d); };
+
+      // Hold the page still underneath. The overlay covers everything, so a
+      // wheel over it scrolls a page nobody can see, and closing then lands
+      // somewhere other than the screenshots you were just looking at. The
+      // padding replaces the scrollbar's own width, or removing it shifts the
+      // whole page sideways at the moment the viewer opens.
+      var lock = function (on) {
+        var d = document.documentElement;
+        if (on) {
+          var gap = window.innerWidth - d.clientWidth;
+          d.style.overflow = 'hidden';
+          if (gap > 0) d.style.paddingRight = gap + 'px';
+        } else {
+          d.style.overflow = '';
+          d.style.paddingRight = '';
+        }
+      };
+
       document.querySelectorAll('.shot').forEach(function (b) {
         b.addEventListener('click', function () {
-          opener = b;
-          img.src = b.dataset.full;
-          img.alt = b.getAttribute('aria-label') || '';
+          shots = live();
+          viewer.classList.toggle('solo', shots.length < 2);
           viewer.hidden = false;
+          lock(true);
+          show(shots.indexOf(b));
           // tabindex="-1" is what makes this line do anything: a plain div is
           // not focusable, so focus stayed on <body> and the dialog opened
           // without announcing itself.
           viewer.focus();
         });
       });
+
       var close = function () {
         viewer.hidden = true;
+        lock(false);
         img.removeAttribute('src');
-        // Back to the thumbnail that opened it, or the keyboard is lost.
-        if (opener) { opener.focus(); opener = null; }
+        // Back to the thumbnail SHOWING, not the one clicked. After three
+        // arrow presses the picture on screen is not the one that opened the
+        // viewer, and landing the keyboard back on that one is disorienting.
+        var b = shots[at];
+        shots = []; at = -1;
+        if (b) b.focus();
       };
       viewer.addEventListener('click', close);
+      viewer.querySelectorAll('.vnav').forEach(function (b) {
+        b.addEventListener('click', function (e) {
+          // The overlay closes on any click and the arrows sit inside it.
+          e.stopPropagation();
+          step(b.classList.contains('next') ? 1 : -1);
+        });
+      });
       document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape' && !viewer.hidden) close();
+        if (viewer.hidden) return;
+        if (e.key === 'Escape') { close(); }
+        else if (e.key === 'ArrowRight') { e.preventDefault(); step(1); }
+        else if (e.key === 'ArrowLeft') { e.preventDefault(); step(-1); }
       });
     }
 

@@ -27,6 +27,8 @@
 </header>
 <main>
   <div class="hero">
+    <div class="lockup"><img src="icon.png" alt="" width="84" height="84"><span
+      class="wordmark">Gloaming</span></div>
     <h1>A bedtime app for Android that keeps its own schedule.</h1>
     <p class="lead">Quiet your phone for whatever stretch of time you want — set up Do Not Disturb and the screen effects in one place. It all works even with the app closed, because it uses the Alarms and reminders permission you grant in the app. That guarantees it fires at exactly the time you set, and it never goes through the background job scheduler.</p>
     <div class="sweep"></div>
@@ -82,7 +84,12 @@
   <a href="privacy-policy.html">Privacy policy</a> ·
   <a href="https://github.com/jemcik/Gloaming/issues">Report an issue</a>
 </footer>
-<div class="viewer" hidden tabindex="-1" role="dialog" aria-modal="true"><img alt=""></div>
+<div class="viewer" hidden tabindex="-1" role="dialog" aria-modal="true" aria-label="Screenshots">
+  <button class="vnav prev" type="button" aria-label="Previous screenshot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg></button>
+  <img alt="">
+  <button class="vnav next" type="button" aria-label="Next screenshot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button>
+  <p class="vcount" aria-live="polite"></p>
+</div>
 <script src="gloaming.js"></script>
 </body>
 </html>

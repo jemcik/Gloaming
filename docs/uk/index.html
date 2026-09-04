@@ -27,6 +27,8 @@
 </header>
 <main>
   <div class="hero">
+    <div class="lockup"><img src="../icon.png" alt="" width="84" height="84"><span
+      class="wordmark">Gloaming</span></div>
     <h1>Застосунок для сну на Android, який спрацьовує вчасно.</h1>
     <p class="lead">Заспокойте свій телефон на бажаний проміжок часу — налаштуйте «Не турбувати» і екранні ефекти в одному зручному інтерфейсі. Усе працює, навіть якщо застосунок закритий: він користується дозволом «Будильники та нагадування», який ви надаєте в застосунку. Це дає гарантію спрацювання точно в заданий час і не проходить через планувальник фонових завдань.</p>
     <div class="sweep"></div>
@@ -82,7 +84,12 @@
   <a href="privacy-policy.html">Політика приватності</a> ·
   <a href="https://github.com/jemcik/Gloaming/issues">Повідомити про проблему</a>
 </footer>
-<div class="viewer" hidden tabindex="-1" role="dialog" aria-modal="true"><img alt=""></div>
+<div class="viewer" hidden tabindex="-1" role="dialog" aria-modal="true" aria-label="Знімки екрана">
+  <button class="vnav prev" type="button" aria-label="Попередній знімок"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg></button>
+  <img alt="">
+  <button class="vnav next" type="button" aria-label="Наступний знімок"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button>
+  <p class="vcount" aria-live="polite"></p>
+</div>
 <script src="../gloaming.js"></script>
 </body>
 </html>

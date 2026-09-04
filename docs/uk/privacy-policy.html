@@ -60,7 +60,12 @@
 </main>
 
 <footer>Чинна з 4 September 2026. Код: <a href="https://github.com/jemcik/Gloaming">github.com/jemcik/Gloaming</a> · Apache License 2.0</footer>
-<div class="viewer" hidden tabindex="-1" role="dialog" aria-modal="true"><img alt=""></div>
+<div class="viewer" hidden tabindex="-1" role="dialog" aria-modal="true" aria-label="Знімки екрана">
+  <button class="vnav prev" type="button" aria-label="Попередній знімок"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg></button>
+  <img alt="">
+  <button class="vnav next" type="button" aria-label="Наступний знімок"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button>
+  <p class="vcount" aria-live="polite"></p>
+</div>
 <script src="../gloaming.js"></script>
 </body>
 </html>

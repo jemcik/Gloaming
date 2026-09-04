@@ -53,6 +53,7 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.text.style.LineBreak
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.text.BasicText
@@ -694,7 +695,18 @@ private fun WindowBlock(
             Spacer(Modifier.height(TIGHT))
             Text(
                 line,
-                style = MaterialTheme.typography.bodyLarge,
+                // BALANCED, so the last line is not one orphaned word. Centred
+                // text wrapping greedily puts as much as it can on line one and
+                // the remainder on line two, which at a large system font left
+                // «С 11:00 PM сегодня до 8:30 AM» over a lone «завтра». Balanced
+                // shares the words out instead - the same thing CSS calls
+                // text-wrap: balance. It costs nothing when the sentence fits on
+                // one line, which is the usual case.
+                style = MaterialTheme.typography.bodyLarge.copy(
+                    lineBreak = LineBreak.Paragraph.copy(
+                        strategy = LineBreak.Strategy.Balanced
+                    )
+                ),
                 color = g.onSurfaceLow,
                 textAlign = TextAlign.Center
             )

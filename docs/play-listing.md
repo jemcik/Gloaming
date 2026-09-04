@@ -182,8 +182,16 @@ Android 15 или новее. Два разрешения, оба выдаютс
 
 ---
 
-## Still to decide
+## Contact details
 
-- **Contact email.** The policy page points at GitHub issues. Play requires a
-  contact email on the listing itself regardless; decide which address before
-  filling the Console form, since it is displayed publicly.
+Play shows these publicly on the store page.
+
+- **Email:** `steroidev@gmail.com` — required, and a separate address from the
+  one on the git commits, which is the point of choosing it deliberately.
+- **Website:** `https://jemcik.github.io/Gloaming/`
+- **Privacy policy:** `https://jemcik.github.io/Gloaming/privacy-policy.html` —
+  set under App content, not here, and it is the same single URL for every
+  language: the page carries its own switcher to the uk/ and ru/ copies.
+
+The policy page also points at GitHub issues, which is where anything that
+needs a thread should go; the email exists because Play requires one.

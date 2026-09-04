@@ -52,9 +52,27 @@
         img.src = b.dataset.full;
         img.alt = b.getAttribute('aria-label') || '';
         count.textContent = (at + 1) + ' / ' + shots.length;
+        place();
         warm(at);
       };
       var step = function (d) { if (shots.length > 1) show(at + d); };
+
+      // Put the arrows against the PICTURE. Measured rather than computed: the
+      // image is capped by width on a short window and by height on a tall one,
+      // so its rendered width is not something the stylesheet can name without
+      // hard-coding the screenshots' aspect ratio. Falls back to the CSS clamp
+      // whenever there is nothing to measure yet.
+      var place = function () {
+        if (viewer.hidden) return;
+        var r = img.getBoundingClientRect();
+        if (!r.width) return;
+        var btn = viewer.querySelector('.vnav');
+        var w = btn ? btn.offsetWidth : 46;
+        viewer.style.setProperty(
+          '--vnav-x', Math.max(8, Math.round(r.left - 14 - w)) + 'px');
+      };
+      img.addEventListener('load', place);
+      window.addEventListener('resize', place);
 
       // Hold the page still underneath. The overlay covers everything, so a
       // wheel over it scrolls a page nobody can see, and closing then lands

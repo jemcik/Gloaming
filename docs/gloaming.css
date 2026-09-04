@@ -261,8 +261,13 @@ a { color: var(--state); text-underline-offset: 2px; }
 .vnav svg { width: 22px; height: 22px; }
 .vnav:hover { background: rgba(255, 255, 255, .24); }
 .vnav:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
-.vnav.prev { left: clamp(.5rem, 4vw, 2.5rem); }
-.vnav.next { right: clamp(.5rem, 4vw, 2.5rem); }
+/* The picture is centred and rarely wider than 420px, so an arrow pinned to the
+   VIEWPORT edge sits half a screen away from the thing it pages through. The
+   script measures the image and sets --vnav-x to put them just off its edges;
+   the clamp is what they fall back to before that runs. One variable does both
+   sides, because a centred image has the same inset either way. */
+.vnav.prev { left: var(--vnav-x, clamp(.5rem, 4vw, 2.5rem)); }
+.vnav.next { right: var(--vnav-x, clamp(.5rem, 4vw, 2.5rem)); }
 .viewer.solo .vnav, .viewer.solo .vcount { display: none; }
 /* A PILL, not bare text. The counter is fixed and the picture scrolls under it
    whenever the picture is taller than the window - which on a phone is always -

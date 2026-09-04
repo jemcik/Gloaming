@@ -408,7 +408,16 @@ is in DECISIONS.md.
                          crops: the README's framing is what the app looks like,
                          and cropping to fit a store makes the two disagree.
                          No device frames - a bezel encodes nothing true and
-                         costs pixels these screens need
+                         costs pixels these screens need. A set PER LANGUAGE
+                         into `<lang>/`, captions and all: Play carries one per
+                         listing, and Ukrainian captions over Ukrainian screens
+                         is the whole reason the shoot went trilingual. PIL does
+                         NOT fall back per glyph the way the site's browser
+                         does, so Figtree - Latin only - draws every Cyrillic
+                         letter as a box; the Slavic bands are set in San
+                         Francisco instead, at GRAD 620, which is how a face
+                         with no Weight axis is made to match Figtree 600
+                         without moving where the line wraps
     python3 tools/build_site.py         the SITE into docs/, for GitHub Pages.
                          Six pages - landing and privacy policy, in en/uk/ru -
                          from one template each, because six hand-written files

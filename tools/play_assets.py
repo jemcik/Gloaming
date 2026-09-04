@@ -54,6 +54,44 @@ def hx(h):
     return tuple(int(h[i:i+2], 16) for i in (0, 2, 4))
 
 
+# FIGTREE HAS NO CYRILLIC - 391 codepoints, Latin only - and unlike a browser,
+# PIL cannot fall back per glyph: it draws a tofu box for every letter, which is
+# exactly what the first Ukrainian caption came out as. So the Slavic captions
+# are set in a face that covers them. San Francisco ships on every Mac and is
+# only ever used HERE, to draw a picture; nothing is redistributed.
+CYRILLIC_CANDIDATES = [
+    '/System/Library/Fonts/SFNS.ttf',
+    '/System/Library/Fonts/Supplemental/Arial Unicode.ttf',
+    '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
+]
+
+
+def cyrillic_font(size):
+    for path in CYRILLIC_CANDIDATES:
+        if os.path.exists(path):
+            f = ImageFont.truetype(path, size)
+            # San Francisco has no Weight axis, but it has GRAD (400-1000),
+            # which darkens the strokes WITHOUT changing the metrics - so the
+            # Cyrillic band carries the same visual weight as Figtree 600 on the
+            # English one, and the line still wraps where it measured. Nobody
+            # sees two languages side by side, but the sets should not look like
+            # they came from different projects.
+            try:
+                f.set_variation_by_axes([100, float(size), 620])
+            except Exception:
+                pass
+            return f
+    raise SystemExit(
+        'No Cyrillic font found for the uk/ru captions. Add one to '
+        'CYRILLIC_CANDIDATES; Figtree cannot draw them and PIL will not '
+        'substitute, so the band would come out as boxes.')
+
+
+def caption_font(lang, size, weight):
+    """Figtree where it can read the words, something that can where it cannot."""
+    return figtree(size, weight) if lang == 'en' else cyrillic_font(size)
+
+
 def figtree(size, weight):
     """Figtree at a weight. It is a VARIABLE font, so the weight is an axis.
 
@@ -133,13 +171,39 @@ def build_feature():
 # No device frame, deliberately. A bezel encodes nothing true and costs pixels,
 # and these screens are dense: a dial, a countdown and a stack of rows. Same
 # reason the app has no decorative structure - see the design note in CLAUDE.md.
+# The five, and where each is shot from. The arrangement mirrors what the set
+# has always shown: the dial in daylight, then the same screen at night, then
+# the three that only make sense dark.
 SHOTS = [
-    ('home.png',      'One window — drag either end, or tap a time to set it'),
-    ('home-dark.png', 'Two themes, and it follows your phone'),
-    ('effects.png',   'Gray screen and dimmed wallpaper, where your phone allows it'),
-    ('allowed.png',   'Choose exactly what still gets through'),
-    ('settings.png',  'Theme, language, and the vendor screens that matter'),
+    ('light', 'home'), ('dark', 'home'), ('dark', 'effects'),
+    ('dark', 'allowed'), ('dark', 'settings'),
 ]
+
+# Play carries a screenshot set per LANGUAGE, and a Ukrainian reader being shown
+# English captions over Ukrainian screens is worse than no caption at all.
+CAPTIONS = {
+    'en': [
+        'One window — drag either end, or tap a time to set it',
+        'Two themes, and it follows your phone',
+        'Gray screen and dimmed wallpaper, where your phone allows it',
+        'Choose exactly what still gets through',
+        'Theme, language, and the vendor screens that matter',
+    ],
+    'uk': [
+        'Один проміжок: тягніть будь-який кінець або торкніться часу',
+        'Дві теми — світла й темна, як на вашому телефоні',
+        'Чорно-білий екран і притемнені шпалери, де телефон це дозволяє',
+        'Оберіть, що все одно зможе вас потурбувати',
+        'Тема, мова і потрібні екрани вашого телефона',
+    ],
+    'ru': [
+        'Один промежуток: тяните любой конец или коснитесь времени',
+        'Две темы — светлая и тёмная, как на вашем телефоне',
+        'Чёрно-белый экран и приглушённые обои, где телефон это позволяет',
+        'Выберите, что всё равно сможет вас побеспокоить',
+        'Тема, язык и нужные экраны вашего телефона',
+    ],
+}
 
 BAND = 300          # caption band height, px
 CAP_SIZE = 52
@@ -171,39 +235,40 @@ def build_screenshots():
     Neither crops. The README's framing is what the app looks like.
     """
     src = os.path.join(ROOT, 'docs', 'screenshots')
-    cap_dir = os.path.join(OUT, 'screenshots')
-    plain_dir = os.path.join(OUT, 'screenshots-plain-9x16')
-    os.makedirs(cap_dir, exist_ok=True)
-    os.makedirs(plain_dir, exist_ok=True)
 
-    font = figtree(CAP_SIZE, 600)
-    for i, (name, caption) in enumerate(SHOTS, start=1):
-        im = Image.open(os.path.join(src, name)).convert('RGB')
-        w, h = im.size
+    for lang, captions in CAPTIONS.items():
+        cap_dir = os.path.join(OUT, 'screenshots', lang)
+        plain_dir = os.path.join(OUT, 'screenshots-plain-9x16', lang)
+        os.makedirs(cap_dir, exist_ok=True)
+        os.makedirs(plain_dir, exist_ok=True)
+        font = caption_font(lang, CAP_SIZE, 600)
 
-        # Captioned: a Dusk band above the shot, the same band on all five so
-        # they read as one set rather than following each screenshot's theme.
-        out = Image.new('RGB', (w, h + BAND), hx(SURFACE))
-        out.paste(im, (0, BAND))
-        d = ImageDraw.Draw(out)
-        lines = _wrap(d, caption, font, w - 160)
-        lh = CAP_SIZE * 1.32
-        y = (BAND - lh * len(lines)) / 2
-        for ln in lines:
-            d.text(((w - d.textlength(ln, font=font)) / 2, y), ln,
-                   font=font, fill=hx(ON_SURFACE))
-            y += lh
-        p = os.path.join(cap_dir, f'{i}.png')
-        out.save(p)
-        print(p, out.size, f'({name}) "{caption}"')
+        for i, ((theme, name), caption) in enumerate(zip(SHOTS, captions), start=1):
+            im = Image.open(os.path.join(src, lang, theme, f'{name}.png')).convert('RGB')
+            w, h = im.size
 
-        # Plain, padded to 9:16 from each capture's own corner color, so a Dusk
-        # shot pads dark and a Dawn shot pads light.
-        want = int(round(h * 9 / 16))
-        pl = im if want <= w else Image.new('RGB', (want, h), im.getpixel((0, 0)))
-        if want > w:
-            pl.paste(im, ((want - w) // 2, 0))
-        pl.save(os.path.join(plain_dir, f'{i}.png'))
+            # A Dusk band above the shot, the same band on all five so they read
+            # as one set rather than following each screenshot's own theme.
+            out = Image.new('RGB', (w, h + BAND), hx(SURFACE))
+            out.paste(im, (0, BAND))
+            d = ImageDraw.Draw(out)
+            lines = _wrap(d, caption, font, w - 160)
+            lh = CAP_SIZE * 1.32
+            y = (BAND - lh * len(lines)) / 2
+            for ln in lines:
+                d.text(((w - d.textlength(ln, font=font)) / 2, y), ln,
+                       font=font, fill=hx(ON_SURFACE))
+                y += lh
+            out.save(os.path.join(cap_dir, f'{i}.png'))
+
+            # Plain, padded to 9:16 from each capture's own corner color, so a
+            # Dusk shot pads dark and a Dawn shot pads light.
+            want = int(round(h * 9 / 16))
+            pl = im if want <= w else Image.new('RGB', (want, h), im.getpixel((0, 0)))
+            if want > w:
+                pl.paste(im, ((want - w) // 2, 0))
+            pl.save(os.path.join(plain_dir, f'{i}.png'))
+        print(f'  {lang}: 5 captioned + 5 plain')
 
 
 if __name__ == '__main__':

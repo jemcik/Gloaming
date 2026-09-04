@@ -27,6 +27,9 @@
           img.src = b.dataset.full;
           img.alt = b.getAttribute('aria-label') || '';
           viewer.hidden = false;
+          // tabindex="-1" is what makes this line do anything: a plain div is
+          // not focusable, so focus stayed on <body> and the dialog opened
+          // without announcing itself.
           viewer.focus();
         });
       });

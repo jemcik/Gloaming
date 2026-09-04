@@ -189,6 +189,18 @@ a { color: var(--state); text-underline-offset: 2px; }
   max-width: min(92vw, 420px); max-height: 92vh;
   border-radius: 12px; box-shadow: 0 24px 60px rgba(0, 0, 0, .5);
 }
+/* FIT-TO-HEIGHT STOPS BEING AN ENLARGEMENT ON A SHORT WINDOW. These are phone
+   screenshots at 1:2.24, and the thumbnail is ~233px wide on any viewport past
+   --wrap - so 92vh only beats it above ~570px of window, and at 460px, which is
+   what a docked browser pane gives you, clicking to enlarge made the picture
+   SMALLER than the one clicked. Measured, not reasoned about. Below the point
+   where fitting the height still buys a third again, size by WIDTH and let the
+   overlay scroll; flex-start rather than centre, or the overflowing top is
+   unreachable. */
+@media (max-height: 780px) {
+  .viewer { align-items: flex-start; overflow: auto; }
+  .viewer img { max-height: none; }
+}
 .viewer[hidden] { display: none; }
 
 /* ── feature list ── */

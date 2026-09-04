@@ -112,16 +112,36 @@ body {
 
 /* ── chrome ── */
 
+/* THE BAR SHARES THE CONTENT COLUMN'S EDGES. It was 62rem against main's 46rem,
+   so the language switcher sat a clear 8rem to the right of the text it was
+   meant to line up with, and the mark the same distance to the left. One width
+   for both, and the masthead reads as the top of the page rather than as a
+   separate strip laid over it. */
 .bar {
-  display: flex; align-items: center; gap: 1rem;
-  max-width: 62rem; margin: 0 auto; padding: 1.1rem 1.5rem;
+  display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; row-gap: .9rem;
+  max-width: var(--wrap); margin: 0 auto; padding: 1.6rem 1.5rem .35rem;
 }
+/* The brand IS the lockup now - the app's mark at a size the crescent is
+   visible in, and the name at headline weight. It used to be 38px and 1.2rem
+   sitting next to a 2.7rem tagline, which is how the page came to introduce
+   itself in the smallest type on the screen. */
 .brand {
-  display: flex; align-items: center; gap: .55rem;
-  font-weight: 700; font-size: 1.2rem; letter-spacing: -.015em;
+  display: flex; align-items: center; gap: clamp(.55rem, 2vw, .85rem);
+  font-weight: 800; font-size: clamp(1.25rem, 4.4vw, 2.2rem);
+  letter-spacing: -.03em; line-height: 1;
   color: var(--ink); text-decoration: none;
 }
-.brand img { width: 38px; height: 38px; }
+.brand img {
+  width: clamp(38px, 9vw, 62px); height: clamp(38px, 9vw, 62px); flex: none;
+}
+/* The masthead now has TWO things competing for one row, and on a 360px phone -
+   which is as common a width as any - the mark, the name, three language
+   buttons and the theme button do not all fit. Measured at 375px: they fit with
+   the 16px gap and NOTHING to spare, so the next narrower phone is over the
+   edge. `.brand` cannot shrink below its icon plus the word "Gloaming", so with
+   wrap on, the switcher drops to a line of its own and stays right-aligned
+   rather than the two being squashed into each other. Costs nothing at any
+   width where they do fit. */
 .bar-end { margin-left: auto; display: flex; align-items: center; gap: .4rem; }
 
 .langs { display: flex; gap: .15rem; }
@@ -173,29 +193,7 @@ a { color: var(--state); text-underline-offset: 2px; }
 
 /* ── hero ── */
 
-.hero { padding-top: 1.5rem; }
-
-/* THE NAME HAD NOWHERE TO BE. It appeared once, at 1.05rem in the top bar
-   next to the language switcher - which is chrome, and reads as chrome - so
-   the page introduced itself with a tagline and never said out loud what the
-   thing is called. The lockup is the mark at a size the crescent is actually
-   visible at, with the word beside it, placed AHEAD of the sentence rather
-   than competing with it: the h1 is still the tagline and still the largest
-   thing on the page. */
-.lockup {
-  display: flex; align-items: center; gap: clamp(.8rem, 2.4vw, 1.15rem);
-  margin-bottom: 1.4rem;
-}
-/* icon.png is masked already - alpha 0 in the corners - so no border-radius
-   here, which would round the rounding. */
-.lockup img {
-  width: clamp(62px, 11vw, 84px); height: clamp(62px, 11vw, 84px);
-  display: block; flex: none;
-}
-.wordmark {
-  font-size: clamp(1.75rem, 5vw, 2.25rem); font-weight: 800;
-  letter-spacing: -.03em; line-height: 1; color: var(--ink);
-}
+.hero { padding-top: 1rem; }
 .sweep {
   height: 7px; border-radius: 4px; margin: 1.75rem 0 0;
   background: linear-gradient(90deg, var(--night) 0%, var(--dusk) 42%,
@@ -900,7 +898,7 @@ def chrome(lang, up, page):
         f'<span class="lg">{label}</span><span class="sm">{short}</span></a>'
         for code, label, short, path in LANGS)
     return f'''<header class="bar">
-  <a class="brand" href="index.html"><img src="{up}icon.png" alt="">Gloaming</a>
+  <a class="brand" href="index.html"><img src="{up}icon.png" alt="" width="62" height="62">Gloaming</a>
   <div class="bar-end">
     <nav class="langs" aria-label="Language">{langs}</nav>
     <button class="theme" type="button"
@@ -961,8 +959,6 @@ def page_index(lang, up):
         for name, alt in zip(SHOTS, t['shot_alts']))
     body = f'''<main>
   <div class="hero">
-    <div class="lockup"><img src="{up}icon.png" alt="" width="84" height="84"><span
-      class="wordmark">Gloaming</span></div>
     <h1>{t['tagline']}</h1>
     <p class="lead">{t['lead']}</p>
     <div class="sweep"></div>

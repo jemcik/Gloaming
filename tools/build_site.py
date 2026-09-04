@@ -170,15 +170,37 @@ body {
   .theme .theme-name { display: none; }
 }
 
+/* The masthead misses ONE ROW BY THREE PIXELS on the phone it was tested on.
+   The Honor is 1256px at density 560, so 359 CSS px, and mark + name + three
+   language buttons + the theme button came to 362 - the switcher dropped to a
+   line of its own, correct and ugly, for the sake of 3px. Everything here gives
+   back a little: the gap, the brand's floor, and the buttons' side padding,
+   which is where the room actually is - .55rem either side of three buttons is
+   53px of nothing. The horizontal PADDING is untouchable, because it is what
+   holds the bar on the text column's edges. */
+@media (max-width: 26rem) {
+  .bar { gap: .7rem; }
+  .bar-end { gap: .3rem; }
+  .langs a, .theme { padding: .3rem .42rem; }
+  .brand { font-size: 1.2rem; gap: .5rem; }
+  .brand img { width: 36px; height: 36px; }
+}
+
 /* ── layout ── */
 
 main { max-width: var(--wrap); margin: 0 auto; padding: 1.5rem 1.5rem 5rem; }
 section { margin-top: 3.25rem; }
 
+/* Smaller than it was - 2.7rem/2rem - and the floor is what matters. The root
+   is 17px, so the old 2rem floor drew the headline at 34px, and «конфиденциальности»
+   measures 369px there against a 311px column on a 359px phone: the Russian
+   privacy title ran off the screen. 1.6rem puts that word at 295px. break-word
+   is the backstop for a 320px screen, where no headline size that is still a
+   headline will fit it. */
 h1 {
-  font-size: clamp(2rem, 6vw, 2.7rem); font-weight: 700;
+  font-size: clamp(1.6rem, 6vw, 2.35rem); font-weight: 700;
   line-height: 1.12; letter-spacing: -.02em; margin: 0;
-  text-wrap: balance;
+  text-wrap: balance; overflow-wrap: break-word;
 }
 h2 {
   font-size: 1.35rem; font-weight: 700; letter-spacing: -.01em;
@@ -280,9 +302,18 @@ a { color: var(--state); text-underline-offset: 2px; }
 .vnav.prev { left: clamp(.5rem, 4vw, 2.5rem); }
 .vnav.next { right: clamp(.5rem, 4vw, 2.5rem); }
 .viewer.solo .vnav, .viewer.solo .vcount { display: none; }
+/* A PILL, not bare text. The counter is fixed and the picture scrolls under it
+   whenever the picture is taller than the window - which on a phone is always -
+   so "1 / 3" was landing on top of whatever the screenshot happened to say
+   there. Seen on the Honor: it sat across the app's own "Bedtime starts the day
+   before." Its own background is the only thing that makes it legible over an
+   image it cannot predict. */
 .vcount {
-  position: fixed; left: 0; right: 0; bottom: 1.1rem; margin: 0; z-index: 2;
-  text-align: center; color: rgba(255, 255, 255, .74);
+  position: fixed; left: 50%; transform: translateX(-50%); bottom: 1.1rem;
+  margin: 0; z-index: 2; width: max-content;
+  padding: .2rem .65rem; border-radius: 999px;
+  background: rgba(0, 0, 0, .62); backdrop-filter: blur(2px);
+  color: rgba(255, 255, 255, .92);
   font-size: .82rem; font-weight: 600; font-variant-numeric: tabular-nums;
 }
 

@@ -9,11 +9,13 @@
 Do Not Disturb and the screen effects that go with it, for whatever stretch of
 time you choose — and it fires with the app closed.
 
+[**Website**](https://jemcik.github.io/Gloaming/) · [Privacy policy](https://jemcik.github.io/Gloaming/privacy-policy.html)
+
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue)](LICENSE)
 [![Android](https://img.shields.io/badge/Android-15%2B%20(API%2035)-3DDC84)](#requirements)
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.3.21-7F52FF)](https://kotlinlang.org)
 [![Compose](https://img.shields.io/badge/Jetpack%20Compose-Material%203-4285F4)](https://developer.android.com/jetpack/compose)
-[![Tests](https://img.shields.io/badge/tests-180-success)](#tests)
+[![Tests](https://img.shields.io/badge/tests-201-success)](#tests)
 
 <img src="docs/screenshots/home.png" width="19%" alt="Home, mid-window">
 <img src="docs/screenshots/home-dark.png" width="19%" alt="Home, dark, mid-window">
@@ -101,9 +103,9 @@ doing it, or on any vendor doing it at all.
 - **Screen effects.** Grayscale, wallpaper
   dimming, dark theme, always-on display. All four are standard
   `ZenDeviceEffects`, and a device will happily accept an effect it has no
-  intention of applying — so which ones take effect varies. Where an effect does
-  nothing and nothing else can reach it, the control is not drawn at all rather
-  than offering a switch that lies.
+  intention of applying — so which ones take effect varies. Where the operating
+  system does not let an app control an effect, and no vendor route reaches it
+  either, the switch is not drawn at all rather than offering one that lies.
 - **A boot watch.** Some vendors withhold `BOOT_COMPLETED` from apps their
   launch manager has decided are unimportant, which leaves a bedtime app armed
   with no alarms behind it. Gloaming compares the boot it handled against the
@@ -306,6 +308,10 @@ answer, and the journal — which you can read before it goes anywhere.
     ./tools/check.sh      what the phone thinks: zen state, the rule, the app's
                           own view, the next alarms and the journal. Read-only.
     ./gradlew lint        0 errors
+    python3 tools/build_site.py
+                          the site into docs/ for GitHub Pages — six pages, a
+                          landing page and a privacy policy, in en/uk/ru, from
+                          one template each
     python3 tools/render_icon.py
                           re-render docs/icon.png from the adaptive icon's own
                           numbers — cropped to the 72dp a launcher shows and
@@ -314,7 +320,7 @@ answer, and the journal — which you can read before it goes anywhere.
 
 ## Tests
 
-    ./gradlew test        180 tests, JVM only, seconds
+    ./gradlew test        201 tests, JVM only, seconds
     ./gradlew coverage    JaCoCo HTML at app/build/reports/jacoco/coverage
 
 They cover the scheduling core (pure functions of times, days and an injected
@@ -332,7 +338,10 @@ Disturb screen shows, which is deliberately not pushed while a window is live an
 must therefore still be owed once it ends. Some of them measure real text
 layout at each locale's own widths, because a row that fits in English and wraps
 in Ukrainian is a bug you cannot see from the source — at the width the row
-actually has on the screen, which is not the width of the screen.
+actually has on the screen, which is not the width of the screen. They run at a
+large system font too, which is where the last two real ones were: a preset
+label losing its final letter to half a pixel, and the dial's caption spilling
+outside the ring it sits in.
 
 What they cannot cover is everything that depends on the device: whether an
 exact alarm fires with the screen off, whether grayscale is really applied,

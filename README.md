@@ -34,13 +34,14 @@ time you choose — and it fires with the app closed.
 > **Everyone else:** Releases is the right place and the APK there is the real
 > one, signed with the project key.
 
-## Why it exists
+## Why another bedtime app
 
 Android's own bedtime mode is scheduled as a **WorkManager job**, and jobs are
 advisory. The system decides when they run, and every vendor's battery
-management gets a say on top of that. When something in that chain defers a job
-indefinitely, bedtime silently never happens — there is no error, no
-notification, nothing to notice except that the screen stayed colorful.
+management gets a say on top of that. When something in that chain defers a job,
+bedtime does not happen until you next open the app that runs it — or happens
+late. There is no error and no notification — Do Not Disturb simply never comes
+on and the effects never apply.
 
 Exact alarms are the other path. They are a separate, user-granted permission
 with a scheduling guarantee, and they do not go through JobScheduler at all.
@@ -68,13 +69,15 @@ what it is for. Background work being quietly dropped is a common shape across
 Android OEMs; the alarm-driven approach here does not depend on which vendor is
 doing it, or on any vendor doing it at all.
 
-## What it does
+## What Gloaming does
 
-- **A 24-hour dial.** One window, dragged at either end. It is a full day rather
+- **A 24-hour dial.** One window, set by dragging either end around the dial or by
+  tapping a time and picking it exactly. It is a full day rather
   than a clock face because a 12-hour face cannot draw a window longer than
-  twelve hours; Apple's Sleep ring makes the same choice. Days are chosen as the
-  **mornings** you want the window to end on, so asking for the weekend means
-  Saturday and Sunday, not Friday night.
+  twelve hours; Apple's Sleep ring makes the same choice. You choose the
+  **mornings** you want to wake up on, not the evenings you go to bed: pick
+  Saturday and the window runs from Friday evening to Saturday morning — so
+  asking for the weekend means Friday and Saturday nights.
 - **End bedtime at your alarm.** AOSP's own schedules carry this rule as
   `exitAtAlarm` and Android Settings calls it "Alarm can override end time"; both
   apply it only when the alarm falls *inside* the window, and so does this — a
@@ -92,10 +95,10 @@ doing it, or on any vendor doing it at all.
   must not mean. Long-press opens the app.
 - **Do Not Disturb**, with a per-night allowlist — who can call, who can
   message, conversations, repeat callers, reminders, calendar events, media. The
-  screen reports what the system says is actually in effect, rather than what the
-  app believes it asked for. Alarms are always allowed, and the app says that is
+  screen reports the system's current state, not the one the app switched on and
+  assumes is in effect. Alarms are always allowed, and the app says that is
   its own choice rather than pretending the platform forbids silencing them.
-- **Screen effects**, as far as your phone honors them: grayscale, wallpaper
+- **Screen effects.** Grayscale, wallpaper
   dimming, dark theme, always-on display. All four are standard
   `ZenDeviceEffects`, and a device will happily accept an effect it has no
   intention of applying — so which ones take effect varies. Where an effect does

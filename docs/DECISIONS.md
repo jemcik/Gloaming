@@ -3077,3 +3077,36 @@ this screen has had that reported before. Names fit the segmented row's
   which is the corner doing the pointing. Base 6.5 dp, length 10.5 dp: the base
   is an arc chord, so `dAng × radius` decides its width, and a value that makes
   the triangle wider than it is long has no point at all.
+- The quick-settings SUBTITLE is only seen at 2x1, and the tile's comment
+  promised it unconditionally. Measured 4 Sep 2026, both phones on Android 16,
+  this tile observed on each.
+  Android 16 QPR1 made tiles RESIZABLE, and the size is what decides.
+  **1x1** — the default — is the ICON ALONE: no subtitle, no label, not even the
+  app's name. The platform's own answer to that is a gesture rather than a
+  setting: tapping a small tile flashes its name in the bar at the foot of the
+  panel. There is no preference anywhere to label small tiles; `secure`,
+  `global` and `system` were searched and hold only `sysui_qs_tiles` and
+  `qs_auto_tiles`.
+  **2x1 on the OnePlus CPH2653, LineageOS 23** — the whole thing: hourglass,
+  "Bedtime mode" and "Starts in 4h 01m" under it. The **Honor BKQ-N49, MagicOS
+  10** at its default size draws icon and label — «Режим сну» — and NO subtitle,
+  so MagicOS omits at a labelled size what AOSP shows.
+  Two things fell out of looking. The label TRUNCATES at 2x1 — "Bedtime mod..."
+  on a 1440px panel — so the label cannot hold anything that must be read. And
+  "the hour" was wrong even where the subtitle IS drawn: `statusLine` returns a
+  clock time only while a window is RUNNING; armed gives a COUNTDOWN, which is
+  exactly what the 2x1 measurement shows, and off, unscheduled and
+  permission-missing give no time at all.
+  Getting there took three wrong answers in a row, each stated confidently: that
+  the subtitle was always read, then that MagicOS specifically did not draw it,
+  then that no SystemUI did. The first survived because nobody had looked at a
+  phone; the second and third because looking at ONE phone, and then at two at
+  one size, each looked like enough. A tile can no longer be added over adb to
+  check — `settings put secure sysui_qs_tiles` is rewritten by SystemUI on
+  Android 16 — so the panel has to be edited by hand.
+  Nothing changed in behaviour. The subtitle costs nothing to set and says the
+  right thing where it is drawn; what changed is that no reasoning here may lean
+  on it, because the DEFAULT size shows none of it. Putting the hour in the
+  LABEL instead is doubly rejected now: the label is the tile's NAME, it is
+  absent at 1x1 and truncated at 2x1. The three-icon design is load-bearing —
+  for anyone who never resizes a tile, the icons are the entire message.

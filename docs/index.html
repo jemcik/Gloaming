@@ -14,7 +14,7 @@
 <header class="bar">
   <a class="brand" href="index.html"><img src="icon.png" alt="">Gloaming</a>
   <div class="bar-end">
-    <nav class="langs" aria-label="Language"><a href="index.html" aria-current="page">EN</a><a href="uk/index.html">UK</a><a href="ru/index.html">RU</a></nav>
+    <nav class="langs" aria-label="Language"><a href="index.html" aria-current="page"><span class="lg">English</span><span class="sm">EN</span></a><a href="uk/index.html"><span class="lg">Українська</span><span class="sm">UA</span></a><a href="ru/index.html"><span class="lg">Русский</span><span class="sm">RU</span></a></nav>
     <button class="theme" type="button"
       data-name-system="System" data-name-dawn="Dawn" data-name-dusk="Dusk"
       data-label-system="System" data-label-dawn="Dawn" data-label-dusk="Dusk"
@@ -43,26 +43,26 @@
   </div>
 
   <section>
-    <h2>Why it exists</h2>
-    <p>Android already has a bedtime mode. On a lot of phones it silently never fires. It is scheduled as a background job, and every vendor’s battery management gets a say in whether background jobs ever run. When something in that chain defers it there is no error and no notification — just a screen that stayed colorful all night.</p>
+    <h2>Why another bedtime app</h2>
+    <p>Android already has a bedtime mode. On a lot of phones it does not fire until you open the app that runs it — or it fires, but late. That mode is scheduled as a background job, and every vendor’s battery management gets a say in whether background jobs ever run. When something in that chain defers it there is no error and no notification — Do Not Disturb simply never comes on and the effects never apply.</p>
     <p>Gloaming does not use a background job. It asks for the Alarms and reminders permission — the one you grant inside the app — which the system guarantees will fire at the minute you set. The app holds its own Do Not Disturb rule and switches it itself, so bedtime happens whether or not the app is open.</p>
   </section>
 
   <section>
-    <h2>What it does</h2>
+    <h2>What Gloaming does</h2>
     <div class="feats">
-    <div class="feat"><h3>A 24-hour dial</h3><p>One window, dragged at either end. Days are chosen as the mornings you want the window to end on, so “the weekend” means Saturday and Sunday mornings.</p></div>
+    <div class="feat"><h3>A 24-hour dial</h3><p>One window, set by dragging either end around the dial or by tapping a time and picking it exactly. You choose the mornings you want to wake up on, not the evenings you go to bed: pick Saturday and the window runs from Friday evening to Saturday morning.</p></div>
     <div class="feat"><h3>It ends at your alarm</h3><p>Turn it on and the window follows whatever time your alarm is set for, instead of you keeping two schedules in step.</p></div>
-    <div class="feat"><h3>A Quick Settings tile with three states</h3><p>An hourglass while bedtime is only scheduled, a tick once it is actually running. A tick sitting there all evening while nothing is happening is the one thing a tick must not mean.</p></div>
-    <div class="feat"><h3>An allowlist for the window</h3><p>Who can call, who can message, conversations, repeat callers, reminders, calendar events, media. The screen reports what the system says is in effect, not what the app believes it asked for.</p></div>
-    <div class="feat"><h3>Screen effects, as far as your phone honors them</h3><p>Grayscale, wallpaper dimming, dark theme, always-on display. Where an effect does nothing on your device the switch is not drawn at all, rather than offering one that lies.</p></div>
-    <div class="feat"><h3>It watches its own schedule</h3><p>If the end of a window comes due and does not arrive on time, you are told, with a button to the setting that usually explains it.</p></div>
-    <div class="feat"><h3>A boot watch</h3><p>For phones that withhold the restart broadcast from apps their launch manager has decided are unimportant — which otherwise leaves a bedtime app armed with no alarms behind it.</p></div>
+    <div class="feat"><h3>A Quick Settings tile with three states</h3><p>Three faces, one meaning each. Hourglass — bedtime is on and waiting for its hour. Tick — a window is running right now. Gloaming’s own mark — bedtime is off. The tile never shows a tick for something that has not started.</p></div>
+    <div class="feat"><h3>An allowlist for the window</h3><p>Who can call, who can message, conversations, repeat callers, reminders, calendar events, media. The screen reports the system’s current state, not the one the app switched on and assumes is in effect.</p></div>
+    <div class="feat"><h3>Screen effects</h3><p>Grayscale, wallpaper dimming, dark theme, always-on display. Where the operating system does not let an app control an effect, the switch is not drawn at all, rather than offering one that lies.</p></div>
+    <div class="feat"><h3>It checks rather than assumes</h3><p>Some phones freeze apps in the background, and the failure that causes is specific: the end of a window never fires, so bedtime does not end — whatever it switched on stays on into your day. Gloaming watches every end and says when one is late, with a button to the background setting that is usually the cause. It also asks once, eleven minutes after install, whether this phone delivers background alarms at all — silent unless the answer is no.</p></div>
+    <div class="feat"><h3>A boot watch</h3><p>For phones that never tell apps the phone restarted: bedtime stays switched on while nothing behind it will fire. Gloaming notices.</p></div>
     </div>
   </section>
 
   <section>
-    <h2>What it doesn’t do</h2>
+    <h2>What Gloaming doesn’t do</h2>
     <div class="note"><p>Gloaming has no internet permission. Not “does not send data” — it cannot. There is no analytics, no advertising, no account and no third-party code. Your schedule and the app’s own log stay on the phone, and uninstalling removes them.</p>
     <p><a href="privacy-policy.html">Read the privacy policy</a></p></div>
   </section>

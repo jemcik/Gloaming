@@ -53,7 +53,11 @@
 
 * { box-sizing: border-box; }
 
-html { scroll-behavior: smooth; }
+/* The base size goes on the ROOT, not on body. Every other size here is in rem,
+   and rem resolves against the root - so with 17px on body and 16px still on
+   html, `h3 { font-size: 1rem }` meant "the same as body" and rendered 16px
+   against body's 17px: a feature title SMALLER than its own paragraph. */
+html { scroll-behavior: smooth; font-size: 17px; }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   * { animation: none !important; transition: none !important; }
@@ -64,7 +68,6 @@ body {
   background: var(--surface);
   color: var(--ink);
   font-family: var(--body);
-  font-size: 17px;
   line-height: 1.65;
   -webkit-font-smoothing: antialiased;
 }
@@ -96,6 +99,18 @@ body {
 }
 .theme { display: inline-flex; align-items: center; gap: .35rem; }
 .theme svg { width: 15px; height: 15px; }
+
+/* The switcher says the language's OWN NAME where there is room, and falls back
+   to a code where there is not - measured at 375px, where "English Українська
+   Русский" clipped and pushed the theme button off the screen entirely. The
+   theme button loses its word at the same breakpoint for the same reason:
+   «Як у системі» is wider than all three languages together. */
+.sm { display: none; }
+@media (max-width: 34rem) {
+  .lg { display: none; }
+  .sm { display: inline; }
+  .theme .theme-name { display: none; }
+}
 
 /* ── layout ── */
 
@@ -152,13 +167,12 @@ a { color: var(--state); text-underline-offset: 2px; }
 .feats { display: flex; flex-direction: column; gap: 0; }
 .feat { padding: .95rem 0; border-bottom: 1px solid var(--veil); }
 .feat:last-child { border-bottom: 0; }
-.feat p { margin: 0; font-size: .95rem; }
+.feat p { margin: 0; }
 
 /* ── notes ── */
 
 .note {
   background: var(--raise); border-radius: 9px; padding: 1.1rem 1.25rem;
-  font-size: .98rem;
 }
 .note p:last-child { margin-bottom: 0; }
 

@@ -338,6 +338,31 @@ is in DECISIONS.md.
   guessed wrong. Never let "the user saw the screen" stand in for "the user did
   the thing", least of all where the thing cannot be read back.
 
+- **Copy may not name an effect as happening.** Which of the four device effects
+  a phone applies is the PHONE's decision - One UI 8 stores all four and applies
+  none - and the Do Not Disturb switch may be off, in which case the rule filters
+  nothing deliberately. So "the grey screen stays on", "a screen that stayed
+  colourful all night" and "«Не турбувати» і сірий екран лишаються увімкненими"
+  each claim a configuration the reader may not have. Say instead what is true of
+  EVERY configuration: bedtime did not end, and whatever it switched on stayed
+  on. Three sentences shipped with this fault and were caught in one afternoon on
+  4 Sep 2026 - the store listing, the site and the README - which is why this is
+  a rule rather than three corrections. The same care the SWITCHES get: a switch
+  that lies is not drawn, and a sentence that lies must not be written.
+
+  And say WHY an effect is absent in the user's terms, not the platform's. "The
+  effect does nothing on your device" invites the reader to conclude their phone
+  cannot do it, which on a Galaxy is the opposite of true: One UI drives the very
+  same `Global saturation` from its own Sleep mode, and what is withheld is
+  ACCESS - the zen rule's effects are stored and ignored, `Settings.Secure` needs
+  a grant no ordinary install has, and the Routines SDK's discovery is closed to
+  non-privileged apps. Every route measured, every route shut. So the honest
+  sentence is that the OS does not let an APP control it. Naming the app is what
+  carries the distinction: the phone can, and only the vendor's own software may.
+  This correction came from a Samsung owner reading the copy, against the
+  argument that "the device accepts and ignores" was the whole story - it is the
+  mechanism, not the consequence, and the consequence is what a listing is for.
+
 - There is not one `fontSize` or `fontWeight` override outside `Theme.kt`. Keep
   it that way.
 - Tabular figures (`tnum`) belong on the **display** family only. Numerals get

@@ -77,7 +77,7 @@
     <string name="label_bedtime">режим сну</string>
     <string name="label_started">початок</string>
     <string name="label_wake_up">пробудження</string>
-    <string name="dial_sleep_window">вікно сну</string>
+    <string name="dial_sleep_window">проміжок сну</string>
     <string name="dial_until">до %1$s</string>
     <string name="dial_until_bedtime">до режиму сну</string>
 

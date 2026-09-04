@@ -27,8 +27,33 @@ import com.jemcik.gloaming.core.ZenController
  * language nobody reads consciously - every other tile on the phone means "this
  * is happening now". So the switch's own vocabulary comes with it: an hourglass
  * while bedtime is ARMED and waiting for its hour, a tick once a window is
- * actually RUNNING. The subtitle carries the hour either way, so tapping is
- * never a guess.
+ * actually RUNNING.
+ *
+ * THE SUBTITLE IS ONLY SEEN AT 2x1, and this comment used to promise it
+ * unconditionally - "the subtitle carries the hour either way, so tapping is
+ * never a guess". Measured 4 Sep 2026 on both phones, Android 16.
+ *
+ * Android 16 QPR1 made tiles RESIZABLE and that is what decides it. At 1x1 the
+ * tile is the ICON ALONE - no label, no subtitle, not even the app's name; the
+ * platform's own answer is that tapping a small tile flashes its name in the bar
+ * at the foot of the panel. At 2x1 on LineageOS 23 the whole thing appears:
+ * hourglass, "Bedtime mode" and "Starts in 4h 01m" beneath it. The Honor at its
+ * default size draws icon and label - «Режим сну» - and no subtitle, so MagicOS
+ * omits at a labelled size what AOSP shows.
+ *
+ * Two consequences worth keeping. The label TRUNCATES at 2x1 - "Bedtime mod..."
+ * on a 1440px panel - so the label is not a place to put anything that must be
+ * read. And "the hour" was wrong even where the subtitle IS drawn: `statusLine`
+ * returns a clock time only while a window is RUNNING. Armed gives a COUNTDOWN,
+ * which is what the measurement above shows, and off, unscheduled and
+ * permission-missing give no time at all.
+ *
+ * So the subtitle is worth setting and worth nothing to rely on: most people
+ * never resize a tile, and the default is the size that shows none of it. The
+ * three ICONS have to carry the whole message on their own, which is the
+ * argument for three faces rather than two at its strongest - the
+ * belt-and-braces reasoning the design was given turns out to have been the belt
+ * alone for anyone who left the tile at 1x1.
  *
  * It deliberately does NOT start a window early. Tapping when the schedule is
  * hours away arms it, exactly as the switch does; making the tile jump the
@@ -108,8 +133,11 @@ class BedtimeTile : TileService() {
         // tile at all, so onClick never runs - measured: tapping it left the
         // shade open and did nothing whatever. Greying it out therefore bought
         // one signal and cost the only route to the explanation. INACTIVE is
-        // also the truer word: nothing IS happening. The subtitle carries the
-        // reason, and the tap now opens the app that can fix it.
+        // also the truer word: nothing IS happening. The TAP is what carries the
+        // explanation - it opens the app that can fix it. This said "the
+        // subtitle carries the reason" until 4 Sep 2026: it does at 2x1 and
+        // there is no subtitle at all at 1x1, which is the default, so the tap
+        // has to work on its own. See the class comment.
         tile.state = when {
             p.enabled && ready() -> Tile.STATE_ACTIVE
             else -> Tile.STATE_INACTIVE

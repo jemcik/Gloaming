@@ -23,13 +23,24 @@ it — driven by exact alarms, so it fires with the app closed.
 
 </div>
 
+> [!IMPORTANT]
+> **Here for the Google Play closed test?** Install from the Play link you were
+> sent — **not** from [Releases](https://github.com/jemcik/Gloaming/releases). A
+> hand-installed copy makes Play offer *Open* rather than *Install*, so you never
+> join the test through Play and it does not count; and if the GitHub build's
+> `versionCode` is at or above the tested one, Play has no update path at all.
+> Already sideloaded it? Uninstall first, then use the link.
+>
+> **Everyone else:** Releases is the right place and the APK there is the real
+> one, signed with the project key.
+
 ## Why it exists
 
 Android's own bedtime mode is scheduled as a **WorkManager job**, and jobs are
 advisory. The system decides when they run, and every vendor's battery
 management gets a say on top of that. When something in that chain defers a job
 indefinitely, bedtime silently never happens — there is no error, no
-notification, nothing to notice except that the screen stayed colourful.
+notification, nothing to notice except that the screen stayed colorful.
 
 Exact alarms are the other path. They are a separate, user-granted permission
 with a scheduling guarantee, and they do not go through JobScheduler at all.
@@ -84,7 +95,7 @@ doing it, or on any vendor doing it at all.
   screen reports what the system says is actually in effect, rather than what the
   app believes it asked for. Alarms are always allowed, and the app says that is
   its own choice rather than pretending the platform forbids silencing them.
-- **Screen effects**, as far as your phone honours them: greyscale, wallpaper
+- **Screen effects**, as far as your phone honors them: grayscale, wallpaper
   dimming, dark theme, always-on display. All four are standard
   `ZenDeviceEffects`, and a device will happily accept an effect it has no
   intention of applying — so which ones take effect varies. Where an effect does
@@ -107,7 +118,7 @@ doing it, or on any vendor doing it at all.
   stated in Material 3's own tone scale, and checked against what Google's apps
   actually ship on a phone rather than against the documentation — the two
   agree, which is worth knowing before treating the spec as an ideal nobody
-  follows. Every contrast figure sits in the source beside the colour it
+  follows. Every contrast figure sits in the source beside the color it
   belongs to, including the ones that only just pass and the one that
   deliberately does not.
 - **English, Russian and Ukrainian**, with a per-app language picker, and clock
@@ -142,7 +153,7 @@ into working:
   platform's own getters are `@hide` — and it expires by itself the moment the
   effects are observed working.
 - The one device list is an **exclusion** list, consulted only when the AOSP key
-  it would otherwise read is absent — so an unrecognised phone is treated as
+  it would otherwise read is absent — so an unrecognized phone is treated as
   capable rather than as broken.
 - The only writes to `Settings.*` in the whole app are the always-on routes
   below, and each is gated on a permission the app does not hold by default. On
@@ -196,7 +207,7 @@ decided are unimportant. Measured on an Honor Magic8 Pro: with Gloaming set to
 armed with no alarms behind it until it was next opened — silently, all night.
 
 Fix it once, in **Settings ▸ Apps ▸ App launch ▸ Gloaming ▸ Manage manually**,
-with auto-launch on. Battery optimisation is a different setting and does not
+with auto-launch on. Battery optimization is a different setting and does not
 help; it was tested both ways.
 
 Gloaming notices this by itself and offers a button straight to the right
@@ -250,15 +261,15 @@ Sleep mode, which is also how Honor's were found.
 ### Samsung: the screen effects are not shown, and that is deliberate
 
 One UI accepts the zen rule's `ZenDeviceEffects` and applies none of them —
-greyscale, wallpaper dimming and dark theme are all inert, checked across a
+grayscale, wallpaper dimming and dark theme are all inert, checked across a
 screen-off cycle because AOSP defers night mode there on purpose. A switch that
 does nothing is worse than an absent one, so those three are hidden on such a
 phone.
 
 Settings then offers **System bedtime mode**, which opens One UI's own Sleep
-mode — where its greyscale genuinely works. Every other route was chased to a
+mode — where its grayscale genuinely works. Every other route was chased to a
 measured dead end and the results are in
-[docs/DECISIONS.md](docs/DECISIONS.md): there is no settings key for greyscale,
+[docs/DECISIONS.md](docs/DECISIONS.md): there is no settings key for grayscale,
 `setWallpaperDimAmount` is `@hide`, and `UiModeManager.setNightMode` compiles,
 throws nothing and changes nothing without a signature permission.
 
@@ -321,7 +332,7 @@ in Ukrainian is a bug you cannot see from the source — at the width the row
 actually has on the screen, which is not the width of the screen.
 
 What they cannot cover is everything that depends on the device: whether an
-exact alarm fires with the screen off, whether greyscale is really applied,
+exact alarm fires with the screen off, whether grayscale is really applied,
 whether `updateAutomaticZenRule` clears a rule's condition. That is what the
 journal and `tools/check.sh` are for.
 
@@ -355,19 +366,28 @@ tag, builds a signed release APK and attaches it to the GitHub Release — relea
 assets are downloadable without a GitHub account, which workflow artifacts are
 not.
 
+The same run also builds a signed **App Bundle**, which is what Google Play
+requires and will not do without. That one is kept as a *workflow artifact*
+rather than a release asset, for the reason above read backwards: an `.aab`
+cannot be installed by anyone, so on a public page it is only an invitation to
+download the wrong file. Whoever uploads it to Play Console has a GitHub
+account by definition. Both artefacts come from one Gradle invocation and
+therefore one `versionCode`, and both are signed with the same key — verified
+on a real run, identical certificate.
+
 Published releases start at **0.7**, and **0.10** is current; the tags before
 that have no downloadable build behind them. If a pre-0.7 Gloaming is still on a
 phone, uninstall it rather than expecting an upgrade — 0.1 and 0.2 went out as
 debug builds, and a CI runner generates a fresh debug key per run, so they were
 signed by throwaway certificates Android will not install over.
 
-## Licence
+## License
 
 Apache License 2.0 — see [LICENSE](LICENSE).
 
 The repository also redistributes two SIL Open Font License fonts and a set of
 Material Design icon paths; [NOTICE.md](NOTICE.md) lists them with their
-licences.
+licenses.
 
 ## CLAUDE.md and docs/DECISIONS.md
 
@@ -381,14 +401,14 @@ before touching anything.
 measurement, and every wrong first attempt kept beside the answer, because how a
 thing was got wrong is usually the more useful half. Among them: that
 `updateAutomaticZenRule` silently clears a rule's condition, so rewriting a live
-rule switches Do Not Disturb off underneath you; that a dark warm colour is
+rule switches Do Not Disturb off underneath you; that a dark warm color is
 always brown; that a screenshot can compare two captures but can never establish
-that a colour is right, because on a panel not running in sRGB the framebuffer
+that a color is right, because on a panel not running in sRGB the framebuffer
 and the glass disagree; and that centring a crescent by its own centroid moves
 it somewhere it does not look centred.
 
 It also keeps its own reversals. The launcher icon's entry opens by saying no
-flat colour can serve the artwork, then records how a white tile did — the
+flat color can serve the artwork, then records how a white tile did — the
 evidence was right and the conclusion drawn from it was too narrow. Much of the
 file is written against one phone, because that is the phone it could be
 measured on.

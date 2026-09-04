@@ -7,7 +7,7 @@ Gloaming bundles the following third-party material.
 Both fonts are redistributed in this repository under the
 **SIL Open Font License, Version 1.1**, whose full text is included as required.
 
-| Font | Where | Copyright | Licence |
+| Font | Where | Copyright | License |
 |---|---|---|---|
 | Baloo 2 | `app/src/main/res/font/baloo2.ttf` | Copyright 2019 The Baloo 2 Project Authors (https://github.com/EkType/Baloo2) | [licenses/Baloo2-OFL.txt](licenses/Baloo2-OFL.txt) |
 | Figtree | `app/src/main/res/font/figtree.ttf` | Copyright 2022 The Figtree Project Authors (https://github.com/erikdkennedy/figtree) | [licenses/Figtree-OFL.txt](licenses/Figtree-OFL.txt) |

@@ -21,7 +21,7 @@ Gloaming
 ## Short description (80 max)
 
 ```
-Bedtime that keeps its own schedule: Do Not Disturb, greyscale, dimmed screen.
+Bedtime that keeps its own schedule: Do Not Disturb, grayscale, dimmed screen.
 ```
 
 ## Full description (4000 max)
@@ -29,11 +29,11 @@ Bedtime that keeps its own schedule: Do Not Disturb, greyscale, dimmed screen.
 ```
 Gloaming makes your phone boring at night.
 
-At a time you choose, it switches on Do Not Disturb, drains the screen to greyscale and dims the wallpaper — so when you pick the phone up at 1am out of habit, there is nothing there to hold you. Colour and notifications come back in the morning.
+At a time you choose, it switches on Do Not Disturb, drains the screen to grayscale and dims the wallpaper — so when you pick the phone up at 1am out of habit, there is nothing there to hold you. Color and notifications come back in the morning.
 
 WHY THIS ONE
 
-Android already has a bedtime mode. On a lot of phones it silently never fires. It is scheduled as a background job, and every vendor's battery management gets a say in whether background jobs ever run. When something in that chain defers it there is no error and no notification — just a screen that stayed colourful all night.
+Android already has a bedtime mode. On a lot of phones it silently never fires. It is scheduled as a background job, and every vendor's battery management gets a say in whether background jobs ever run. When something in that chain defers it there is no error and no notification — just a screen that stayed colorful all night.
 
 Gloaming uses exact alarms instead. They are a separate, user-granted permission with a scheduling guarantee, and they do not go through the job scheduler at all. The app holds its own Do Not Disturb rule and flips it from its own alarms, so bedtime happens whether or not the app is open.
 
@@ -47,7 +47,7 @@ WHAT YOU GET
 
 • An allowlist for the night — who can call, who can message, conversations, repeat callers, reminders, calendar events, media. The screen reports what the system says is in effect, not what the app believes it asked for.
 
-• Screen effects, as far as your phone honours them: greyscale, wallpaper dimming, dark theme, always-on display. Where an effect does nothing on your device the switch is not drawn at all, rather than offering one that lies.
+• Screen effects, as far as your phone honors them: grayscale, wallpaper dimming, dark theme, always-on display. Where an effect does nothing on your device the switch is not drawn at all, rather than offering one that lies.
 
 • It watches its own alarms. If the end of a night comes due and does not arrive on time, you are told, with a button to the setting that usually explains it.
 

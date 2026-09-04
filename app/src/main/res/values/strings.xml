@@ -201,7 +201,7 @@
     <string name="fx_dim">Dim wallpaper</string>
     <string name="fx_dark">Dark theme</string>
     <string name="fx_ambient">Hide always-on</string>
-    <string name="fx_grayscale_sub">The screen goes grey</string>
+    <string name="fx_grayscale_sub">The screen goes gray</string>
     <string name="fx_dim_sub">The wallpaper darkens</string>
     <string name="fx_dark_sub">At the next unlock</string>
     <string name="fx_ambient_sub">The screen stays dark</string>
@@ -237,7 +237,7 @@
 
          It is a status PILL plus a sentence now: the pill is the verdict at a
          glance, the sentence is what that means. Before this the pill did not
-         exist and the FAILURE case was signalled by colour alone - and worse,
+         exist and the FAILURE case was signalled by color alone - and worse,
          by the wrong words. Do Not Disturb asked for and the phone reporting
          everything getting through printed "Do Not Disturb is off. Everything
          is allowed.", which is the opposite of what happened: it was not off,

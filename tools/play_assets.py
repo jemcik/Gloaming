@@ -19,7 +19,7 @@ rejection rather than a matter of taste:
                       guidance asks for. These are padded, not cropped - the
                       original framing is what the README shows and what the app
                       actually looks like, and cropping to fit a store would
-                      make the two disagree. Padding colour is sampled from each
+                      make the two disagree. Padding color is sampled from each
                       capture's own top-left pixel, so a Dusk shot pads dark and
                       a Dawn shot pads light.
 
@@ -74,7 +74,7 @@ def build_icon():
     """Full-bleed 512, alpha dropped. Play rounds it itself."""
     rgba = render(512, mask=False)
     rgb = Image.new('RGB', rgba.size, hx('#FFFFFF'))
-    rgb.paste(rgba, mask=None)          # mask=None: no alpha anywhere to honour
+    rgb.paste(rgba, mask=None)          # mask=None: no alpha anywhere to honor
     dest = os.path.join(OUT, 'icon-512.png')
     rgb.save(dest)
     print(dest, rgb.size, rgb.mode)
@@ -125,26 +125,85 @@ def build_feature():
     return dest
 
 
+# The README's order, which is also the order the store should tell it in: what
+# the night looks like, then what it does, then what you can change. The caption
+# says what the SCREEN is, because that is the question a carousel leaves open -
+# nobody scrolling a listing is wondering whether it is a phone.
+#
+# No device frame, deliberately. A bezel encodes nothing true and costs pixels,
+# and these screens are dense: a dial, a countdown and a stack of rows. Same
+# reason the app has no decorative structure - see the design note in CLAUDE.md.
+SHOTS = [
+    ('home.png',      'One window a night, dragged at either end'),
+    ('home-dark.png', 'Two themes, and it follows your phone'),
+    ('effects.png',   'Gray screen and dimmed wallpaper, where your phone allows it'),
+    ('allowed.png',   'Choose exactly what still gets through'),
+    ('settings.png',  'Theme, language, and the vendor screens that matter'),
+]
+
+BAND = 300          # caption band height, px
+CAP_SIZE = 52
+
+
+def _wrap(d, text, font, width):
+    words, lines, line = text.split(), [], ''
+    for w in words:
+        t = f'{line} {w}'.strip()
+        if d.textlength(t, font=font) <= width:
+            line = t
+        else:
+            lines.append(line); line = w
+    if line:
+        lines.append(line)
+    return lines
+
+
 def build_screenshots():
-    """Pad each capture out to 9:16. Never crop - see the module docstring."""
+    """Caption each capture. Also keep a plain 9:16 set as a fallback.
+
+    Two sets because the aspect ratio is unsettled. Play's hard rule is only
+    that each side is 320-3840px, which the captures already satisfy at
+    1256x2808; the 9:16 figure is guidance tied to promotional placement. So the
+    captioned set keeps the phone's own aspect and the plain padded set stands
+    by in case Console objects - which is cheaper than guessing wrong and
+    re-shooting.
+
+    Neither crops. The README's framing is what the app looks like.
+    """
     src = os.path.join(ROOT, 'docs', 'screenshots')
-    dst = os.path.join(OUT, 'screenshots')
-    os.makedirs(dst, exist_ok=True)
-    # The README's order, which is also the order the store should tell it in:
-    # what it looks like, then what it does, then what you can change.
-    order = ['home.png', 'home-dark.png', 'effects.png', 'allowed.png', 'settings.png']
-    for i, name in enumerate(order, start=1):
+    cap_dir = os.path.join(OUT, 'screenshots')
+    plain_dir = os.path.join(OUT, 'screenshots-plain-9x16')
+    os.makedirs(cap_dir, exist_ok=True)
+    os.makedirs(plain_dir, exist_ok=True)
+
+    font = figtree(CAP_SIZE, 600)
+    for i, (name, caption) in enumerate(SHOTS, start=1):
         im = Image.open(os.path.join(src, name)).convert('RGB')
         w, h = im.size
-        want = int(round(h * 9 / 16))
-        if want <= w:
-            out = im                       # already 9:16 or wider; leave it alone
-        else:
-            out = Image.new('RGB', (want, h), im.getpixel((0, 0)))
-            out.paste(im, ((want - w) // 2, 0))
-        p = os.path.join(dst, f'{i}.png')
+
+        # Captioned: a Dusk band above the shot, the same band on all five so
+        # they read as one set rather than following each screenshot's theme.
+        out = Image.new('RGB', (w, h + BAND), hx(SURFACE))
+        out.paste(im, (0, BAND))
+        d = ImageDraw.Draw(out)
+        lines = _wrap(d, caption, font, w - 160)
+        lh = CAP_SIZE * 1.32
+        y = (BAND - lh * len(lines)) / 2
+        for ln in lines:
+            d.text(((w - d.textlength(ln, font=font)) / 2, y), ln,
+                   font=font, fill=hx(ON_SURFACE))
+            y += lh
+        p = os.path.join(cap_dir, f'{i}.png')
         out.save(p)
-        print(p, out.size, f'({name})')
+        print(p, out.size, f'({name}) "{caption}"')
+
+        # Plain, padded to 9:16 from each capture's own corner color, so a Dusk
+        # shot pads dark and a Dawn shot pads light.
+        want = int(round(h * 9 / 16))
+        pl = im if want <= w else Image.new('RGB', (want, h), im.getpixel((0, 0)))
+        if want > w:
+            pl.paste(im, ((want - w) // 2, 0))
+        pl.save(os.path.join(plain_dir, f'{i}.png'))
 
 
 if __name__ == '__main__':

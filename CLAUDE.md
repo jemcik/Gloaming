@@ -384,6 +384,19 @@ is in DECISIONS.md.
                          and cropping to fit a store makes the two disagree.
                          No device frames - a bezel encodes nothing true and
                          costs pixels these screens need
+    python3 tools/build_site.py         the SITE into docs/, for GitHub Pages.
+                         Six pages - landing and privacy policy, in en/uk/ru -
+                         from one template each, because six hand-written files
+                         drift and a missing translation should be a KeyError at
+                         build time rather than a hole on a live page. Palette
+                         and type come from Theme.kt. NEITHER BUNDLED FONT HAS
+                         CYRILLIC (figtree 391 codepoints, baloo2 856, Latin
+                         both), so the stack names Golos Text after Figtree and
+                         the browser falls back per glyph. docs/privacy-policy
+                         .html is the URL given to Google Play - it must keep
+                         its name and stay at the root
+    python3 -m http.server 8765 --directory docs    preview it
+
     adb shell run-as com.jemcik.gloaming cat files/journal.log
 
 Unit tests run on **JDK 21**, pinned in `app/build.gradle.kts`. The reason —

@@ -23,3 +23,6 @@ keystore.properties
 # Python bytecode from tools/
 __pycache__/
 *.pyc
+
+# Claude Code local state - worktrees, launch config
+.claude/

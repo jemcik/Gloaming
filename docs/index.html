@@ -3,83 +3,38 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Gloaming · A bedtime app for Android</title>
+<title>Gloaming · A bedtime app for Android that keeps its own schedule.</title>
+<meta name="description" content="A bedtime app for Android that keeps its own schedule.">
 <link rel="icon" href="icon.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;600;700&display=swap">
-<style>
-  /* Dusk and Dawn, from the app's own Theme.kt - same tokens as the policy page. */
-  :root {
-    --surface: #FDFDFD;
-    --raise:   #E4E5E2;
-    --line:    #C5C4BD;
-    --ink:     #1E1B18;
-    --ink-low: #514A43;
-    --state:   #435B7A;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --surface: #20242A;
-      --raise:   #2F353D;
-      --line:    #49505A;
-      --ink:     #EAEBED;
-      --ink-low: #BCC1CC;
-      --state:   #B0C3E0;
-    }
-  }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    background: var(--surface);
-    color: var(--ink);
-    font-family: "Figtree", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    font-size: 17px;
-    line-height: 1.65;
-  }
-  main {
-    max-width: 34rem; margin: 0 auto; padding: 5rem 1.5rem 6rem;
-    display: flex; flex-direction: column; gap: 2rem;
-  }
-  header { display: flex; align-items: center; gap: 1.15rem; }
-  header img { width: 72px; height: 72px; }
-  h1 { font-size: 1.9rem; font-weight: 700; margin: 0; letter-spacing: -0.015em; }
-  .sub { color: var(--ink-low); font-size: 1rem; margin: 0.2rem 0 0; }
-  p { margin: 0; color: var(--ink-low); }
-  .shots {
-    display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem;
-  }
-  .shots img {
-    width: 100%; border-radius: 8px; border: 1px solid var(--line); display: block;
-  }
-  nav { display: flex; flex-wrap: wrap; gap: 0.6rem; }
-  nav a {
-    display: inline-block; text-decoration: none;
-    background: var(--raise); color: var(--ink);
-    border: 1px solid var(--line); border-radius: 7px;
-    padding: 0.5rem 0.9rem; font-size: 0.94rem; font-weight: 600;
-  }
-  nav a:hover { border-color: var(--state); color: var(--state); }
-  nav a:focus-visible { outline: 2px solid var(--state); outline-offset: 2px; }
-  footer {
-    border-top: 1px solid var(--line); padding-top: 1.25rem;
-    font-size: 0.9rem; color: var(--ink-low);
-  }
-  footer a { color: var(--state); }
-</style>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;600;700&family=Golos+Text:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="gloaming.css">
+<script>(function(){try{var v=localStorage.getItem('gloaming-theme');if(v&&v!=='system')document.documentElement.setAttribute('data-theme',v);}catch(e){}})();</script>
 </head>
 <body>
+<header class="bar">
+  <a class="brand" href="index.html"><img src="icon.png" alt="">Gloaming</a>
+  <div class="bar-end">
+    <nav class="langs" aria-label="Language"><a href="index.html" aria-current="page">EN</a><a href="uk/index.html">UK</a><a href="ru/index.html">RU</a></nav>
+    <button class="theme" type="button"
+      data-name-system="System" data-name-dawn="Dawn" data-name-dusk="Dusk"
+      data-label-system="System" data-label-dawn="Dawn" data-label-dusk="Dusk"
+      aria-label="System">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/>
+      </svg><span class="theme-name">System</span>
+    </button>
+  </div>
+</header>
 <main>
-
-  <header>
-    <img src="icon.png" alt="">
-    <div>
-      <h1>Gloaming</h1>
-      <p class="sub">A bedtime app for Android that keeps its own schedule.</p>
+  <div class="hero">
+    <h1>A bedtime app for Android that keeps its own schedule.</h1>
+    <p class="lead">One sleep window a night — Do Not Disturb and the screen effects that go with it — driven by exact alarms, so it fires with the app closed.</p>
+    <div class="sweep"></div>
+    <div class="cta">
+      <a class="btn" href="https://github.com/jemcik/Gloaming/releases">Download the APK</a>
+      <a class="btn ghost" href="https://github.com/jemcik/Gloaming">Source on GitHub</a>
     </div>
-  </header>
-
-  <p>One sleep window a night — Do Not Disturb and the screen effects that go with it — driven by exact alarms, so it fires with the app closed.</p>
+  </div>
 
   <div class="shots">
     <img src="screenshots/home.png" alt="The home screen mid-window">
@@ -87,17 +42,43 @@
     <img src="screenshots/allowed.png" alt="What is allowed to interrupt">
   </div>
 
-  <nav>
-    <a href="https://github.com/jemcik/Gloaming">Source on GitHub</a>
-    <a href="https://github.com/jemcik/Gloaming/releases">Releases</a>
-    <a href="privacy-policy.html">Privacy policy</a>
-  </nav>
+  <section>
+    <h2>Why it exists</h2>
+    <p>Android already has a bedtime mode. On a lot of phones it silently never fires. It is scheduled as a background job, and every vendor’s battery management gets a say in whether background jobs ever run. When something in that chain defers it there is no error and no notification — just a screen that stayed colorful all night.</p>
+    <p>Gloaming uses exact alarms instead. They are a separate, user-granted permission with a scheduling guarantee, and they do not go through the job scheduler at all. The app holds its own Do Not Disturb rule and flips it from its own alarms, so bedtime happens whether or not the app is open.</p>
+  </section>
 
-  <footer>
-    Requires Android 15 (API 35) or newer · Apache License 2.0 ·
-    <a href="https://github.com/jemcik/Gloaming/issues">Report an issue</a>
-  </footer>
+  <section>
+    <h2>What it does</h2>
+    <div class="feats">
+    <div class="feat"><h3>A 24-hour dial</h3><p>One window, dragged at either end. Days are chosen as the mornings you want the window to end on, so “the weekend” means Saturday and Sunday mornings.</p></div>
+    <div class="feat"><h3>It ends at your alarm</h3><p>Turn it on and the window follows whatever time your alarm is set for, instead of you keeping two schedules in step.</p></div>
+    <div class="feat"><h3>A Quick Settings tile with three states</h3><p>An hourglass while bedtime is only scheduled, a tick once it is actually running. A tick sitting there all evening while nothing is happening is the one thing a tick must not mean.</p></div>
+    <div class="feat"><h3>An allowlist for the night</h3><p>Who can call, who can message, conversations, repeat callers, reminders, calendar events, media. The screen reports what the system says is in effect, not what the app believes it asked for.</p></div>
+    <div class="feat"><h3>Screen effects, as far as your phone honors them</h3><p>Grayscale, wallpaper dimming, dark theme, always-on display. Where an effect does nothing on your device the switch is not drawn at all, rather than offering one that lies.</p></div>
+    <div class="feat"><h3>It watches its own alarms</h3><p>If the end of a night comes due and does not arrive on time, you are told, with a button to the setting that usually explains it.</p></div>
+    <div class="feat"><h3>A boot watch</h3><p>For phones that withhold the restart broadcast from apps their launch manager has decided are unimportant — which otherwise leaves a bedtime app armed with no alarms behind it.</p></div>
+    </div>
+  </section>
 
+  <section>
+    <h2>What it doesn’t do</h2>
+    <div class="note"><p>Gloaming has no internet permission. Not “does not send data” — it cannot. There is no analytics, no advertising, no account and no third-party code. Your schedule and the app’s own log stay on the phone, and uninstalling removes them.</p>
+    <p><a href="privacy-policy.html">Read the privacy policy</a></p></div>
+  </section>
+
+  <section>
+    <h2>Requirements</h2>
+    <p>Android 15 or newer. Two permissions, both granted from inside the app: notification policy access (for Do Not Disturb) and exact alarms.</p>
+  </section>
 </main>
+
+<footer>
+  Apache License 2.0 · <a href="https://github.com/jemcik/Gloaming">Source</a> ·
+  <a href="https://github.com/jemcik/Gloaming/releases">Releases</a> ·
+  <a href="privacy-policy.html">Privacy policy</a> ·
+  <a href="https://github.com/jemcik/Gloaming/issues">Report an issue</a>
+</footer>
+<script src="gloaming.js"></script>
 </body>
 </html>

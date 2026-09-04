@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gloaming · Политика конфиденциальности</title>
+<meta name="description" content="Приложение для сна на Android, которое держит собственное расписание.">
+<link rel="icon" href="../icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;600;700&family=Golos+Text:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../gloaming.css">
+<script>(function(){try{var v=localStorage.getItem('gloaming-theme');if(v&&v!=='system')document.documentElement.setAttribute('data-theme',v);}catch(e){}})();</script>
+</head>
+<body>
+<header class="bar">
+  <a class="brand" href="index.html"><img src="../icon.png" alt="">Gloaming</a>
+  <div class="bar-end">
+    <nav class="langs" aria-label="Language"><a href="../privacy-policy.html">EN</a><a href="../uk/privacy-policy.html">UK</a><a href="../ru/privacy-policy.html" aria-current="page">RU</a></nav>
+    <button class="theme" type="button"
+      data-name-system="Как в системе" data-name-dawn="Светлая" data-name-dusk="Тёмная"
+      data-label-system="Как в системе" data-label-dawn="Светлая" data-label-dusk="Тёмная"
+      aria-label="Как в системе">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/>
+      </svg><span class="theme-name">Как в системе</span>
+    </button>
+  </div>
+</header>
+<main>
+  <h1>Политика конфиденциальности</h1>
+  <p class="lead">Gloaming для Android · <code>com.jemcik.gloaming</code></p>
+
+  <div class="note"><p><strong>Gloaming ничего не собирает, хранит всё на вашем устройстве и не может никуда отправить данные.</strong> Он не запрашивает разрешение <code>INTERNET</code>, поэтому у него нет никакого доступа к сети — это не обещание о намерениях, а ограничение, которое обеспечивает операционная система.</p></div>
+
+  <section><h2>Что собирается</h2><p>Ничего. Нет аналитики, отчётов о сбоях, рекламы, сторонних SDK, аккаунтов и входа. Никакие личные данные или данные устройства не собираются, не передаются, не продаются и ни с кем не разделяются.</p></section>
+
+  <section><h2>Что хранится и где</h2>
+    <p>Всё, что Gloaming помнит, остаётся в его собственном приватном хранилище на вашем телефоне:</p>
+    <ul><li><strong>Ваше расписание и настройки</strong> — окно сна, дни, в которые оно действует, список исключений, включённые экранные эффекты, а также выбранные тема и язык.</li><li><strong>Журнал</strong> — локальная запись того, что приложение делало каждую ночь, чтобы проблему можно было объяснить постфактум. Он пишется в собственную папку приложения и никогда не покидает телефон самостоятельно.</li></ul>
+    <p>Удаление Gloaming убирает всё это. <strong>Сбросить Gloaming</strong>, внутри приложения, очищает данные без удаления.</p>
+  </section>
+
+  <section><h2>Диагностика, которую вы отправляете сами</h2><p><strong>Отправить диагностику</strong> собирает журнал, ваше расписание и то, что система сообщает о правиле «Не беспокоить», в обычный текст и передаёт его в окно «Поделиться» Android. <strong>Получателя выбираете вы</strong> — почта, сообщение, заметка себе. Gloaming не передаёт это сам и не имеет такой возможности; если вы никогда не нажмёте кнопку, ничего и не будет создано. Прочитайте текст перед отправкой, как и любое сообщение.</p></section>
+
+  <section><h2>Разрешения, и зачем каждое</h2>
+    <ul>
+    <li><strong>Доступ к политике уведомлений</strong> — позволяет приложению создавать и переключать собственное правило «Не беспокоить». Именно это заставляет режим сна работать. Оно не даёт доступа к содержимому ваших уведомлений, и Gloaming никогда их не читает.</li>
+    <li><strong>Будильники и напоминания</strong> (<code>SCHEDULE_EXACT_ALARM</code>) — позволяет планировать точные будильники, которые начинают и заканчивают ночь, пока приложение закрыто.</li>
+    <li><strong>Запуск при старте</strong> (<code>RECEIVE_BOOT_COMPLETED</code>) — позволяет восстановить ваше расписание после перезагрузки, чтобы перезапуск в два часа ночи не завершил режим сна молча.</li>
+    <li><strong>Изменение системных настроек</strong> (<code>WRITE_SETTINGS</code>) — необязательное, запрашивается только если вы пользуетесь управлением always-on дисплеем на телефоне, где эта настройка достижима. Используется исключительно для записи этого одного ключа.</li>
+    <li><code>WRITE_SECURE_SETTINGS</code> — объявлено, но его нельзя выдать при обычной установке; его выдают только через adb, осознанно, те, кто хочет вендорский путь к always-on. Без этого разрешения код остаётся неактивным.</li>
+    </ul>
+    <p>Gloaming не запрашивает доступа к контактам, местоположению, камере, микрофону, хранилищу или содержимому ваших сообщений и уведомлений.</p>
+  </section>
+
+  <section><h2>Дети</h2><p>Gloaming — утилита общего назначения. Он не предназначен для детей, и поскольку он не собирает никаких данных, он не собирает их и у них.</p></section>
+  <section><h2>Изменения</h2><p>Если эта политика когда-нибудь изменится, она изменится здесь, с обновлённой датой ниже. У приложения открытый код, поэтому любое изменение того, что он на самом деле делает, видно в истории коммитов.</p></section>
+  <section><h2>Контакты</h2>
+    <p>Вопросы или сообщение о неточности здесь: создайте issue по адресу <a href="https://github.com/jemcik/Gloaming/issues">github.com/jemcik/Gloaming/issues</a>.</p>
+  </section>
+</main>
+
+<footer>Действует с 4 September 2026. Код: <a href="https://github.com/jemcik/Gloaming">github.com/jemcik/Gloaming</a> · Apache License 2.0</footer>
+<script src="../gloaming.js"></script>
+</body>
+</html>

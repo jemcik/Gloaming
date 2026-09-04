@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gloaming · Застосунок для сну на Android, який тримає власний розклад.</title>
+<meta name="description" content="Застосунок для сну на Android, який тримає власний розклад.">
+<link rel="icon" href="../icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;600;700&family=Golos+Text:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../gloaming.css">
+<script>(function(){try{var v=localStorage.getItem('gloaming-theme');if(v&&v!=='system')document.documentElement.setAttribute('data-theme',v);}catch(e){}})();</script>
+</head>
+<body>
+<header class="bar">
+  <a class="brand" href="index.html"><img src="../icon.png" alt="">Gloaming</a>
+  <div class="bar-end">
+    <nav class="langs" aria-label="Language"><a href="../index.html">EN</a><a href="../uk/index.html" aria-current="page">UK</a><a href="../ru/index.html">RU</a></nav>
+    <button class="theme" type="button"
+      data-name-system="Як у системі" data-name-dawn="Світла" data-name-dusk="Темна"
+      data-label-system="Як у системі" data-label-dawn="Світла" data-label-dusk="Темна"
+      aria-label="Як у системі">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/>
+      </svg><span class="theme-name">Як у системі</span>
+    </button>
+  </div>
+</header>
+<main>
+  <div class="hero">
+    <h1>Застосунок для сну на Android, який тримає власний розклад.</h1>
+    <p class="lead">Одне вікно сну на ніч — «Не турбувати» і екранні ефекти, що йдуть із ним, — на точних будильниках, тож воно спрацьовує із закритим застосунком.</p>
+    <div class="sweep"></div>
+    <div class="cta">
+      <a class="btn" href="https://github.com/jemcik/Gloaming/releases">Завантажити APK</a>
+      <a class="btn ghost" href="https://github.com/jemcik/Gloaming">Код на GitHub</a>
+    </div>
+  </div>
+
+  <div class="shots">
+    <img src="../screenshots/home.png" alt="Головний екран посеред вікна">
+    <img src="../screenshots/effects.png" alt="Який вигляд має екран під час вікна">
+    <img src="../screenshots/allowed.png" alt="Що дозволено переривати">
+  </div>
+
+  <section>
+    <h2>Навіщо він</h2>
+    <p>В Android уже є режим сну. На багатьох телефонах він мовчки не спрацьовує. Він запланований як фонове завдання, а чи виконуються фонові завдання — вирішує керування батареєю кожного виробника. Якщо десь у цьому ланцюжку завдання відкладають, не буде ні помилки, ні сповіщення — лише екран, який усю ніч лишався кольоровим.</p>
+    <p>Gloaming натомість використовує точні будильники. Це окремий дозвіл, який надає користувач, із гарантією спрацювання, і вони взагалі не проходять через планувальник завдань. Застосунок тримає власне правило «Не турбувати» і перемикає його своїми ж будильниками, тож режим сну настає незалежно від того, відкритий застосунок чи ні.</p>
+  </section>
+
+  <section>
+    <h2>Що він робить</h2>
+    <div class="feats">
+    <div class="feat"><h3>24-годинний циферблат</h3><p>Одне вікно, яке тягнеться за обидва кінці. Дні обираються як ранки, якими вікно має закінчитися, тож «вихідні» означають ранок суботи й неділі.</p></div>
+    <div class="feat"><h3>Завершення за будильником</h3><p>Увімкніть — і вікно саме підлаштується під час вашого будильника, замість того щоб вести два розклади паралельно.</p></div>
+    <div class="feat"><h3>Плитка у швидких налаштуваннях із трьома станами</h3><p>Пісочний годинник, поки режим лише заплановано, і галочка, коли він справді діє. Галочка, що стоїть цілий вечір, поки нічого не відбувається, — це саме те, чого галочка означати не повинна.</p></div>
+    <div class="feat"><h3>Список винятків на ніч</h3><p>Хто може подзвонити, хто написати, розмови, повторні дзвінки, нагадування, події календаря, медіа. Екран показує те, що система вважає чинним, а не те, що застосунок гадає, ніби попросив.</p></div>
+    <div class="feat"><h3>Ефекти екрана, наскільки їх підтримує ваш телефон</h3><p>Чорно-білий екран, притемнення шпалер, темна тема, always-on дисплей. Якщо ефект на вашому пристрої нічого не робить, перемикач не показується взагалі — краще жодного, ніж такий, що бреше.</p></div>
+    <div class="feat"><h3>Він стежить за власними будильниками</h3><p>Якщо кінець ночі настав, а сигнал не прийшов вчасно, вам про це скажуть — із кнопкою до налаштування, яке зазвичай це пояснює.</p></div>
+    <div class="feat"><h3>Спостереження за перезавантаженням</h3><p>Для телефонів, які приховують від застосунків сигнал про перезапуск і залишають режим сну без жодного будильника за ним.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Чого він не робить</h2>
+    <div class="note"><p>У Gloaming немає дозволу на інтернет. Не «не надсилає дані» — а не може. Немає ні аналітики, ні реклами, ні акаунтів, ні стороннього коду. Ваш розклад і власний журнал застосунку лишаються на телефоні, а видалення застосунку прибирає їх.</p>
+    <p><a href="privacy-policy.html">Читати політику приватності</a></p></div>
+  </section>
+
+  <section>
+    <h2>Вимоги</h2>
+    <p>Android 15 або новіший. Два дозволи, обидва надаються з самого застосунку: доступ до політики сповіщень (для «Не турбувати») і точні будильники.</p>
+  </section>
+</main>
+
+<footer>
+  Ліцензія Apache 2.0 · <a href="https://github.com/jemcik/Gloaming">Код</a> ·
+  <a href="https://github.com/jemcik/Gloaming/releases">Релізи</a> ·
+  <a href="privacy-policy.html">Політика приватності</a> ·
+  <a href="https://github.com/jemcik/Gloaming/issues">Повідомити про проблему</a>
+</footer>
+<script src="../gloaming.js"></script>
+</body>
+</html>

@@ -397,4 +397,55 @@ class RowFitTest {
     @Test fun `presets fit in English`() = presetsFitAt("en", 1.0f)
     @Test fun `presets fit in Russian`() = presetsFitAt("ru", 1.0f)
     @Test fun `presets fit in Ukrainian`() = presetsFitAt("uk", 1.0f)
+
+    /**
+     * Does the DIAL'S CAPTION stay inside its ring?
+     *
+     * Unlike the preset row this one cannot truncate - the text is centred in
+     * the dial with nothing constraining its width - so it does the other thing
+     * and draws straight over the ring. No test above could see it: the row
+     * heights do not change and nothing is clipped.
+     *
+     * The budget is geometry. The canvas is 260dp, R_TRACK is 97 and STROKE
+     * 17.3, so the ring's inner radius is 97 - 17.3/2 = 88.35dp; the caption
+     * sits about 32dp below centre, where the chord is 2*sqrt(88.35² - 32²) =
+     * about 165dp. Measured on the Honor: 122dp at scale 1.0 and 159dp at 1.3,
+     * which is 6dp of clearance a side - tight, not yet touching. It crosses at
+     * about 1.4, and WCAG 1.4.4 asks for 200%.
+     */
+    private fun dialCaptionFitsAt(locale: String, scale: Float) {
+        RuntimeEnvironment.setQualifiers("+$locale-w360dp-h800dp")
+        val ctx = ApplicationProvider.getApplicationContext<android.content.Context>()
+        val prefs = Prefs(ctx)
+        prefs.enabled = true
+        val caption = ctx.getString(R.string.dial_sleep_window).uppercase()
+
+        compose.setContent {
+            GloamingTheme(dark = false) {
+                val d = LocalDensity.current
+                CompositionLocalProvider(
+                    LocalDensity provides Density(d.density, fontScale = scale)
+                ) {
+                    Home(rememberScrollState(), onOpenSettings = {}, onOpenInterruptions = {})
+                }
+            }
+        }
+
+        val b = compose.onAllNodes(hasText(caption, substring = true), useUnmergedTree = true)
+            .onFirst().getUnclippedBoundsInRoot()
+        val w = (b.right - b.left).value
+        assertTrue(
+            "at font scale $scale in '$locale' the dial's caption is ${w}dp wide and the " +
+                "ring leaves ${ringChord}dp - it is drawing over its own dial. Nothing " +
+                "clips it and no height changes, so only a width says so.",
+            w <= ringChord
+        )
+    }
+
+    /** 2*sqrt(88.35² - 32²): the ring's inner chord where the caption sits. */
+    private val ringChord = 165f
+
+    @Test fun `dial caption fits in English at 200 percent`() = dialCaptionFitsAt("en", 2.0f)
+    @Test fun `dial caption fits in Russian at 200 percent`() = dialCaptionFitsAt("ru", 2.0f)
+    @Test fun `dial caption fits in Ukrainian at 200 percent`() = dialCaptionFitsAt("uk", 2.0f)
 }

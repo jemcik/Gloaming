@@ -41,6 +41,10 @@ import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.TextAutoSize
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import java.time.LocalTime
 import kotlin.math.PI
@@ -458,10 +462,28 @@ fun BedtimeDial(
                 color = g.onSurfaceMid,
                 textAlign = TextAlign.Center
             )
-            Text(
+            // BOUNDED, then auto-sized. This cannot truncate - nothing
+            // constrains a centred label - so instead it drew straight over the
+            // ring: measured at 200% it wanted 195dp in English and Ukrainian
+            // and 234 in Russian, against the 165 the ring leaves. Nothing
+            // clipped and no height moved, so only a width could say so;
+            // `RowFitTest` measures it now.
+            //
+            // 160dp is the chord the ring's inner edge leaves where this sits -
+            // 2*sqrt(88.35² - 32²) is 165 - with 5 back for the stroke's
+            // antialiasing. The floor is in DP, not sp, so the worst case is the
+            // label at its DEFAULT appearance, which is 122dp and fits: the
+            // caption gives back the growth a large font gave it, never more.
+            val floor = with(LocalDensity.current) { 11.dp.toSp() }
+            BasicText(
                 centreLabel.uppercase(LocalLocale.current.platformLocale),
-                style = MaterialTheme.typography.labelSmall,
-                color = g.onSurfaceLow
+                modifier = Modifier.widthIn(max = 160.dp),
+                style = MaterialTheme.typography.labelSmall.copy(color = g.onSurfaceLow),
+                maxLines = 1,
+                autoSize = TextAutoSize.StepBased(
+                    minFontSize = floor,
+                    maxFontSize = MaterialTheme.typography.labelSmall.fontSize
+                )
             )
             // A tappable numeral with no affordance is a secret. Two dots are
             // the quietest thing that says "there is more here".

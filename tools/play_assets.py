@@ -134,7 +134,7 @@ def build_feature():
 # and these screens are dense: a dial, a countdown and a stack of rows. Same
 # reason the app has no decorative structure - see the design note in CLAUDE.md.
 SHOTS = [
-    ('home.png',      'One window a night, dragged at either end'),
+    ('home.png',      'One window, dragged at either end'),
     ('home-dark.png', 'Two themes, and it follows your phone'),
     ('effects.png',   'Gray screen and dimmed wallpaper, where your phone allows it'),
     ('allowed.png',   'Choose exactly what still gets through'),

@@ -35,7 +35,7 @@
 
   <section><h2>What is stored, and where</h2>
     <p>Everything Gloaming remembers stays in its own private storage on your phone:</p>
-    <ul><li><strong>Your schedule and settings</strong> — the sleep window, the days it applies to, the interruption allowlist, the screen effects you enabled, and your theme and language choices.</li><li><strong>A journal</strong> — an on-device log of what the app did each night, so a problem can be explained after the fact. It is written to the app’s own files directory and never leaves the phone on its own.</li></ul>
+    <ul><li><strong>Your schedule and settings</strong> — the sleep window, the days it applies to, the interruption allowlist, the screen effects you enabled, and your theme and language choices.</li><li><strong>A journal</strong> — an on-device log of what the app did on each run, so a problem can be explained after the fact. It is written to the app’s own files directory and never leaves the phone on its own.</li></ul>
     <p>Uninstalling Gloaming removes all of it. <strong>Reset Gloaming</strong>, inside the app, clears it without uninstalling.</p>
   </section>
 
@@ -44,7 +44,7 @@
   <section><h2>Permissions, and why each exists</h2>
     <ul>
     <li><strong>Notification policy access</strong> — lets the app create and switch its own Do Not Disturb rule. This is what makes bedtime work. It grants no access to the content of your notifications, and Gloaming never reads them.</li>
-    <li><strong>Alarms &amp; reminders</strong> (<code>SCHEDULE_EXACT_ALARM</code>) — lets the app schedule the exact alarms that start and end the night while it is closed.</li>
+    <li><strong>Alarms and reminders</strong> (<code>SCHEDULE_EXACT_ALARM</code>) — lets the app start and end your window at exactly the time you set, while it is closed.</li>
     <li><strong>Run at startup</strong> (<code>RECEIVE_BOOT_COMPLETED</code>) — lets it restore your schedule after a restart, so a reboot at 2am does not silently end bedtime.</li>
     <li><strong>Modify system settings</strong> (<code>WRITE_SETTINGS</code>) — optional, and requested only if you use the always-on display control on a phone where that setting is reachable. Used solely to write that one display key.</li>
     <li><code>WRITE_SECURE_SETTINGS</code> — declared but not grantable by an ordinary install; it can only be granted over adb, deliberately, by someone who wants the vendor always-on route. Without that grant the code path is inert.</li>

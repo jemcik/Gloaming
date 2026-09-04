@@ -28,7 +28,7 @@
 <main>
   <div class="hero">
     <h1>A bedtime app for Android that keeps its own schedule.</h1>
-    <p class="lead">One sleep window a night — Do Not Disturb and the screen effects that go with it — driven by exact alarms, so it fires with the app closed.</p>
+    <p class="lead">Quiet your phone for whatever stretch of time you want — set up Do Not Disturb and the screen effects in one place. It all works even with the app closed, because it uses the Alarms and reminders permission you grant in the app. That guarantees it fires at exactly the time you set, and it never goes through the background job scheduler.</p>
     <div class="sweep"></div>
     <div class="cta">
       <a class="btn" href="https://github.com/jemcik/Gloaming/releases">Download the APK</a>
@@ -45,7 +45,7 @@
   <section>
     <h2>Why it exists</h2>
     <p>Android already has a bedtime mode. On a lot of phones it silently never fires. It is scheduled as a background job, and every vendor’s battery management gets a say in whether background jobs ever run. When something in that chain defers it there is no error and no notification — just a screen that stayed colorful all night.</p>
-    <p>Gloaming uses exact alarms instead. They are a separate, user-granted permission with a scheduling guarantee, and they do not go through the job scheduler at all. The app holds its own Do Not Disturb rule and flips it from its own alarms, so bedtime happens whether or not the app is open.</p>
+    <p>Gloaming does not use a background job. It asks for the Alarms and reminders permission — the one you grant inside the app — which the system guarantees will fire at the minute you set. The app holds its own Do Not Disturb rule and switches it itself, so bedtime happens whether or not the app is open.</p>
   </section>
 
   <section>
@@ -54,9 +54,9 @@
     <div class="feat"><h3>A 24-hour dial</h3><p>One window, dragged at either end. Days are chosen as the mornings you want the window to end on, so “the weekend” means Saturday and Sunday mornings.</p></div>
     <div class="feat"><h3>It ends at your alarm</h3><p>Turn it on and the window follows whatever time your alarm is set for, instead of you keeping two schedules in step.</p></div>
     <div class="feat"><h3>A Quick Settings tile with three states</h3><p>An hourglass while bedtime is only scheduled, a tick once it is actually running. A tick sitting there all evening while nothing is happening is the one thing a tick must not mean.</p></div>
-    <div class="feat"><h3>An allowlist for the night</h3><p>Who can call, who can message, conversations, repeat callers, reminders, calendar events, media. The screen reports what the system says is in effect, not what the app believes it asked for.</p></div>
+    <div class="feat"><h3>An allowlist for the window</h3><p>Who can call, who can message, conversations, repeat callers, reminders, calendar events, media. The screen reports what the system says is in effect, not what the app believes it asked for.</p></div>
     <div class="feat"><h3>Screen effects, as far as your phone honors them</h3><p>Grayscale, wallpaper dimming, dark theme, always-on display. Where an effect does nothing on your device the switch is not drawn at all, rather than offering one that lies.</p></div>
-    <div class="feat"><h3>It watches its own alarms</h3><p>If the end of a night comes due and does not arrive on time, you are told, with a button to the setting that usually explains it.</p></div>
+    <div class="feat"><h3>It watches its own schedule</h3><p>If the end of a window comes due and does not arrive on time, you are told, with a button to the setting that usually explains it.</p></div>
     <div class="feat"><h3>A boot watch</h3><p>For phones that withhold the restart broadcast from apps their launch manager has decided are unimportant — which otherwise leaves a bedtime app armed with no alarms behind it.</p></div>
     </div>
   </section>
@@ -69,7 +69,7 @@
 
   <section>
     <h2>Requirements</h2>
-    <p>Android 15 or newer. Two permissions, both granted from inside the app: notification policy access (for Do Not Disturb) and exact alarms.</p>
+    <p>Android 15 or newer. Two permissions, both granted from inside the app: notification policy access (for Do Not Disturb) and Alarms and reminders.</p>
   </section>
 </main>
 

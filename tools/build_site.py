@@ -268,8 +268,11 @@ T = {}
 T['en'] = dict(
     htmllang='en',
     tagline='A bedtime app for Android that keeps its own schedule.',
-    lead='One sleep window a night — Do Not Disturb and the screen effects that go '
-         'with it — driven by exact alarms, so it fires with the app closed.',
+    lead='Quiet your phone for whatever stretch of time you want — set up Do Not Disturb '
+         'and the screen effects in one place. It all works even with the app closed, '
+         'because it uses the Alarms and reminders permission you grant in the app. That '
+         'guarantees it fires at exactly the time you set, and it never goes through the '
+         'background job scheduler.',
     cta_get='Download the APK', cta_src='Source on GitHub',
     theme_system='System', theme_dawn='Dawn', theme_dusk='Dusk',
     shot_alts=['The home screen mid-window', 'How the screen looks during a window',
@@ -280,10 +283,10 @@ T['en'] = dict(
            'management gets a say in whether background jobs ever run. When something in '
            'that chain defers it there is no error and no notification — just a screen '
            'that stayed colorful all night.',
-    why_p2='Gloaming uses exact alarms instead. They are a separate, user-granted '
-           'permission with a scheduling guarantee, and they do not go through the job '
-           'scheduler at all. The app holds its own Do Not Disturb rule and flips it from '
-           'its own alarms, so bedtime happens whether or not the app is open.',
+    why_p2='Gloaming does not use a background job. It asks for the Alarms and reminders '
+           'permission — the one you grant inside the app — which the system guarantees '
+           'will fire at the minute you set. The app holds its own Do Not Disturb rule and '
+           'switches it itself, so bedtime happens whether or not the app is open.',
     what_h='What it does',
     feats=[
         ('A 24-hour dial',
@@ -296,7 +299,7 @@ T['en'] = dict(
          'An hourglass while bedtime is only scheduled, a tick once it is actually '
          'running. A tick sitting there all evening while nothing is happening is the one '
          'thing a tick must not mean.'),
-        ('An allowlist for the night',
+        ('An allowlist for the window',
          'Who can call, who can message, conversations, repeat callers, reminders, '
          'calendar events, media. The screen reports what the system says is in effect, '
          'not what the app believes it asked for.'),
@@ -304,8 +307,8 @@ T['en'] = dict(
          'Grayscale, wallpaper dimming, dark theme, always-on display. Where an effect '
          'does nothing on your device the switch is not drawn at all, rather than '
          'offering one that lies.'),
-        ('It watches its own alarms',
-         'If the end of a night comes due and does not arrive on time, you are told, with '
+        ('It watches its own schedule',
+         'If the end of a window comes due and does not arrive on time, you are told, with '
          'a button to the setting that usually explains it.'),
         ('A boot watch',
          'For phones that withhold the restart broadcast from apps their launch manager '
@@ -320,7 +323,7 @@ T['en'] = dict(
     priv_link='Read the privacy policy',
     req_h='Requirements',
     req_p='Android 15 or newer. Two permissions, both granted from inside the app: '
-          'notification policy access (for Do Not Disturb) and exact alarms.',
+          'notification policy access (for Do Not Disturb) and Alarms and reminders.',
     foot='Apache License 2.0 · ',
     foot_src='Source', foot_rel='Releases', foot_priv='Privacy policy', foot_iss='Report an issue',
     # privacy policy
@@ -339,7 +342,7 @@ T['en'] = dict(
     p_2a='<strong>Your schedule and settings</strong> — the sleep window, the days it '
          'applies to, the interruption allowlist, the screen effects you enabled, and '
          'your theme and language choices.',
-    p_2b='<strong>A journal</strong> — an on-device log of what the app did each night, '
+    p_2b='<strong>A journal</strong> — an on-device log of what the app did on each run, '
          'so a problem can be explained after the fact. It is written to the app’s own '
          'files directory and never leaves the phone on its own.',
     p_2c='Uninstalling Gloaming removes all of it. <strong>Reset Gloaming</strong>, inside '
@@ -356,8 +359,8 @@ T['en'] = dict(
         '<strong>Notification policy access</strong> — lets the app create and switch its '
         'own Do Not Disturb rule. This is what makes bedtime work. It grants no access to '
         'the content of your notifications, and Gloaming never reads them.',
-        '<strong>Alarms &amp; reminders</strong> (<code>SCHEDULE_EXACT_ALARM</code>) — lets '
-        'the app schedule the exact alarms that start and end the night while it is closed.',
+        '<strong>Alarms and reminders</strong> (<code>SCHEDULE_EXACT_ALARM</code>) — lets '
+        'the app start and end your window at exactly the time you set, while it is closed.',
         '<strong>Run at startup</strong> (<code>RECEIVE_BOOT_COMPLETED</code>) — lets it '
         'restore your schedule after a restart, so a reboot at 2am does not silently end '
         'bedtime.',
@@ -385,8 +388,11 @@ T['en'] = dict(
 T['uk'] = dict(
     htmllang='uk',
     tagline='Застосунок для сну на Android, який тримає власний розклад.',
-    lead='Одне вікно сну на ніч — «Не турбувати» і екранні ефекти, що йдуть із ним, — '
-         'на точних будильниках, тож воно спрацьовує із закритим застосунком.',
+    lead='Заспокойте свій телефон на бажаний проміжок часу — налаштуйте «Не турбувати» і '
+         'екранні ефекти в одному зручному інтерфейсі. Усе працює, навіть якщо застосунок '
+         'закритий: він користується дозволом «Будильники та нагадування», який ви надаєте '
+         'в застосунку. Це дає гарантію спрацювання точно в заданий час і не проходить '
+         'через планувальник фонових завдань.',
     cta_get='Завантажити APK', cta_src='Код на GitHub',
     theme_system='Як у системі', theme_dawn='Світла', theme_dusk='Темна',
     shot_alts=['Головний екран посеред вікна', 'Який вигляд має екран під час вікна',
@@ -397,11 +403,11 @@ T['uk'] = dict(
            'керування батареєю кожного виробника. Якщо десь у цьому ланцюжку завдання '
            'відкладають, не буде ні помилки, ні сповіщення — лише екран, який усю ніч '
            'лишався кольоровим.',
-    why_p2='Gloaming натомість використовує точні будильники. Це окремий дозвіл, який надає '
-           'користувач, із гарантією спрацювання, і вони взагалі не проходять через '
-           'планувальник завдань. Застосунок тримає власне правило «Не турбувати» і '
-           'перемикає його своїми ж будильниками, тож режим сну настає незалежно від того, '
-           'відкритий застосунок чи ні.',
+    why_p2='Gloaming не користується фоновим завданням. Він просить дозвіл «Будильники та '
+           'нагадування» — той самий, який ви надаєте в застосунку, — і система гарантує '
+           'спрацювання в задану хвилину. Застосунок тримає власне правило «Не турбувати» і '
+           'перемикає його сам, тож режим сну настає незалежно від того, відкритий '
+           'застосунок чи ні.',
     what_h='Що він робить',
     feats=[
         ('24-годинний циферблат',
@@ -414,7 +420,7 @@ T['uk'] = dict(
          'Пісочний годинник, поки режим лише заплановано, і галочка, коли він справді діє. '
          'Галочка, що стоїть цілий вечір, поки нічого не відбувається, — це саме те, чого '
          'галочка означати не повинна.'),
-        ('Список винятків на ніч',
+        ('Список винятків на час вікна',
          'Хто може подзвонити, хто написати, розмови, повторні дзвінки, нагадування, події '
          'календаря, медіа. Екран показує те, що система вважає чинним, а не те, що '
          'застосунок гадає, ніби попросив.'),
@@ -422,8 +428,8 @@ T['uk'] = dict(
          'Чорно-білий екран, притемнення шпалер, темна тема, always-on дисплей. Якщо ефект '
          'на вашому пристрої нічого не робить, перемикач не показується взагалі — краще '
          'жодного, ніж такий, що бреше.'),
-        ('Він стежить за власними будильниками',
-         'Якщо кінець ночі настав, а сигнал не прийшов вчасно, вам про це скажуть — із '
+        ('Він стежить за власним розкладом',
+         'Якщо кінець вікна настав, а сигнал не прийшов вчасно, вам про це скажуть — із '
          'кнопкою до налаштування, яке зазвичай це пояснює.'),
         ('Спостереження за перезавантаженням',
          'Для телефонів, які приховують від застосунків сигнал про перезапуск і залишають '
@@ -437,7 +443,7 @@ T['uk'] = dict(
     priv_link='Читати політику приватності',
     req_h='Вимоги',
     req_p='Android 15 або новіший. Два дозволи, обидва надаються з самого застосунку: '
-          'доступ до політики сповіщень (для «Не турбувати») і точні будильники.',
+          'доступ до політики сповіщень (для «Не турбувати») і «Будильники та нагадування».',
     foot='Ліцензія Apache 2.0 · ',
     foot_src='Код', foot_rel='Релізи', foot_priv='Політика приватності',
     foot_iss='Повідомити про проблему',
@@ -456,7 +462,7 @@ T['uk'] = dict(
         'телефоні:',
     p_2a='<strong>Ваш розклад і налаштування</strong> — вікно сну, дні, у які воно діє, '
          'список винятків, увімкнені екранні ефекти, а також вибрані тема й мова.',
-    p_2b='<strong>Журнал</strong> — локальний запис того, що застосунок робив щоночі, щоб '
+    p_2b='<strong>Журнал</strong> — локальний запис того, що застосунок робив за кожен проміжок, щоб '
          'проблему можна було пояснити постфактум. Він пишеться у власну теку застосунку і '
          'ніколи не залишає телефон самостійно.',
     p_2c='Видалення Gloaming прибирає все це. <strong>Скинути Gloaming</strong>, усередині '
@@ -473,9 +479,9 @@ T['uk'] = dict(
         '<strong>Доступ до політики сповіщень</strong> — дозволяє застосунку створювати і '
         'перемикати власне правило «Не турбувати». Саме це змушує режим сну працювати. Він '
         'не дає доступу до вмісту ваших сповіщень, і Gloaming ніколи їх не читає.',
-        '<strong>Будильники й нагадування</strong> (<code>SCHEDULE_EXACT_ALARM</code>) — '
-        'дозволяє планувати точні будильники, які починають і завершують ніч, поки '
-        'застосунок закритий.',
+        '<strong>Будильники та нагадування</strong> (<code>SCHEDULE_EXACT_ALARM</code>) — '
+        'дозволяє починати й завершувати ваш проміжок точно в заданий час, поки застосунок '
+        'закритий.',
         '<strong>Запуск при старті</strong> (<code>RECEIVE_BOOT_COMPLETED</code>) — '
         'дозволяє відновити ваш розклад після перезавантаження, щоб перезапуск о другій '
         'ночі не завершив режим сну мовчки.',
@@ -504,8 +510,11 @@ T['uk'] = dict(
 T['ru'] = dict(
     htmllang='ru',
     tagline='Приложение для сна на Android, которое держит собственное расписание.',
-    lead='Одно окно сна за ночь — «Не беспокоить» и экранные эффекты, идущие с ним, — '
-         'на точных будильниках, так что оно срабатывает с закрытым приложением.',
+    lead='Успокойте свой телефон на нужный промежуток времени — настройте «Не беспокоить» '
+         'и экранные эффекты в одном удобном интерфейсе. Всё работает, даже если приложение '
+         'закрыто: оно пользуется разрешением «Будильники и напоминания», которое вы '
+         'выдаёте в приложении. Это даёт гарантию срабатывания точно в заданное время и не '
+         'проходит через планировщик фоновых задач.',
     cta_get='Скачать APK', cta_src='Код на GitHub',
     theme_system='Как в системе', theme_dawn='Светлая', theme_dusk='Тёмная',
     shot_alts=['Главный экран посреди окна', 'Как выглядит экран во время окна',
@@ -516,10 +525,10 @@ T['ru'] = dict(
            'управление батареей каждого производителя. Если где-то в этой цепочке задачу '
            'откладывают, не будет ни ошибки, ни уведомления — только экран, который всю '
            'ночь оставался цветным.',
-    why_p2='Gloaming вместо этого использует точные будильники. Это отдельное разрешение, '
-           'которое выдаёт пользователь, с гарантией срабатывания, и они вообще не проходят '
-           'через планировщик задач. Приложение держит собственное правило «Не беспокоить» '
-           'и переключает его своими же будильниками, так что режим сна наступает '
+    why_p2='Gloaming не пользуется фоновой задачей. Он запрашивает разрешение «Будильники и '
+           'напоминания» — то самое, которое вы выдаёте в приложении, — и система '
+           'гарантирует срабатывание в заданную минуту. Приложение держит собственное '
+           'правило «Не беспокоить» и переключает его само, так что режим сна наступает '
            'независимо от того, открыто приложение или нет.',
     what_h='Что он делает',
     feats=[
@@ -533,7 +542,7 @@ T['ru'] = dict(
          'Песочные часы, пока режим только запланирован, и галочка, когда он действительно '
          'работает. Галочка, стоящая весь вечер, пока ничего не происходит, — это ровно то, '
          'чего галочка означать не должна.'),
-        ('Список исключений на ночь',
+        ('Список исключений на заданное время',
          'Кто может позвонить, кто написать, разговоры, повторные звонки, напоминания, '
          'события календаря, медиа. Экран показывает то, что система считает действующим, '
          'а не то, что приложение думает, будто запросило.'),
@@ -541,8 +550,8 @@ T['ru'] = dict(
          'Чёрно-белый экран, приглушение обоев, тёмная тема, always-on дисплей. Если эффект '
          'на вашем устройстве ничего не делает, переключатель не показывается вовсе — лучше '
          'никакого, чем такой, который врёт.'),
-        ('Он следит за собственными будильниками',
-         'Если конец ночи наступил, а сигнал не пришёл вовремя, вам об этом скажут — с '
+        ('Он следит за собственным расписанием',
+         'Если заданное время подошло к концу, а сигнал не пришёл вовремя, вам об этом скажут — с '
          'кнопкой к настройке, которая обычно это объясняет.'),
         ('Наблюдение за перезагрузкой',
          'Для телефонов, которые скрывают от приложений сигнал о перезапуске и оставляют '
@@ -556,7 +565,7 @@ T['ru'] = dict(
     priv_link='Читать политику конфиденциальности',
     req_h='Требования',
     req_p='Android 15 или новее. Два разрешения, оба выдаются из самого приложения: доступ '
-          'к политике уведомлений (для «Не беспокоить») и точные будильники.',
+          'к политике уведомлений (для «Не беспокоить») и «Будильники и напоминания».',
     foot='Лицензия Apache 2.0 · ',
     foot_src='Код', foot_rel='Релизы', foot_priv='Политика конфиденциальности',
     foot_iss='Сообщить о проблеме',
@@ -595,7 +604,7 @@ T['ru'] = dict(
         'работать. Оно не даёт доступа к содержимому ваших уведомлений, и Gloaming никогда '
         'их не читает.',
         '<strong>Будильники и напоминания</strong> (<code>SCHEDULE_EXACT_ALARM</code>) — '
-        'позволяет планировать точные будильники, которые начинают и заканчивают ночь, пока '
+        'позволяет начинать и заканчивать ваш промежуток точно в заданное время, пока '
         'приложение закрыто.',
         '<strong>Запуск при старте</strong> (<code>RECEIVE_BOOT_COMPLETED</code>) — '
         'позволяет восстановить ваше расписание после перезагрузки, чтобы перезапуск в два '

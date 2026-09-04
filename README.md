@@ -6,8 +6,8 @@
 
 **A bedtime app for Android that keeps its own schedule.**
 
-One sleep window a night — Do Not Disturb and the screen effects that go with
-it — driven by exact alarms, so it fires with the app closed.
+Do Not Disturb and the screen effects that go with it, for whatever stretch of
+time you choose — and it fires with the app closed.
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue)](LICENSE)
 [![Android](https://img.shields.io/badge/Android-15%2B%20(API%2035)-3DDC84)](#requirements)
@@ -197,7 +197,7 @@ Android 15 (API 35) or newer — `ZenDeviceEffects` and `AutomaticZenRule.Builde
 are API 35, and the app is built entirely around them.
 
 Two permissions, both user-granted from inside the app: notification policy
-access (Do Not Disturb) and exact alarms.
+access (Do Not Disturb) and Alarms and reminders (`SCHEDULE_EXACT_ALARM`).
 
 ### Honor, Huawei and other phones with an "app launch" manager
 

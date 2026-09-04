@@ -387,7 +387,7 @@ account by definition. Both artefacts come from one Gradle invocation and
 therefore one `versionCode`, and both are signed with the same key — verified
 on a real run, identical certificate.
 
-Published releases start at **0.7**, and **0.10** is current; the tags before
+Published releases start at **0.7**, and **0.12** is current; the tags before
 that have no downloadable build behind them. If a pre-0.7 Gloaming is still on a
 phone, uninstall it rather than expecting an upgrade — 0.1 and 0.2 went out as
 debug builds, and a CI runner generates a fresh debug key per run, so they were

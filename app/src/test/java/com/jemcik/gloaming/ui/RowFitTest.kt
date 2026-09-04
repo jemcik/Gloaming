@@ -14,6 +14,12 @@ import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.test.performSemanticsAction
+import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.unit.Density
 import androidx.test.core.app.ApplicationProvider
 import com.jemcik.gloaming.R
 import com.jemcik.gloaming.core.Prefs
@@ -298,4 +304,97 @@ class RowFitTest {
     @Test fun `ends section fits in English`() = endsSectionFitsIn("en")
     @Test fun `ends section fits in Russian`() = endsSectionFitsIn("ru")
     @Test fun `ends section fits in Ukrainian`() = endsSectionFitsIn("uk")
+
+    /**
+     * Does the text still fit when the SYSTEM FONT IS LARGE?
+     *
+     * Everything above measures at font scale 1.0, and that is the one setting
+     * these controls actually break at. Measured on the Honor at 1.3 - Android's
+     * "Large", two notches off a scale that goes to 2.0 - the preset row
+     * truncates in EVERY language: "Weekdays" loses its s and reads "Weekday",
+     * "Weekends" reads "Weekend", and «Выходные» reads «Выходн». The Russian is
+     * obvious and the English is nearly invisible, which is why it shipped.
+     *
+     * It was never a translation problem. The row is three equal thirds of the
+     * screen with `maxLines = 1`, and HomeScreen's own comment records that
+     * "Weekdays" already wants 66 of the 79 a third leaves - 84% at 1.0, so
+     * anything above about 1.2 overflows. The budgets in strings.xml count
+     * characters at one size and cannot see this.
+     *
+     * `hasVisualOverflow` is the assertion rather than a height: a truncated
+     * label does not change the row's height, so every dp measurement in this
+     * file reads a truncated row as passing.
+     */
+    private fun presetsFitAt(locale: String, scale: Float) {
+        RuntimeEnvironment.setQualifiers("+$locale-w360dp-h800dp")
+        val ctx = ApplicationProvider.getApplicationContext<android.content.Context>()
+        val prefs = Prefs(ctx)
+        prefs.enabled = true
+        // The preset row draws only while Repeat is on, and only then are the
+        // three segments laid out at a third of the width each.
+        prefs.days = DayOfWeek.entries.toSet()
+
+        compose.setContent {
+            GloamingTheme(dark = false) {
+                // The system font size, as a user's accessibility setting sets
+                // it. Density is overridden rather than the qualifiers because
+                // font scale is not a resource qualifier - there is no
+                // "-fontScale130" - it is a Configuration value, and this is the
+                // path Compose actually reads.
+                val d = LocalDensity.current
+                CompositionLocalProvider(
+                    LocalDensity provides Density(d.density, fontScale = scale)
+                ) {
+                    Home(rememberScrollState(), onOpenSettings = {}, onOpenInterruptions = {})
+                }
+            }
+        }
+
+        val clipped = listOf(
+            R.string.preset_every_night, R.string.preset_weekdays, R.string.preset_weekends
+        ).map { ctx.getString(it) }.mapNotNull { label ->
+            // UNMERGED: a SegmentedButton merges its label's semantics into
+            // itself, so the merged tree hands back the BUTTON, whose layout
+            // says nothing about whether the text inside it was cut.
+            val node = compose
+                .onAllNodes(hasText(label, substring = true), useUnmergedTree = true).onFirst()
+            val out = mutableListOf<TextLayoutResult>()
+            node.performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(out) }
+            val r = out.firstOrNull() ?: return@mapNotNull null
+            val room = r.layoutInput.constraints.maxWidth
+            // The text's UNCONSTRAINED width against the room it was given.
+            // Two simpler signals were tried and both lie here:
+            //
+            //   `hasVisualOverflow` is true for every label at 1.3, including
+            //   "Always" at 61 of 80, because the taller line also overflows the
+            //   segment's HEIGHT. It cannot tell "cut off" from "tall".
+            //
+            //   `size.width >= maxWidth` reads a clip correctly but also fires
+            //   on auto-sized text that was shrunk to fit EXACTLY, which is a
+            //   pass, not a failure.
+            //
+            // maxIntrinsicWidth is what the string wants at its chosen size, so
+            // wanting more than it has is the definition of being cut.
+            val wants = r.multiParagraph.maxIntrinsicWidth
+            if (wants > room) "$label (wants $wants of $room at ${r.layoutInput.style.fontSize})" else null
+        }
+        assertTrue(
+            "at font scale $scale in '$locale' these preset labels are TRUNCATED: " +
+                "$clipped. The row is three equal thirds with maxLines = 1, so the " +
+                "text is cut rather than wrapped and the row's height never changes - " +
+                "which is why every dp measurement in this file reads it as passing.",
+            clipped.isEmpty()
+        )
+    }
+
+    // 1.3 is Android's "Large". The scale goes to 2.0, so this is not the worst
+    // case - it is the first one that breaks.
+    @Test fun `presets fit in English at large font`() = presetsFitAt("en", 1.3f)
+    @Test fun `presets fit in Russian at large font`() = presetsFitAt("ru", 1.3f)
+    @Test fun `presets fit in Ukrainian at large font`() = presetsFitAt("uk", 1.3f)
+
+    // And at the default, so a regression there is told apart from a scale one.
+    @Test fun `presets fit in English`() = presetsFitAt("en", 1.0f)
+    @Test fun `presets fit in Russian`() = presetsFitAt("ru", 1.0f)
+    @Test fun `presets fit in Ukrainian`() = presetsFitAt("uk", 1.0f)
 }

@@ -55,6 +55,11 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.TextAutoSize
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -921,6 +926,15 @@ private fun DaysSection(s: HomeState) {
                     // row of presets directly above it should not be the
                     // one control on the screen you have to aim at.
                     modifier = Modifier.height(48.dp),
+                        // M3's default is 16dp either side. At font scale 1.3
+                        // "Weekends" wants 81.5px of the 81 a third of the row
+                        // leaves - a 0.6% shortfall, and because the overflow is
+                        // Clip rather than Ellipsis, Compose drops the whole last
+                        // GLYPH that will not fit. Half a pixel costs the entire
+                        // "s". Eight either side gives the label back more than
+                        // it was short, and costs nothing at any size: the
+                        // segments are 104dp wide and the text is centred.
+                        contentPadding = PaddingValues(horizontal = 8.dp),
                         colors = SegmentedButtonDefaults.colors(
                             activeContainerColor = g.selectFill,
                             activeContentColor = g.onSelect,
@@ -941,10 +955,38 @@ private fun DaysSection(s: HomeState) {
                         // check it says so from across the room.
                         icon = {},
                         label = {
-                            Text(
+                            // AUTO-SIZED, WITH A FLOOR. At font scale 1.3 this
+                            // row truncated in English and Russian - "Weekdays"
+                            // read "Weekday", "Weekends" read "Weekend",
+                            // «Выходные» read «Выходн» - and there is no
+                            // ellipsis, so the cut was INVISIBLE: the English
+                            // ones are still valid words meaning something else.
+                            // WCAG 1.4.4 asks for 200% with no loss of content
+                            // and this lost it at 130%. `RowFitTest` pins it now.
+                            //
+                            // Wrapping would have been the better answer and is
+                            // not available: SegmentedButton is an extension on
+                            // SingleChoiceSegmentedButtonRowScope and itemShape
+                            // computes start/middle/end corners for ONE row, so
+                            // a FlowRow can carry neither the receiver nor the
+                            // shapes.
+                            //
+                            // The floor is in DP, not sp, and that is the whole
+                            // point: it means "never smaller than a default user
+                            // sees". The label may give back the growth the font
+                            // scale gave it, never more - shrinking text below
+                            // default to answer a request for larger text would
+                            // trade one accessibility failure for another.
+                            val floor = with(LocalDensity.current) { 14.dp.toSp() }
+                            BasicText(
                                 label,
-                                style = MaterialTheme.typography.labelLarge,
-                                maxLines = 1
+                                style = MaterialTheme.typography.labelLarge
+                                    .copy(color = LocalContentColor.current),
+                                maxLines = 1,
+                                autoSize = TextAutoSize.StepBased(
+                                    minFontSize = floor,
+                                    maxFontSize = MaterialTheme.typography.labelLarge.fontSize
+                                )
                             )
                         }
                     )

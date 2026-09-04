@@ -270,6 +270,15 @@ is in DECISIONS.md.
   all. Verify by CREATING A RULE and finding it in `dumpsys notification` -
   reading the setting back once cost a whole verification run, in which a
   working fix measured as broken.
+  **It goes the other way once the package is GONE.** Cleaning the Honor after
+  an uninstall, 4 Sep 2026: `cmd notification disallow_dnd com.jemcik.gloaming`
+  did nothing at all - with and without an explicit user id, and silently, no
+  error - while `settings put secure enabled_notification_policy_access_packages
+  ''` cleared the list at once. The command resolves a package name and there is
+  no package left to resolve, so it no-ops on the one occasion you would reach
+  for it. The grant OUTLIVES the app: uninstalling took the rule, the data, the
+  appop and the AOD keys with it and left this behind, which on the next install
+  means the permission card may never appear and a first run is not a first run.
 - `am broadcast` cannot reach `BedtimeReceiver` — it is `exported="false"`,
   correctly. Test through real alarms.
 - `dumpsys notification` prints a `Zen Log:` history as well as live config, so

@@ -279,6 +279,12 @@ is in DECISIONS.md.
   for it. The grant OUTLIVES the app: uninstalling took the rule, the data, the
   appop and the AOD keys with it and left this behind, which on the next install
   means the permission card may never appear and a first run is not a first run.
+  **And the setting lies in BOTH directions.** Same phone, hours later, on the
+  Play build: `enabled_notification_policy_access_packages` read EMPTY while the
+  app plainly had access - it had created a live `ZenRule[name=Gloaming]`,
+  enabled, `STATE_TRUE`, with zen actually on. Listing a package is not evidence
+  of access and omitting one is not evidence of its absence. The setting is not
+  weak evidence; it is none. The rule in `dumpsys notification` is the answer.
 - `am broadcast` cannot reach `BedtimeReceiver` — it is `exported="false"`,
   correctly. Test through real alarms.
 - `dumpsys notification` prints a `Zen Log:` history as well as live config, so

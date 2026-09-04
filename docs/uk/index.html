@@ -12,7 +12,7 @@
 </head>
 <body>
 <header class="bar">
-  <a class="brand" href="index.html"><img src="../icon.png" alt="">Gloaming</a>
+  <a class="brand" href="index.html"><img src="../icon.png" alt="" width="62" height="62">Gloaming</a>
   <div class="bar-end">
     <nav class="langs" aria-label="Language"><a href="../index.html"><span class="lg">English</span><span class="sm">EN</span></a><a href="../uk/index.html" aria-current="page"><span class="lg">Українська</span><span class="sm">UA</span></a><a href="../ru/index.html"><span class="lg">Русский</span><span class="sm">RU</span></a></nav>
     <button class="theme" type="button"
@@ -37,9 +37,12 @@
   </div>
 
   <div class="shots">
-    <img src="../screenshots/home.png" alt="Головний екран посеред проміжку">
-    <img src="../screenshots/effects.png" alt="Який вигляд має екран під час проміжку">
-    <img src="../screenshots/allowed.png" alt="Що дозволено переривати">
+    <button class="shot light" type="button" data-full="../screenshots/uk/light/home.png" aria-label="Головний екран посеред проміжку"><img src="../screenshots/web/uk/light/home.webp" alt="Головний екран посеред проміжку" loading="lazy"></button>
+    <button class="shot dark" type="button" data-full="../screenshots/uk/dark/home.png" aria-label="Головний екран посеред проміжку"><img src="../screenshots/web/uk/dark/home.webp" alt="Головний екран посеред проміжку" loading="lazy"></button>
+    <button class="shot light" type="button" data-full="../screenshots/uk/light/effects.png" aria-label="Який вигляд має екран під час проміжку"><img src="../screenshots/web/uk/light/effects.webp" alt="Який вигляд має екран під час проміжку" loading="lazy"></button>
+    <button class="shot dark" type="button" data-full="../screenshots/uk/dark/effects.png" aria-label="Який вигляд має екран під час проміжку"><img src="../screenshots/web/uk/dark/effects.webp" alt="Який вигляд має екран під час проміжку" loading="lazy"></button>
+    <button class="shot light" type="button" data-full="../screenshots/uk/light/allowed.png" aria-label="Що дозволено переривати"><img src="../screenshots/web/uk/light/allowed.webp" alt="Що дозволено переривати" loading="lazy"></button>
+    <button class="shot dark" type="button" data-full="../screenshots/uk/dark/allowed.png" aria-label="Що дозволено переривати"><img src="../screenshots/web/uk/dark/allowed.webp" alt="Що дозволено переривати" loading="lazy"></button>
   </div>
 
   <section>
@@ -79,6 +82,12 @@
   <a href="privacy-policy.html">Політика приватності</a> ·
   <a href="https://github.com/jemcik/Gloaming/issues">Повідомити про проблему</a>
 </footer>
+<div class="viewer" hidden tabindex="-1" role="dialog" aria-modal="true" aria-label="Знімки екрана">
+  <button class="vnav prev" type="button" aria-label="Попередній знімок"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg></button>
+  <img alt="">
+  <button class="vnav next" type="button" aria-label="Наступний знімок"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button>
+  <p class="vcount" aria-live="polite"></p>
+</div>
 <script src="../gloaming.js"></script>
 </body>
 </html>

@@ -25,6 +25,7 @@ copies live under uk/ and ru/ rather than the English one moving.
 Run from anywhere:  python3 tools/build_site.py
 """
 import os
+from PIL import Image
 
 ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 DOCS = os.path.join(ROOT, 'docs')
@@ -111,16 +112,36 @@ body {
 
 /* ── chrome ── */
 
+/* THE BAR SHARES THE CONTENT COLUMN'S EDGES. It was 62rem against main's 46rem,
+   so the language switcher sat a clear 8rem to the right of the text it was
+   meant to line up with, and the mark the same distance to the left. One width
+   for both, and the masthead reads as the top of the page rather than as a
+   separate strip laid over it. */
 .bar {
-  display: flex; align-items: center; gap: 1rem;
-  max-width: 62rem; margin: 0 auto; padding: 1.1rem 1.5rem;
+  display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; row-gap: .9rem;
+  max-width: var(--wrap); margin: 0 auto; padding: 1.6rem 1.5rem .35rem;
 }
+/* The brand IS the lockup now - the app's mark at a size the crescent is
+   visible in, and the name at headline weight. It used to be 38px and 1.2rem
+   sitting next to a 2.7rem tagline, which is how the page came to introduce
+   itself in the smallest type on the screen. */
 .brand {
-  display: flex; align-items: center; gap: .6rem;
-  font-weight: 700; font-size: 1.05rem; letter-spacing: -.01em;
+  display: flex; align-items: center; gap: clamp(.55rem, 2vw, .85rem);
+  font-weight: 800; font-size: clamp(1.25rem, 4.4vw, 2.2rem);
+  letter-spacing: -.03em; line-height: 1;
   color: var(--ink); text-decoration: none;
 }
-.brand img { width: 32px; height: 32px; }
+.brand img {
+  width: clamp(38px, 9vw, 62px); height: clamp(38px, 9vw, 62px); flex: none;
+}
+/* The masthead now has TWO things competing for one row, and on a 360px phone -
+   which is as common a width as any - the mark, the name, three language
+   buttons and the theme button do not all fit. Measured at 375px: they fit with
+   the 16px gap and NOTHING to spare, so the next narrower phone is over the
+   edge. `.brand` cannot shrink below its icon plus the word "Gloaming", so with
+   wrap on, the switcher drops to a line of its own and stays right-aligned
+   rather than the two being squashed into each other. Costs nothing at any
+   width where they do fit. */
 .bar-end { margin-left: auto; display: flex; align-items: center; gap: .4rem; }
 
 .langs { display: flex; gap: .15rem; }
@@ -149,15 +170,37 @@ body {
   .theme .theme-name { display: none; }
 }
 
+/* The masthead misses ONE ROW BY THREE PIXELS on the phone it was tested on.
+   The Honor is 1256px at density 560, so 359 CSS px, and mark + name + three
+   language buttons + the theme button came to 362 - the switcher dropped to a
+   line of its own, correct and ugly, for the sake of 3px. Everything here gives
+   back a little: the gap, the brand's floor, and the buttons' side padding,
+   which is where the room actually is - .55rem either side of three buttons is
+   53px of nothing. The horizontal PADDING is untouchable, because it is what
+   holds the bar on the text column's edges. */
+@media (max-width: 26rem) {
+  .bar { gap: .7rem; }
+  .bar-end { gap: .3rem; }
+  .langs a, .theme { padding: .3rem .42rem; }
+  .brand { font-size: 1.2rem; gap: .5rem; }
+  .brand img { width: 36px; height: 36px; }
+}
+
 /* ── layout ── */
 
 main { max-width: var(--wrap); margin: 0 auto; padding: 1.5rem 1.5rem 5rem; }
 section { margin-top: 3.25rem; }
 
+/* Smaller than it was - 2.7rem/2rem - and the floor is what matters. The root
+   is 17px, so the old 2rem floor drew the headline at 34px, and «конфиденциальности»
+   measures 369px there against a 311px column on a 359px phone: the Russian
+   privacy title ran off the screen. 1.6rem puts that word at 295px. break-word
+   is the backstop for a 320px screen, where no headline size that is still a
+   headline will fit it. */
 h1 {
-  font-size: clamp(2rem, 6vw, 2.7rem); font-weight: 700;
+  font-size: clamp(1.6rem, 6vw, 2.35rem); font-weight: 700;
   line-height: 1.12; letter-spacing: -.02em; margin: 0;
-  text-wrap: balance;
+  text-wrap: balance; overflow-wrap: break-word;
 }
 h2 {
   font-size: 1.35rem; font-weight: 700; letter-spacing: -.01em;
@@ -172,7 +215,7 @@ a { color: var(--state); text-underline-offset: 2px; }
 
 /* ── hero ── */
 
-.hero { padding-top: 1.5rem; }
+.hero { padding-top: 1rem; }
 .sweep {
   height: 7px; border-radius: 4px; margin: 1.75rem 0 0;
   background: linear-gradient(90deg, var(--night) 0%, var(--dusk) 42%,
@@ -193,11 +236,91 @@ a { color: var(--state); text-underline-offset: 2px; }
   display: grid; grid-template-columns: repeat(3, 1fr); gap: .9rem;
   margin-top: 2.5rem;
 }
-.shots img {
-  width: 100%; display: block; border-radius: 10px;
-  border: 1px solid var(--line);
+.shot {
+  padding: 0; border: 1px solid var(--line); border-radius: 10px;
+  background: none; cursor: zoom-in; overflow: hidden; display: block;
 }
+.shot img { width: 100%; display: block; }
+.shot:focus-visible { outline: 2px solid var(--state); outline-offset: 2px; }
+
+/* One theme's shots at a time, on the same three-state rule as the colours:
+   bare :root is light, the media query covers "system", the stamp wins. */
+.shot.dark { display: none; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="dawn"]) .shot.light { display: none; }
+  :root:not([data-theme="dawn"]) .shot.dark { display: block; }
+}
+:root[data-theme="dusk"] .shot.light { display: none; }
+:root[data-theme="dusk"] .shot.dark { display: block; }
+:root[data-theme="dawn"] .shot.light { display: block; }
+:root[data-theme="dawn"] .shot.dark { display: none; }
+
 @media (max-width: 34rem) { .shots { grid-template-columns: repeat(2, 1fr); } }
+
+/* ── the viewer ── */
+
+.viewer {
+  position: fixed; inset: 0; z-index: 50;
+  background: rgba(0, 0, 0, .82);
+  display: flex; align-items: center; justify-content: center;
+  padding: 2rem 1rem; cursor: zoom-out;
+}
+.viewer img {
+  max-width: min(92vw, 420px); max-height: 92vh;
+  border-radius: 12px; box-shadow: 0 24px 60px rgba(0, 0, 0, .5);
+}
+/* FIT-TO-HEIGHT STOPS BEING AN ENLARGEMENT ON A SHORT WINDOW. These are phone
+   screenshots at 1:2.24, and the thumbnail is ~233px wide on any viewport past
+   --wrap - so 92vh only beats it above ~570px of window, and at 460px, which is
+   what a docked browser pane gives you, clicking to enlarge made the picture
+   SMALLER than the one clicked. Measured, not reasoned about. Below the point
+   where fitting the height still buys a third again, size by WIDTH and let the
+   overlay scroll; flex-start rather than centre, or the overflowing top is
+   unreachable. */
+@media (max-height: 780px) {
+  .viewer { align-items: flex-start; overflow: auto; }
+  .viewer img { max-height: none; }
+}
+.viewer[hidden] { display: none; }
+
+/* The arrows are position:FIXED, not absolute. The overlay scrolls on a short
+   window - see the media query above - and absolute children scroll away with
+   the picture, which puts the controls somewhere off-screen exactly when the
+   picture is too big to see at once. Fixed inside a fixed parent anchors to the
+   viewport, so they hold still. Nothing here may carry a transform or that
+   stops being true. */
+.vnav {
+  position: fixed; top: 50%; transform: translateY(-50%); z-index: 2;
+  width: 46px; height: 46px; border-radius: 50%; padding: 0;
+  display: grid; place-items: center; cursor: pointer;
+  background: rgba(255, 255, 255, .13); color: #fff;
+  border: 1px solid rgba(255, 255, 255, .26);
+}
+.vnav svg { width: 22px; height: 22px; }
+.vnav:hover { background: rgba(255, 255, 255, .24); }
+.vnav:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+/* The picture is centred and rarely wider than 420px, so an arrow pinned to the
+   VIEWPORT edge sits half a screen away from the thing it pages through. The
+   script measures the image and sets --vnav-x to put them just off its edges;
+   the clamp is what they fall back to before that runs. One variable does both
+   sides, because a centred image has the same inset either way. */
+.vnav.prev { left: var(--vnav-x, clamp(.5rem, 4vw, 2.5rem)); }
+.vnav.next { right: var(--vnav-x, clamp(.5rem, 4vw, 2.5rem)); }
+.viewer.solo .vnav, .viewer.solo .vcount { display: none; }
+/* A PILL, not bare text. The counter is fixed and the picture scrolls under it
+   whenever the picture is taller than the window - which on a phone is always -
+   so "1 / 3" was landing on top of whatever the screenshot happened to say
+   there. Seen on the Honor: it sat across the app's own "Bedtime starts the day
+   before." Its own background is the only thing that makes it legible over an
+   image it cannot predict. */
+.vcount {
+  position: fixed; left: 50%; transform: translateX(-50%); bottom: 1.1rem;
+  margin: 0; z-index: 2; width: max-content;
+  padding: .2rem .65rem; border-radius: 999px;
+  background: rgba(0, 0, 0, .62); backdrop-filter: blur(2px);
+  color: rgba(255, 255, 255, .92);
+  font-size: .82rem; font-weight: 600; font-variant-numeric: tabular-nums;
+}
 
 /* ── feature list ── */
 
@@ -249,7 +372,125 @@ JS = """// Generated by tools/build_site.py - edit there, not here.
     btn.querySelector('.theme-name').textContent =
       btn.dataset['name' + v.charAt(0).toUpperCase() + v.slice(1)] || v;
   }
+  // Click a screenshot to see it properly. The thumbnail is a 520px copy; the
+  // viewer loads the full capture, which is the only place it is worth the
+  // bytes. Escape closes, so does clicking anywhere - the whole overlay is the
+  // target, because hunting for a small × is the thing people complain about.
+  //
+  // It is a GALLERY, not a single picture: once one is open the arrows and the
+  // left/right keys move through the set without closing it, because closing
+  // and reopening to see the next of three is the thing that makes a lightbox
+  // feel like a document viewer.
   document.addEventListener('DOMContentLoaded', function () {
+    var viewer = document.querySelector('.viewer');
+    if (viewer) {
+      var img = viewer.querySelector('img');
+      var count = viewer.querySelector('.vcount');
+      var shots = [], at = -1;
+
+      // Only the shots the CURRENT THEME draws. Both themes are in the markup
+      // and one is display:none, so a naive querySelectorAll walks six and
+      // navigates into pictures that are not on the page.
+      var live = function () {
+        return [].filter.call(document.querySelectorAll('.shot'), function (b) {
+          return b.offsetParent !== null;
+        });
+      };
+      // Neighbours are fetched ahead. These are 150-240kB captures, so without
+      // this every arrow press blanks the overlay while the next one loads.
+      var warm = function (i) {
+        if (!shots.length) return;
+        [i - 1, i + 1].forEach(function (n) {
+          var b = shots[(n + shots.length) % shots.length];
+          if (b) { new Image().src = b.dataset.full; }
+        });
+      };
+      var show = function (i) {
+        at = (i + shots.length) % shots.length;
+        var b = shots[at];
+        img.src = b.dataset.full;
+        img.alt = b.getAttribute('aria-label') || '';
+        count.textContent = (at + 1) + ' / ' + shots.length;
+        place();
+        warm(at);
+      };
+      var step = function (d) { if (shots.length > 1) show(at + d); };
+
+      // Put the arrows against the PICTURE. Measured rather than computed: the
+      // image is capped by width on a short window and by height on a tall one,
+      // so its rendered width is not something the stylesheet can name without
+      // hard-coding the screenshots' aspect ratio. Falls back to the CSS clamp
+      // whenever there is nothing to measure yet.
+      var place = function () {
+        if (viewer.hidden) return;
+        var r = img.getBoundingClientRect();
+        if (!r.width) return;
+        var btn = viewer.querySelector('.vnav');
+        var w = btn ? btn.offsetWidth : 46;
+        viewer.style.setProperty(
+          '--vnav-x', Math.max(8, Math.round(r.left - 14 - w)) + 'px');
+      };
+      img.addEventListener('load', place);
+      window.addEventListener('resize', place);
+
+      // Hold the page still underneath. The overlay covers everything, so a
+      // wheel over it scrolls a page nobody can see, and closing then lands
+      // somewhere other than the screenshots you were just looking at. The
+      // padding replaces the scrollbar's own width, or removing it shifts the
+      // whole page sideways at the moment the viewer opens.
+      var lock = function (on) {
+        var d = document.documentElement;
+        if (on) {
+          var gap = window.innerWidth - d.clientWidth;
+          d.style.overflow = 'hidden';
+          if (gap > 0) d.style.paddingRight = gap + 'px';
+        } else {
+          d.style.overflow = '';
+          d.style.paddingRight = '';
+        }
+      };
+
+      document.querySelectorAll('.shot').forEach(function (b) {
+        b.addEventListener('click', function () {
+          shots = live();
+          viewer.classList.toggle('solo', shots.length < 2);
+          viewer.hidden = false;
+          lock(true);
+          show(shots.indexOf(b));
+          // tabindex="-1" is what makes this line do anything: a plain div is
+          // not focusable, so focus stayed on <body> and the dialog opened
+          // without announcing itself.
+          viewer.focus();
+        });
+      });
+
+      var close = function () {
+        viewer.hidden = true;
+        lock(false);
+        img.removeAttribute('src');
+        // Back to the thumbnail SHOWING, not the one clicked. After three
+        // arrow presses the picture on screen is not the one that opened the
+        // viewer, and landing the keyboard back on that one is disorienting.
+        var b = shots[at];
+        shots = []; at = -1;
+        if (b) b.focus();
+      };
+      viewer.addEventListener('click', close);
+      viewer.querySelectorAll('.vnav').forEach(function (b) {
+        b.addEventListener('click', function (e) {
+          // The overlay closes on any click and the arrows sit inside it.
+          e.stopPropagation();
+          step(b.classList.contains('next') ? 1 : -1);
+        });
+      });
+      document.addEventListener('keydown', function (e) {
+        if (viewer.hidden) return;
+        if (e.key === 'Escape') { close(); }
+        else if (e.key === 'ArrowRight') { e.preventDefault(); step(1); }
+        else if (e.key === 'ArrowLeft') { e.preventDefault(); step(-1); }
+      });
+    }
+
     var btn = document.querySelector('.theme');
     if (!btn) return;
     var cur = read();
@@ -282,6 +523,36 @@ FONTS = ('<link rel="preconnect" href="https://fonts.googleapis.com">'
 LANGS = [('en', 'English', 'EN', ''), ('uk', 'Українська', 'UA', 'uk/'),
          ('ru', 'Русский', 'RU', 'ru/')]
 
+# The three the page shows, in the order the app meets you: the dial, then what
+# the night does to the screen, then what still gets through.
+SHOTS = ['home', 'effects', 'allowed']
+THEMES = ['light', 'dark']
+# The captures are 1256 wide and the page draws them at about 200. A full-size
+# PNG per shot per theme would be six of them and 1.4MB a page; these are the
+# same pictures at a size the layout can use, in WebP. Measured on one shot:
+# 157kB as a resized PNG, 51kB quantised to 128 colours, 26kB as WebP q82 - and
+# a UI screenshot is flat colour and hard edges, which is where WebP is at its
+# best. The FULL PNG is still what a click opens.
+WEB_W = 520
+WEB_Q = 82
+
+
+def web_copies():
+    """Downscale every capture once, into docs/screenshots/web/."""
+    src = os.path.join(DOCS, 'screenshots')
+    for lang, _, _, _ in LANGS:
+        for theme in THEMES:
+            for name in SHOTS:
+                i = os.path.join(src, lang, theme, f'{name}.png')
+                o = os.path.join(src, 'web', lang, theme, f'{name}.webp')
+                os.makedirs(os.path.dirname(o), exist_ok=True)
+                im = Image.open(i).convert('RGB')
+                im.resize((WEB_W, round(im.height * WEB_W / im.width)), Image.LANCZOS) \
+                    .save(o, 'WEBP', quality=WEB_Q, method=6)
+    total = sum(os.path.getsize(os.path.join(dp, f))
+                for dp, _, fs in os.walk(os.path.join(src, 'web')) for f in fs)
+    print(f'screenshots/web/  18 copies at {WEB_W}px, {total // 1024}kB total')
+
 # ── content ────────────────────────────────────────────────────────────────
 # Every string for every page. A language missing a key fails the build.
 T = {}
@@ -296,6 +567,8 @@ T['en'] = dict(
          'background job scheduler.',
     cta_get='Download the APK', cta_src='Source on GitHub',
     theme_system='System', theme_dawn='Dawn', theme_dusk='Dusk',
+    viewer_label='Screenshots', viewer_prev='Previous screenshot',
+    viewer_next='Next screenshot',
     shot_alts=['The home screen mid-window', 'How the screen looks during a window',
                'What is allowed to interrupt'],
     why_h='Why another bedtime app',
@@ -420,6 +693,8 @@ T['uk'] = dict(
          'через планувальник фонових завдань.',
     cta_get='Завантажити APK', cta_src='Код на GitHub',
     theme_system='Як у системі', theme_dawn='Світла', theme_dusk='Темна',
+    viewer_label='Знімки екрана', viewer_prev='Попередній знімок',
+    viewer_next='Наступний знімок',
     shot_alts=['Головний екран посеред проміжку', 'Який вигляд має екран під час проміжку',
                'Що дозволено переривати'],
     why_h='Навіщо ще один застосунок для сну',
@@ -526,8 +801,8 @@ T['uk'] = dict(
     p_4b='Gloaming не запитує доступу до контактів, місцезнаходження, камери, мікрофона, '
          'сховища або вмісту ваших повідомлень чи сповіщень.',
     p_h5='Діти',
-    p_5='Gloaming — утиліта загального призначення. Він не призначений для дітей, і '
-        'оскільки він не збирає жодних даних, він не збирає їх і в них.',
+    p_5='Gloaming — інструмент загального призначення. Він не призначений для дітей '
+        'і не збирає жодних даних — ні про них, ні про когось іншого.',
     p_h6='Зміни',
     p_6='Якщо ця політика колись зміниться, вона зміниться тут, із оновленою датою нижче. '
         'Застосунок має відкритий код, тож будь-яка зміна того, що він насправді робить, '
@@ -547,6 +822,8 @@ T['ru'] = dict(
          'проходит через планировщик фоновых задач.',
     cta_get='Скачать APK', cta_src='Код на GitHub',
     theme_system='Как в системе', theme_dawn='Светлая', theme_dusk='Тёмная',
+    viewer_label='Снимки экрана', viewer_prev='Предыдущий снимок',
+    viewer_next='Следующий снимок',
     shot_alts=['Главный экран посреди промежутка', 'Как выглядит экран во время промежутка',
                'Что разрешено прерывать'],
     why_h='Зачем ещё одно приложение для сна',
@@ -655,11 +932,11 @@ T['ru'] = dict(
     p_4b='Gloaming не запрашивает доступа к контактам, местоположению, камере, микрофону, '
          'хранилищу или содержимому ваших сообщений и уведомлений.',
     p_h5='Дети',
-    p_5='Gloaming — утилита общего назначения. Он не предназначен для детей, и поскольку он '
-        'не собирает никаких данных, он не собирает их и у них.',
+    p_5='Gloaming — инструмент общего назначения. Он не предназначен для детей '
+        'и не собирает никаких данных — ни о них, ни о ком-то ещё.',
     p_h6='Изменения',
     p_6='Если эта политика когда-нибудь изменится, она изменится здесь, с обновлённой датой '
-        'ниже. У приложения открытый код, поэтому любое изменение того, что он на самом '
+        'ниже. У приложения открытый код, поэтому любое изменение того, что оно на самом '
         'деле делает, видно в истории коммитов.',
     p_h7='Контакты',
     p_7='Вопросы или сообщение о неточности здесь: создайте issue по адресу',
@@ -675,7 +952,7 @@ def chrome(lang, up, page):
         f'<span class="lg">{label}</span><span class="sm">{short}</span></a>'
         for code, label, short, path in LANGS)
     return f'''<header class="bar">
-  <a class="brand" href="index.html"><img src="{up}icon.png" alt="">Gloaming</a>
+  <a class="brand" href="index.html"><img src="{up}icon.png" alt="" width="62" height="62">Gloaming</a>
   <div class="bar-end">
     <nav class="langs" aria-label="Language">{langs}</nav>
     <button class="theme" type="button"
@@ -707,6 +984,12 @@ def shell(lang, title, up, page, body):
 <body>
 {chrome(lang, up, page)}
 {body}
+<div class="viewer" hidden tabindex="-1" role="dialog" aria-modal="true" aria-label="{t['viewer_label']}">
+  <button class="vnav prev" type="button" aria-label="{t['viewer_prev']}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg></button>
+  <img alt="">
+  <button class="vnav next" type="button" aria-label="{t['viewer_next']}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button>
+  <p class="vcount" aria-live="polite"></p>
+</div>
 <script src="{up}gloaming.js"></script>
 </body>
 </html>
@@ -717,9 +1000,17 @@ def page_index(lang, up):
     t = T[lang]
     feats = '\n'.join(
         f'    <div class="feat"><h3>{h}</h3><p>{b}</p></div>' for h, b in t['feats'])
+    # BOTH themes in the markup, one shown by CSS. The page already carries a
+    # Dusk/Dawn toggle, so the screenshots follow it rather than contradicting
+    # whichever one the reader is looking at.
     shots = '\n'.join(
-        f'    <img src="{up}screenshots/{n}" alt="{a}">'
-        for n, a in zip(['home.png', 'effects.png', 'allowed.png'], t['shot_alts']))
+        '\n'.join(
+            f'    <button class="shot {theme}" type="button" '
+            f'data-full="{up}screenshots/{lang}/{theme}/{name}.png" aria-label="{alt}">'
+            f'<img src="{up}screenshots/web/{lang}/{theme}/{name}.webp" alt="{alt}" '
+            f'loading="lazy"></button>'
+            for theme in THEMES)
+        for name, alt in zip(SHOTS, t['shot_alts']))
     body = f'''<main>
   <div class="hero">
     <h1>{t['tagline']}</h1>
@@ -813,6 +1104,7 @@ def write(path, text):
 
 
 if __name__ == '__main__':
+    web_copies()
     write(os.path.join(DOCS, 'gloaming.css'), CSS)
     write(os.path.join(DOCS, 'gloaming.js'), JS)
     # Jekyll would otherwise process a directory that also holds DECISIONS.md

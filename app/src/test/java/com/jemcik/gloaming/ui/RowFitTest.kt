@@ -14,6 +14,13 @@ import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.test.performSemanticsAction
+import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.unit.Density
 import androidx.test.core.app.ApplicationProvider
 import com.jemcik.gloaming.R
 import com.jemcik.gloaming.core.Prefs
@@ -65,7 +72,55 @@ class RowFitTest {
      */
     private val threeLine = 88.dp
 
-    private fun rowsFitIn(locale: String) {
+    /**
+     * The same rule cannot be applied at both font sizes, and the reason is not
+     * arithmetic - M3's ListItem heights are dp constants that do NOT scale.
+     * Measured in English: at 1.0 the rows are 56, 72, 72, 72, 72dp and at 1.3
+     * they are 56, 72, 96, 72, 72. Only the row whose supporting line WRAPPED
+     * moved, and it moved a whole step.
+     *
+     * So 88dp means two different things. At 1.0 it means this copy is too long,
+     * which is a content problem worth failing over. At 1.3 it means the text
+     * wrapped, which is the layout doing its job - and past two lines M3
+     * top-aligns its trailing slot BY SPECIFICATION, so the switch leaving the
+     * centre is Material behaving, not breaking. Re-centring it was tried:
+     * `ListItem` measures the trailing slot itself, so `fillMaxHeight` has
+     * nothing to fill.
+     *
+     * Nothing is lost either way - `Rows.kt` sets no `maxLines`, so these wrap
+     * rather than clip.
+     *
+     * 128dp at 1.3 is the same STRUCTURE this file already allows at 1.0, not a
+     * looser rule. 88 there permits a wrapped headline over a subtitle - the
+     * comment above says so, and says why: "Hide always-on" has a long, correct
+     * name in Russian and Ukrainian and is allowed two lines for it. Grow that
+     * same shape by a third and it is 119dp in Russian and 124 in Ukrainian.
+     * Failing those would reverse a decision already taken, in the languages
+     * where the name is right.
+     *
+     * 100 was tried first and did exactly that. What 128 still catches is a row
+     * gaining a line it did not have at 1.0 - copy that is long even after the
+     * scale is allowed for, which is the only thing left that a person can fix.
+     */
+    private fun ceiling(scale: Float) = if (scale > 1f) 128.dp else threeLine
+
+
+    /**
+     * The system font size, as a user's accessibility setting sets it.
+     *
+     * Density is overridden rather than the resource qualifiers because font
+     * scale is NOT a qualifier - there is no "-fontScale130" - it is a
+     * Configuration value, and this is the path Compose actually reads.
+     */
+    @Composable
+    private fun AtFontScale(scale: Float, content: @Composable () -> Unit) {
+        val d = LocalDensity.current
+        CompositionLocalProvider(
+            LocalDensity provides Density(d.density, fontScale = scale)
+        ) { content() }
+    }
+
+    private fun rowsFitIn(locale: String, scale: Float = 1f) {
         // A width, not Robolectric's default: this is a layout test, so the
         // screen it lays out on has to be a phone's. 360dp is the common narrow
         // modern phone, and the Honor these were measured on is 359.
@@ -89,7 +144,9 @@ class RowFitTest {
 
         compose.setContent {
             GloamingTheme(dark = false) {
-                Home(rememberScrollState(), onOpenSettings = {}, onOpenInterruptions = {})
+                AtFontScale(scale) {
+                    Home(rememberScrollState(), onOpenSettings = {}, onOpenInterruptions = {})
+                }
             }
         }
 
@@ -98,7 +155,7 @@ class RowFitTest {
             if (compose.onAllNodes(match).fetchSemanticsNodes().isEmpty()) return@mapNotNull null
             val b = compose.onNode(match).getUnclippedBoundsInRoot()
             val h = b.bottom - b.top
-            if (h >= threeLine) "$title is ${h.value}dp" else null
+            if (h >= ceiling(scale)) "$title is ${h.value}dp" else null
         }
         assertTrue(
             "in '$locale' these rows' SUPPORTING text wrapped, which makes the item " +
@@ -127,7 +184,7 @@ class RowFitTest {
         ctx.withSystemBedtime()
     }
 
-    private fun settingsRowsFitIn(locale: String) {
+    private fun settingsRowsFitIn(locale: String, scale: Float = 1f) {
         RuntimeEnvironment.setQualifiers("+$locale-w360dp-h800dp")
         val ctx = ApplicationProvider.getApplicationContext<android.content.Context>()
         withVendorDoors(ctx)
@@ -140,7 +197,9 @@ class RowFitTest {
 
         compose.setContent {
             GloamingTheme(dark = false) {
-                SettingsScreen(themeMode = 0, onThemeMode = {}, onBack = {})
+                AtFontScale(scale) {
+                    SettingsScreen(themeMode = 0, onThemeMode = {}, onBack = {})
+                }
             }
         }
 
@@ -153,7 +212,7 @@ class RowFitTest {
             }
             val b = compose.onNode(match).getUnclippedBoundsInRoot()
             val h = b.bottom - b.top
-            if (h >= threeLine) "$title is ${h.value}dp" else null
+            if (h >= ceiling(scale)) "$title is ${h.value}dp" else null
         }
         // Absence is a FAILURE, not a pass. A row that is not on screen was not
         // measured, and this test spent its life reporting that as a fit.
@@ -179,7 +238,7 @@ class RowFitTest {
      * excluded deliberately: it is three lines on purpose, it carries no
      * trailing content, and its sentence is the point of the row.
      */
-    private fun allowlistFitsIn(locale: String) {
+    private fun allowlistFitsIn(locale: String, scale: Float = 1f) {
         RuntimeEnvironment.setQualifiers("+$locale-w360dp-h800dp")
         val ctx = ApplicationProvider.getApplicationContext<android.content.Context>()
         val titles = listOf(
@@ -190,7 +249,9 @@ class RowFitTest {
 
         compose.setContent {
             GloamingTheme(dark = false) {
-                InterruptionsScreen(onBack = {}, onChanged = {})
+                AtFontScale(scale) {
+                    InterruptionsScreen(onBack = {}, onChanged = {})
+                }
             }
         }
 
@@ -199,7 +260,7 @@ class RowFitTest {
             if (compose.onAllNodes(match).fetchSemanticsNodes().isEmpty()) return@mapNotNull null
             val b = compose.onAllNodes(match).onFirst().getUnclippedBoundsInRoot()
             val h = b.bottom - b.top
-            if (h >= threeLine) "$title is ${h.value}dp" else null
+            if (h >= ceiling(scale)) "$title is ${h.value}dp" else null
         }
         assertTrue("in '$locale' these allowlist rows did not fit: $tall", tall.isEmpty())
     }
@@ -243,7 +304,7 @@ class RowFitTest {
      * wrapped on the phone the moment it was looked at. A measurement taken at
      * the wrong width is not a measurement.
      */
-    private fun endsSectionFitsIn(locale: String) {
+    private fun endsSectionFitsIn(locale: String, scale: Float = 1f) {
         RuntimeEnvironment.setQualifiers("+$locale-w360dp-h800dp")
         val ctx = ApplicationProvider.getApplicationContext<android.content.Context>()
         // The row shows the hour and nothing else now, so the thing that can
@@ -255,6 +316,7 @@ class RowFitTest {
 
         compose.setContent {
             GloamingTheme(dark = false) {
+                AtFontScale(scale) {
                 Box(Modifier.padding(horizontal = 24.dp)) {
                 Section(heading) {
                 GroupedList(gloam.raise, listOf {
@@ -264,6 +326,7 @@ class RowFitTest {
                         leading = { RowIcon(R.drawable.ic_alarm, IconTint.Alarm) }
                     ) {}
                 })
+                }
                 }
                 }
             }
@@ -285,7 +348,7 @@ class RowFitTest {
         assertTrue(
             "in '$locale' the ends row is ${h}dp: its subtitle wrapped, and M3 " +
                 "then top-aligns the switch instead of centring it on the row",
-            h < twoLineCeiling.value
+            h < if (scale > 1f) 92f else twoLineCeiling.value
         )
     }
 
@@ -298,4 +361,172 @@ class RowFitTest {
     @Test fun `ends section fits in English`() = endsSectionFitsIn("en")
     @Test fun `ends section fits in Russian`() = endsSectionFitsIn("ru")
     @Test fun `ends section fits in Ukrainian`() = endsSectionFitsIn("uk")
+
+    /**
+     * Does the text still fit when the SYSTEM FONT IS LARGE?
+     *
+     * Everything above measures at font scale 1.0, and that is the one setting
+     * these controls actually break at. Measured on the Honor at 1.3 - Android's
+     * "Large", two notches off a scale that goes to 2.0 - the preset row
+     * truncates in EVERY language: "Weekdays" loses its s and reads "Weekday",
+     * "Weekends" reads "Weekend", and «Выходные» reads «Выходн». The Russian is
+     * obvious and the English is nearly invisible, which is why it shipped.
+     *
+     * It was never a translation problem. The row is three equal thirds of the
+     * screen with `maxLines = 1`, and HomeScreen's own comment records that
+     * "Weekdays" already wants 66 of the 79 a third leaves - 84% at 1.0, so
+     * anything above about 1.2 overflows. The budgets in strings.xml count
+     * characters at one size and cannot see this.
+     *
+     * `hasVisualOverflow` is the assertion rather than a height: a truncated
+     * label does not change the row's height, so every dp measurement in this
+     * file reads a truncated row as passing.
+     */
+    private fun presetsFitAt(locale: String, scale: Float) {
+        RuntimeEnvironment.setQualifiers("+$locale-w360dp-h800dp")
+        val ctx = ApplicationProvider.getApplicationContext<android.content.Context>()
+        val prefs = Prefs(ctx)
+        prefs.enabled = true
+        // The preset row draws only while Repeat is on, and only then are the
+        // three segments laid out at a third of the width each.
+        prefs.days = DayOfWeek.entries.toSet()
+
+        compose.setContent {
+            GloamingTheme(dark = false) {
+                // The system font size, as a user's accessibility setting sets
+                // it. Density is overridden rather than the qualifiers because
+                // font scale is not a resource qualifier - there is no
+                // "-fontScale130" - it is a Configuration value, and this is the
+                // path Compose actually reads.
+                AtFontScale(scale) {
+                    Home(rememberScrollState(), onOpenSettings = {}, onOpenInterruptions = {})
+                }
+            }
+        }
+
+        val clipped = listOf(
+            R.string.preset_every_night, R.string.preset_weekdays, R.string.preset_weekends
+        ).map { ctx.getString(it) }.mapNotNull { label ->
+            // UNMERGED: a SegmentedButton merges its label's semantics into
+            // itself, so the merged tree hands back the BUTTON, whose layout
+            // says nothing about whether the text inside it was cut.
+            val node = compose
+                .onAllNodes(hasText(label, substring = true), useUnmergedTree = true).onFirst()
+            val out = mutableListOf<TextLayoutResult>()
+            node.performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(out) }
+            val r = out.firstOrNull() ?: return@mapNotNull null
+            val room = r.layoutInput.constraints.maxWidth
+            // The text's UNCONSTRAINED width against the room it was given.
+            // Two simpler signals were tried and both lie here:
+            //
+            //   `hasVisualOverflow` is true for every label at 1.3, including
+            //   "Always" at 61 of 80, because the taller line also overflows the
+            //   segment's HEIGHT. It cannot tell "cut off" from "tall".
+            //
+            //   `size.width >= maxWidth` reads a clip correctly but also fires
+            //   on auto-sized text that was shrunk to fit EXACTLY, which is a
+            //   pass, not a failure.
+            //
+            // maxIntrinsicWidth is what the string wants at its chosen size, so
+            // wanting more than it has is the definition of being cut.
+            val wants = r.multiParagraph.maxIntrinsicWidth
+            if (wants > room) "$label (wants $wants of $room at ${r.layoutInput.style.fontSize})" else null
+        }
+        assertTrue(
+            "at font scale $scale in '$locale' these preset labels are TRUNCATED: " +
+                "$clipped. The row is three equal thirds with maxLines = 1, so the " +
+                "text is cut rather than wrapped and the row's height never changes - " +
+                "which is why every dp measurement in this file reads it as passing.",
+            clipped.isEmpty()
+        )
+    }
+
+    // 1.3 is Android's "Large". The scale goes to 2.0, so this is not the worst
+    // case - it is the first one that breaks.
+    @Test fun `presets fit in English at large font`() = presetsFitAt("en", 1.3f)
+    @Test fun `presets fit in Russian at large font`() = presetsFitAt("ru", 1.3f)
+    @Test fun `presets fit in Ukrainian at large font`() = presetsFitAt("uk", 1.3f)
+
+    // And at the default, so a regression there is told apart from a scale one.
+    @Test fun `presets fit in English`() = presetsFitAt("en", 1.0f)
+    @Test fun `presets fit in Russian`() = presetsFitAt("ru", 1.0f)
+    @Test fun `presets fit in Ukrainian`() = presetsFitAt("uk", 1.0f)
+
+    /**
+     * Does the DIAL'S CAPTION stay inside its ring?
+     *
+     * Unlike the preset row this one cannot truncate - the text is centred in
+     * the dial with nothing constraining its width - so it does the other thing
+     * and draws straight over the ring. No test above could see it: the row
+     * heights do not change and nothing is clipped.
+     *
+     * The budget is geometry. The canvas is 260dp, R_TRACK is 97 and STROKE
+     * 17.3, so the ring's inner radius is 97 - 17.3/2 = 88.35dp; the caption
+     * sits about 32dp below centre, where the chord is 2*sqrt(88.35² - 32²) =
+     * about 165dp. Measured on the Honor: 122dp at scale 1.0 and 159dp at 1.3,
+     * which is 6dp of clearance a side - tight, not yet touching. It crosses at
+     * about 1.4, and WCAG 1.4.4 asks for 200%.
+     */
+    private fun dialCaptionFitsAt(locale: String, scale: Float) {
+        RuntimeEnvironment.setQualifiers("+$locale-w360dp-h800dp")
+        val ctx = ApplicationProvider.getApplicationContext<android.content.Context>()
+        val prefs = Prefs(ctx)
+        prefs.enabled = true
+        val caption = ctx.getString(R.string.dial_sleep_window).uppercase()
+
+        compose.setContent {
+            GloamingTheme(dark = false) {
+                AtFontScale(scale) {
+                    Home(rememberScrollState(), onOpenSettings = {}, onOpenInterruptions = {})
+                }
+            }
+        }
+
+        val b = compose.onAllNodes(hasText(caption, substring = true), useUnmergedTree = true)
+            .onFirst().getUnclippedBoundsInRoot()
+        val w = (b.right - b.left).value
+        assertTrue(
+            "at font scale $scale in '$locale' the dial's caption is ${w}dp wide and the " +
+                "ring leaves ${ringChord}dp - it is drawing over its own dial. Nothing " +
+                "clips it and no height changes, so only a width says so.",
+            w <= ringChord
+        )
+    }
+
+    /** 2*sqrt(88.35² - 32²): the ring's inner chord where the caption sits. */
+    private val ringChord = 165f
+
+    @Test fun `dial caption fits in English at 200 percent`() = dialCaptionFitsAt("en", 2.0f)
+    @Test fun `dial caption fits in Russian at 200 percent`() = dialCaptionFitsAt("ru", 2.0f)
+    @Test fun `dial caption fits in Ukrainian at 200 percent`() = dialCaptionFitsAt("uk", 2.0f)
+
+    /**
+     * And all of it again at a LARGE system font.
+     *
+     * The thresholds above are M3's own dp heights, and they do NOT scale: a
+     * two-line item is 72dp whatever the font size, because the container is
+     * sized in dp while the text inside it grows. So a row that was one line at
+     * 1.0 and wraps to two at 1.3 is not a bug - the layout doing its job - but
+     * a row that reaches THREE lines still is, because M3 then top-aligns the
+     * trailing control and the switch leaves its own row's centre.
+     *
+     * The app's rows carry no `maxLines`, so nothing here can truncate; they
+     * wrap, which is what Android's guidance asks for. What these measure at
+     * scale is the one thing wrapping can still cost.
+     */
+    @Test fun `rows fit in English at large font`() = rowsFitIn("en", 1.3f)
+    @Test fun `rows fit in Russian at large font`() = rowsFitIn("ru", 1.3f)
+    @Test fun `rows fit in Ukrainian at large font`() = rowsFitIn("uk", 1.3f)
+
+    @Test fun `settings rows fit in English at large font`() = settingsRowsFitIn("en", 1.3f)
+    @Test fun `settings rows fit in Russian at large font`() = settingsRowsFitIn("ru", 1.3f)
+    @Test fun `settings rows fit in Ukrainian at large font`() = settingsRowsFitIn("uk", 1.3f)
+
+    @Test fun `allowlist fits in English at large font`() = allowlistFitsIn("en", 1.3f)
+    @Test fun `allowlist fits in Russian at large font`() = allowlistFitsIn("ru", 1.3f)
+    @Test fun `allowlist fits in Ukrainian at large font`() = allowlistFitsIn("uk", 1.3f)
+
+    @Test fun `ends section fits in English at large font`() = endsSectionFitsIn("en", 1.3f)
+    @Test fun `ends section fits in Russian at large font`() = endsSectionFitsIn("ru", 1.3f)
+    @Test fun `ends section fits in Ukrainian at large font`() = endsSectionFitsIn("uk", 1.3f)
 }

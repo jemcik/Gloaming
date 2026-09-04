@@ -363,6 +363,21 @@ is in DECISIONS.md.
   argument that "the device accepts and ignores" was the whole story - it is the
   mechanism, not the consequence, and the consequence is what a listing is for.
 
+- **A pronoun in ru/uk agrees with the NOUN JUST WRITTEN, not with the English
+  it came from.** "Gloaming is a general-purpose utility. It is not directed at
+  children" went across as «утилита общего назначения. Он не предназначен» -
+  «утилита» is feminine and «он» agrees with nothing on the page. The same
+  section carried the other half of the fault: «он не собирает их и у них», a
+  word-for-word "it collects none from them either", where «их» means the data
+  and «у них» means the children, two pronouns with different referents one word
+  apart. Caught by a native speaker on the live site, not by any checker -
+  `check_translation.py` counts strings and cannot see agreement. So: pick the
+  predicate noun for the GENDER the rest of the document already uses
+  («інструмент»/«инструмент», masculine, because Gloaming is «Він»/«Он»
+  everywhere else), and where English chains pronouns, name the things instead.
+  The same sentence pattern one section down had «он» sitting after «приложение»
+  (neuter) and «код» (masculine), so it read as the code.
+
 - There is not one `fontSize` or `fontWeight` override outside `Theme.kt`. Keep
   it that way.
 - Tabular figures (`tnum`) belong on the **display** family only. Numerals get
@@ -408,7 +423,16 @@ is in DECISIONS.md.
                          crops: the README's framing is what the app looks like,
                          and cropping to fit a store makes the two disagree.
                          No device frames - a bezel encodes nothing true and
-                         costs pixels these screens need
+                         costs pixels these screens need. A set PER LANGUAGE
+                         into `<lang>/`, captions and all: Play carries one per
+                         listing, and Ukrainian captions over Ukrainian screens
+                         is the whole reason the shoot went trilingual. PIL does
+                         NOT fall back per glyph the way the site's browser
+                         does, so Figtree - Latin only - draws every Cyrillic
+                         letter as a box; the Slavic bands are set in San
+                         Francisco instead, at GRAD 620, which is how a face
+                         with no Weight axis is made to match Figtree 600
+                         without moving where the line wraps
     python3 tools/build_site.py         the SITE into docs/, for GitHub Pages.
                          Six pages - landing and privacy policy, in en/uk/ru -
                          from one template each, because six hand-written files
@@ -421,6 +445,14 @@ is in DECISIONS.md.
                          .html is the URL given to Google Play - it must keep
                          its name and stay at the root
     python3 -m http.server 8765 --directory docs    preview it
+    tools/shoot.py       RE-SHOOT the screenshots on the phone: three languages
+                         x two themes x four screens, into docs/screenshots/
+                         <lang>/<theme>/. EN captures at 12-hour and ru/uk at
+                         24, because that is what each audience has set. Taps
+                         are found by TEXT in the uiautomator dump rather than
+                         by coordinate - the rows move between languages, and
+                         shooting all three is the point. The flat files the
+                         README uses are copies of the en set
 
     adb shell run-as com.jemcik.gloaming cat files/journal.log
 
@@ -448,7 +480,7 @@ compileSdk 37, targetSdk 36, minSdk 35.
 
 ## Tests
 
-`app/src/test/`, 180 cases, no device. They are written as the QUESTION the code
+`app/src/test/`, 201 cases, no device. They are written as the QUESTION the code
 answers rather than as coverage of a method, because none of the bugs were ever
 in a method — they were in an assumption.
 

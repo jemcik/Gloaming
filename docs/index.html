@@ -12,7 +12,7 @@
 </head>
 <body>
 <header class="bar">
-  <a class="brand" href="index.html"><img src="icon.png" alt="">Gloaming</a>
+  <a class="brand" href="index.html"><img src="icon.png" alt="" width="62" height="62">Gloaming</a>
   <div class="bar-end">
     <nav class="langs" aria-label="Language"><a href="index.html" aria-current="page"><span class="lg">English</span><span class="sm">EN</span></a><a href="uk/index.html"><span class="lg">Українська</span><span class="sm">UA</span></a><a href="ru/index.html"><span class="lg">Русский</span><span class="sm">RU</span></a></nav>
     <button class="theme" type="button"
@@ -37,9 +37,12 @@
   </div>
 
   <div class="shots">
-    <img src="screenshots/home.png" alt="The home screen mid-window">
-    <img src="screenshots/effects.png" alt="How the screen looks during a window">
-    <img src="screenshots/allowed.png" alt="What is allowed to interrupt">
+    <button class="shot light" type="button" data-full="screenshots/en/light/home.png" aria-label="The home screen mid-window"><img src="screenshots/web/en/light/home.webp" alt="The home screen mid-window" loading="lazy"></button>
+    <button class="shot dark" type="button" data-full="screenshots/en/dark/home.png" aria-label="The home screen mid-window"><img src="screenshots/web/en/dark/home.webp" alt="The home screen mid-window" loading="lazy"></button>
+    <button class="shot light" type="button" data-full="screenshots/en/light/effects.png" aria-label="How the screen looks during a window"><img src="screenshots/web/en/light/effects.webp" alt="How the screen looks during a window" loading="lazy"></button>
+    <button class="shot dark" type="button" data-full="screenshots/en/dark/effects.png" aria-label="How the screen looks during a window"><img src="screenshots/web/en/dark/effects.webp" alt="How the screen looks during a window" loading="lazy"></button>
+    <button class="shot light" type="button" data-full="screenshots/en/light/allowed.png" aria-label="What is allowed to interrupt"><img src="screenshots/web/en/light/allowed.webp" alt="What is allowed to interrupt" loading="lazy"></button>
+    <button class="shot dark" type="button" data-full="screenshots/en/dark/allowed.png" aria-label="What is allowed to interrupt"><img src="screenshots/web/en/dark/allowed.webp" alt="What is allowed to interrupt" loading="lazy"></button>
   </div>
 
   <section>
@@ -79,6 +82,12 @@
   <a href="privacy-policy.html">Privacy policy</a> ·
   <a href="https://github.com/jemcik/Gloaming/issues">Report an issue</a>
 </footer>
+<div class="viewer" hidden tabindex="-1" role="dialog" aria-modal="true" aria-label="Screenshots">
+  <button class="vnav prev" type="button" aria-label="Previous screenshot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg></button>
+  <img alt="">
+  <button class="vnav next" type="button" aria-label="Next screenshot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button>
+  <p class="vcount" aria-live="polite"></p>
+</div>
 <script src="gloaming.js"></script>
 </body>
 </html>

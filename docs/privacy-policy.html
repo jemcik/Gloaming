@@ -12,7 +12,7 @@
 </head>
 <body>
 <header class="bar">
-  <a class="brand" href="index.html"><img src="icon.png" alt="">Gloaming</a>
+  <a class="brand" href="index.html"><img src="icon.png" alt="" width="62" height="62">Gloaming</a>
   <div class="bar-end">
     <nav class="langs" aria-label="Language"><a href="privacy-policy.html" aria-current="page"><span class="lg">English</span><span class="sm">EN</span></a><a href="uk/privacy-policy.html"><span class="lg">Українська</span><span class="sm">UA</span></a><a href="ru/privacy-policy.html"><span class="lg">Русский</span><span class="sm">RU</span></a></nav>
     <button class="theme" type="button"
@@ -60,6 +60,12 @@
 </main>
 
 <footer>Effective 4 September 2026. Source: <a href="https://github.com/jemcik/Gloaming">github.com/jemcik/Gloaming</a> · Apache License 2.0</footer>
+<div class="viewer" hidden tabindex="-1" role="dialog" aria-modal="true" aria-label="Screenshots">
+  <button class="vnav prev" type="button" aria-label="Previous screenshot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg></button>
+  <img alt="">
+  <button class="vnav next" type="button" aria-label="Next screenshot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button>
+  <p class="vcount" aria-live="polite"></p>
+</div>
 <script src="gloaming.js"></script>
 </body>
 </html>

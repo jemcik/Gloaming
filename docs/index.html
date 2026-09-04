@@ -3,101 +3,91 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Gloaming · A bedtime app for Android</title>
+<title>Gloaming · A bedtime app for Android that keeps its own schedule.</title>
+<meta name="description" content="A bedtime app for Android that keeps its own schedule.">
 <link rel="icon" href="icon.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;600;700&display=swap">
-<style>
-  /* Dusk and Dawn, from the app's own Theme.kt - same tokens as the policy page. */
-  :root {
-    --surface: #FDFDFD;
-    --raise:   #E4E5E2;
-    --line:    #C5C4BD;
-    --ink:     #1E1B18;
-    --ink-low: #514A43;
-    --state:   #435B7A;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --surface: #20242A;
-      --raise:   #2F353D;
-      --line:    #49505A;
-      --ink:     #EAEBED;
-      --ink-low: #BCC1CC;
-      --state:   #B0C3E0;
-    }
-  }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    background: var(--surface);
-    color: var(--ink);
-    font-family: "Figtree", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    font-size: 17px;
-    line-height: 1.65;
-  }
-  main {
-    max-width: 34rem; margin: 0 auto; padding: 5rem 1.5rem 6rem;
-    display: flex; flex-direction: column; gap: 2rem;
-  }
-  header { display: flex; align-items: center; gap: 1.15rem; }
-  header img { width: 72px; height: 72px; }
-  h1 { font-size: 1.9rem; font-weight: 700; margin: 0; letter-spacing: -0.015em; }
-  .sub { color: var(--ink-low); font-size: 1rem; margin: 0.2rem 0 0; }
-  p { margin: 0; color: var(--ink-low); }
-  .shots {
-    display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem;
-  }
-  .shots img {
-    width: 100%; border-radius: 8px; border: 1px solid var(--line); display: block;
-  }
-  nav { display: flex; flex-wrap: wrap; gap: 0.6rem; }
-  nav a {
-    display: inline-block; text-decoration: none;
-    background: var(--raise); color: var(--ink);
-    border: 1px solid var(--line); border-radius: 7px;
-    padding: 0.5rem 0.9rem; font-size: 0.94rem; font-weight: 600;
-  }
-  nav a:hover { border-color: var(--state); color: var(--state); }
-  nav a:focus-visible { outline: 2px solid var(--state); outline-offset: 2px; }
-  footer {
-    border-top: 1px solid var(--line); padding-top: 1.25rem;
-    font-size: 0.9rem; color: var(--ink-low);
-  }
-  footer a { color: var(--state); }
-</style>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;600;700&family=Golos+Text:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="gloaming.css">
+<script>(function(){try{var v=localStorage.getItem('gloaming-theme');if(v&&v!=='system')document.documentElement.setAttribute('data-theme',v);}catch(e){}})();</script>
 </head>
 <body>
+<header class="bar">
+  <a class="brand" href="index.html"><img src="icon.png" alt="" width="62" height="62">Gloaming</a>
+  <div class="bar-end">
+    <nav class="langs" aria-label="Language"><a href="index.html" aria-current="page"><span class="lg">English</span><span class="sm">EN</span></a><a href="uk/index.html"><span class="lg">Українська</span><span class="sm">UA</span></a><a href="ru/index.html"><span class="lg">Русский</span><span class="sm">RU</span></a></nav>
+    <button class="theme" type="button"
+      data-name-system="System" data-name-dawn="Dawn" data-name-dusk="Dusk"
+      data-label-system="System" data-label-dawn="Dawn" data-label-dusk="Dusk"
+      aria-label="System">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/>
+      </svg><span class="theme-name">System</span>
+    </button>
+  </div>
+</header>
 <main>
-
-  <header>
-    <img src="icon.png" alt="">
-    <div>
-      <h1>Gloaming</h1>
-      <p class="sub">A bedtime app for Android that keeps its own schedule.</p>
+  <div class="hero">
+    <h1>A bedtime app for Android that keeps its own schedule.</h1>
+    <p class="lead">Quiet your phone for whatever stretch of time you want — set up Do Not Disturb and the screen effects in one place. It all works even with the app closed, because it uses the Alarms and reminders permission you grant in the app. That guarantees it fires at exactly the time you set, and it never goes through the background job scheduler.</p>
+    <div class="sweep"></div>
+    <div class="cta">
+      <a class="btn" href="https://github.com/jemcik/Gloaming/releases">Download the APK</a>
+      <a class="btn ghost" href="https://github.com/jemcik/Gloaming">Source on GitHub</a>
     </div>
-  </header>
-
-  <p>One sleep window a night — Do Not Disturb and the screen effects that go with it — driven by exact alarms, so it fires with the app closed.</p>
-
-  <div class="shots">
-    <img src="screenshots/home.png" alt="The home screen mid-window">
-    <img src="screenshots/effects.png" alt="How the screen looks during a window">
-    <img src="screenshots/allowed.png" alt="What is allowed to interrupt">
   </div>
 
-  <nav>
-    <a href="https://github.com/jemcik/Gloaming">Source on GitHub</a>
-    <a href="https://github.com/jemcik/Gloaming/releases">Releases</a>
-    <a href="privacy-policy.html">Privacy policy</a>
-  </nav>
+  <div class="shots">
+    <button class="shot light" type="button" data-full="screenshots/en/light/home.png" aria-label="The home screen mid-window"><img src="screenshots/web/en/light/home.webp" alt="The home screen mid-window" loading="lazy"></button>
+    <button class="shot dark" type="button" data-full="screenshots/en/dark/home.png" aria-label="The home screen mid-window"><img src="screenshots/web/en/dark/home.webp" alt="The home screen mid-window" loading="lazy"></button>
+    <button class="shot light" type="button" data-full="screenshots/en/light/effects.png" aria-label="How the screen looks during a window"><img src="screenshots/web/en/light/effects.webp" alt="How the screen looks during a window" loading="lazy"></button>
+    <button class="shot dark" type="button" data-full="screenshots/en/dark/effects.png" aria-label="How the screen looks during a window"><img src="screenshots/web/en/dark/effects.webp" alt="How the screen looks during a window" loading="lazy"></button>
+    <button class="shot light" type="button" data-full="screenshots/en/light/allowed.png" aria-label="What is allowed to interrupt"><img src="screenshots/web/en/light/allowed.webp" alt="What is allowed to interrupt" loading="lazy"></button>
+    <button class="shot dark" type="button" data-full="screenshots/en/dark/allowed.png" aria-label="What is allowed to interrupt"><img src="screenshots/web/en/dark/allowed.webp" alt="What is allowed to interrupt" loading="lazy"></button>
+  </div>
 
-  <footer>
-    Requires Android 15 (API 35) or newer · Apache License 2.0 ·
-    <a href="https://github.com/jemcik/Gloaming/issues">Report an issue</a>
-  </footer>
+  <section>
+    <h2>Why another bedtime app</h2>
+    <p>Android already has a bedtime mode. On a lot of phones it does not fire until you open the app that runs it — or it fires, but late. That mode is scheduled as a background job, and every vendor’s battery management gets a say in whether background jobs ever run. When something in that chain defers it there is no error and no notification — Do Not Disturb simply never comes on and the effects never apply.</p>
+    <p>Gloaming does not use a background job. It asks for the Alarms and reminders permission — the one you grant inside the app — which the system guarantees will fire at the minute you set. The app holds its own Do Not Disturb rule and switches it itself, so bedtime happens whether or not the app is open.</p>
+  </section>
 
+  <section>
+    <h2>What Gloaming does</h2>
+    <div class="feats">
+    <div class="feat"><h3>A 24-hour dial</h3><p>One window, set by dragging either end around the dial or by tapping a time and picking it exactly. You choose the mornings you want to wake up on, not the evenings you go to bed: pick Saturday and the window runs from Friday evening to Saturday morning.</p></div>
+    <div class="feat"><h3>It ends at your alarm</h3><p>Turn it on and the window follows whatever time your alarm is set for, instead of you keeping two schedules in step.</p></div>
+    <div class="feat"><h3>A Quick Settings tile with three states</h3><p>Three faces, one meaning each. Hourglass — bedtime is on and waiting for its hour. Tick — a window is running right now. Gloaming’s own mark — bedtime is off. The tile never shows a tick for something that has not started.</p></div>
+    <div class="feat"><h3>An allowlist for the window</h3><p>Who can call, who can message, conversations, repeat callers, reminders, calendar events, media. The screen reports the system’s current state, not the one the app switched on and assumes is in effect.</p></div>
+    <div class="feat"><h3>Screen effects</h3><p>Grayscale, wallpaper dimming, dark theme, always-on display. Where the operating system does not let an app control an effect, the switch is not drawn at all, rather than offering one that lies.</p></div>
+    <div class="feat"><h3>It checks rather than assumes</h3><p>Some phones freeze apps in the background, and the failure that causes is specific: the end of a window never fires, so bedtime does not end — whatever it switched on stays on into your day. Gloaming watches every end and says when one is late, with a button to the background setting that is usually the cause. It also asks once, eleven minutes after install, whether this phone delivers background alarms at all — silent unless the answer is no.</p></div>
+    <div class="feat"><h3>A boot watch</h3><p>For phones that never tell apps the phone restarted: bedtime stays switched on while nothing behind it will fire. Gloaming notices.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>What Gloaming doesn’t do</h2>
+    <div class="note"><p>Gloaming has no internet permission. Not “does not send data” — it cannot. There is no analytics, no advertising, no account and no third-party code. Your schedule and the app’s own log stay on the phone, and uninstalling removes them.</p>
+    <p><a href="privacy-policy.html">Read the privacy policy</a></p></div>
+  </section>
+
+  <section>
+    <h2>Requirements</h2>
+    <p>Android 15 or newer. Two permissions, both granted from inside the app: notification policy access (for Do Not Disturb) and Alarms and reminders.</p>
+  </section>
 </main>
+
+<footer>
+  Apache License 2.0 · <a href="https://github.com/jemcik/Gloaming">Source</a> ·
+  <a href="https://github.com/jemcik/Gloaming/releases">Releases</a> ·
+  <a href="privacy-policy.html">Privacy policy</a> ·
+  <a href="https://github.com/jemcik/Gloaming/issues">Report an issue</a>
+</footer>
+<div class="viewer" hidden tabindex="-1" role="dialog" aria-modal="true" aria-label="Screenshots">
+  <button class="vnav prev" type="button" aria-label="Previous screenshot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg></button>
+  <img alt="">
+  <button class="vnav next" type="button" aria-label="Next screenshot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button>
+  <p class="vcount" aria-live="polite"></p>
+</div>
+<script src="gloaming.js"></script>
 </body>
 </html>

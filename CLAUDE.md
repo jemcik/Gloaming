@@ -338,6 +338,46 @@ is in DECISIONS.md.
   guessed wrong. Never let "the user saw the screen" stand in for "the user did
   the thing", least of all where the thing cannot be read back.
 
+- **Copy may not name an effect as happening.** Which of the four device effects
+  a phone applies is the PHONE's decision - One UI 8 stores all four and applies
+  none - and the Do Not Disturb switch may be off, in which case the rule filters
+  nothing deliberately. So "the grey screen stays on", "a screen that stayed
+  colourful all night" and "«Не турбувати» і сірий екран лишаються увімкненими"
+  each claim a configuration the reader may not have. Say instead what is true of
+  EVERY configuration: bedtime did not end, and whatever it switched on stayed
+  on. Three sentences shipped with this fault and were caught in one afternoon on
+  4 Sep 2026 - the store listing, the site and the README - which is why this is
+  a rule rather than three corrections. The same care the SWITCHES get: a switch
+  that lies is not drawn, and a sentence that lies must not be written.
+
+  And say WHY an effect is absent in the user's terms, not the platform's. "The
+  effect does nothing on your device" invites the reader to conclude their phone
+  cannot do it, which on a Galaxy is the opposite of true: One UI drives the very
+  same `Global saturation` from its own Sleep mode, and what is withheld is
+  ACCESS - the zen rule's effects are stored and ignored, `Settings.Secure` needs
+  a grant no ordinary install has, and the Routines SDK's discovery is closed to
+  non-privileged apps. Every route measured, every route shut. So the honest
+  sentence is that the OS does not let an APP control it. Naming the app is what
+  carries the distinction: the phone can, and only the vendor's own software may.
+  This correction came from a Samsung owner reading the copy, against the
+  argument that "the device accepts and ignores" was the whole story - it is the
+  mechanism, not the consequence, and the consequence is what a listing is for.
+
+- **A pronoun in ru/uk agrees with the NOUN JUST WRITTEN, not with the English
+  it came from.** "Gloaming is a general-purpose utility. It is not directed at
+  children" went across as «утилита общего назначения. Он не предназначен» -
+  «утилита» is feminine and «он» agrees with nothing on the page. The same
+  section carried the other half of the fault: «он не собирает их и у них», a
+  word-for-word "it collects none from them either", where «их» means the data
+  and «у них» means the children, two pronouns with different referents one word
+  apart. Caught by a native speaker on the live site, not by any checker -
+  `check_translation.py` counts strings and cannot see agreement. So: pick the
+  predicate noun for the GENDER the rest of the document already uses
+  («інструмент»/«инструмент», masculine, because Gloaming is «Він»/«Он»
+  everywhere else), and where English chains pronouns, name the things instead.
+  The same sentence pattern one section down had «он» sitting after «приложение»
+  (neuter) and «код» (masculine), so it read as the code.
+
 - There is not one `fontSize` or `fontWeight` override outside `Theme.kt`. Keep
   it that way.
 - Tabular figures (`tnum`) belong on the **display** family only. Numerals get
@@ -383,7 +423,37 @@ is in DECISIONS.md.
                          crops: the README's framing is what the app looks like,
                          and cropping to fit a store makes the two disagree.
                          No device frames - a bezel encodes nothing true and
-                         costs pixels these screens need
+                         costs pixels these screens need. A set PER LANGUAGE
+                         into `<lang>/`, captions and all: Play carries one per
+                         listing, and Ukrainian captions over Ukrainian screens
+                         is the whole reason the shoot went trilingual. PIL does
+                         NOT fall back per glyph the way the site's browser
+                         does, so Figtree - Latin only - draws every Cyrillic
+                         letter as a box; the Slavic bands are set in San
+                         Francisco instead, at GRAD 620, which is how a face
+                         with no Weight axis is made to match Figtree 600
+                         without moving where the line wraps
+    python3 tools/build_site.py         the SITE into docs/, for GitHub Pages.
+                         Six pages - landing and privacy policy, in en/uk/ru -
+                         from one template each, because six hand-written files
+                         drift and a missing translation should be a KeyError at
+                         build time rather than a hole on a live page. Palette
+                         and type come from Theme.kt. NEITHER BUNDLED FONT HAS
+                         CYRILLIC (figtree 391 codepoints, baloo2 856, Latin
+                         both), so the stack names Golos Text after Figtree and
+                         the browser falls back per glyph. docs/privacy-policy
+                         .html is the URL given to Google Play - it must keep
+                         its name and stay at the root
+    python3 -m http.server 8765 --directory docs    preview it
+    tools/shoot.py       RE-SHOOT the screenshots on the phone: three languages
+                         x two themes x four screens, into docs/screenshots/
+                         <lang>/<theme>/. EN captures at 12-hour and ru/uk at
+                         24, because that is what each audience has set. Taps
+                         are found by TEXT in the uiautomator dump rather than
+                         by coordinate - the rows move between languages, and
+                         shooting all three is the point. The flat files the
+                         README uses are copies of the en set
+
     adb shell run-as com.jemcik.gloaming cat files/journal.log
 
 Unit tests run on **JDK 21**, pinned in `app/build.gradle.kts`. The reason —
@@ -410,7 +480,7 @@ compileSdk 37, targetSdk 36, minSdk 35.
 
 ## Tests
 
-`app/src/test/`, 180 cases, no device. They are written as the QUESTION the code
+`app/src/test/`, 201 cases, no device. They are written as the QUESTION the code
 answers rather than as coverage of a method, because none of the bugs were ever
 in a method — they were in an assumption.
 

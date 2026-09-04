@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gloaming · Політика приватності</title>
+<meta name="description" content="Застосунок для сну на Android, який спрацьовує вчасно.">
+<link rel="icon" href="../icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;600;700&family=Golos+Text:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../gloaming.css">
+<script>(function(){try{var v=localStorage.getItem('gloaming-theme');if(v&&v!=='system')document.documentElement.setAttribute('data-theme',v);}catch(e){}})();</script>
+</head>
+<body>
+<header class="bar">
+  <a class="brand" href="index.html"><img src="../icon.png" alt="" width="62" height="62">Gloaming</a>
+  <div class="bar-end">
+    <nav class="langs" aria-label="Language"><a href="../privacy-policy.html"><span class="lg">English</span><span class="sm">EN</span></a><a href="../uk/privacy-policy.html" aria-current="page"><span class="lg">Українська</span><span class="sm">UA</span></a><a href="../ru/privacy-policy.html"><span class="lg">Русский</span><span class="sm">RU</span></a></nav>
+    <button class="theme" type="button"
+      data-name-system="Як у системі" data-name-dawn="Світла" data-name-dusk="Темна"
+      data-label-system="Як у системі" data-label-dawn="Світла" data-label-dusk="Темна"
+      aria-label="Як у системі">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/>
+      </svg><span class="theme-name">Як у системі</span>
+    </button>
+  </div>
+</header>
+<main>
+  <h1>Політика приватності</h1>
+  <p class="lead">Gloaming для Android · <code>com.jemcik.gloaming</code></p>
+
+  <div class="note"><p><strong>Gloaming нічого не збирає, зберігає все на вашому пристрої і не може нікуди надіслати дані.</strong> Він не запитує дозволу <code>INTERNET</code>, тож не має жодного доступу до мережі — це не обіцянка про наміри, а обмеження, яке забезпечує операційна система.</p></div>
+
+  <section><h2>Що збирається</h2><p>Нічого. Немає аналітики, звітів про збої, реклами, сторонніх SDK, акаунтів і входу. Жодні особисті дані чи дані пристрою не збираються, не передаються, не продаються і ні з ким не діляться.</p></section>
+
+  <section><h2>Що зберігається і де</h2>
+    <p>Усе, що Gloaming пам’ятає, лишається у його власному приватному сховищі на вашому телефоні:</p>
+    <ul><li><strong>Ваш розклад і налаштування</strong> — проміжок сну, дні, у які він діє, список винятків, увімкнені екранні ефекти, а також вибрані тема й мова.</li><li><strong>Журнал</strong> — локальний запис того, що застосунок робив за кожен проміжок, щоб проблему можна було пояснити постфактум. Він пишеться у власну теку застосунку і ніколи не залишає телефон самостійно.</li></ul>
+    <p>Видалення Gloaming прибирає все це. <strong>Скинути Gloaming</strong>, усередині застосунку, очищає дані без видалення.</p>
+  </section>
+
+  <section><h2>Діагностика, яку ви надсилаєте самі</h2><p><strong>Надіслати діагностику</strong> збирає журнал, ваш розклад і те, що система повідомляє про правило «Не турбувати», у звичайний текст і передає його у вікно поширення Android. <strong>Одержувача обираєте ви</strong> — пошта, повідомлення, нотатка собі. Gloaming не передає це сам і не має такої змоги; якщо ви ніколи не натиснете кнопку, нічого й не буде створено. Прочитайте текст перед надсиланням, як і будь-яке повідомлення.</p></section>
+
+  <section><h2>Дозволи, і навіщо кожен</h2>
+    <ul>
+    <li><strong>Доступ до політики сповіщень</strong> — дозволяє застосунку створювати і перемикати власне правило «Не турбувати». Саме це змушує режим сну працювати. Він не дає доступу до вмісту ваших сповіщень, і Gloaming ніколи їх не читає.</li>
+    <li><strong>Будильники та нагадування</strong> (<code>SCHEDULE_EXACT_ALARM</code>) — дозволяє починати й завершувати ваш проміжок точно в заданий час, поки застосунок закритий.</li>
+    <li><strong>Запуск при старті</strong> (<code>RECEIVE_BOOT_COMPLETED</code>) — дозволяє відновити ваш розклад після перезавантаження, щоб перезапуск о другій ночі не завершив режим сну мовчки.</li>
+    <li><strong>Зміна системних налаштувань</strong> (<code>WRITE_SETTINGS</code>) — необов’язковий, запитується лише якщо ви користуєтеся керуванням always-on дисплеєм на телефоні, де це налаштування доступне. Використовується винятково для запису цього одного ключа.</li>
+    <li><code>WRITE_SECURE_SETTINGS</code> — оголошений, але його неможливо надати при звичайному встановленні; його видають лише через adb, свідомо, ті, хто хоче вендорський шлях до always-on. Без цього дозволу код лишається неактивним.</li>
+    </ul>
+    <p>Gloaming не запитує доступу до контактів, місцезнаходження, камери, мікрофона, сховища або вмісту ваших повідомлень чи сповіщень.</p>
+  </section>
+
+  <section><h2>Діти</h2><p>Gloaming — інструмент загального призначення. Він не призначений для дітей і не збирає жодних даних — ні про них, ні про когось іншого.</p></section>
+  <section><h2>Зміни</h2><p>Якщо ця політика колись зміниться, вона зміниться тут, із оновленою датою нижче. Застосунок має відкритий код, тож будь-яка зміна того, що він насправді робить, видима в історії комітів.</p></section>
+  <section><h2>Контакти</h2>
+    <p>Питання або повідомлення про неточність тут: створіть issue за адресою <a href="https://github.com/jemcik/Gloaming/issues">github.com/jemcik/Gloaming/issues</a>.</p>
+  </section>
+</main>
+
+<footer>Чинна з 4 September 2026. Код: <a href="https://github.com/jemcik/Gloaming">github.com/jemcik/Gloaming</a> · Apache License 2.0</footer>
+<div class="viewer" hidden tabindex="-1" role="dialog" aria-modal="true" aria-label="Знімки екрана">
+  <button class="vnav prev" type="button" aria-label="Попередній знімок"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg></button>
+  <img alt="">
+  <button class="vnav next" type="button" aria-label="Наступний знімок"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button>
+  <p class="vcount" aria-live="polite"></p>
+</div>
+<script src="../gloaming.js"></script>
+</body>
+</html>

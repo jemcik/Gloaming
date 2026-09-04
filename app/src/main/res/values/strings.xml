@@ -314,5 +314,5 @@
     <string name="action_reset">Reset</string>
     <string name="section_about">about</string>
     <string name="settings_version">Version %1$s</string>
-    <string name="settings_about_body">One switch for the whole night. Gloaming turns on Do Not Disturb and the screen effects automatically, on the schedule you set – everything a bedtime routine needs sits in one place instead of scattered through Settings. It works with the app closed.</string>
+    <string name="settings_about_body">One switch for the whole window. Gloaming turns on Do Not Disturb and the screen effects automatically, for the stretch of time you choose – everything a bedtime routine needs sits in one place instead of scattered through Settings. It works even with the app closed, because it uses the Alarms and reminders permission you grant here.</string>
 </resources>

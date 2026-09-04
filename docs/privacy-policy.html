@@ -4,122 +4,68 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Gloaming · Privacy policy</title>
+<meta name="description" content="A bedtime app for Android that keeps its own schedule.">
 <link rel="icon" href="icon.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;600;700&display=swap">
-<style>
-  /* Dusk and Dawn, from the app's own Theme.kt. */
-  :root {
-    --surface: #FDFDFD;
-    --raise:   #E4E5E2;
-    --line:    #C5C4BD;
-    --ink:     #1E1B18;
-    --ink-low: #514A43;
-    --state:   #435B7A;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --surface: #20242A;
-      --raise:   #2F353D;
-      --line:    #49505A;
-      --ink:     #EAEBED;
-      --ink-low: #BCC1CC;
-      --state:   #B0C3E0;
-    }
-  }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    background: var(--surface);
-    color: var(--ink);
-    font-family: "Figtree", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    font-size: 17px;
-    line-height: 1.65;
-  }
-  main { max-width: 40rem; margin: 0 auto; padding: 4rem 1.5rem 6rem; }
-  header { display: flex; align-items: center; gap: 1rem; margin-bottom: 2.5rem; }
-  header img { width: 56px; height: 56px; }
-  h1 { font-size: 1.6rem; font-weight: 700; margin: 0; letter-spacing: -0.01em; }
-  .sub { color: var(--ink-low); font-size: 0.95rem; margin: 0.15rem 0 0; }
-  h2 {
-    font-size: 1.1rem; font-weight: 700; margin: 2.5rem 0 0.6rem;
-    padding-top: 1.5rem; border-top: 1px solid var(--line);
-  }
-  p, li { color: var(--ink-low); }
-  p { margin: 0 0 1rem; }
-  strong { color: var(--ink); font-weight: 600; }
-  ul { padding-left: 1.2rem; margin: 0 0 1rem; }
-  li { margin-bottom: 0.5rem; }
-  a { color: var(--state); }
-  code {
-    font-family: ui-monospace, "SF Mono", Menlo, monospace;
-    font-size: 0.88em; background: var(--raise);
-    padding: 0.1em 0.35em; border-radius: 3px; color: var(--ink);
-  }
-  .lede {
-    background: var(--raise); border-radius: 8px; padding: 1.1rem 1.25rem;
-    font-size: 1rem; margin-bottom: 0.5rem;
-  }
-  .lede p:last-child { margin-bottom: 0; }
-  footer {
-    margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--line);
-    font-size: 0.9rem; color: var(--ink-low);
-  }
-</style>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;600;700&family=Golos+Text:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="gloaming.css">
+<script>(function(){try{var v=localStorage.getItem('gloaming-theme');if(v&&v!=='system')document.documentElement.setAttribute('data-theme',v);}catch(e){}})();</script>
 </head>
 <body>
-<main>
-
-  <header>
-    <img src="icon.png" alt="">
-    <div>
-      <h1>Privacy policy</h1>
-      <p class="sub">Gloaming for Android · <code>com.jemcik.gloaming</code></p>
-    </div>
-  </header>
-
-  <div class="lede">
-    <p><strong>Gloaming collects nothing, stores everything on your device, and cannot send data anywhere.</strong> It does not request the <code>INTERNET</code> permission, so it has no network access of any kind — this is not a promise about intent, it is a restriction the operating system enforces.</p>
+<header class="bar">
+  <a class="brand" href="index.html"><img src="icon.png" alt="" width="62" height="62">Gloaming</a>
+  <div class="bar-end">
+    <nav class="langs" aria-label="Language"><a href="privacy-policy.html" aria-current="page"><span class="lg">English</span><span class="sm">EN</span></a><a href="uk/privacy-policy.html"><span class="lg">Українська</span><span class="sm">UA</span></a><a href="ru/privacy-policy.html"><span class="lg">Русский</span><span class="sm">RU</span></a></nav>
+    <button class="theme" type="button"
+      data-name-system="System" data-name-dawn="Dawn" data-name-dusk="Dusk"
+      data-label-system="System" data-label-dawn="Dawn" data-label-dusk="Dusk"
+      aria-label="System">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/>
+      </svg><span class="theme-name">System</span>
+    </button>
   </div>
+</header>
+<main>
+  <h1>Privacy policy</h1>
+  <p class="lead">Gloaming for Android · <code>com.jemcik.gloaming</code></p>
 
-  <h2>What is collected</h2>
-  <p>Nothing. There is no analytics, no crash reporting, no advertising, no third-party SDK, no account and no sign-in. No personal or device data is gathered, transmitted, sold or shared with anyone.</p>
+  <div class="note"><p><strong>Gloaming collects nothing, stores everything on your device, and cannot send data anywhere.</strong> It does not request the <code>INTERNET</code> permission, so it has no network access of any kind — this is not a promise about intent, it is a restriction the operating system enforces.</p></div>
 
-  <h2>What is stored, and where</h2>
-  <p>Everything Gloaming remembers stays in its own private storage on your phone:</p>
-  <ul>
-    <li><strong>Your schedule and settings</strong> — the sleep window, the days it applies to, the interruption allowlist, the screen effects you enabled, and your theme and language choices.</li>
-    <li><strong>A journal</strong> — an on-device log of what the app did each night, so a problem can be explained after the fact. It is written to the app's own files directory and never leaves the phone on its own.</li>
-  </ul>
-  <p>Uninstalling Gloaming removes all of it. <strong>Reset Gloaming</strong>, inside the app, clears it without uninstalling.</p>
+  <section><h2>What is collected</h2><p>Nothing. There is no analytics, no crash reporting, no advertising, no third-party SDK, no account and no sign-in. No personal or device data is gathered, transmitted, sold or shared with anyone.</p></section>
 
-  <h2>Diagnostics you choose to send</h2>
-  <p><strong>Send diagnostics</strong> gathers the journal, your schedule and what the system reports about the app's Do Not Disturb rule into plain text, and hands it to Android's share sheet. <strong>You choose the recipient</strong> — an email, a message, a note to yourself. Gloaming does not transmit it and has no way to; if you never use the button, nothing is ever produced. Read the text before sending it, as you would any message.</p>
+  <section><h2>What is stored, and where</h2>
+    <p>Everything Gloaming remembers stays in its own private storage on your phone:</p>
+    <ul><li><strong>Your schedule and settings</strong> — the sleep window, the days it applies to, the interruption allowlist, the screen effects you enabled, and your theme and language choices.</li><li><strong>A journal</strong> — an on-device log of what the app did on each run, so a problem can be explained after the fact. It is written to the app’s own files directory and never leaves the phone on its own.</li></ul>
+    <p>Uninstalling Gloaming removes all of it. <strong>Reset Gloaming</strong>, inside the app, clears it without uninstalling.</p>
+  </section>
 
-  <h2>Permissions, and why each exists</h2>
-  <ul>
+  <section><h2>Diagnostics you choose to send</h2><p><strong>Send diagnostics</strong> gathers the journal, your schedule and what the system reports about the app’s Do Not Disturb rule into plain text, and hands it to Android’s share sheet. <strong>You choose the recipient</strong> — an email, a message, a note to yourself. Gloaming does not transmit it and has no way to; if you never use the button, nothing is ever produced. Read the text before sending it, as you would any message.</p></section>
+
+  <section><h2>Permissions, and why each exists</h2>
+    <ul>
     <li><strong>Notification policy access</strong> — lets the app create and switch its own Do Not Disturb rule. This is what makes bedtime work. It grants no access to the content of your notifications, and Gloaming never reads them.</li>
-    <li><strong>Alarms &amp; reminders</strong> (<code>SCHEDULE_EXACT_ALARM</code>) — lets the app schedule the exact alarms that start and end the night while it is closed.</li>
+    <li><strong>Alarms and reminders</strong> (<code>SCHEDULE_EXACT_ALARM</code>) — lets the app start and end your window at exactly the time you set, while it is closed.</li>
     <li><strong>Run at startup</strong> (<code>RECEIVE_BOOT_COMPLETED</code>) — lets it restore your schedule after a restart, so a reboot at 2am does not silently end bedtime.</li>
     <li><strong>Modify system settings</strong> (<code>WRITE_SETTINGS</code>) — optional, and requested only if you use the always-on display control on a phone where that setting is reachable. Used solely to write that one display key.</li>
     <li><code>WRITE_SECURE_SETTINGS</code> — declared but not grantable by an ordinary install; it can only be granted over adb, deliberately, by someone who wants the vendor always-on route. Without that grant the code path is inert.</li>
-  </ul>
-  <p>Gloaming requests no access to contacts, location, camera, microphone, storage, or the content of your messages or notifications.</p>
+    </ul>
+    <p>Gloaming requests no access to contacts, location, camera, microphone, storage, or the content of your messages or notifications.</p>
+  </section>
 
-  <h2>Children</h2>
-  <p>Gloaming is a general-purpose utility. It is not directed at children, and since it collects no data it collects none from them either.</p>
-
-  <h2>Changes</h2>
-  <p>If this policy ever changes it will change here, with the date below updated. The app is open source, so any change to what it actually does is visible in the commit history.</p>
-
-  <h2>Contact</h2>
-  <p>Questions, or a report that something here is inaccurate: open an issue at <a href="https://github.com/jemcik/Gloaming/issues">github.com/jemcik/Gloaming/issues</a>.</p>
-
-  <footer>
-    <p>Effective 4 September 2026. Source: <a href="https://github.com/jemcik/Gloaming">github.com/jemcik/Gloaming</a> · Apache License 2.0</p>
-  </footer>
-
+  <section><h2>Children</h2><p>Gloaming is a general-purpose utility. It is not directed at children, and since it collects no data it collects none from them either.</p></section>
+  <section><h2>Changes</h2><p>If this policy ever changes it will change here, with the date below updated. The app is open source, so any change to what it actually does is visible in the commit history.</p></section>
+  <section><h2>Contact</h2>
+    <p>Questions, or a report that something here is inaccurate: open an issue at <a href="https://github.com/jemcik/Gloaming/issues">github.com/jemcik/Gloaming/issues</a>.</p>
+  </section>
 </main>
+
+<footer>Effective 4 September 2026. Source: <a href="https://github.com/jemcik/Gloaming">github.com/jemcik/Gloaming</a> · Apache License 2.0</footer>
+<div class="viewer" hidden tabindex="-1" role="dialog" aria-modal="true" aria-label="Screenshots">
+  <button class="vnav prev" type="button" aria-label="Previous screenshot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg></button>
+  <img alt="">
+  <button class="vnav next" type="button" aria-label="Next screenshot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button>
+  <p class="vcount" aria-live="polite"></p>
+</div>
+<script src="gloaming.js"></script>
 </body>
 </html>

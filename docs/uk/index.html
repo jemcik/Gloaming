@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gloaming · Застосунок для сну на Android, який спрацьовує вчасно.</title>
+<meta name="description" content="Застосунок для сну на Android, який спрацьовує вчасно.">
+<link rel="icon" href="../icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;600;700&family=Golos+Text:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../gloaming.css">
+<script>(function(){try{var v=localStorage.getItem('gloaming-theme');if(v&&v!=='system')document.documentElement.setAttribute('data-theme',v);}catch(e){}})();</script>
+</head>
+<body>
+<header class="bar">
+  <a class="brand" href="index.html"><img src="../icon.png" alt="" width="62" height="62">Gloaming</a>
+  <div class="bar-end">
+    <nav class="langs" aria-label="Language"><a href="../index.html"><span class="lg">English</span><span class="sm">EN</span></a><a href="../uk/index.html" aria-current="page"><span class="lg">Українська</span><span class="sm">UA</span></a><a href="../ru/index.html"><span class="lg">Русский</span><span class="sm">RU</span></a></nav>
+    <button class="theme" type="button"
+      data-name-system="Як у системі" data-name-dawn="Світла" data-name-dusk="Темна"
+      data-label-system="Як у системі" data-label-dawn="Світла" data-label-dusk="Темна"
+      aria-label="Як у системі">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/>
+      </svg><span class="theme-name">Як у системі</span>
+    </button>
+  </div>
+</header>
+<main>
+  <div class="hero">
+    <h1>Застосунок для сну на Android, який спрацьовує вчасно.</h1>
+    <p class="lead">Заспокойте свій телефон на бажаний проміжок часу — налаштуйте «Не турбувати» і екранні ефекти в одному зручному інтерфейсі. Усе працює, навіть якщо застосунок закритий: він користується дозволом «Будильники та нагадування», який ви надаєте в застосунку. Це дає гарантію спрацювання точно в заданий час і не проходить через планувальник фонових завдань.</p>
+    <div class="sweep"></div>
+    <div class="cta">
+      <a class="btn" href="https://github.com/jemcik/Gloaming/releases">Завантажити APK</a>
+      <a class="btn ghost" href="https://github.com/jemcik/Gloaming">Код на GitHub</a>
+    </div>
+  </div>
+
+  <div class="shots">
+    <button class="shot light" type="button" data-full="../screenshots/uk/light/home.png" aria-label="Головний екран посеред проміжку"><img src="../screenshots/web/uk/light/home.webp" alt="Головний екран посеред проміжку" loading="lazy"></button>
+    <button class="shot dark" type="button" data-full="../screenshots/uk/dark/home.png" aria-label="Головний екран посеред проміжку"><img src="../screenshots/web/uk/dark/home.webp" alt="Головний екран посеред проміжку" loading="lazy"></button>
+    <button class="shot light" type="button" data-full="../screenshots/uk/light/effects.png" aria-label="Який вигляд має екран під час проміжку"><img src="../screenshots/web/uk/light/effects.webp" alt="Який вигляд має екран під час проміжку" loading="lazy"></button>
+    <button class="shot dark" type="button" data-full="../screenshots/uk/dark/effects.png" aria-label="Який вигляд має екран під час проміжку"><img src="../screenshots/web/uk/dark/effects.webp" alt="Який вигляд має екран під час проміжку" loading="lazy"></button>
+    <button class="shot light" type="button" data-full="../screenshots/uk/light/allowed.png" aria-label="Що дозволено переривати"><img src="../screenshots/web/uk/light/allowed.webp" alt="Що дозволено переривати" loading="lazy"></button>
+    <button class="shot dark" type="button" data-full="../screenshots/uk/dark/allowed.png" aria-label="Що дозволено переривати"><img src="../screenshots/web/uk/dark/allowed.webp" alt="Що дозволено переривати" loading="lazy"></button>
+  </div>
+
+  <section>
+    <h2>Навіщо ще один застосунок для сну</h2>
+    <p>В Android уже є режим сну. На багатьох телефонах він не спрацьовує, доки ви не відкриєте застосунок, який ним керує, — або спрацьовує, але невчасно. Режим сну запланований як фонове завдання, а чи виконуються фонові завдання — вирішує керування батареєю кожного виробника. Якщо десь у цьому ланцюжку завдання відкладають, не буде ні помилки, ні сповіщення — «Не турбувати» просто не вмикається, а ефекти не застосовуються.</p>
+    <p>Gloaming не користується фоновим завданням. Він просить дозвіл «Будильники та нагадування» — той самий, який ви надаєте в застосунку, — і система гарантує спрацювання в задану хвилину. Застосунок має власне правило «Не турбувати» і перемикає його сам, тож режим сну настає незалежно від того, відкритий застосунок чи ні.</p>
+  </section>
+
+  <section>
+    <h2>Що вміє Gloaming</h2>
+    <div class="feats">
+    <div class="feat"><h3>24-годинний циферблат</h3><p>Один проміжок: тягніть будь-який кінець по колу або торкніться часу й виберіть його точно. Ви обираєте не вечір, коли лягаєте, а ранок, коли хочете прокинутися: виберіть суботу — і проміжок триватиме з вечора п’ятниці до ранку суботи.</p></div>
+    <div class="feat"><h3>Завершення за будильником</h3><p>Увімкніть — і проміжок сам підлаштується під час вашого будильника, замість того щоб вести два розклади паралельно.</p></div>
+    <div class="feat"><h3>Плитка у швидких налаштуваннях із трьома станами</h3><p>Три вигляди, кожен з одним значенням. Пісочний годинник — режим сну увімкнено, він чекає своєї години. Галочка — проміжок триває просто зараз. Власний знак Gloaming — режим сну вимкнено. Плитка ніколи не показує галочку для того, що ще не почалося.</p></div>
+    <div class="feat"><h3>Список винятків на час проміжку</h3><p>Хто може подзвонити, хто написати, розмови, повторні дзвінки, нагадування, події календаря, медіа. Екран показує поточний стан системи, а не той, який застосунок увімкнув і вважає чинним.</p></div>
+    <div class="feat"><h3>Ефекти екрана</h3><p>Чорно-білий екран, притемнення шпалер, темна тема, always-on дисплей. Якщо операційна система не дозволяє застосунку керувати ефектом, перемикач не показується взагалі — краще жодного, ніж такий, що бреше.</p></div>
+    <div class="feat"><h3>Він перевіряє, а не припускає</h3><p>Деякі телефони заморожують застосунки у фоні, і поломка при цьому конкретна: кінець проміжку не спрацьовує, тож режим сну не завершується — усе, що він увімкнув, лишається увімкненим уже вдень. Gloaming стежить за кожним кінцем і повідомляє, коли той запізнився, — із кнопкою до налаштування фонової роботи, яке зазвичай і є причиною. А ще одноразово, через одинадцять хвилин після встановлення, питає, чи доставляє цей телефон фонові сигнали взагалі, — і мовчить, якщо все гаразд.</p></div>
+    <div class="feat"><h3>Спостереження за перезавантаженням</h3><p>Для телефонів, які не кажуть застосункам, що телефон перезавантажився: режим сну лишається увімкненим, але вже нічого не спрацює. Gloaming це помічає.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Чого Gloaming не робить</h2>
+    <div class="note"><p>У Gloaming немає дозволу на інтернет. Це не обіцянка не надсилати дані, а обмеження, яке забезпечує операційна система. Немає ні аналітики, ні реклами, ні акаунтів, ні стороннього коду. Ваш розклад і власний журнал застосунку лишаються на телефоні, а видалення застосунку прибирає їх.</p>
+    <p><a href="privacy-policy.html">Читати політику приватності</a></p></div>
+  </section>
+
+  <section>
+    <h2>Вимоги</h2>
+    <p>Android 15 або новіший. Два дозволи, обидва надаються з самого застосунку: доступ до політики сповіщень (для «Не турбувати») і «Будильники та нагадування».</p>
+  </section>
+</main>
+
+<footer>
+  Ліцензія Apache 2.0 · <a href="https://github.com/jemcik/Gloaming">Код</a> ·
+  <a href="https://github.com/jemcik/Gloaming/releases">Релізи</a> ·
+  <a href="privacy-policy.html">Політика приватності</a> ·
+  <a href="https://github.com/jemcik/Gloaming/issues">Повідомити про проблему</a>
+</footer>
+<div class="viewer" hidden tabindex="-1" role="dialog" aria-modal="true" aria-label="Знімки екрана">
+  <button class="vnav prev" type="button" aria-label="Попередній знімок"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg></button>
+  <img alt="">
+  <button class="vnav next" type="button" aria-label="Наступний знімок"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button>
+  <p class="vcount" aria-live="polite"></p>
+</div>
+<script src="../gloaming.js"></script>
+</body>
+</html>

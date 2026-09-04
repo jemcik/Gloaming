@@ -77,7 +77,7 @@
     <string name="label_bedtime">режим сну</string>
     <string name="label_started">початок</string>
     <string name="label_wake_up">пробудження</string>
-    <string name="dial_sleep_window">вікно сну</string>
+    <string name="dial_sleep_window">проміжок сну</string>
     <string name="dial_until">до %1$s</string>
     <string name="dial_until_bedtime">до режиму сну</string>
 
@@ -213,5 +213,5 @@
     <string name="action_reset">Скинути</string>
     <string name="section_about">про застосунок</string>
     <string name="settings_version">Версія %1$s</string>
-    <string name="settings_about_body">Один перемикач на всю ніч. Gloaming автоматизує вмикання режиму «Не турбувати» та активацію різних ефектів екрана за заданим розкладом — усе, що потрібно для режиму сну, зібрано в одному місці, а не розкидано по налаштуваннях. Працює із закритим застосунком.</string>
+    <string name="settings_about_body">Один перемикач на весь проміжок. Gloaming автоматизує вмикання режиму «Не турбувати» та активацію ефектів екрана на той час, який ви обрали, — усе, що потрібно для режиму сну, зібрано в одному місці, а не розкидано по налаштуваннях. Працює, навіть якщо застосунок закритий, бо користується дозволом «Будильники та нагадування», який ви надаєте тут.</string>
 </resources>

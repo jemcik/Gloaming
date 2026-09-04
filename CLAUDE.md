@@ -421,6 +421,14 @@ is in DECISIONS.md.
                          .html is the URL given to Google Play - it must keep
                          its name and stay at the root
     python3 -m http.server 8765 --directory docs    preview it
+    tools/shoot.py       RE-SHOOT the screenshots on the phone: three languages
+                         x two themes x four screens, into docs/screenshots/
+                         <lang>/<theme>/. EN captures at 12-hour and ru/uk at
+                         24, because that is what each audience has set. Taps
+                         are found by TEXT in the uiautomator dump rather than
+                         by coordinate - the rows move between languages, and
+                         shooting all three is the point. The flat files the
+                         README uses are copies of the en set
 
     adb shell run-as com.jemcik.gloaming cat files/journal.log
 

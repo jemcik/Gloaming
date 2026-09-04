@@ -37,9 +37,12 @@
   </div>
 
   <div class="shots">
-    <img src="screenshots/home.png" alt="The home screen mid-window">
-    <img src="screenshots/effects.png" alt="How the screen looks during a window">
-    <img src="screenshots/allowed.png" alt="What is allowed to interrupt">
+    <button class="shot light" type="button" data-full="screenshots/en/light/home.png" aria-label="The home screen mid-window"><img src="screenshots/web/en/light/home.webp" alt="The home screen mid-window" loading="lazy"></button>
+    <button class="shot dark" type="button" data-full="screenshots/en/dark/home.png" aria-label="The home screen mid-window"><img src="screenshots/web/en/dark/home.webp" alt="The home screen mid-window" loading="lazy"></button>
+    <button class="shot light" type="button" data-full="screenshots/en/light/effects.png" aria-label="How the screen looks during a window"><img src="screenshots/web/en/light/effects.webp" alt="How the screen looks during a window" loading="lazy"></button>
+    <button class="shot dark" type="button" data-full="screenshots/en/dark/effects.png" aria-label="How the screen looks during a window"><img src="screenshots/web/en/dark/effects.webp" alt="How the screen looks during a window" loading="lazy"></button>
+    <button class="shot light" type="button" data-full="screenshots/en/light/allowed.png" aria-label="What is allowed to interrupt"><img src="screenshots/web/en/light/allowed.webp" alt="What is allowed to interrupt" loading="lazy"></button>
+    <button class="shot dark" type="button" data-full="screenshots/en/dark/allowed.png" aria-label="What is allowed to interrupt"><img src="screenshots/web/en/dark/allowed.webp" alt="What is allowed to interrupt" loading="lazy"></button>
   </div>
 
   <section>
@@ -79,6 +82,7 @@
   <a href="privacy-policy.html">Privacy policy</a> ·
   <a href="https://github.com/jemcik/Gloaming/issues">Report an issue</a>
 </footer>
+<div class="viewer" hidden role="dialog" aria-modal="true"><img alt=""></div>
 <script src="gloaming.js"></script>
 </body>
 </html>

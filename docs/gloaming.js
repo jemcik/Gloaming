@@ -13,7 +13,35 @@
     btn.querySelector('.theme-name').textContent =
       btn.dataset['name' + v.charAt(0).toUpperCase() + v.slice(1)] || v;
   }
+  // Click a screenshot to see it properly. The thumbnail is a 520px copy; the
+  // viewer loads the full capture, which is the only place it is worth the
+  // bytes. Escape closes, so does clicking anywhere - the whole overlay is the
+  // target, because hunting for a small × is the thing people complain about.
   document.addEventListener('DOMContentLoaded', function () {
+    var viewer = document.querySelector('.viewer');
+    if (viewer) {
+      var img = viewer.querySelector('img'), opener = null;
+      document.querySelectorAll('.shot').forEach(function (b) {
+        b.addEventListener('click', function () {
+          opener = b;
+          img.src = b.dataset.full;
+          img.alt = b.getAttribute('aria-label') || '';
+          viewer.hidden = false;
+          viewer.focus();
+        });
+      });
+      var close = function () {
+        viewer.hidden = true;
+        img.removeAttribute('src');
+        // Back to the thumbnail that opened it, or the keyboard is lost.
+        if (opener) { opener.focus(); opener = null; }
+      };
+      viewer.addEventListener('click', close);
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && !viewer.hidden) close();
+      });
+    }
+
     var btn = document.querySelector('.theme');
     if (!btn) return;
     var cur = read();

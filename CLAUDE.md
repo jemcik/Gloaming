@@ -416,12 +416,17 @@ is in DECISIONS.md.
     python3 tools/play_assets.py        the Play store assets into docs/play/.
                          Play refuses what the README needs: an alpha channel on
                          the icon. Same geometry, `mask=False`, and Play applies
-                         its own corner mask. Screenshots come out TWICE -
-                         captioned at the phone's own aspect, and plain padded
-                         to 9:16 - because Play's hard rule is only 320-3840px
-                         per side and the 9:16 figure is guidance. Neither set
-                         crops: the README's framing is what the app looks like,
-                         and cropping to fit a store makes the two disagree.
+                         its own corner mask. Screenshots come out TWICE, both
+                         at an EXACT 9:16 - Play enforces the ratio, it is not
+                         guidance: a 1256x3108 captioned shot is 1:2.47 and the
+                         Console answers "needs cropping", which on a phone
+                         screenshot means losing the caption or the top of the
+                         screen. Padding the SIDES costs nothing, so the canvas
+                         is the smallest exact 9:16 that holds the shot, snapped
+                         to a multiple of 9 so the height is integral - 1755x3120
+                         captioned, 1584x2816 plain. Neither set crops: the
+                         README's framing is what the app looks like, and
+                         cropping to fit a store makes the two disagree.
                          No device frames - a bezel encodes nothing true and
                          costs pixels these screens need. A set PER LANGUAGE
                          into `<lang>/`, captions and all: Play carries one per

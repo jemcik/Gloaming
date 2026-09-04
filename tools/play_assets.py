@@ -205,7 +205,26 @@ CAPTIONS = {
     ],
 }
 
-BAND = 300          # caption band height, px
+BAND = 300          # caption band MINIMUM height, px - the real one is whatever
+                    # the 9:16 canvas leaves above the screenshot
+
+
+def nine_by_sixteen(w, h, extra=0):
+    """The smallest EXACT 9:16 canvas holding a w x h shot plus `extra` height.
+
+    Play's phone screenshots are 16:9 or 9:16 and it enforces it - a 1256x3108
+    captioned shot is 1:2.47 and comes back "needs cropping", which for a phone
+    screenshot means losing either the caption or the top of the screen. Padding
+    the SIDES costs nothing instead: the shot keeps every pixel and the margins
+    read as a deliberate frame in the same colour as the band.
+
+    Snapped to a multiple of 9 so the height is exact rather than 0.5624 - the
+    ratio is checked, and a rounding error is still not 9:16.
+    """
+    need = h + extra
+    width = max(w, -(-need * 9 // 16))
+    width = -(-width // 9) * 9
+    return width, width * 16 // 9
 CAP_SIZE = 52
 
 
@@ -248,25 +267,28 @@ def build_screenshots():
             w, h = im.size
 
             # A Dusk band above the shot, the same band on all five so they read
-            # as one set rather than following each screenshot's own theme.
-            out = Image.new('RGB', (w, h + BAND), hx(SURFACE))
-            out.paste(im, (0, BAND))
+            # as one set rather than following each screenshot's own theme. The
+            # canvas is a true 9:16, so the band is whatever height is left over
+            # once the shot is placed - never less than BAND.
+            cw, ch = nine_by_sixteen(w, h, BAND)
+            band = ch - h
+            out = Image.new('RGB', (cw, ch), hx(SURFACE))
+            out.paste(im, ((cw - w) // 2, band))
             d = ImageDraw.Draw(out)
-            lines = _wrap(d, caption, font, w - 160)
+            lines = _wrap(d, caption, font, cw - 260)
             lh = CAP_SIZE * 1.32
-            y = (BAND - lh * len(lines)) / 2
+            y = (band - lh * len(lines)) / 2
             for ln in lines:
-                d.text(((w - d.textlength(ln, font=font)) / 2, y), ln,
+                d.text(((cw - d.textlength(ln, font=font)) / 2, y), ln,
                        font=font, fill=hx(ON_SURFACE))
                 y += lh
             out.save(os.path.join(cap_dir, f'{i}.png'))
 
-            # Plain, padded to 9:16 from each capture's own corner color, so a
-            # Dusk shot pads dark and a Dawn shot pads light.
-            want = int(round(h * 9 / 16))
-            pl = im if want <= w else Image.new('RGB', (want, h), im.getpixel((0, 0)))
-            if want > w:
-                pl.paste(im, ((want - w) // 2, 0))
+            # Plain, padded to an exact 9:16 from each capture's own corner
+            # colour, so a Dusk shot pads dark and a Dawn shot pads light.
+            pw, ph = nine_by_sixteen(w, h)
+            pl = Image.new('RGB', (pw, ph), im.getpixel((0, 0)))
+            pl.paste(im, ((pw - w) // 2, (ph - h) // 2))
             pl.save(os.path.join(plain_dir, f'{i}.png'))
         print(f'  {lang}: 5 captioned + 5 plain')
 

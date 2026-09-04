@@ -363,6 +363,21 @@ is in DECISIONS.md.
   argument that "the device accepts and ignores" was the whole story - it is the
   mechanism, not the consequence, and the consequence is what a listing is for.
 
+- **A pronoun in ru/uk agrees with the NOUN JUST WRITTEN, not with the English
+  it came from.** "Gloaming is a general-purpose utility. It is not directed at
+  children" went across as «утилита общего назначения. Он не предназначен» -
+  «утилита» is feminine and «он» agrees with nothing on the page. The same
+  section carried the other half of the fault: «он не собирает их и у них», a
+  word-for-word "it collects none from them either", where «их» means the data
+  and «у них» means the children, two pronouns with different referents one word
+  apart. Caught by a native speaker on the live site, not by any checker -
+  `check_translation.py` counts strings and cannot see agreement. So: pick the
+  predicate noun for the GENDER the rest of the document already uses
+  («інструмент»/«инструмент», masculine, because Gloaming is «Він»/«Он»
+  everywhere else), and where English chains pronouns, name the things instead.
+  The same sentence pattern one section down had «он» sitting after «приложение»
+  (neuter) and «код» (masculine), so it read as the code.
+
 - There is not one `fontSize` or `fontWeight` override outside `Theme.kt`. Keep
   it that way.
 - Tabular figures (`tnum`) belong on the **display** family only. Numerals get

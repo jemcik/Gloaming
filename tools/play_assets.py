@@ -9,7 +9,7 @@ rejection rather than a matter of taste:
                       by Play. Play applies its own corner mask, so this one is
                       full bleed and gets rounded exactly once.
 
-  feature-graphic.png 1024x500, no alpha. Required, and there was nothing to
+  feature-graphic{,-uk,-ru}.png 1024x500, no alpha. Required, and nothing to
                       reuse. Composed here rather than drawn by hand so it
                       tracks the palette: change Theme.kt's Arc stops and re-run.
 
@@ -46,7 +46,14 @@ ON_SURFACE = '#EAEBED'
 ON_SURFACE_LOW = '#BCC1CC'
 
 WORDMARK = 'Gloaming'
-TAGLINE = 'Bedtime that keeps its own schedule'
+TAGLINES = {
+    'en': 'Bedtime that keeps its own schedule',
+    # Not translations of the English but of the SITE's taglines, which were
+    # read and corrected by a native speaker - «спрацьовує вчасно» /
+    # «срабатывает вовремя» is his wording, not a fresh guess at it.
+    'uk': 'Режим сну, який спрацьовує вчасно',
+    'ru': 'Режим сна, который срабатывает вовремя',
+}
 
 
 def hx(h):
@@ -66,7 +73,7 @@ CYRILLIC_CANDIDATES = [
 ]
 
 
-def cyrillic_font(size):
+def cyrillic_font(size, grad=620):
     for path in CYRILLIC_CANDIDATES:
         if os.path.exists(path):
             f = ImageFont.truetype(path, size)
@@ -77,7 +84,7 @@ def cyrillic_font(size):
             # sees two languages side by side, but the sets should not look like
             # they came from different projects.
             try:
-                f.set_variation_by_axes([100, float(size), 620])
+                f.set_variation_by_axes([100, float(size), grad])
             except Exception:
                 pass
             return f
@@ -88,8 +95,16 @@ def cyrillic_font(size):
 
 
 def caption_font(lang, size, weight):
-    """Figtree where it can read the words, something that can where it cannot."""
-    return figtree(size, weight) if lang == 'en' else cyrillic_font(size)
+    """Figtree where it can read the words, something that can where it cannot.
+
+    The GRADE tracks the weight asked for. Grade 620 matches Figtree 600 on the
+    caption bands, but the feature graphic's tagline is a 400 - drawing that at
+    620 too would make the Slavic graphics heavier than the English one in the
+    one place all three sit side by side in a listing switcher.
+    """
+    if lang == 'en':
+        return figtree(size, weight)
+    return cyrillic_font(size, grad=620 if weight >= 600 else 400)
 
 
 def figtree(size, weight):
@@ -119,8 +134,9 @@ def build_icon():
     return dest
 
 
-def build_feature():
+def build_feature(lang='en'):
     W, H = 1024, 500
+    tagline = TAGLINES[lang]
     # Ground: a shallow vertical gradient rather than a flat fill, so the tile
     # and the rule below have something to sit against.
     top, bot = np.array(hx(DEEP), float), np.array(hx(SURFACE), float)
@@ -129,7 +145,9 @@ def build_feature():
         np.repeat(col[:, None, :], W, axis=1).clip(0, 255).astype(np.uint8), 'RGB')
 
     d = ImageDraw.Draw(img)
-    mark_f, tag_f = figtree(78, 700), figtree(29, 400)
+    # The WORDMARK is Latin in every language - it is a name - so it keeps
+    # Figtree throughout. Only the tagline needs a face with Cyrillic.
+    mark_f, tag_f = figtree(78, 700), caption_font(lang, 29, 400)
 
     # Centre the whole lockup rather than pinning it left. Play crops the
     # feature graphic from the SIDES on some surfaces, so anything with a left
@@ -137,7 +155,7 @@ def build_feature():
     # Measured, not guessed - the tagline is wider than the wordmark here, but
     # that is a fact about this string and would flip with a different one.
     TILE, GAP = 196, 56
-    text_w = max(d.textlength(WORDMARK, font=mark_f), d.textlength(TAGLINE, font=tag_f))
+    text_w = max(d.textlength(WORDMARK, font=mark_f), d.textlength(tagline, font=tag_f))
     left = int((W - (TILE + GAP + text_w)) / 2)
 
     tile = render(TILE, mask=True)
@@ -145,7 +163,7 @@ def build_feature():
 
     x = left + TILE + GAP
     d.text((x, 186), WORDMARK, font=mark_f, fill=hx(ON_SURFACE))
-    d.text((x, 286), TAGLINE, font=tag_f, fill=hx(ON_SURFACE_LOW))
+    d.text((x, 286), tagline, font=tag_f, fill=hx(ON_SURFACE_LOW))
 
     # The dial's own sweep, as a rule under the tagline. Night to dawn, left to
     # right, from the same stops the arc and the crescent use.
@@ -157,7 +175,8 @@ def build_feature():
     ImageDraw.Draw(round_).rounded_rectangle([0, 0, rw - 1, rh - 1], radius=rh // 2, fill=255)
     img.paste(rule, (x, ry), round_)
 
-    dest = os.path.join(OUT, 'feature-graphic.png')
+    name = 'feature-graphic.png' if lang == 'en' else f'feature-graphic-{lang}.png'
+    dest = os.path.join(OUT, name)
     img.save(dest)
     print(dest, img.size, img.mode)
     return dest
@@ -296,5 +315,6 @@ def build_screenshots():
 if __name__ == '__main__':
     os.makedirs(OUT, exist_ok=True)
     build_icon()
-    build_feature()
+    for _lang in TAGLINES:
+        build_feature(_lang)
     build_screenshots()

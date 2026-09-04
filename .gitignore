@@ -26,3 +26,6 @@ __pycache__/
 
 # Claude Code local state - worktrees, launch config
 .claude/
+
+# Finder leaves these everywhere
+.DS_Store

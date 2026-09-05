@@ -12,6 +12,12 @@ import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.platform.testTag
+import androidx.compose.material3.Text
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.layout.Column
 import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.Composable
@@ -22,6 +28,10 @@ import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.Density
 import androidx.test.core.app.ApplicationProvider
+import android.app.NotificationManager
+import org.robolectric.Shadows.shadowOf
+import org.robolectric.shadows.ShadowAlarmManager
+import java.time.LocalDate
 import com.jemcik.gloaming.R
 import com.jemcik.gloaming.core.Prefs
 import org.junit.Assert.assertTrue
@@ -492,6 +502,189 @@ class RowFitTest {
             w <= ringChord
         )
     }
+
+    /**
+     * Does the APP BAR'S STATUS LINE fit beside the switch?
+     *
+     * Nothing in this file measured the bar until the status line was wrapped in
+     * a pill. The pill costs 22dp - 10dp of padding a side plus its rim - out of
+     * a title column that has to end before the switch begins, and the line is
+     * capped at one line in code, so anything too long is TRUNCATED rather than
+     * wrapped. No height changes and nothing else on the screen moves, which is
+     * the same blind spot the preset row had.
+     *
+     * The worst case is reachable rather than theoretical: on a schedule of ONE
+     * morning a week the next bedtime is up to six days out and the countdown
+     * reaches three digits - "Starts in 167h 30m" against the 22-character
+     * budget the English strings carry. That is what is set up here.
+     *
+     * The clock is read to CHOOSE THE INPUT, not to expect an answer. Yesterday's
+     * weekday is always five to six days ahead of tonight whichever day the test
+     * runs on, so the countdown is three digits every time; the assertion is
+     * "does it fit", which is invariant. A test that read the clock and then
+     * asserted a fixed string would pass only in the hours it was written in.
+     */
+    private fun barStatusFitsIn(locale: String, scale: Float = 1f) {
+        RuntimeEnvironment.setQualifiers("+$locale-w360dp-h800dp")
+        val ctx = ApplicationProvider.getApplicationContext<android.content.Context>()
+        // Robolectric grants neither by default, and without both the bar says
+        // "Needs permission" - which is short, so the test would measure the one
+        // string that cannot fail.
+        shadowOf(ctx.getSystemService(NotificationManager::class.java))
+            .setNotificationPolicyAccessGranted(true)
+        ShadowAlarmManager.setCanScheduleExactAlarms(true)
+        val prefs = Prefs(ctx)
+        prefs.enabled = true
+        prefs.days = setOf(LocalDate.now().dayOfWeek.minus(1))
+
+        compose.setContent {
+            GloamingTheme(dark = false) {
+                AtFontScale(scale) {
+                    Home(rememberScrollState(), onOpenSettings = {}, onOpenInterruptions = {})
+                }
+            }
+        }
+
+        // By the format string's own literal half, so the lookup follows the
+        // locale: "Starts in" in English, «Через» in Ukrainian. Matching the
+        // whole rendered string would mean predicting the countdown, which is
+        // the clock dependency this test is built to avoid.
+        val prefix = ctx.getString(R.string.state_starts_in, "").trim()
+        val node = compose
+            .onAllNodes(hasText(prefix, substring = true), useUnmergedTree = true).onFirst()
+        val out = mutableListOf<TextLayoutResult>()
+        node.performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(out) }
+        val r = out.firstOrNull()
+        assertTrue(
+            "in '$locale' the app bar's status line was not found by its own format " +
+                "string - the bar is not saying what this test measures, so the " +
+                "measurement below would be of nothing.",
+            r != null
+        )
+        val room = r!!.layoutInput.constraints.maxWidth
+        val wants = r.multiParagraph.maxIntrinsicWidth
+        assertTrue(
+            "at font scale $scale in '$locale' the app bar's status line is TRUNCATED: " +
+                "it wants ${wants}px of ${room}px. The line is capped at one line, so it " +
+                "is cut rather than wrapped and the bar's height never changes - nothing " +
+                "else in this file would see it. The pill around it costs 22dp; trim its " +
+                "padding before trimming the sentence.",
+            wants <= room
+        )
+    }
+
+    /**
+     * EVERY status line the bar can show, against the room the REAL bar leaves.
+     *
+     * `barStatusFitsIn` above measures one string - whichever the live screen
+     * happens to be showing - and that is the case that actually renders, so it
+     * stays. This is the other half: the bar has five shapes of status line and
+     * three of them cannot be reached from prefs alone. "On now, until 8:30 AM"
+     * needs the clock inside a window; "Nothing scheduled" needs an empty day
+     * set the UI will not produce; the three-digit countdown needs a specific
+     * weekday. Waiting for the clock to cooperate is how a test ends up passing
+     * only in the hours it was written in.
+     *
+     * So the ROOM is measured from the real composition - the real bar, the real
+     * pill, the real 22dp it costs, at the real width - and every candidate
+     * string is then measured against it. The room is not assumed and the
+     * strings are not sampled.
+     *
+     * The durations are the ones the app can actually produce: under an hour,
+     * a normal night, and the three-digit case a one-morning-a-week schedule
+     * reaches. Both clock formats are included because `Clock` follows the
+     * phone's 12/24 setting, and "12:30 AM" is four characters longer than
+     * "00:30" - the widest of these is an English 12-hour "On now, until".
+     */
+    private fun everyBarStatusFitsIn(locale: String, scale: Float) {
+        RuntimeEnvironment.setQualifiers("+$locale-w360dp-h800dp")
+        val ctx = ApplicationProvider.getApplicationContext<android.content.Context>()
+        shadowOf(ctx.getSystemService(NotificationManager::class.java))
+            .setNotificationPolicyAccessGranted(true)
+        ShadowAlarmManager.setCanScheduleExactAlarms(true)
+        val prefs = Prefs(ctx)
+        prefs.enabled = true
+        prefs.days = setOf(LocalDate.now().dayOfWeek.minus(1))
+        val res = ctx.resources
+
+        val candidates = buildList {
+            add(ctx.getString(R.string.bedtime_off))
+            add(ctx.getString(R.string.state_nothing_scheduled))
+            add(ctx.getString(R.string.state_needs_permission))
+            listOf(45L, 9L * 60 + 30, 167L * 60 + 30).forEach {
+                add(ctx.getString(R.string.state_starts_in, span(res, it)))
+            }
+            // Both clock formats, and both extremes of each - a 12-hour
+            // "12:30 AM" is the widest thing this string can carry.
+            listOf("12:30 AM", "8:05 AM", "23:45", "08:00").forEach {
+                add(ctx.getString(R.string.state_on_until, it))
+            }
+        }
+
+        compose.setContent {
+            GloamingTheme(dark = false) {
+                AtFontScale(scale) {
+                    Box {
+                        Home(rememberScrollState(), onOpenSettings = {}, onOpenInterruptions = {})
+                        // Laid out only to be MEASURED. maxIntrinsicWidth is what
+                        // a string wants at its size and is independent of the
+                        // constraints it is given, so where these sit does not
+                        // matter - only that they carry the pill's own style.
+                        Column {
+                            candidates.forEachIndexed { i, s ->
+                                Text(
+                                    s,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    maxLines = 1,
+                                    modifier = Modifier.testTag("cand$i")
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        fun layoutOf(matcher: SemanticsMatcher): TextLayoutResult? {
+            val out = mutableListOf<TextLayoutResult>()
+            compose.onAllNodes(matcher, useUnmergedTree = true).onFirst()
+                .performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(out) }
+            return out.firstOrNull()
+        }
+
+        val prefix = ctx.getString(R.string.state_starts_in, "").trim()
+        val real = layoutOf(hasText(prefix, substring = true))
+        assertTrue("in '$locale' the bar's own status line was not found", real != null)
+        val room = real!!.layoutInput.constraints.maxWidth
+
+        val tooWide = candidates.indices.mapNotNull { i ->
+            val r = layoutOf(hasTestTag("cand$i")) ?: return@mapNotNull null
+            val wants = r.multiParagraph.maxIntrinsicWidth
+            if (wants > room) "${candidates[i]} (wants $wants of $room)" else null
+        }
+        assertTrue(
+            "at font scale $scale in '$locale' these status lines do not fit the app " +
+                "bar: $tooWide. The line is one line and TRUNCATES; the pill around it " +
+                "costs 22dp. Trim the pill's padding before trimming the sentence.",
+            tooWide.isEmpty()
+        )
+    }
+
+    @Test fun `every bar status fits in English`() = everyBarStatusFitsIn("en", 1f)
+    @Test fun `every bar status fits in Russian`() = everyBarStatusFitsIn("ru", 1f)
+    @Test fun `every bar status fits in Ukrainian`() = everyBarStatusFitsIn("uk", 1f)
+
+    @Test fun `every bar status fits in English at large font`() = everyBarStatusFitsIn("en", 1.3f)
+    @Test fun `every bar status fits in Russian at large font`() = everyBarStatusFitsIn("ru", 1.3f)
+    @Test fun `every bar status fits in Ukrainian at large font`() = everyBarStatusFitsIn("uk", 1.3f)
+
+    @Test fun `bar status fits in English`() = barStatusFitsIn("en")
+    @Test fun `bar status fits in Russian`() = barStatusFitsIn("ru")
+    @Test fun `bar status fits in Ukrainian`() = barStatusFitsIn("uk")
+
+    @Test fun `bar status fits in English at large font`() = barStatusFitsIn("en", 1.3f)
+    @Test fun `bar status fits in Russian at large font`() = barStatusFitsIn("ru", 1.3f)
+    @Test fun `bar status fits in Ukrainian at large font`() = barStatusFitsIn("uk", 1.3f)
 
     /** 2*sqrt(88.35² - 32²): the ring's inner chord where the caption sits. */
     private val ringChord = 165f

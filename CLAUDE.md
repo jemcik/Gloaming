@@ -500,7 +500,7 @@ compileSdk 37, targetSdk 36, minSdk 35.
 
 ## Tests
 
-`app/src/test/`, 201 cases, no device. They are written as the QUESTION the code
+`app/src/test/`, 213 cases, no device. They are written as the QUESTION the code
 answers rather than as coverage of a method, because none of the bugs were ever
 in a method — they were in an assumption.
 
@@ -527,8 +527,13 @@ in a method — they were in an assumption.
                           default ON, where an install that predates the change
                           must keep them
     RowFitTest            does the text fit, in en/ru/uk, by MEASURING -
-                          Home's rows, the allowlist's, Settings', and the
-                          alarm section's row AND heading. AT HOME'S OWN WIDTH:
+                          Home's rows, the allowlist's, Settings', the alarm
+                          section's row AND heading, and the APP BAR's status
+                          line, which is capped at one line and so truncates
+                          rather than wraps - measured on the worst case that
+                          is actually reachable, a one-morning-a-week schedule
+                          whose countdown reaches three digits. AT HOME'S OWN
+                          WIDTH:
                           a row built bare gets a 360dp card and the real one
                           is 311, and those 49dp are six characters this test
                           passed for a fortnight

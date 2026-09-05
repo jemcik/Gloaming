@@ -2499,6 +2499,138 @@ this screen has had that reported before. Names fit the segmented row's
 
 ## Deviations from the design brief (deliberate, worth revisiting with designer)
 
+- **The master switch has its own palette, and the route there is five rejected
+  attempts.** 5 Sep 2026. UX testing found the app's main control attracted
+  almost no attention. The cause was not contrast - the checked track measured
+  4.80:1 against its card - it was RANK. `switchTrack` is `selectFill`, byte for
+  byte in both themes, and so are the day discs, the preset pill and every other
+  switch, so on a default "Always" schedule ten elements on Home wore one colour
+  and the main control was one of them. It also sat at 52x32dp beside a Repeat
+  toggle of exactly the same size, in a top bar's `actions` slot, next to a
+  260dp saturated dial. It lost on colour, size and position at once.
+  Everything below was built, deployed to the Honor and looked at. Reading them
+  in order is the point: each was a reasonable idea that a phone disproved.
+  **Scaling the switch — rejected.** 1.2x and then 1.3x. Rank by geometry looked
+  right on paper: it spends no chroma, moves no palette and survives any colour
+  vision, which is the same argument the 16/24dp thumb asymmetry rests on. On
+  the device a scaled M3 switch simply reads as crude - the geometry is the
+  spec's, and stretching it looks like a mistake rather than an emphasis.
+  **Brightening the settings gear — rejected twice, for two different reasons.**
+  Lifting the tint from `onSurfaceLow` to `onSurface` first made the gear the
+  HEAVIER mark of the two, because with bedtime off the switch was still a
+  hollow outline with a 16dp dot: the inversion being fixed, made worse. That
+  objection died when the switch gained a filled coloured track in both states,
+  so the lift went back in - and was then rejected on the panel for a reason no
+  palette can see.
+  **SAME COLOUR IS NOT SAME WEIGHT.** Read off the device rather than from the
+  tokens: at `onSurface` the gear's glyph and the bar's title sampled IDENTICAL,
+  `#1D1B18` in Dawn and `#EAEBED` in Dusk, and the gear still read as far
+  blacker. A title is a stroked letterform with paper between the strokes; a
+  gear is a solid disc with teeth at near-total ink coverage. Matching an icon's
+  colour to a text colour is matching the wrong quantity, and the tokens cannot
+  tell you so. What ships is 28dp at `onSurfaceLow` - the SIZE carries being
+  findable and the ink stays quiet, which is also the right hierarchy: a
+  settings gear should be findable when looked for, not competing with the
+  control beside it.
+  Note `onSurfaceMid` is not a middle rung either: it is the SAME value as
+  `onSurfaceLow` in Dawn, `#514A43`.
+  **Muting the dial when off — rejected, wrong problem.** The idea was that with
+  bedtime off the screen looks exactly as live as with it on - a saturated 260dp
+  arc - so desaturating it would put the state where the eye already is. Built
+  with a luma-preserving mute. It answers a different question: it changes where
+  the DIAL looks, and the brief was that the top bar draws no attention. A
+  screenshot could not show its only real merit either, which was the transition.
+  What survived from it is smaller and honest - the off arc's alpha went 0.55 to
+  0.30, looked at against 0.40 and 0.20, where 0.20 is the point the arc stops
+  separating from the track and the window becomes unreadable.
+  **Reusing `stateOn`/`onState` — rejected as not being its own.** Close, but
+  they are shared tokens; the request was a private palette, and shared tokens
+  cannot be tuned for this control without moving whatever else holds them.
+  **Terracotta — rejected on collision.** `#7A4A3A` against `alert` at `#6F362E`
+  is the same warm dark red-brown, eleven tones apart. The app has already
+  deleted a red for merely being switched off (`lampOff`) because a red on a
+  surface reads as a fault and being switched off is a choice; putting one back
+  under a different name is the same mistake with better spelling.
+  **What ships:** seven private tokens - `masterOn`, `onMasterOn`, `masterOff`,
+  `onMasterOff`, `masterOffBorder`, `masterOnInk`, `masterOffInk` - used by
+  nothing else, so no existing token changed value and the discs and the pill
+  did not move. BOTH states are coloured, which is what separates this switch
+  from every other one here: M3 draws an unchecked track as a hollow outline on
+  `veil`, 1.1:1 off the card, and that is the state a new install lands on,
+  where finding the control is the whole job. Every other switch keeps the quiet
+  version because each sits in a row carrying a label - they have a sentence to
+  be found by and this one has none.
+  The OFF colour is SAMPLED FROM THE DIAL'S OWN SWEEP, ten even points along the
+  arc's four stops, rendered on the phone and chosen per theme. The two themes
+  land at opposite ends of the ramp and the measurement says why: the dark end
+  is 1.22:1 on Dusk's card and 8.03:1 on Dawn's, so what vanishes in one theme
+  is strongest in the other. Only indices 5 and 6 work in both.
+  **Then WASHED, and the washing is what resolved a collision that going deeper
+  could not.** The light theme's pick was `Arc.dawn` verbatim - which is the SUN
+  HANDLE's own fill, sitting 400dp below the switch on the same screen, so the
+  off control and the mark meaning "wake" were the identical swatch. Moving one
+  step deeper along the ramp separates them but makes the quietest state the
+  loudest colour in the bar. Pulling the CHROMA out does both at once, and costs
+  nothing to do it: the operation is luma-preserving, so contrast against the
+  card moves 1.63 to 1.67:1 across the whole ramp and only the intensity
+  changes. Five levels were rendered on the phone; 40% ships in Dawn and 25% in
+  Dusk, because Dusk's base is already muted by its tone and needs less. The off
+  switch is still the dawn end of the app's own arc; it is no longer shouting
+  it.
+  **Armed is the GREEN end, and the order was got wrong first.** Built with the
+  dial's arc for armed against a green off, which read backwards on the phone -
+  green is the strong convention for active, so a saturated green "off" beside a
+  muted blue "on" tells a glancing reader the opposite of the truth.
+  **A mid-luminance fill fails LIGHT ink, not dark, and that is counterintuitive
+  enough to write down.** The teal started at `#2E8C7A`, where white tops out at
+  4.07:1 - under the 4.5:1 that 16sp text needs - so the filled pill could only
+  be read with a near-black, which is wrong in a dark theme. Darkening the fill
+  three tones to `#26786A` is what lets the ink go light. The toggle took the
+  same value rather than approximating it.
+
+- **The status line is a pill wearing the switch's own three colours**, so the
+  sentence and the control that governs it are visibly one thing; the bar's two
+  halves were previously joined by nothing but proximity. The rim follows the
+  switch's ASYMMETRY rather than being drawn unconditionally - `masterOffBorder`
+  while off, and while on the rim IS the fill, so it vanishes exactly as the
+  track's does. A visible rim on both states would have broken the pill away
+  from the control it is quoting.
+  **It has THREE states, not two, and the third is the one a fresh install
+  lands on.** Without a permission the switch falls back to M3's disabled greys,
+  and a fully coloured pill beside a grey ghost of a switch is the pill's whole
+  premise broken in the first state anyone sees - caught by revoking
+  SCHEDULE_EXACT_ALARM on the phone rather than by looking at the two states the
+  screen usually shows. It greys with the switch now, on the switch's own
+  disabled pair (`veil` and `line`) so the two cannot drift, with the caption
+  token for ink at 5.98:1 in Dusk and 6.43:1 in Dawn.
+  The pill costs 22dp of a title column that has to end before the switch
+  begins, and that line is capped at one line in code, so anything too long is
+  TRUNCATED rather than wrapped - no height changes, nothing else moves.
+  `RowFitTest` had never measured the bar; it does now, in all three languages
+  and at 1.3x, on the worst case that is actually reachable: a schedule of one
+  morning a week puts the next bedtime six days out and the countdown reaches
+  three digits. The test was confirmed to bite by fattening the pill, which
+  fails four of its six cases - Russian and Ukrainian survive at 1.0 because
+  «Через %1$s» is shorter than "Starts in %1$s", which is also why English is
+  the worst case here rather than the Cyrillic that usually is.
+  A second case measures EVERY status line the bar can show rather than the one
+  the live screen happens to be on: three of the five shapes cannot be reached
+  from prefs alone - "On now, until 8:30 AM" needs the clock inside a window,
+  "Nothing scheduled" needs an empty day set the UI will not produce - so the
+  ROOM is taken from the real composition and the strings are then measured
+  against it. Room measured, strings exhaustive, clock not waited on.
+  **Headroom, measured by widening the pill until it breaks:** 20dp a side still
+  passes, 26dp fails one case and 32dp fails three. So the 10dp that ships has
+  about 10dp a side in hand, and the first thing to give is English at 1.3x.
+
+- **The bar's bottom edge is the dial's sweep**, the same four stops as the site
+  and the feature graphic. `Arc.stopsOn(dark)`, not `Arc.stops`: `night` is
+  8.4:1 against Dawn's paper and 1.8:1 against Dusk's surface, so on a dark
+  ground the low end has nothing to sit on and the rule appears to BEGIN
+  halfway along. The adaptation already existed for the arc; this is the same
+  stroke on the same ground.
+
+
 - Master switch stays in one place across all states, and since 29 Aug 2026
   sits at the top of the screen. The brief hides the switch while running, which
   left no way out of DND until the wake alarm, and carried a separate

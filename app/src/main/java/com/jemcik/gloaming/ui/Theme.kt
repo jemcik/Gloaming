@@ -200,6 +200,38 @@ data class GloamColors(
        draws the segmented button's border, the day circles' rings and the
        dial's dots, where quiet is right. */
     val switchThumbOff: Color,
+
+    /* The MASTER switch's own five, and the only control in the app with a
+       private palette. Everything else takes `switchTrack`, which is
+       `selectFill`, which is also the day discs and the preset pill - so on a
+       default schedule ten elements wore one colour and the app's main control
+       was one of them. UX testing found it attracted almost no attention.
+       Both STATES are coloured here, which is the part that separates this from
+       every other switch: M3 draws an unchecked track as a hollow outline on
+       `veil`, 1.1:1 off the card, and that is the state a new install lands on.
+       ARMED IS THE GREEN END, and the order matters more than it looks. Built
+       the other way round first - the dial's own arc for armed against a green
+       off - and it read backwards on the phone: green is the strong convention
+       for active, so a saturated green "off" beside a muted blue "on" says the
+       opposite of the truth to anyone glancing. The dial's blue carries OFF
+       instead, which is also the honest reading of it: the arc is what the
+       night WILL look like, and while bedtime is off that is all it is.
+       Chosen on the device against ten candidates per theme, drawn on the
+       bar's own ground rather than picked from hex. */
+    val masterOn: Color,
+    val onMasterOn: Color,
+    val masterOff: Color,
+    val onMasterOff: Color,
+    val masterOffBorder: Color,
+    /* Ink for the status PILL, which is filled in the master colour. Separate
+       from onMasterOn/onMasterOff, which are THUMB colours: a thumb is a UI
+       part at 3:1 and this is 16sp text at 4.5:1, and the thumb values do not
+       reach it. Measured - pale mint on the teal is 3.59:1 and the sand thumb
+       ink on the sand track is 3.80:1, both short. Note the teal is
+       mid-luminance, so it fails LIGHT ink rather than dark: white on it tops
+       out at 4.07:1 and only a near-black clears the bar. */
+    val masterOnInk: Color,
+    val masterOffInk: Color,
     /* The one FAILURE state in the app: bedtime is running, Do Not Disturb was
        asked for, and the phone reports that everything is getting through.
        Material's error container tones (30 dark / 90 light). It is now the
@@ -303,6 +335,39 @@ private val Dusk = GloamColors(
     switchTrack = Color(0xFF566479),      // within 2 tones of Arc.dusk already
     switchThumb = Color(0xFFDDE9FF),      // light thumb on a dark track
     switchThumbOff = Color(0xFF9196A0),   //                     3.59:1 on the veil track
+    /* THE SAME GREEN AS DAWN'S, deliberately: armed now has one identity in
+       both themes rather than two colours that merely rhyme, and it measures
+       better here than the teal it replaces - 2.71:1 against the card against
+       the teal's 2.34:1.
+       The teal is worth keeping a note on, because it fails in a direction that
+       is easy to get backwards. It sat mid-luminance, so it failed LIGHT ink
+       rather than dark: white on #2E8C7A tops out at 4.07:1, under the 4.5:1
+       that 16sp text needs, which is why a filled pill on it could only be read
+       with a near-black - wrong in a dark theme. Darkening it to #26786A is
+       what let the ink go light. This green needs none of that.
+       WHAT IT COSTS: the pill's ink has NO HEADROOM. White on this is 4.57:1
+       and white is the lightest colour there is, so anything that lifts this
+       track even slightly puts the ink under the bar with nowhere left to go.
+       Lighten the track and the pill has to stop being filled. */
+    masterOn = Color(0xFF3F8358),         // = Dawn's masterOn
+    onMasterOn = Color(0xFFDFF5EF),       // thumb, 4.01:1 on the track
+    /* OFF is SAMPLED FROM THE DIAL'S OWN SWEEP - the same four stops the arc
+       draws with, read at a point along the night. Ten points were rendered on
+       the phone and one picked per theme, and the two themes land at opposite
+       ends for a measurable reason: the ramp's dark end is 1.22:1 on Dusk's
+       card and 8.03:1 on Dawn's, so what disappears in one theme is strongest
+       in the other. Dusk takes the ember shoulder, Dawn takes the sun handle's
+       own fill.
+       This replaces a terracotta that collided with `alert` (#6F362E), and the
+       collision note is worth keeping: the app once carried a red for merely
+       being switched OFF and deleted it, because a red on a surface reads as a
+       fault and being switched off is a choice. These are the arc's own
+       colours, so they cannot drift into the alert's territory by accident. */
+    masterOff = Color(0xFF8D664F),        // arc, washed 25% · 2.44:1 on the card
+    onMasterOff = Color(0xFFE6DDD8),
+    masterOffBorder = Color(0xFFB19787),
+    masterOnInk = Color(0xFFFFFFFF),      // 4.57:1 - see above, no headroom
+    masterOffInk = Color(0xFFF6F4F2),     // 4.62:1 on the track
     alert = Color(0xFF6F362E),         // tone 30 · ink 7.24:1
     onAlert = Color(0xFFFFDAD5),
     /* Tone 54, and the same value Dawn uses - a mid-tone rim clears 3:1
@@ -369,6 +434,29 @@ private val Dawn = GloamColors(
     onSelect = Color(0xFFFFFFFF),         // white; tone 50 would fail it at 4.47:1
     switchTrack = Color(0xFF596F8B),      // the SAME token again - see the note above
     switchThumb = Color(0xFFFFFFFF),      // 5.16:1 on the track
+    /* Sage at 1.45x the saturation it started with, and the LIGHTNESS is not a
+       taste decision - it is solved. The pill is filled and its ink is 16sp, so
+       white has to clear 4.5:1, and pushing chroma up forces the fill down
+       until it does: this lands at 4.57:1, the least headroom of the five
+       candidates and still legal. Anything more saturated has to go darker
+       again, which is the trade to know about before reaching for it. */
+    masterOn = Color(0xFF3F8358),         // sage, 4.57:1 under white
+    onMasterOn = Color(0xFFFFFFFF),
+    /* The sun handle's colour with the chroma pulled out. See the Dusk note.
+       Arc.dawn VERBATIM was built first and rejected on the phone for a reason
+       a palette cannot show: the sun handle sits 400dp below this switch on the
+       same screen, and the two were then the identical swatch - the off control
+       and the thing that means "wake". Going DEEPER along the ramp separates
+       them but makes the quietest state the loudest colour in the bar. Washing
+       does both at once, and costs nothing to do it: the operation is
+       luma-preserving, so contrast against the card moves 1.63 to 1.67:1 across
+       the whole ramp while only the intensity changes. The off switch is still
+       the dawn end of the app's own arc; it is no longer shouting it. */
+    masterOff = Color(0xFFDBA888),        // Arc.dawn, washed 40% · 1.67:1 on the card
+    onMasterOff = Color(0xFF3D2F26),
+    masterOffBorder = Color(0xFF9E7962),
+    masterOnInk = Color(0xFFFFFFFF),      // 4.98:1 on the sage
+    masterOffInk = Color(0xFF523F33),     // 4.71:1 on the track
     switchThumbOff = Color(0xFF837B72),   //                     3.39:1 on the veil track
     alert = Color(0xFFFFDAD5),         // tone 90 · ink 7.27:1
     onAlert = Color(0xFF6B3831),
@@ -618,20 +706,43 @@ private val GloamShapes = Shapes(
  * also draws the day rings, the section rules and the dial's dots.
  */
 @Composable
+/**
+ * The app's switch colours, and then the master's as a DIFF against them.
+ *
+ * The shape is the point. There is one switch design here and exactly one
+ * instance that overrides part of it, so that is what the code says: a base, and
+ * seven roles replaced. Two independent functions would assert two designs,
+ * which is false and is how the two drift - the same worry that put every switch
+ * through one wrapper in the first place. A `master: Boolean` flag threaded
+ * through nine assignments says it a third way, and makes every line read twice.
+ * Note what `copy` buys beyond tidiness: the three DISABLED roles are inherited
+ * rather than restated, so the master switch cannot quietly acquire its own
+ * disabled look. That matters here - the status pill greys itself against
+ * exactly these tokens, and a divergence would break the pair in the one state
+ * a fresh install lands on.
+ */
 fun gloamSwitchColors(): SwitchColors = SwitchDefaults.colors(
     checkedTrackColor = gloam.switchTrack,
     checkedThumbColor = gloam.switchThumb,
-    // Bare, which is M3's own rule: a dark track bounds itself.
     checkedBorderColor = gloam.switchTrack,
     uncheckedTrackColor = gloam.veil,
     uncheckedThumbColor = gloam.switchThumbOff,
     uncheckedBorderColor = gloam.veilOutline,
-    // the check reads as the track's own green on the pale thumb
-    // the check reads as the track's colour on the pale thumb
     checkedIconColor = gloam.switchTrack,
     disabledUncheckedTrackColor = gloam.veil,
     disabledUncheckedThumbColor = gloam.line,
     disabledUncheckedBorderColor = gloam.line
+)
+
+@Composable
+fun masterSwitchColors(): SwitchColors = gloamSwitchColors().copy(
+    checkedTrackColor = gloam.masterOn,
+    checkedThumbColor = gloam.onMasterOn,
+    checkedBorderColor = gloam.masterOn,
+    checkedIconColor = gloam.masterOn,
+    uncheckedTrackColor = gloam.masterOff,
+    uncheckedThumbColor = gloam.onMasterOff,
+    uncheckedBorderColor = gloam.masterOffBorder
 )
 
 /**
@@ -667,16 +778,37 @@ fun GloamSwitch(
     // no content description at all, which TalkBack announces as a bare
     // "on, switch". Naming it is the fix, and it is the same string the title
     // beside it shows.
-    contentDescription: String? = null
+    contentDescription: String? = null,
+    /* See gloamSwitchColors: the app bar's switch alone. */
+    master: Boolean = false
 ) {
     Switch(
         checked = checked,
         onCheckedChange = onCheckedChange,
         enabled = enabled,
         interactionSource = interactionSource,
+        /* VERIFIED BY LISTENING, 5 Sep 2026 - TalkBack announces this switch
+           with its name AND its state. The note is here because the evidence
+           that says otherwise is easy to find and wrong.
+           In a uiautomator dump the tree looks SPLIT: the toggleable node
+           carries checkable=true and the state with no label, and the
+           contentDescription sits on a separate inner node with
+           checkable=false. That is not a defect - EVERY switch in this app
+           dumps that way, rows included, because the dump is blind to Compose's
+           semantic merging. This one actually carries more label than the rows.
+           `Modifier.semantics(mergeDescendants = true)` was tried and moved the
+           dump by nothing, which is consistent: `toggleable` is itself a merging
+           node and a parent merge treats it as a boundary.
+           Note how the check had to be run, because the obvious route fails
+           silently: `settings put secure enabled_accessibility_services` sets
+           the value and TalkBack does NOT start - the phone still says "TalkBack
+           is off", the same shape of trap as the DND access setting. What starts
+           it is `cmd accessibility call-system-action 13`, the accessibility
+           shortcut. And the speech cannot be read back on this phone at all:
+           MagicOS encrypts third-party logcat, so a person has to listen. */
         modifier = if (contentDescription == null) Modifier
                    else Modifier.semantics { this.contentDescription = contentDescription },
-        colors = gloamSwitchColors(),
+        colors = if (master) masterSwitchColors() else gloamSwitchColors(),
         // M3 offers the thumb an icon and it is worth taking: it states the ON
         // state a second way, so the control does not rest on thumb POSITION
         // alone - which is the one cue that survives neither a glance nor

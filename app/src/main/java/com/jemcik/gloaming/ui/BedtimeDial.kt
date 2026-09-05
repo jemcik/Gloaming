@@ -169,8 +169,15 @@ fun BedtimeDial(
     val curScrolling by rememberUpdatedState(scrollInProgress)
 
     // arc alpha cross-fades with state; spec: spring(.9, 380)
+    //
+    // 0.30 off, down from 0.55. The old value left the window nearly as present
+    // as an armed one, which is half of why the master switch was hard to find:
+    // the loudest thing on the screen said nothing about the state, so nothing
+    // pointed at the control that sets it. Looked at on the phone at 0.40, 0.30
+    // and 0.20 - 0.20 is where the arc stops separating from the track and the
+    // window you set becomes unreadable, so this stops one step short of it.
     val arcAlpha by animateFloatAsState(
-        targetValue = if (enabled) 1f else 0.55f,
+        targetValue = if (enabled) 1f else 0.30f,
         animationSpec = spring(dampingRatio = 0.9f, stiffness = 380f),
         label = "arcAlpha"
     )

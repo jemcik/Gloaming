@@ -20,6 +20,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
@@ -41,6 +42,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.layout
@@ -169,7 +171,33 @@ fun Home(
             containerColor = Color.Transparent,
             modifier = Modifier.nestedScroll(bar.nestedScrollConnection),
             topBar = {
-                HomeBar(s, runningNow, ready, bar, onOpenSettings)
+                Column {
+                    HomeBar(s, runningNow, ready, bar, onOpenSettings)
+                    // The bar and every card on the page are both `raise`, so
+                    // the control strip did not read as its own zone - it read
+                    // as the first card. The edge that separates them is the
+                    // dial's own sweep, night to dawn, which is also the rule
+                    // under the tagline on the site and in the feature graphic.
+                    // Same four stops, same fractions.
+                    //
+                    // `stopsOn`, not `stops`, and that is the whole adaptation
+                    // the two themes need: `night` measures 8.4:1 against
+                    // Dawn's paper but 1.8:1 against Dusk's surface, so on a
+                    // dark ground the low end has nothing to sit on and the
+                    // rule appears to BEGIN halfway along. The dark ramp starts
+                    // from `dusk` instead. Already measured for the arc; this
+                    // is the same stroke on the same ground.
+                    Box(
+                        Modifier
+                            .fillMaxWidth()
+                            .height(3.dp)
+                            .background(
+                                Brush.horizontalGradient(
+                                    colorStops = Arc.stopsOn(g.dark).toTypedArray()
+                                )
+                            )
+                    )
+                }
             }
         ) { inner ->
             Column(
@@ -1423,12 +1451,66 @@ private fun HomeBar(
                         )
                     }
                 }
-                Text(
-                    status,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = g.onSurfaceLow,
-                    maxLines = 1, overflow = TextOverflow.Ellipsis
-                )
+                // The status line as a pill wearing THE SWITCH'S OWN THREE
+                // COLOURS - the same fill, the same rim, inverted ink - so the
+                // sentence and the control that governs it are visibly one
+                // thing. The bar's two halves were previously joined by nothing
+                // but proximity: the title column said what the state is, the
+                // switch 200dp away said the same thing in a colour, and
+                // neither pointed at the other.
+                //
+                // The rim follows the switch's asymmetry rather than being
+                // drawn unconditionally: `masterOffBorder` while off, and while
+                // ON the rim IS the fill, so it vanishes. That is not an
+                // oversight - it is M3's rule, which the track already keeps: a
+                // saturated fill bounds itself and only the quiet state needs
+                // an edge. Hard-coding a visible rim on both would break the
+                // pill away from the control it is quoting.
+                Box(
+                    Modifier
+                        .padding(top = 3.dp)
+                        // THREE states, not two, and the third is the one a
+                        // fresh install lands on. Without a permission the
+                        // switch falls back to M3's disabled greys, and a fully
+                        // coloured pill beside a grey ghost of a switch is the
+                        // pill's whole premise broken in the first state anyone
+                        // sees. It greys with it. The tokens are the switch's
+                        // own disabled pair - `veil` and `line` - so the two
+                        // cannot drift.
+                        .background(
+                            when {
+                                !ready -> g.veil
+                                s.enabled -> g.masterOn
+                                else -> g.masterOff
+                            },
+                            RoundedCornerShape(50)
+                        )
+                        .border(
+                            1.dp,
+                            when {
+                                !ready -> g.line
+                                s.enabled -> g.masterOn
+                                else -> g.masterOffBorder
+                            },
+                            RoundedCornerShape(50)
+                        )
+                        .padding(horizontal = 10.dp, vertical = 1.dp)
+                ) {
+                    Text(
+                        status,
+                        style = MaterialTheme.typography.bodyLarge,
+                        // `onSurfaceLow` on the disabled ground rather than a
+                        // master ink: 5.98:1 in Dusk and 6.43:1 in Dawn, and it
+                        // is the token every other disabled caption already
+                        // uses.
+                        color = when {
+                            !ready -> g.onSurfaceLow
+                            s.enabled -> g.masterOnInk
+                            else -> g.masterOffInk
+                        },
+                        maxLines = 1, overflow = TextOverflow.Ellipsis
+                    )
+                }
             }
         },
         actions = {
@@ -1446,13 +1528,40 @@ private fun HomeBar(
                 // nothing, which is what a tick should never mean.
                 icon = if (runningNow) R.drawable.ic_check
                        else R.drawable.ic_hourglass,
-                contentDescription = stringResource(R.string.bedtime_mode)
+                contentDescription = stringResource(R.string.bedtime_mode),
+                // The one switch in the app with its own colours. Drawing it
+                // LARGER was built and rejected on sight - a scaled M3 switch
+                // reads as crude, and the geometry is the spec's.
+                master = true
             )
             IconButton(onClick = { haptics.open(); onOpenSettings() }) {
                 Icon(
                     painterResource(R.drawable.ic_settings),
                     contentDescription = stringResource(R.string.settings_title),
-                    tint = g.onSurfaceLow
+                    /* SIZE carries this, not ink. The gear is 28dp against
+                       M3's default 24; the BUTTON is untouched, so the touch
+                       target stays 48dp.
+                       Lifting the tint to `onSurface` was built twice and
+                       rejected twice, for two different reasons, and the second
+                       is the one worth keeping. First: with bedtime off the
+                       switch was still a hollow outline with a 16dp dot, so a
+                       near-white gear beside it became the heavier mark and
+                       inverted the hierarchy being fixed. That objection died
+                       when the switch gained a filled coloured track in both
+                       states - so it went back in, and was then rejected on the
+                       panel for a reason no palette can see.
+                       SAME COLOUR IS NOT SAME WEIGHT. Read off the device: at
+                       `onSurface` the gear's glyph and the bar's title sampled
+                       IDENTICAL - #1D1B18 in Dawn, #EAEBED in Dusk - and the
+                       gear still read as much blacker, because a title is a
+                       stroked letterform with paper between the strokes and a
+                       gear is a solid disc with teeth at near-total ink
+                       coverage. Matching a text colour to an icon is matching
+                       the wrong quantity.
+                       (`onSurfaceMid` is not a middle rung either way: it is
+                       the SAME value as onSurfaceLow in Dawn, #514A43.) */
+                    tint = g.onSurfaceLow,
+                    modifier = Modifier.size(28.dp)
                 )
             }
             Spacer(Modifier.width(4.dp))

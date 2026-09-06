@@ -338,6 +338,22 @@ class Prefs(ctx: Context) {
         set(v) = sp.edit { putString("ambientSaved", v) }
 
     /**
+     * The switch behind a screen effect - what the user asked for, whichever
+     * mechanism carries it: the rule's device effect on most phones, a routine
+     * on a Galaxy. Written ONCE, here, so the two never disagree about which
+     * key an effect lives under.
+     */
+    fun fxWants(effect: RoutineEffect): Boolean = when (effect) {
+        RoutineEffect.GRAYSCALE -> fxGrayscale
+        RoutineEffect.DARK -> fxDarkTheme
+    }
+
+    fun setFxWants(effect: RoutineEffect, on: Boolean) = when (effect) {
+        RoutineEffect.GRAYSCALE -> fxGrayscale = on
+        RoutineEffect.DARK -> fxDarkTheme = on
+    }
+
+    /**
      * The routine Samsung's app holds for one screen effect, by Modes and
      * Routines' own uuid - 0 is none. Only ever non-zero where
      * [Routines.available] answered yes.

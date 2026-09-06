@@ -3,6 +3,8 @@ package com.jemcik.gloaming.ui
 import android.content.ComponentName
 import android.content.Context
 import com.jemcik.gloaming.core.Doors
+import com.jemcik.gloaming.core.FakeRoutines
+import com.jemcik.gloaming.core.RoutineEffect
 import org.robolectric.Shadows.shadowOf
 
 /**
@@ -30,7 +32,7 @@ internal fun Context.withLaunchManager() {
  * routine provider present with the permission held. Returns the fake so a test
  * can put routines in it.
  */
-internal fun Context.asGalaxyWithRoutines(): com.jemcik.gloaming.core.FakeRoutines {
+internal fun Context.asGalaxyWithRoutines(): FakeRoutines {
     org.robolectric.util.ReflectionHelpers.setStaticField(android.os.Build::class.java, "MANUFACTURER", "samsung")
-    return com.jemcik.gloaming.core.FakeRoutines.install(this)
+    return FakeRoutines.install(this)
 }

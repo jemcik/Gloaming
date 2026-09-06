@@ -34,6 +34,8 @@ import org.robolectric.shadows.ShadowAlarmManager
 import java.time.LocalDate
 import com.jemcik.gloaming.R
 import com.jemcik.gloaming.core.Prefs
+import com.jemcik.gloaming.core.FakeRoutines
+import com.jemcik.gloaming.core.RoutineEffect
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -258,12 +260,12 @@ class RowFitTest {
         val prefs = Prefs(ctx)
         prefs.enabled = true
         // The third face: an offer left open, so the row says "not saved".
-        if (pending) prefs.routineOffered = com.jemcik.gloaming.core.RoutineEffect.GRAYSCALE.key
+        if (pending) prefs.routineOffered = RoutineEffect.GRAYSCALE.key
         if (adopted) {
-            fake.rows += com.jemcik.gloaming.core.FakeRoutines.Row(10, "g")
-            fake.rows += com.jemcik.gloaming.core.FakeRoutines.Row(11, "d")
-            prefs.setRoutineUuid(com.jemcik.gloaming.core.RoutineEffect.GRAYSCALE, 10)
-            prefs.setRoutineUuid(com.jemcik.gloaming.core.RoutineEffect.DARK, 11)
+            fake.rows += FakeRoutines.Row(10, "g")
+            fake.rows += FakeRoutines.Row(11, "d")
+            prefs.setRoutineUuid(RoutineEffect.GRAYSCALE, 10)
+            prefs.setRoutineUuid(RoutineEffect.DARK, 11)
         }
         val titles = listOf(R.string.fx_grayscale, R.string.fx_dark).map { ctx.getString(it) }
 

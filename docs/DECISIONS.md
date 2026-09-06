@@ -931,6 +931,22 @@ its reason: it was the stand-in for them, and it now offered a second bedtime
 with its own schedule and DND. Removed, on the owner's call; its DECISIONS
 entry above is marked superseded rather than deleted.
 
+A quality pass over the branch before the PR, on the owner's usual ask. What
+changed: resume reads Samsung's app ONCE (`Routines.refresh`, which forgets
+what was deleted and adopts what was saved off one cursor, and does not touch
+the provider at all where nothing is adopted and nothing offered - every
+phone but a set-up Galaxy); the effect-to-switch mapping is written once, in
+`Prefs.fxWants`/`setFxWants`, where three `when` blocks had repeated it; Home
+holds the adopted effects as one set rather than two parallel fields; the
+routine's name and confirmation strings hang off the effect beside the state
+that uses them; the offer catches the FileProvider lookup with the write; and
+the tests import the fake instead of naming it in full. Four tests added for
+the failure paths - a provider that throws, a cursor whose columns moved, the
+single read, the one key behind each switch. 248 cases, 78% of instructions
+and 63% of branches (from 76/59); `Routines.kt` 85/80, its uncovered lines
+being the app-opening fallback and the "no answer" branch. Re-run live on the
+S23 afterwards: both routines start with the window and end with it.
+
 **A parked alarm is still DELIVERED, so arrival cannot be the test.** The first
 version of the probe scored a blocked phone as healthy, and only the device
 caught it. With `RUN_ANY_IN_BACKGROUND` at `ignore` the probe sat in *"Pending

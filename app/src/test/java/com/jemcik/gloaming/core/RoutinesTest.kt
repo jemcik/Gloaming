@@ -217,4 +217,58 @@ class RoutinesTest {
         Routines.sync(ctx, p, windowActive = true)
         assertTrue("the rule does this job, not the routines: " + f.calls, f.calls.isEmpty())
     }
+
+    @Test
+    fun `resume reads Samsung's app once, and not at all where there is nothing to ask`() {
+        val f = FakeRoutines.install(ctx)
+        val p = Prefs(ctx)
+        // A Galaxy before any set-up, and every other phone: no read.
+        assertNull(Routines.refresh(ctx, p))
+        assertEquals(0, f.queries)
+        // An offer open and a routine adopted: forget and adopt off ONE read.
+        f.rows += FakeRoutines.Row(42, "Gloaming: grayscale")
+        p.setRoutineUuid(RoutineEffect.DARK, 11)
+        p.routineOffered = RoutineEffect.GRAYSCALE.key
+        p.routineOfferedName = "Gloaming: grayscale"
+        assertEquals(RoutineEffect.GRAYSCALE, Routines.refresh(ctx, p))
+        assertEquals(1, f.queries)
+        assertEquals("the deleted one is forgotten off the same read", 0L, p.routineUuid(RoutineEffect.DARK))
+        assertEquals(42L, p.routineUuid(RoutineEffect.GRAYSCALE))
+    }
+
+    @Test
+    fun `a provider that throws is a refusal, not a crash`() {
+        val f = phone()
+        f.throwOnCall = true
+        val p = prefs(gray = true, dark = false)
+        Routines.sync(ctx, p, windowActive = true)
+        assertEquals(listOf("start 10"), f.calls)
+        assertTrue("nothing recorded as started", p.routinesStarted.isEmpty())
+    }
+
+    @Test
+    fun `a provider whose columns moved lists nothing, and nothing is adopted off it`() {
+        val f = FakeRoutines.install(ctx)
+        f.bareColumns = true
+        f.rows += FakeRoutines.Row(42, "Gloaming: grayscale")
+        assertTrue(Routines.list(ctx).isEmpty())
+        val p = Prefs(ctx)
+        p.routineOffered = RoutineEffect.GRAYSCALE.key
+        p.routineOfferedName = "Gloaming: grayscale"
+        assertNull(Routines.refresh(ctx, p))
+    }
+
+    @Test
+    fun `the switch behind each effect is one key, read and written through the same door`() {
+        val p = Prefs(ctx)
+        for (e in RoutineEffect.entries) {
+            p.setFxWants(e, true)
+            assertTrue(p.fxWants(e))
+            p.setFxWants(e, false)
+            assertFalse(p.fxWants(e))
+        }
+        p.setFxWants(RoutineEffect.GRAYSCALE, true)
+        assertTrue("it is the grayscale switch the rule reads too", p.fxGrayscale)
+        assertFalse(p.fxDarkTheme)
+    }
 }

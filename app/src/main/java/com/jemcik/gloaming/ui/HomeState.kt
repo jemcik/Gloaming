@@ -5,7 +5,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -83,12 +82,8 @@ class HomeState(
      * one per effect, 0 while none. Re-read on resume, which is when the user
      * comes back from Samsung's editor with a new one saved.
      */
-    var routineGray by mutableLongStateOf(prefs.routineUuid(RoutineEffect.GRAYSCALE))
-    var routineDark by mutableLongStateOf(prefs.routineUuid(RoutineEffect.DARK))
-    fun routineOf(e: RoutineEffect): Long = when (e) {
-        RoutineEffect.GRAYSCALE -> routineGray
-        RoutineEffect.DARK -> routineDark
-    }
+    var adopted by mutableStateOf(Routines.adopted(prefs).toSet())
+    fun hasRoutine(e: RoutineEffect): Boolean = e in adopted
 
     /**
      * The effect we last handed Samsung's app a routine for and have not yet
@@ -237,7 +232,7 @@ class HomeState(
      * chosen here: the switch appears on return, in [onResume], on evidence.
      */
     fun offerRoutine(e: RoutineEffect): Boolean {
-        val ok = Routines.offer(ctx, prefs, e, ctx.getString(routineName(e)))
+        val ok = Routines.offer(ctx, prefs, e, ctx.getString(e.nameRes))
         if (ok) pendingOffer = e
         return ok
     }
@@ -260,15 +255,6 @@ class HomeState(
         offerRoutine(e)
     }
 
-    fun routineDone(e: RoutineEffect): Int = when (e) {
-        RoutineEffect.GRAYSCALE -> R.string.routine_done_gray
-        RoutineEffect.DARK -> R.string.routine_done_dark
-    }
-
-    private fun routineName(e: RoutineEffect): Int = when (e) {
-        RoutineEffect.GRAYSCALE -> R.string.routine_name_gray
-        RoutineEffect.DARK -> R.string.routine_name_dark
-    }
 
     fun commit() {
         writePrefs()
@@ -355,10 +341,8 @@ class HomeState(
         // Back from Samsung's editor, perhaps: if the routine we offered is
         // there now, its switch is on - and it is started at once if the
         // window is open, through the same commit every switch takes.
-        Routines.prune(ctx, prefs)
-        val adoptedNow = Routines.adopt(ctx, prefs)
-        routineGray = prefs.routineUuid(RoutineEffect.GRAYSCALE)
-        routineDark = prefs.routineUuid(RoutineEffect.DARK)
+        val adoptedNow = Routines.refresh(ctx, prefs)
+        adopted = Routines.adopted(prefs).toSet()
         pendingOffer = RoutineEffect.entries.firstOrNull { it.key == prefs.routineOffered }
         if (adoptedNow != null) {
             fxGray = prefs.fxGrayscale; fxDark = prefs.fxDarkTheme
@@ -439,3 +423,16 @@ fun rememberHomeState(): HomeState {
     val prefs = remember { Prefs(ctx) }
     return remember { HomeState(ctx, prefs, haptics) }
 }
+
+/** The strings an effect's routine carries, and the one that confirms it - beside the state that uses them. */
+internal val RoutineEffect.nameRes: Int
+    get() = when (this) {
+        RoutineEffect.GRAYSCALE -> R.string.routine_name_gray
+        RoutineEffect.DARK -> R.string.routine_name_dark
+    }
+
+internal val RoutineEffect.doneRes: Int
+    get() = when (this) {
+        RoutineEffect.GRAYSCALE -> R.string.routine_done_gray
+        RoutineEffect.DARK -> R.string.routine_done_dark
+    }

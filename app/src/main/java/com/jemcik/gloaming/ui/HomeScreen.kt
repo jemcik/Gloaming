@@ -174,7 +174,7 @@ fun Home(
         // change it may not notice.
         val snack = remember { SnackbarHostState() }
         val adopted = s.justAdopted
-        val adoptedText = adopted?.let { stringResource(s.routineDone(it)) }
+        val adoptedText = adopted?.let { stringResource(it.doneRes) }
         // Cleared AFTER the snackbar has been shown, not before: this effect is
         // keyed on the value, and clearing it first restarts the effect with
         // null - which cancels the coroutine that was about to show it. That
@@ -1237,6 +1237,9 @@ private fun ScreenEffectsSection(s: HomeState, runningNow: Boolean) {
     // resolves or it does not - and where it does, the row is the one working
     // route to a grey screen that needs no computer. See Routines.
     val routines = remember(s.tick) { Routines.available(ctx) }
+    // Grayscale and the dark theme go through routines exactly where the rule's
+    // effects are thrown away AND Samsung's door is open - never both ways.
+    val viaRoutines = !zenEffects && routines
     if (!zenEffects && !ambientRow && !routines) return
 
     // A card of rows, the same shape as "What can wake you" above it,
@@ -1269,7 +1272,7 @@ private fun ScreenEffectsSection(s: HomeState, runningNow: Boolean) {
             // On a Galaxy, before either routine exists: what these two rows
             // are about to ask, said once, where the rows are. Gone the moment
             // both are set up, because then there is nothing left to ask.
-            if (!zenEffects && routines && (s.routineGray == 0L || s.routineDark == 0L)) add {
+            if (viaRoutines && s.adopted.size < RoutineEffect.entries.size) add {
                 NoticeStrip(stringResource(R.string.routine_note))
             }
             if (zenEffects) add {
@@ -1283,7 +1286,7 @@ private fun ScreenEffectsSection(s: HomeState, runningNow: Boolean) {
             // of the rule - or, until that routine has been saved once in
             // Samsung's app, the row that offers it. Dimming has no routine
             // action and is not drawn there at all.
-            if (!zenEffects && routines) add {
+            if (viaRoutines) add {
                 RoutineEffectRow(
                     s, RoutineEffect.GRAYSCALE, Fx.Grayscale,
                     stringResource(R.string.fx_grayscale), s.fxGray
@@ -1305,7 +1308,7 @@ private fun ScreenEffectsSection(s: HomeState, runningNow: Boolean) {
                     stringResource(R.string.fx_dark_sub), s.fxDark
                 ) { s.fxDark = !s.fxDark; haptics.toggle(s.fxDark); s.commit() }
             }
-            if (!zenEffects && routines) add {
+            if (viaRoutines) add {
                 RoutineEffectRow(
                     s, RoutineEffect.DARK, Fx.Dark,
                     stringResource(R.string.fx_dark), s.fxDark
@@ -1356,7 +1359,7 @@ private fun RoutineEffectRow(
     onToggle: () -> Unit
 ) {
     val haptics = s.haptics
-    if (s.routineOf(effect) != 0L) {
+    if (s.hasRoutine(effect)) {
         EffectRow(icon, title, stringResource(R.string.fx_via_routine), checked, onToggle)
     } else {
         LinkRow(
@@ -1383,12 +1386,7 @@ private fun RoutineExplainDialog(s: HomeState) {
     val g = gloam
     val haptics = s.haptics
     val effect = s.explaining ?: return
-    val name = stringResource(
-        when (effect) {
-            RoutineEffect.GRAYSCALE -> R.string.routine_name_gray
-            RoutineEffect.DARK -> R.string.routine_name_dark
-        }
-    )
+    val name = stringResource(effect.nameRes)
     AlertDialog(
         onDismissRequest = { s.explaining = null },
         containerColor = g.raise,

@@ -30,6 +30,8 @@ import java.time.LocalTime
 import androidx.compose.foundation.rememberScrollState
 import com.jemcik.gloaming.R
 import com.jemcik.gloaming.core.Prefs
+import com.jemcik.gloaming.core.FakeRoutines
+import com.jemcik.gloaming.core.RoutineEffect
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -802,9 +804,9 @@ class ScreensTest {
         prefs.days = DayOfWeek.entries.toSet()
         // As Routines.offer leaves things: the file was handed over under this
         // name, and Samsung's editor saved it while we were away.
-        prefs.routineOffered = com.jemcik.gloaming.core.RoutineEffect.GRAYSCALE.key
+        prefs.routineOffered = RoutineEffect.GRAYSCALE.key
         prefs.routineOfferedName = "Gloaming: grayscale"
-        fake.rows += com.jemcik.gloaming.core.FakeRoutines.Row(42, "Gloaming: grayscale")
+        fake.rows += FakeRoutines.Row(42, "Gloaming: grayscale")
 
         compose.setContent {
             GloamingTheme(dark = false) {
@@ -813,7 +815,7 @@ class ScreensTest {
         }
         val gray = ctx.getString(R.string.fx_grayscale)
         compose.onNode(hasText(gray, substring = true) and isToggleable()).performScrollTo().assertIsOn()
-        assertEquals(42L, prefs.routineUuid(com.jemcik.gloaming.core.RoutineEffect.GRAYSCALE))
+        assertEquals(42L, prefs.routineUuid(RoutineEffect.GRAYSCALE))
         assertEquals(listOf("start 42"), fake.calls)
         // And it is said out loud, once: the confirmation the eye needs after a
         // trip through another app.
@@ -862,8 +864,8 @@ class ScreensTest {
         val ctx = ctx()
         val fake = ctx.asGalaxyWithRoutines()
         val prefs = Prefs(ctx)
-        fake.rows += com.jemcik.gloaming.core.FakeRoutines.Row(10, "g")
-        prefs.setRoutineUuid(com.jemcik.gloaming.core.RoutineEffect.GRAYSCALE, 10)
+        fake.rows += FakeRoutines.Row(10, "g")
+        prefs.setRoutineUuid(RoutineEffect.GRAYSCALE, 10)
         compose.setContent {
             GloamingTheme(dark = false) {
                 Home(rememberScrollState(), onOpenSettings = {}, onOpenInterruptions = {})

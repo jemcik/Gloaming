@@ -33,22 +33,36 @@ internal class FakeRoutines : ContentProvider() {
     /** When set, every call is refused with this as its `error`. */
     var refuse: String? = null
 
+    /** When set, every call THROWS - a provider that is present and broken. */
+    var throwOnCall: Boolean = false
+
+    /** When set, the cursor carries none of our columns - a provider whose contract moved. */
+    var bareColumns: Boolean = false
+
+    /** How many times the list was read. */
+    var queries: Int = 0
+
     override fun onCreate(): Boolean = true
 
     override fun query(
         uri: Uri, projection: Array<String>?, selection: String?,
         selectionArgs: Array<String>?, sortOrder: String?
-    ): Cursor = MatrixCursor(
-        arrayOf("uuid", "name", "icon_resource_id", "icon_color", "is_running", "is_enabled", "is_oneoff")
-    ).apply {
+    ): Cursor {
+        queries++
+        if (bareColumns) return MatrixCursor(arrayOf("something_else"))
+        return MatrixCursor(
+            arrayOf("uuid", "name", "icon_resource_id", "icon_color", "is_running", "is_enabled", "is_oneoff")
+        ).apply {
         rows.forEach {
             addRow(arrayOf<Any?>(it.uuid, it.name, 0, "", if (it.uuid in running) 1 else 0, if (it.enabled) 1 else 0, 0))
+        }
         }
     }
 
     override fun call(method: String, arg: String?, extras: Bundle?): Bundle {
         val id = extras?.getLong("uuid", -1L) ?: -1L
         calls += method.substringBefore('_') + " " + id
+        if (throwOnCall) throw IllegalStateException("provider broken")
         refuse?.let { return bundleOf("success" to false, "error" to it) }
         when (method) {
             "start_manual_routine" -> running += id

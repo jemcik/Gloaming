@@ -123,14 +123,16 @@ object Routines {
      * shown: going to look is not an answer.
      */
     fun offer(ctx: Context, p: Prefs, effect: RoutineEffect, name: String): Boolean {
-        val file = runCatching {
+        // The write and the provider lookup fail the same way for the user -
+        // nothing opens - so they are caught together, and named in the journal.
+        val uri = runCatching {
             val dir = File(ctx.cacheDir, "routine").apply { mkdirs() }
-            File(dir, "gloaming-${effect.key}.rtn").apply { writeBytes(RoutineFile.bytes(name, effect)) }
+            val file = File(dir, "gloaming-${effect.key}.rtn").apply { writeBytes(RoutineFile.bytes(name, effect)) }
+            FileProvider.getUriForFile(ctx, FILE_AUTHORITY, file)
         }.getOrElse {
-            Journal.write(ctx, "routine file not written: $it")
+            Journal.write(ctx, "routine file not offered: $it")
             return false
         }
-        val uri = FileProvider.getUriForFile(ctx, FILE_AUTHORITY, file)
         // In OUR task when an Activity is asking, deliberately: Samsung's editor
         // then sits on top of Home, and Save drops the user straight back onto
         // the row that sent them - which is where the adoption shows. Started
@@ -158,15 +160,12 @@ object Routines {
      * for the night is a routine wanted for the night. Called on resume, which
      * is when the user comes back from Samsung's editor.
      */
-    fun adopt(ctx: Context, p: Prefs): RoutineEffect? {
+    fun adopt(ctx: Context, p: Prefs, listed: List<Routine> = list(ctx)): RoutineEffect? {
         val effect = RoutineEffect.entries.firstOrNull { it.key == p.routineOffered } ?: return null
         val name = p.routineOfferedName ?: return null
-        val found = list(ctx).firstOrNull { it.name == name && it.enabled } ?: return null
+        val found = listed.firstOrNull { it.name == name && it.enabled } ?: return null
         p.setRoutineUuid(effect, found.uuid)
-        when (effect) {
-            RoutineEffect.GRAYSCALE -> p.fxGrayscale = true
-            RoutineEffect.DARK -> p.fxDarkTheme = true
-        }
+        p.setFxWants(effect, true)
         p.routineOffered = null
         p.routineOfferedName = null
         Journal.write(ctx, "routine ${effect.key} adopted: " + found.uuid)
@@ -179,24 +178,33 @@ object Routines {
      * Read from the provider, never assumed; a routine merely switched off
      * there is kept, and reported as such by Diagnostics.
      */
-    fun prune(ctx: Context, p: Prefs): List<RoutineEffect> {
+    fun prune(ctx: Context, p: Prefs, listed: List<Routine> = list(ctx)): List<RoutineEffect> {
         val have = adopted(p)
         if (have.isEmpty()) return emptyList()
-        val listed = list(ctx).map { it.uuid }.toSet()
-        return have.filter { p.routineUuid(it) !in listed }.onEach {
+        val present = listed.map { it.uuid }.toSet()
+        return have.filter { p.routineUuid(it) !in present }.onEach {
             Journal.write(ctx, "routine ${it.key} gone from Samsung's app: " + p.routineUuid(it))
             p.setRoutineUuid(it, 0L)
         }
     }
 
+    /**
+     * What resume does, in ONE read of Samsung's app: forget what was deleted
+     * there, adopt what was just saved there. Returns the effect adopted now,
+     * if any. Nothing adopted and nothing offered means nothing to ask, and
+     * the provider is not touched at all - which is every phone but a Galaxy,
+     * and a Galaxy before its first set-up.
+     */
+    fun refresh(ctx: Context, p: Prefs): RoutineEffect? {
+        if (adopted(p).isEmpty() && p.routineOffered == null) return null
+        val listed = list(ctx)
+        prune(ctx, p, listed)
+        return adopt(ctx, p, listed)
+    }
+
     /** The routines the window wants running: adopted, and switched on. */
     private fun wanted(p: Prefs): Set<Long> = RoutineEffect.entries
-        .filter {
-            when (it) {
-                RoutineEffect.GRAYSCALE -> p.fxGrayscale
-                RoutineEffect.DARK -> p.fxDarkTheme
-            }
-        }
+        .filter { p.fxWants(it) }
         .map { p.routineUuid(it) }
         .filter { it != 0L }
         .toSet()

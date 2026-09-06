@@ -152,21 +152,24 @@ object Diagnostics {
         row("active day", if (p.activeDay == Prefs.NO_DAY) "-"
             else runCatching { LocalDate.ofEpochDay(p.activeDay).toString() }
                 .getOrDefault(p.activeDay.toString()))
-        // Samsung's routine, as ITS app sees it now - looked up, never recalled,
-        // for the same reason the rule is: what we last wrote is a belief.
-        row("routine", ask {
-            val id = p.routineUuid
-            if (id == 0L) "none chosen" else {
-                val r = Routines.chosen(ctx, p)
+        // Samsung's routines, as ITS app sees them now - looked up, never
+        // recalled, for the same reason the rule is: what we last wrote is a
+        // belief. One line per effect that has a routine here.
+        for (e in RoutineEffect.entries) {
+            val id = p.routineUuid(e)
+            if (id == 0L) continue
+            row("routine " + e.key, ask {
+                val r = Routines.list(ctx).firstOrNull { it.uuid == id }
                 id.toString() + " " + when {
                     r == null -> "NOT FOUND in Modes and Routines"
                     !r.enabled -> "'" + r.name + "' SWITCHED OFF there"
                     r.running -> "'" + r.name + "' running"
                     else -> "'" + r.name + "' idle"
                 }
-            }
-        })
-        row("routine started", if (p.routineStarted == 0L) "-" else p.routineStarted.toString())
+            })
+        }
+        row("routines started", p.routinesStarted.joinToString(" ").ifEmpty { "-" })
+        row("routine offered", p.routineOffered?.let { it + " as '" + p.routineOfferedName + "'" } ?: "-")
         row("wants", listOfNotNull(
             "dnd".takeIf { p.fxDnd },
             "grayscale".takeIf { p.fxGrayscale },

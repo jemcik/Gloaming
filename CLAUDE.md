@@ -67,11 +67,24 @@ indefinitely is background restriction — see `core/BackgroundLimit.kt`.
                                  the door it leaves open: a content provider
                                  behind a NORMAL permission that lists the
                                  user's manual routines and starts or ends one
-                                 by uuid. The chosen routine runs exactly while
-                                 the window does, and WHAT it does stays the
-                                 user's choice inside Samsung's app - which is
-                                 why no copy names an effect. A capability
-                                 probe, like Doors, never a manufacturer test
+                                 by uuid, and an importer that takes a routine
+                                 FILE we write. On a Galaxy the grayscale and
+                                 dark-theme switches are each backed by one
+                                 generated routine - Samsung's own built-in
+                                 actions - saved once (the Save in Samsung's
+                                 editor is the floor: inserting directly is
+                                 signature-level), then run exactly while the
+                                 window does. Adoption is on EVIDENCE - the
+                                 provider lists the routine by the name the
+                                 file carried - never on the screen having
+                                 been shown. A capability probe, like Doors
+    core/RoutineFile.kt          the routine file Samsung's importer takes,
+                                 byte for byte as its own writer lays it out:
+                                 512-byte header, plain JSON body, footer.
+                                 One built-in action per effect, with the
+                                 parameters its handler reads; the dark
+                                 theme's is UiModeManager's NUMBER as a
+                                 string, and "true" there draws the row OFF
     core/BackgroundProbe.kt      one throwaway alarm that asks whether this
                                  phone delivers alarms at all. Silent unless
                                  the answer is no
@@ -306,10 +319,15 @@ is in DECISIONS.md.
   external provider (`Routines.kt`) sits behind `READ_ROUTINE_INFO`, which is
   `protectionLevel normal` - but the shell does not hold it, so `content query`
   from adb is refused where the app is answered. Test through the app and read
-  Samsung's side in logcat (`Routine@Core`), which is readable there. A MODE
-  cannot be switched on directly (`READ/WRITE_MODE_INFO` are signature); only a
-  manual routine that turns the mode on. Measured 6 Sep 2026; DECISIONS has the
-  contract.
+  Samsung's side in logcat (`Routine@Core`), which is readable there. The
+  importer DOES take a file from the shell over `file:///sdcard/…`, which is how
+  a generated routine is tried before it is built in. Grayscale and the dark
+  theme are BUILT-IN routine actions (`gray_scale`, `dark_mode_v3`), absent from
+  the editor's picker but present in the catalogue and executing; a mode cannot
+  be switched on directly (`READ/WRITE_MODE_INFO` are signature). The one step
+  nobody can take for the user is Save in Samsung's editor - every insertion
+  path is signature-level, the Bixby capsule provider included. Measured 6 Sep
+  2026; DECISIONS has the contract and the file format.
 - `dumpsys notification` prints a `Zen Log:` history as well as live config, so
   `sed '/Zen Log:/q'` before grepping or long-deleted rules read as present.
   It also prints the live config TWICE, so count rules by id, not occurrence.
@@ -531,7 +549,7 @@ compileSdk 37, targetSdk 36, minSdk 35.
 
 ## Tests
 
-`app/src/test/`, 230 cases, no device. They are written as the QUESTION the code
+`app/src/test/`, 238 cases, no device. They are written as the QUESTION the code
 answers rather than as coverage of a method, because none of the bugs were ever
 in a method — they were in an assumption.
 
@@ -578,13 +596,21 @@ in a method — they were in an assumption.
     BackgroundProbeTest   the delivery probe: lateness rather than arrival is
                           the verdict, and the latch that stops its own retest
                           erasing it
-    RoutinesTest          Samsung's routine, run for the night: it runs exactly
-                          while the window does, a daytime reconcile never ends
-                          a run the user began by hand, a refused end is owed
-                          until it succeeds, and a pick moved mid-window ends
-                          the old one before starting the new. Against
-                          FakeRoutines, which carries the provider's contract
-                          as read from the decompiled original
+    RoutinesTest          Samsung's routines, one per screen effect: they run
+                          exactly while the window does and only where the
+                          switch is on, a daytime reconcile never ends a run
+                          the user began by hand, a refused end is owed until
+                          it succeeds, a routine deleted in Samsung's app is
+                          forgotten while one switched off there is kept, and
+                          an offered routine is adopted on evidence, never on
+                          the offer. Against FakeRoutines, which carries the
+                          provider's contract as read from the decompiled
+                          original
+    RoutineFileTest       the routine file Samsung's importer is handed, read
+                          back the way its reader reads it: the 512-byte
+                          header's sizes are true, the padding is NUL, each
+                          effect's action carries the parameters its handler
+                          reads
     ResetTest             starting over: no rule survives - not even one whose
                           id was already lost - the store comes back EMPTY so
                           the next launch takes the fresh-install branch and not

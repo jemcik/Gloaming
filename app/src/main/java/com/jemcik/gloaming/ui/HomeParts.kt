@@ -214,7 +214,7 @@ internal fun WindowTime(r: Clock.Reading, color: Color) {
  * gone with the hand-drawn crescent, which had to punch itself with the chip's
  * own fill to stay a crescent.
  */
-internal enum class Fx { Grayscale, Dim, Dark, Ambient, Routine }
+internal enum class Fx { Grayscale, Dim, Dark, Ambient }
 
 /**
  * One screen effect: what it is called, what it does, and its switch.
@@ -256,7 +256,6 @@ internal fun FxIcon(icon: Fx) {
                 Fx.Dim -> R.drawable.ic_dim
                 Fx.Dark -> R.drawable.ic_dark
                 Fx.Ambient -> R.drawable.ic_ambient
-                Fx.Routine -> R.drawable.ic_routine
             }
         ),
         tint = when (icon) {
@@ -264,7 +263,6 @@ internal fun FxIcon(icon: Fx) {
             Fx.Dim -> IconTint.Dim
             Fx.Dark -> IconTint.Dark
             Fx.Ambient -> IconTint.Ambient
-            Fx.Routine -> IconTint.Routine
         }
     )
 }

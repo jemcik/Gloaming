@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The one file this app ever shares: the routine it offers Samsung's Modes
+     and Routines. Cache, so it costs nothing to keep and nothing to lose. -->
+<paths>
+    <cache-path name="routine" path="routine/" />
+</paths>

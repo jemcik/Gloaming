@@ -768,6 +768,87 @@ other. The supporting texts now name the TAB - "Choose from Routines",
 «Выберите в «Сценариях»» - and the app's full name lives in the picker, where
 there is room for the sentence that explains it.
 
+**Round three, the same evening: nobody builds the routine, and the switches
+come back.** The picker above asked the user to build a manual routine by hand
+in Samsung's app and choose it here, and the owner's answer was that this is
+not the product: a Galaxy should show the screen switches preconfigured, out of
+the box. Two more finds closed most of that gap.
+
+*The importer takes a file we write.* `RoutineFileHandleActivity` is exported
+with no permission and handles `VIEW` of `application/vnd.samsung.routines`
+from `file:` or `content:`; its Samsung-signature check guards only its own
+`SHARE_SAVE` action. The format, read from `RoutineFileWriter`/`Reader`: a
+512-byte header - JSON `{version, valid_state, body_size, footer_size,
+description}` then NUL - the body, a footer `{"resource_table":[]}`. Version
+"1.0" is the PLAIN body, which is what Samsung's own writer produces for a QR
+share; "2.0" bodies are AES-GCM under the first 32 chars of the app's signing
+certificate, and `valid_state` is an HMAC under the same key, and the reader
+checks neither on a 1.0 file. The body is kotlinx-serialized `JsonRoutine`:
+`version, name, conditions[], actions[]` plus optional `icon, icon_color,
+icon_image, is_recovery_off, scheduled_end_time, condition_combination_type`
+(the serializer for the routine itself is one jadx refuses to emit -
+DONT_GENERATE - so those names were confirmed against the dex string pool; the
+optional ones are simply omitted). Each condition and action is `{package,
+tag, uuid, label, intent_param[], is_negative, instance_extra, extra_info,
+version}`, the metas looked up by `package=? AND tag=?` against the preload
+providers' own package, parameters as `{KEY, TYPE, VALUE}` with TYPE from
+Samsung's `ValueType`. `RoutineFileTest` pins the layout.
+
+*The effects are built-in ACTIONS, not only Sleep-mode settings.*
+`builtin_actions_provider.xml` declares `gray_scale` (TOGGLE template, param
+`toggle_value` BOOLEAN, `reversible="forced"`) and `dark_mode_v3` (params
+`enable_dark_mode` as UiModeManager's night-mode NUMBER as a string - "2" is
+YES; "true" drew the editor's row as Off - and `enable_dark_theme` BOOLEAN,
+reversible). Neither is offered in the routine editor's action picker on this
+phone, which is why the first pass concluded grayscale was a mode-only effect;
+both are in the catalogue and both execute. Measured: a routine carrying only
+`gray_scale`, imported from a generated file and started from Samsung's list,
+flipped `Global saturation: Activated` to true, and Stop put it back. Dimming
+has no action of its own (`wallpaper_apply_dark_mode` is Samsung's "dark
+wallpaper with dark mode", delegated to its wallpaper app), and always-on has
+none either - it is a mode effect, and ours goes through `AmbientControl`'s
+WRITE_SETTINGS route regardless.
+
+So the Galaxy now draws Grayscale and Dark theme as the SAME switches every
+other phone has, each backed by one generated routine instead of the rule.
+Until its routine exists the row is a link, "Tap to set up": one tap hands
+Samsung's editor the file, Save there is the whole setup, and on return
+`Routines.adopt` finds the routine by the exact name the file carried and turns
+the switch on - on that evidence, never on the screen having been shown. The
+generic picker is gone with its strings. Measured end to end on the S23 at
+16:09: `routine gray offered`, Save, `routine gray adopted: 5738…7716`, the row
+reading «Через сценарий» with its switch on; bedtime on at 16:11 - `routine
+start …: ok`, saturation true; off - `routine end …: ok`, saturation false.
+
+Two things the phone taught along the way. The importer must be started in
+OUR task: launched with NEW_TASK it joined Samsung's own, which still held the
+Sleep-mode editor from an earlier probe, and Save returned there rather than
+to Home. And the single tap that remains - Save - is the floor: inserting a
+routine is `WRITE_ROUTINE_INFO`, the suggestion service that creates routines
+is `RECEIVE_SUGGESTION`, and the GTS and Smart Switch restore receivers are
+behind `WRITE_SECURE_SETTINGS` or Samsung's own permissions, every one
+signature-level. One Save per effect is what "out of the box" costs on this
+phone.
+
+Recorded, not verified: the Automate community's flow for the same external
+provider states a minimum of One UI 8.0 and that "One UI 8.5 has broken" it.
+The provider is therefore new in 8.0 and may have changed in 8.5; the S23
+here is on 8.0. `available` is a probe, so a phone where it has changed draws
+nothing rather than a switch that lies - and a Galaxy on 7 never had the door.
+
+Asked, at the end, whether the Save can be avoided at all: no, and the list is
+now complete. `RoutineInfoProvider`'s insert is `WRITE_ROUTINE_INFO`;
+`RoutineSuggestionReceiverService`'s `ACTION_CREATE_ROUTINE` is
+`RECEIVE_SUGGESTION`; `RoutineRestoreEventReceiver` and `RoutineGtsCellProvider`
+are `WRITE_SECURE_SETTINGS`; Smart Switch's receiver is `COM_WSSNPS`; the
+Bixby `CapsuleProvider`, exported with no manifest permission, checks the
+caller is `com.samsung.android.bixby.agent` under two hardcoded Samsung
+certificates and throws otherwise; `DetailActivity` itself is `ROUTINE_HOST`.
+An accessibility service could tap Save for the user, and that is a larger,
+scarier grant than the tap it would save. The routine deleted in Samsung's app
+is handled too: `Routines.prune` on resume forgets an adopted uuid the provider
+no longer lists, and the row offers again.
+
 **A parked alarm is still DELIVERED, so arrival cannot be the test.** The first
 version of the probe scored a blocked phone as healthy, and only the device
 caught it. With `RUN_ANY_IN_BACKGROUND` at `ignore` the probe sat in *"Pending

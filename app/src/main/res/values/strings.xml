@@ -206,19 +206,14 @@
     <string name="fx_dark_sub">At the next unlock</string>
     <string name="fx_ambient_sub">The screen stays dark</string>
     <string name="fx_ambient_grant">Needs permission to change system settings. Tap to allow</string>
-    <!-- Samsung only: a manual routine in Modes and Routines that bedtime starts
-         and ends. The condition and the app are quoted by THEIR names, read from
-         Samsung's own resources - "Start button tapped" is what the routine
-         editor shows for a manual routine. Nothing here says what the routine
-         DOES: that is the user's choice inside Samsung's app. -->
-    <string name="fx_routine">Routine</string>
-    <string name="fx_routine_pick">Choose from Routines</string>
-    <string name="fx_routine_missing">No longer exists</string>
-    <string name="fx_routine_disabled">Switched off in Routines</string>
-    <string name="routine_how">Gloaming starts it when bedtime begins and ends it when bedtime ends. Make it in Modes and Routines with the condition “Start button tapped”.</string>
-    <string name="routine_none_yet">No manual routines yet. In Modes and Routines, add one with the condition “Start button tapped” and the actions you want for the night; Gloaming will start it when bedtime begins and end it when bedtime ends.</string>
-    <string name="routine_none">None</string>
-    <string name="routine_open">Open Modes and Routines</string>
+    <!-- Samsung only. The grayscale and dark-theme rows are backed by a routine
+         in Modes and Routines rather than by the rule; until that routine has
+         been saved once the row offers it. The routine NAMES are what the app
+         looks for afterwards, so they carry the app's name and the effect. -->
+    <string name="fx_routine_setup">Tap to set up</string>
+    <string name="fx_via_routine">Through a routine</string>
+    <string name="routine_name_gray">Gloaming: grayscale</string>
+    <string name="routine_name_dark">Gloaming: dark theme</string>
 
     <!-- ============ Home: end-bedtime dialog ============ -->
     <string name="action_set">Set</string>

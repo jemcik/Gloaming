@@ -96,6 +96,19 @@
                 <action android:name="android.app.action.NEXT_ALARM_CLOCK_CHANGED" />
             </intent-filter>
         </receiver>
+        <!-- How the routine file reaches Samsung's importer. Not exported; the
+             importer gets a one-off read grant on one cache file, and nothing
+             else of ours is reachable through it. See Routines.offer. -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="com.jemcik.gloaming.routine"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/routine_paths" />
+        </provider>
+
         <!-- The master switch in the shade. It is the same control as the app
              bar's, sharing Bedtime.set and statusLine, so the two cannot drift.
              BIND_QUICK_SETTINGS_TILE is what lets SystemUI bind it, and is

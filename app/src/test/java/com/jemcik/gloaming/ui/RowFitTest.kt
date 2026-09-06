@@ -243,22 +243,26 @@ class RowFitTest {
     @Test fun `settings rows fit in Ukrainian`() = settingsRowsFitIn("uk")
 
     /**
-     * Samsung's routine row is a LINK row in Home's card, and it carries the
-     * longest supporting text in that section: the prompt and both warnings
-     * name Samsung's app in full, in three languages. It is not toggleable, so
-     * the Home measurement above cannot see it - and a row that measurement
-     * cannot see is a row it silently skips. So it is measured here on its
-     * own, in the two states that put a sentence under it: nothing chosen,
-     * and a choice Samsung's app no longer holds.
+     * On a Galaxy the grayscale and dark-theme rows wear TWO faces - a link
+     * row offering the routine, then the switch backed by it - and each face
+     * has its own supporting text, in three languages, under an avatar and a
+     * chevron or a switch. The Home measurement above sees only the switch
+     * face, and only on a phone that applies the zen effects; so both faces
+     * are measured here on a Galaxy of their own. Absence is a failure.
      */
-    private fun routineRowFitsIn(locale: String, chosen: Long, scale: Float = 1f) {
+    private fun galaxyRowsFitIn(locale: String, adopted: Boolean, scale: Float = 1f) {
         RuntimeEnvironment.setQualifiers("+$locale-w360dp-h800dp")
         val ctx = ApplicationProvider.getApplicationContext<android.content.Context>()
-        com.jemcik.gloaming.core.FakeRoutines.install(ctx)
+        val fake = ctx.asGalaxyWithRoutines()
         val prefs = Prefs(ctx)
         prefs.enabled = true
-        prefs.routineUuid = chosen
-        val title = ctx.getString(R.string.fx_routine)
+        if (adopted) {
+            fake.rows += com.jemcik.gloaming.core.FakeRoutines.Row(10, "g")
+            fake.rows += com.jemcik.gloaming.core.FakeRoutines.Row(11, "d")
+            prefs.setRoutineUuid(com.jemcik.gloaming.core.RoutineEffect.GRAYSCALE, 10)
+            prefs.setRoutineUuid(com.jemcik.gloaming.core.RoutineEffect.DARK, 11)
+        }
+        val titles = listOf(R.string.fx_grayscale, R.string.fx_dark).map { ctx.getString(it) }
 
         compose.setContent {
             GloamingTheme(dark = false) {
@@ -268,26 +272,27 @@ class RowFitTest {
             }
         }
 
-        val match = hasText(title, substring = true)
-        assertTrue(
-            "in '$locale' the routine row was never drawn, so nothing measured it",
-            compose.onAllNodes(match).fetchSemanticsNodes().isNotEmpty()
-        )
-        val b = compose.onNode(match).getUnclippedBoundsInRoot()
-        val h = b.bottom - b.top
-        assertTrue(
-            "in '$locale' the routine row (chosen=$chosen) is ${h.value}dp: its " +
-                "supporting text wrapped, which top-aligns the chevron",
-            h < ceiling(scale)
-        )
+        val missing = mutableListOf<String>()
+        val tall = titles.mapNotNull { title ->
+            val match = hasText(title, substring = true)
+            if (compose.onAllNodes(match).fetchSemanticsNodes().isEmpty()) {
+                missing += title
+                return@mapNotNull null
+            }
+            val b = compose.onNode(match).getUnclippedBoundsInRoot()
+            val h = b.bottom - b.top
+            if (h >= ceiling(scale)) "$title is ${h.value}dp" else null
+        }
+        assertTrue("in '$locale' (adopted=$adopted) these rows were never drawn: $missing", missing.isEmpty())
+        assertTrue("in '$locale' (adopted=$adopted) these rows wrapped to three lines: $tall", tall.isEmpty())
     }
 
-    @Test fun `the routine row fits in English, nothing chosen`() = routineRowFitsIn("en", 0)
-    @Test fun `the routine row fits in Russian, nothing chosen`() = routineRowFitsIn("ru", 0)
-    @Test fun `the routine row fits in Ukrainian, nothing chosen`() = routineRowFitsIn("uk", 0)
-    @Test fun `the routine row fits in English, choice gone`() = routineRowFitsIn("en", 99)
-    @Test fun `the routine row fits in Russian, choice gone`() = routineRowFitsIn("ru", 99)
-    @Test fun `the routine row fits in Ukrainian, choice gone`() = routineRowFitsIn("uk", 99)
+    @Test fun `a Galaxy's set-up rows fit in English`() = galaxyRowsFitIn("en", adopted = false)
+    @Test fun `a Galaxy's set-up rows fit in Russian`() = galaxyRowsFitIn("ru", adopted = false)
+    @Test fun `a Galaxy's set-up rows fit in Ukrainian`() = galaxyRowsFitIn("uk", adopted = false)
+    @Test fun `a Galaxy's switch rows fit in English`() = galaxyRowsFitIn("en", adopted = true)
+    @Test fun `a Galaxy's switch rows fit in Russian`() = galaxyRowsFitIn("ru", adopted = true)
+    @Test fun `a Galaxy's switch rows fit in Ukrainian`() = galaxyRowsFitIn("uk", adopted = true)
 
     /**
      * The allowlist's rows have LESS room than Home's - a leading icon and a

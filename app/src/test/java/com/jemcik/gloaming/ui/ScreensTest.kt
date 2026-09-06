@@ -784,35 +784,38 @@ class ScreensTest {
     }
 
     /**
-     * Picking a routine mid-window starts it NOW, through the same setActive
-     * every alarm goes through - not at the next window. The pick is the one
-     * act the row has, and a pick that took effect tomorrow would look, all
-     * evening, exactly like a pick that did nothing.
+     * The routine we offered, once saved in Samsung's app, becomes the effect's
+     * own switch - on - and is started NOW if the window is open, not at the
+     * next one. And the link row it replaces is gone: a switch is drawn only
+     * over a routine the provider lists, never over an offer.
      */
     @Test
-    fun `picking a routine mid-window starts it now`() {
+    fun `a saved routine turns its link row into a switch that is on, and starts now`() {
         val ctx = ctx()
-        val fake = com.jemcik.gloaming.core.FakeRoutines.install(ctx)
-        fake.rows += com.jemcik.gloaming.core.FakeRoutines.Row(10, "Sleep")
+        val fake = ctx.asGalaxyWithRoutines()
         val prefs = Prefs(ctx)
         prefs.enabled = true
         val now = LocalTime.now()
         prefs.startTime = now.minusHours(1)
         prefs.endTime = now.plusHours(1)
         prefs.days = DayOfWeek.entries.toSet()
+        // As Routines.offer leaves things: the file was handed over under this
+        // name, and Samsung's editor saved it while we were away.
+        prefs.routineOffered = com.jemcik.gloaming.core.RoutineEffect.GRAYSCALE.key
+        prefs.routineOfferedName = "Gloaming: grayscale"
+        fake.rows += com.jemcik.gloaming.core.FakeRoutines.Row(42, "Gloaming: grayscale")
 
         compose.setContent {
             GloamingTheme(dark = false) {
                 Home(rememberScrollState(), onOpenSettings = {}, onOpenInterruptions = {})
             }
         }
-        compose.onNodeWithText(ctx.getString(R.string.fx_routine)).performScrollTo().performClick()
-        compose.onNodeWithText("Sleep").performClick()
-
-        assertEquals(10L, prefs.routineUuid)
-        assertEquals(listOf("start 10"), fake.calls)
-        assertEquals("and it is on the books as ours", 10L, prefs.routineStarted)
-        // The row now says which one, off Samsung's own answer.
-        compose.onNodeWithText("Sleep").assertExists()
+        val gray = ctx.getString(R.string.fx_grayscale)
+        compose.onNode(hasText(gray, substring = true) and isToggleable()).performScrollTo().assertIsOn()
+        assertEquals(42L, prefs.routineUuid(com.jemcik.gloaming.core.RoutineEffect.GRAYSCALE))
+        assertEquals(listOf("start 42"), fake.calls)
+        // The dark theme was never offered, so its row still only offers.
+        val dark = ctx.getString(R.string.fx_dark)
+        assertTrue(compose.onAllNodes(hasText(dark, substring = true) and isToggleable()).fetchSemanticsNodes().isEmpty())
     }
 }

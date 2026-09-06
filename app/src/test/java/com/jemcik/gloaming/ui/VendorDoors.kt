@@ -35,3 +35,14 @@ internal fun Context.withSystemBedtime() {
     pm.addActivityIfNotPresent(bedtime)
     pm.addIntentFilterForActivity(bedtime, IntentFilter("android.settings.BEDTIME_SETTINGS"))
 }
+
+/**
+ * Make this phone a Galaxy for the screen section: the zen effects thrown away
+ * (the one manufacturer prior in the app, see ScreenEffects) and Samsung's
+ * routine provider present with the permission held. Returns the fake so a test
+ * can put routines in it.
+ */
+internal fun Context.asGalaxyWithRoutines(): com.jemcik.gloaming.core.FakeRoutines {
+    org.robolectric.util.ReflectionHelpers.setStaticField(android.os.Build::class.java, "MANUFACTURER", "samsung")
+    return com.jemcik.gloaming.core.FakeRoutines.install(this)
+}

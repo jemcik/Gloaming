@@ -338,21 +338,34 @@ class Prefs(ctx: Context) {
         set(v) = sp.edit { putString("ambientSaved", v) }
 
     /**
-     * The manual routine bedtime runs, by Modes and Routines' own uuid - 0 is
-     * none. Only ever non-zero where [Routines.available] answered yes.
+     * The routine Samsung's app holds for one screen effect, by Modes and
+     * Routines' own uuid - 0 is none. Only ever non-zero where
+     * [Routines.available] answered yes.
      */
-    var routineUuid: Long
-        get() = sp.getLong("routineUuid", 0L)
-        set(v) = sp.edit { putLong("routineUuid", v) }
+    fun routineUuid(effect: RoutineEffect): Long = sp.getLong("routine." + effect.key, 0L)
+    fun setRoutineUuid(effect: RoutineEffect, uuid: Long) = sp.edit { putLong("routine." + effect.key, uuid) }
 
     /**
-     * The routine WE started and have not yet ended - the latch that keeps a
+     * The routines WE started and have not yet ended - the latch that keeps a
      * daytime reconcile from ending a run the user began by hand, and keeps a
      * refused end on the books until it succeeds. See [Routines.sync].
      */
-    var routineStarted: Long
-        get() = sp.getLong("routineStarted", 0L)
-        set(v) = sp.edit { putLong("routineStarted", v) }
+    var routinesStarted: Set<Long>
+        get() = sp.getString("routinesStarted", "")!!.split(',').mapNotNull { it.toLongOrNull() }.toSet()
+        set(v) = sp.edit { putString("routinesStarted", v.joinToString(",")) }
+
+    /**
+     * The effect we handed Samsung's app a routine for, and the exact name that
+     * file carried - open until [Routines.adopt] finds it on the phone. Cleared
+     * on that evidence, never on the screen having been shown.
+     */
+    var routineOffered: String?
+        get() = sp.getString("routineOffered", null)
+        set(v) = sp.edit { putString("routineOffered", v) }
+
+    var routineOfferedName: String?
+        get() = sp.getString("routineOfferedName", null)
+        set(v) = sp.edit { putString("routineOfferedName", v) }
 
     // --- who can interrupt, mapped onto ZenPolicy ---
     // ZenPolicy.PEOPLE_TYPE_*: 1 anyone, 2 contacts, 3 starred, 4 none

@@ -10,7 +10,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import com.jemcik.gloaming.core.RoutineEffect
 import com.jemcik.gloaming.core.Routines
+import com.jemcik.gloaming.R
 import com.jemcik.gloaming.core.AlarmWatch
 import com.jemcik.gloaming.core.BackgroundLimit
 import com.jemcik.gloaming.core.Bedtime
@@ -76,15 +78,17 @@ class HomeState(
     var fxDim by mutableStateOf(prefs.fxDimWallpaper)
     var fxDark by mutableStateOf(prefs.fxDarkTheme)
     var fxAmbient by mutableStateOf(prefs.fxHideAmbient)
-    /** The manual routine bedtime runs on a Galaxy, by Samsung's uuid; 0 is none. */
-    var routineUuid by mutableLongStateOf(prefs.routineUuid)
     /**
-     * What Modes and Routines says about [routineUuid] NOW - null when nothing
-     * is chosen or it has been deleted there. Asked on resume and on pick, not
-     * per tick: it is a query into another app's process, and a name does not
-     * change by the minute.
+     * The routines Samsung's app holds for our screen effects, on a Galaxy -
+     * one per effect, 0 while none. Re-read on resume, which is when the user
+     * comes back from Samsung's editor with a new one saved.
      */
-    var routine by mutableStateOf<Routines.Routine?>(null)
+    var routineGray by mutableLongStateOf(prefs.routineUuid(RoutineEffect.GRAYSCALE))
+    var routineDark by mutableLongStateOf(prefs.routineUuid(RoutineEffect.DARK))
+    fun routineOf(e: RoutineEffect): Long = when (e) {
+        RoutineEffect.GRAYSCALE -> routineGray
+        RoutineEffect.DARK -> routineDark
+    }
 
     /** Whether the morning alarm may end the night early. */
     var endAtAlarm by mutableStateOf(prefs.exitAtAlarm)
@@ -208,18 +212,18 @@ class HomeState(
         prefs.fxDimWallpaper = fxDim; prefs.fxDarkTheme = fxDark
         prefs.fxHideAmbient = fxAmbient
         prefs.exitAtAlarm = endAtAlarm
-        prefs.routineUuid = routineUuid
     }
 
     /**
-     * The routine picker's one act. Commits at once, like every effect row: a
-     * pick made mid-window starts the routine now, through the same setActive
-     * every alarm goes through, rather than at the next window.
+     * Hand Samsung's app the ready-made routine for one effect. Nothing is
+     * chosen here: the switch appears on return, in [onResume], on evidence.
      */
-    fun pickRoutine(r: Routines.Routine?) {
-        routineUuid = r?.uuid ?: 0L
-        routine = r
-        commit()
+    fun offerRoutine(e: RoutineEffect): Boolean =
+        Routines.offer(ctx, prefs, e, ctx.getString(routineName(e)))
+
+    private fun routineName(e: RoutineEffect): Int = when (e) {
+        RoutineEffect.GRAYSCALE -> R.string.routine_name_gray
+        RoutineEffect.DARK -> R.string.routine_name_dark
     }
 
     fun commit() {
@@ -304,8 +308,17 @@ class HomeState(
         fxDim = prefs.fxDimWallpaper; fxDark = prefs.fxDarkTheme
         fxAmbient = prefs.fxHideAmbient
         endAtAlarm = prefs.exitAtAlarm
-        routineUuid = prefs.routineUuid
-        routine = Routines.chosen(ctx, prefs)
+        // Back from Samsung's editor, perhaps: if the routine we offered is
+        // there now, its switch is on - and it is started at once if the
+        // window is open, through the same commit every switch takes.
+        Routines.prune(ctx, prefs)
+        val adoptedNow = Routines.adopt(ctx, prefs)
+        routineGray = prefs.routineUuid(RoutineEffect.GRAYSCALE)
+        routineDark = prefs.routineUuid(RoutineEffect.DARK)
+        if (adoptedNow != null) {
+            fxGray = prefs.fxGrayscale; fxDark = prefs.fxDarkTheme
+            commit()
+        }
         // Re-asked here so the notice clears itself the moment a boot is
         // handled properly - the only confirmation available, since the
         // vendor's own setting cannot be read.

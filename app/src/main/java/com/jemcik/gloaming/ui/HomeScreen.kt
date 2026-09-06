@@ -1254,6 +1254,17 @@ private fun ScreenEffectsSection(s: HomeState, runningNow: Boolean) {
                     stringResource(R.string.fx_grayscale_sub), s.fxGray
                 ) { s.fxGray = !s.fxGray; haptics.toggle(s.fxGray); s.commit() }
             }
+            // On a phone that throws the zen effects away but runs routines,
+            // the SAME switch is drawn, backed by a routine of its own instead
+            // of the rule - or, until that routine has been saved once in
+            // Samsung's app, the row that offers it. Dimming has no routine
+            // action and is not drawn there at all.
+            if (!zenEffects && routines) add {
+                RoutineEffectRow(
+                    s, RoutineEffect.GRAYSCALE, Fx.Grayscale,
+                    stringResource(R.string.fx_grayscale), s.fxGray
+                ) { s.fxGray = !s.fxGray; haptics.toggle(s.fxGray); s.commit() }
+            }
             if (zenEffects) add {
                 EffectRow(
                     Fx.Dim, stringResource(R.string.fx_dim),
@@ -1270,7 +1281,12 @@ private fun ScreenEffectsSection(s: HomeState, runningNow: Boolean) {
                     stringResource(R.string.fx_dark_sub), s.fxDark
                 ) { s.fxDark = !s.fxDark; haptics.toggle(s.fxDark); s.commit() }
             }
-            if (routines) add { RoutineRow(s) }
+            if (!zenEffects && routines) add {
+                RoutineEffectRow(
+                    s, RoutineEffect.DARK, Fx.Dark,
+                    stringResource(R.string.fx_dark), s.fxDark
+                ) { s.fxDark = !s.fxDark; haptics.toggle(s.fxDark); s.commit() }
+            }
             // No divider to remove with it: a grouped list just has one
             // item fewer, and the corners re-form around what is left.
             if (ambientRow) add {
@@ -1297,78 +1313,34 @@ private fun ScreenEffectsSection(s: HomeState, runningNow: Boolean) {
 }
 
 /**
- * The routine Samsung's app will run for the night, and the picker behind it.
+ * One screen effect on a Galaxy: the app's own switch, backed by a routine in
+ * Samsung's app - or, until that routine exists, the row that offers it.
  *
- * A link row rather than a switch, because the thing it controls is a CHOICE
- * among the user's own routines, not an on/off - and "none" is one of the
- * choices. The subtitle is what Modes and Routines says about the pick NOW:
- * its name, or that it is gone, or that it has been switched off over there.
- * A switch that read "on" over a routine Samsung had deleted would be the
- * lying switch this section exists to avoid.
+ * Two faces, and the split is on EVIDENCE: the switch is drawn only once the
+ * provider has listed a routine by the name we offered, so a switch is never
+ * shown over an effect the phone cannot yet apply. Before that, the row is a
+ * link: one tap opens Samsung's editor with the routine filled in, Save there
+ * is the whole setup, and the switch appears - on - when the user comes back.
  */
 @Composable
-private fun RoutineRow(s: HomeState) {
+private fun RoutineEffectRow(
+    s: HomeState,
+    effect: RoutineEffect,
+    icon: Fx,
+    title: String,
+    checked: Boolean,
+    onToggle: () -> Unit
+) {
     val haptics = s.haptics
-    var picking by remember { mutableStateOf(false) }
-    val r = s.routine
-    LinkRow(
-        stringResource(R.string.fx_routine),
-        supporting = when {
-            s.routineUuid == 0L -> stringResource(R.string.fx_routine_pick)
-            r == null -> stringResource(R.string.fx_routine_missing)
-            !r.enabled -> stringResource(R.string.fx_routine_disabled)
-            else -> r.name
-        },
-        leading = { FxIcon(Fx.Routine) }
-    ) { haptics.open(); picking = true }
-    if (picking) RoutinePicker(s) { picking = false }
-}
-
-/**
- * Every manual routine Samsung's app holds, and none. A pick commits at once
- * and closes, the way the theme picker works - there is nothing to confirm.
- * The door to Samsung's app is the other button, because the routine has to
- * be MADE there first, and the empty state says so in as many words.
- */
-@Composable
-private fun RoutinePicker(s: HomeState, onClose: () -> Unit) {
-    val ctx = LocalContext.current
-    val g = gloam
-    val haptics = s.haptics
-    val routines = remember { Routines.list(ctx) }
-    AlertDialog(
-        onDismissRequest = onClose,
-        containerColor = g.raise,
-        shape = RoundedCornerShape(32.dp),
-        title = { Text(stringResource(R.string.fx_routine)) },
-        text = {
-            Column(Modifier.verticalScroll(rememberScrollState())) {
-                Text(
-                    stringResource(
-                        if (routines.isEmpty()) R.string.routine_none_yet else R.string.routine_how
-                    ),
-                    style = MaterialTheme.typography.bodyMedium, color = g.onSurfaceLow
-                )
-                Spacer(Modifier.height(12.dp))
-                RadioRow(stringResource(R.string.routine_none), s.routineUuid == 0L) {
-                    haptics.select(); s.pickRoutine(null); onClose()
-                }
-                routines.forEach { r ->
-                    RadioRow(r.name, s.routineUuid == r.uuid) {
-                        haptics.select(); s.pickRoutine(r); onClose()
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = { haptics.open(); Routines.openApp(ctx); onClose() }) {
-                Text(stringResource(R.string.routine_open))
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onClose) { Text(stringResource(R.string.action_cancel)) }
-        }
-    )
+    if (s.routineOf(effect) != 0L) {
+        EffectRow(icon, title, stringResource(R.string.fx_via_routine), checked, onToggle)
+    } else {
+        LinkRow(
+            title,
+            supporting = stringResource(R.string.fx_routine_setup),
+            leading = { FxIcon(icon) }
+        ) { haptics.open(); s.offerRoutine(effect) }
+    }
 }
 
 /**

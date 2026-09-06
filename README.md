@@ -295,9 +295,6 @@ and forgets them but cannot remove them, and says so; Settings links to them in
 Samsung's app, where deleting is one tap. A routine you delete there is noticed
 on the next resume, and its row goes back to offering one.
 
-Settings still offers **System bedtime mode**, which opens One UI's own Sleep
-mode editor.
-
 ### When something goes wrong, the app says so
 
 Vendor interference is the failure this app was built around, so it watches

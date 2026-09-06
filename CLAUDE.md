@@ -280,12 +280,14 @@ is in DECISIONS.md.
   our rule overrules the prior for good. Watch the TRANSITION, never the state:
   the first version asked "is it dark while we want dark", answered yes on a
   phone that was simply always dark, and un-hid the broken switches.
-- **One UI 8 stores `ZenDeviceEffects` and applies none of them** - grayscale and
-  night mode both, across a screen-off cycle. Not a capability gap: One UI's own
-  Sleep mode drives the same `Global saturation`. `BootWatch.hasSystemBedtime`
-  offers the system's own bedtime screen where it resolves, which is the only
-  working route to a grey screen there. Samsung's Routines SDK was tried and its
-  discovery is closed to non-privileged apps.
+- **One UI 8 stores `ZenDeviceEffects` and applies none of them** - grayscale
+  and night mode both, across a screen-off cycle. Not a capability gap: One
+  UI's own Sleep mode drives the same `Global saturation`. On a Galaxy the
+  grayscale and dark-theme switches therefore run through routines Gloaming
+  generates (`Routines.kt`); the link to One UI's own Sleep mode editor that
+  used to stand in for them is gone, because a second bedtime system with its
+  own schedule and DND fights this one. Samsung's Routines SDK was tried and
+  its discovery is closed to non-privileged apps.
 - Honor's auto-launch and run-in-background states are **unreadable** — absent
   from settings, appops and the package dump, measured either side of a clean
   toggle. Run-in-background is answered by `BackgroundProbe` instead, whose

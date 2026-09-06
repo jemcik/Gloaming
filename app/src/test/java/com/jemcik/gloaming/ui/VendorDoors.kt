@@ -2,7 +2,6 @@ package com.jemcik.gloaming.ui
 
 import android.content.ComponentName
 import android.content.Context
-import android.content.IntentFilter
 import com.jemcik.gloaming.core.Doors
 import org.robolectric.Shadows.shadowOf
 
@@ -10,7 +9,7 @@ import org.robolectric.Shadows.shadowOf
  * Make this phone answer for the doors `Doors` knows how to open.
  *
  * Robolectric resolves nothing by default, which is a phone with no vendor
- * launch manager and no system bedtime screen - correct as a default, and the
+ * launch manager - correct as a default, and the
  * reason a test that forgets to arrange them measures neither.
  *
  * The launch manager is taken from [Doors.VENDOR_SCREENS] rather than written
@@ -23,17 +22,6 @@ import org.robolectric.Shadows.shadowOf
 internal fun Context.withLaunchManager() {
     val pm = shadowOf(packageManager)
     Doors.VENDOR_SCREENS.forEach { pm.addActivityIfNotPresent(it) }
-}
-
-/**
- * And the system's own bedtime screen, which is resolved by ACTION rather than
- * by component - so it needs an intent filter rather than just an activity.
- */
-internal fun Context.withSystemBedtime() {
-    val pm = shadowOf(packageManager)
-    val bedtime = ComponentName("com.example.wellbeing", "Bedtime")
-    pm.addActivityIfNotPresent(bedtime)
-    pm.addIntentFilterForActivity(bedtime, IntentFilter("android.settings.BEDTIME_SETTINGS"))
 }
 
 /**

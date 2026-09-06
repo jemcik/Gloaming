@@ -62,8 +62,6 @@
     <string name="launch_setup_why">Найдите Gloaming через поиск, выберите «Управлять вручную», затем включите автозапуск и работу в фоне</string>
     <string name="section_this_phone">этот телефон</string>
     <string name="launch_link_why">Автозапуск и работа в фоне</string>
-    <string name="bedtime_settings_row">Системный режим сна</string>
-    <string name="bedtime_settings_why">От производителя</string>
     <string name="routines_row">Сценарии в приложении Samsung</string>
     <string name="routines_why">Два сценария Gloaming</string>
     <string name="launch_tip_title">Сделайте сон надёжным</string>

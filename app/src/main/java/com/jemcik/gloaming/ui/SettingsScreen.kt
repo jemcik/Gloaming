@@ -120,11 +120,10 @@ fun SettingsScreen(themeMode: Int, onThemeMode: (Int) -> Unit, onBack: () -> Uni
         // Hidden where no launch manager resolves, on the same capability probe
         // the notices use - never a Build.MANUFACTURER test.
         val launchManager = Doors.hasLaunchManager(ctx)
-        val systemBedtime = Doors.hasSystemBedtime(ctx)
         // And, on a Galaxy, the routines: the app can make them and cannot
         // delete them, so the place to do that is one tap from here.
         val routines = Routines.available(ctx)
-        if (launchManager || systemBedtime || routines) {
+        if (launchManager || routines) {
             Section(stringResource(R.string.section_this_phone)) {
                 SettingsCard {
                     if (launchManager) {
@@ -133,13 +132,6 @@ fun SettingsScreen(themeMode: Int, onThemeMode: (Int) -> Unit, onBack: () -> Uni
                             supporting = stringResource(R.string.launch_link_why),
                             leading = rowIcon(R.drawable.ic_restart)
                         ) { haptics.open(); Doors.openAutoStart(ctx) }
-                    }
-                    if (systemBedtime) {
-                        LinkRow(
-                            stringResource(R.string.bedtime_settings_row),
-                            supporting = stringResource(R.string.bedtime_settings_why),
-                            leading = rowIcon(R.drawable.ic_bedtime)
-                        ) { haptics.open(); Doors.openSystemBedtime(ctx) }
                     }
                     if (routines) {
                         LinkRow(

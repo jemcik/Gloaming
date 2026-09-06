@@ -643,7 +643,15 @@ almost certainly restricted to privileged packages. The SDK is also absent from
 developer.samsung.com's published Galaxy SDKs. Spike left on `samsung-spike`,
 unmerged.
 
-**What DOES work is an AOSP action: `android.settings.BEDTIME_SETTINGS`.** It
+**What DOES work is an AOSP action: `android.settings.BEDTIME_SETTINGS`.**
+*(Superseded 6 Sep 2026: the door is removed. The grayscale and dark-theme
+switches now run through generated routines - see "Round three" below - so the
+link no longer gave a Samsung owner anything the app lacked, and what it gave
+instead was a second bedtime system with its own schedule and its own Do Not
+Disturb, whose stricter policy would override the allowlist chosen here. It
+also resolved on any phone with a bedtime screen, a Pixel's included, where it
+pointed at the very feature this app replaces. The probe, the opener, the two
+strings and the test helper went with it; the finding below stands.)* It
 resolves on the Galaxy - landing on One UI's `LifestyleModeEditorActivity`, the
 Sleep mode editor where greyscale actually is configurable - and resolves to
 nothing on the Honor. So it is a capability probe like every other here, not a
@@ -917,6 +925,11 @@ and forgets both uuids, the routines stay as inert manual routines, and two
 things now say so: a "Routines in Samsung's app" link under Settings' "this
 phone", and one more sentence in the Reset confirmation on a Galaxy that has
 them.
+
+And with the switches real, the "System bedtime mode" link in Settings lost
+its reason: it was the stand-in for them, and it now offered a second bedtime
+with its own schedule and DND. Removed, on the owner's call; its DECISIONS
+entry above is marked superseded rather than deleted.
 
 **A parked alarm is still DELIVERED, so arrival cannot be the test.** The first
 version of the probe scored a blocked phone as healthy, and only the device

@@ -106,8 +106,6 @@
     <!-- The always-available door: a link in Settings, never a notice. -->
     <string name="section_this_phone">this phone</string>
     <string name="launch_link_why">Autostart and background</string>
-    <string name="bedtime_settings_row">System bedtime mode</string>
-    <string name="bedtime_settings_why">From the vendor</string>
     <!-- Samsung only: where the two generated routines live, one tap away to
          delete - which the app cannot do for the user. -->
     <string name="routines_row">Routines in Samsung\'s app</string>
@@ -149,7 +147,7 @@
          not cross a newline, so keys wrapped onto a second line are silently in
          no budget at all. These two sat there unmeasured until RowFitTest was
          made to draw them.
-         BUDGET-EACH 26 launch_link_why bedtime_settings_why routines_why
+         BUDGET-EACH 26 launch_link_why routines_why
          26 rather than 22 because these rows carry a chevron where the four
          above carry a SWITCH, which is 20dp wider - and because 26 is measured,
          not guessed: RowFitTest draws the real screen at 360dp in all three

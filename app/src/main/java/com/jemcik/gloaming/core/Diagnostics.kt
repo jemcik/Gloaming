@@ -100,7 +100,6 @@ object Diagnostics {
         })
         row("ambient keys", askYn { AmbientCapability.isSupported(ctx) })
         row("launch manager", askYn { Doors.hasLaunchManager(ctx) })
-        row("system bedtime", askYn { Doors.hasSystemBedtime(ctx) })
         row("routines", askYn { Routines.available(ctx) })
 
         // What the SYSTEM says. Asked of NotificationManager every time, never

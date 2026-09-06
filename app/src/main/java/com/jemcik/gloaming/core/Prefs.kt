@@ -367,6 +367,15 @@ class Prefs(ctx: Context) {
         get() = sp.getString("routineOfferedName", null)
         set(v) = sp.edit { putString("routineOfferedName", v) }
 
+    /**
+     * The one-time explainer before the first jump into Samsung's editor has
+     * been shown and acted on. The second effect skips it: the user has seen
+     * the whole flow once, and a sheet that repeats itself is a nag.
+     */
+    var routineExplained: Boolean
+        get() = sp.getBoolean("routineExplained", false)
+        set(v) = sp.edit { putBoolean("routineExplained", v) }
+
     // --- who can interrupt, mapped onto ZenPolicy ---
     // ZenPolicy.PEOPLE_TYPE_*: 1 anyone, 2 contacts, 3 starred, 4 none
     // ZenPolicy.CONVERSATION_SENDERS_*: 1 anyone, 2 important, 3 none

@@ -168,9 +168,26 @@ fun Home(
             .drawBehind { drawRect(ground) }
     ) {
         val bar = TopAppBarDefaults.pinnedScrollBehavior()
+        // The one thing Home says out loud: a routine adopted on this resume.
+        // The switch turning on is the real confirmation, but it happens after
+        // a trip through another app, and a change the eye did not watch is a
+        // change it may not notice.
+        val snack = remember { SnackbarHostState() }
+        val adopted = s.justAdopted
+        val adoptedText = adopted?.let { stringResource(s.routineDone(it)) }
+        // Cleared AFTER the snackbar has been shown, not before: this effect is
+        // keyed on the value, and clearing it first restarts the effect with
+        // null - which cancels the coroutine that was about to show it. That
+        // is how the first build confirmed nothing, measured on the phone.
+        LaunchedEffect(adopted) {
+            if (adopted == null || adoptedText == null) return@LaunchedEffect
+            snack.showSnackbar(adoptedText)
+            if (s.justAdopted == adopted) s.justAdopted = null
+        }
         Scaffold(
             containerColor = Color.Transparent,
             modifier = Modifier.nestedScroll(bar.nestedScrollConnection),
+            snackbarHost = { SnackbarHost(snack) },
             topBar = {
                 Column {
                     HomeBar(s, runningNow, ready, bar, onOpenSettings)
@@ -233,6 +250,7 @@ fun Home(
     }
 
     TimePickerDialog(s)
+    RoutineExplainDialog(s)
 }
 
 
@@ -1248,6 +1266,12 @@ private fun ScreenEffectsSection(s: HomeState, runningNow: Boolean) {
             if (!runningNow) add {
                 NoticeStrip(planNote(ctx, s.enabled, s.start, s.end, s.days, loc))
             }
+            // On a Galaxy, before either routine exists: what these two rows
+            // are about to ask, said once, where the rows are. Gone the moment
+            // both are set up, because then there is nothing left to ask.
+            if (!zenEffects && routines && (s.routineGray == 0L || s.routineDark == 0L)) add {
+                NoticeStrip(stringResource(R.string.routine_note))
+            }
             if (zenEffects) add {
                 EffectRow(
                     Fx.Grayscale, stringResource(R.string.fx_grayscale),
@@ -1337,10 +1361,49 @@ private fun RoutineEffectRow(
     } else {
         LinkRow(
             title,
-            supporting = stringResource(R.string.fx_routine_setup),
+            // "Not saved" once the user has been to Samsung's editor for this
+            // effect and come back with nothing - the app knows, from the offer
+            // still open, and saying so beats repeating the first invitation.
+            supporting = stringResource(
+                if (s.pendingOffer == effect) R.string.fx_routine_retry else R.string.fx_routine_setup
+            ),
             leading = { FxIcon(icon) }
-        ) { haptics.open(); s.offerRoutine(effect) }
+        ) { haptics.open(); s.tapRoutine(effect) }
     }
+}
+
+/**
+ * The one-time explainer between the first tap and Samsung's editor: what will
+ * open, what it will already contain, and the one thing to do there. One
+ * button, because there is one act; Cancel is the dismiss.
+ */
+@Composable
+private fun RoutineExplainDialog(s: HomeState) {
+    val ctx = LocalContext.current
+    val g = gloam
+    val haptics = s.haptics
+    val effect = s.explaining ?: return
+    val name = stringResource(
+        when (effect) {
+            RoutineEffect.GRAYSCALE -> R.string.routine_name_gray
+            RoutineEffect.DARK -> R.string.routine_name_dark
+        }
+    )
+    AlertDialog(
+        onDismissRequest = { s.explaining = null },
+        containerColor = g.raise,
+        shape = RoundedCornerShape(32.dp),
+        title = { Text(stringResource(R.string.routine_explain_title)) },
+        text = { Text(stringResource(R.string.routine_explain_body, name)) },
+        confirmButton = {
+            Button(onClick = { haptics.confirm(); s.explainedAndGo() }, shape = CircleShape) {
+                Text(stringResource(R.string.routine_open))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = { s.explaining = null }) { Text(stringResource(R.string.action_cancel)) }
+        }
+    )
 }
 
 /**

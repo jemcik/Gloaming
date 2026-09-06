@@ -210,8 +210,17 @@
          in Modes and Routines rather than by the rule; until that routine has
          been saved once the row offers it. The routine NAMES are what the app
          looks for afterwards, so they carry the app's name and the effect. -->
-    <string name="fx_routine_setup">Tap to set up</string>
+    <string name="fx_routine_setup">Set up in Samsung\'s app</string>
+    <string name="fx_routine_retry">Not saved. Tap to retry</string>
     <string name="fx_via_routine">Through a routine</string>
+    <!-- The note above the rows, until both routines exist; the explainer
+         before the first jump into Samsung's app; the confirmation after. -->
+    <string name="routine_note">Grayscale and dark theme run through Samsung\'s routines here. Each needs one Save in Samsung\'s app.</string>
+    <string name="routine_explain_title">Set up in Samsung\'s app</string>
+    <string name="routine_explain_body">Modes and Routines will open with a routine named “%1$s” already filled in. Tap Save there, then come back. Gloaming will run it every bedtime.</string>
+    <string name="routine_open">Open Modes and Routines</string>
+    <string name="routine_done_gray">Grayscale is set up</string>
+    <string name="routine_done_dark">Dark theme is set up</string>
     <string name="routine_name_gray">Gloaming: grayscale</string>
     <string name="routine_name_dark">Gloaming: dark theme</string>
 

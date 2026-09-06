@@ -90,6 +90,24 @@ class HomeState(
         RoutineEffect.DARK -> routineDark
     }
 
+    /**
+     * The effect we last handed Samsung's app a routine for and have not yet
+     * seen come back - so its row can say "not saved yet" rather than repeat
+     * the first invitation. Mirrors [Prefs.routineOffered].
+     */
+    var pendingOffer by mutableStateOf(RoutineEffect.entries.firstOrNull { it.key == prefs.routineOffered })
+
+    /** The effect whose one-time explainer is on screen, or null. */
+    var explaining by mutableStateOf<RoutineEffect?>(null)
+
+    /**
+     * The effect whose routine was adopted on THIS resume - the one thing the
+     * screen confirms out loud, because a switch quietly turning on is a change
+     * the eye does not always catch after a trip through another app.
+     * Cleared by the screen once shown.
+     */
+    var justAdopted by mutableStateOf<RoutineEffect?>(null)
+
     /** Whether the morning alarm may end the night early. */
     var endAtAlarm by mutableStateOf(prefs.exitAtAlarm)
 
@@ -218,8 +236,34 @@ class HomeState(
      * Hand Samsung's app the ready-made routine for one effect. Nothing is
      * chosen here: the switch appears on return, in [onResume], on evidence.
      */
-    fun offerRoutine(e: RoutineEffect): Boolean =
-        Routines.offer(ctx, prefs, e, ctx.getString(routineName(e)))
+    fun offerRoutine(e: RoutineEffect): Boolean {
+        val ok = Routines.offer(ctx, prefs, e, ctx.getString(routineName(e)))
+        if (ok) pendingOffer = e
+        return ok
+    }
+
+    /**
+     * The row's tap. The first time, an explainer stands between the tap and
+     * Samsung's editor, because a jump into another app with nothing said is
+     * the one part of this flow a first-time user cannot work out alone. Once
+     * seen and acted on, every later tap goes straight through.
+     */
+    fun tapRoutine(e: RoutineEffect) {
+        if (prefs.routineExplained) offerRoutine(e) else explaining = e
+    }
+
+    /** The explainer's one button: remember it was seen, then go. */
+    fun explainedAndGo() {
+        val e = explaining ?: return
+        explaining = null
+        prefs.routineExplained = true
+        offerRoutine(e)
+    }
+
+    fun routineDone(e: RoutineEffect): Int = when (e) {
+        RoutineEffect.GRAYSCALE -> R.string.routine_done_gray
+        RoutineEffect.DARK -> R.string.routine_done_dark
+    }
 
     private fun routineName(e: RoutineEffect): Int = when (e) {
         RoutineEffect.GRAYSCALE -> R.string.routine_name_gray
@@ -315,8 +359,10 @@ class HomeState(
         val adoptedNow = Routines.adopt(ctx, prefs)
         routineGray = prefs.routineUuid(RoutineEffect.GRAYSCALE)
         routineDark = prefs.routineUuid(RoutineEffect.DARK)
+        pendingOffer = RoutineEffect.entries.firstOrNull { it.key == prefs.routineOffered }
         if (adoptedNow != null) {
             fxGray = prefs.fxGrayscale; fxDark = prefs.fxDarkTheme
+            justAdopted = adoptedNow
             commit()
         }
         // Re-asked here so the notice clears itself the moment a boot is

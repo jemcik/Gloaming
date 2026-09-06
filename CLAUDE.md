@@ -77,7 +77,11 @@ indefinitely is background restriction — see `core/BackgroundLimit.kt`.
                                  window does. Adoption is on EVIDENCE - the
                                  provider lists the routine by the name the
                                  file carried - never on the screen having
-                                 been shown. A capability probe, like Doors
+                                 been shown. The Save is EXPLAINED, four ways:
+                                 a note in the section, a one-time explainer
+                                 on the first tap, the row's own "not saved"
+                                 after a trip back with nothing, a snackbar on
+                                 adoption. A capability probe, like Doors
     core/RoutineFile.kt          the routine file Samsung's importer takes,
                                  byte for byte as its own writer lays it out:
                                  512-byte header, plain JSON body, footer.
@@ -551,7 +555,7 @@ compileSdk 37, targetSdk 36, minSdk 35.
 
 ## Tests
 
-`app/src/test/`, 238 cases, no device. They are written as the QUESTION the code
+`app/src/test/`, 243 cases, no device. They are written as the QUESTION the code
 answers rather than as coverage of a method, because none of the bugs were ever
 in a method — they were in an assumption.
 

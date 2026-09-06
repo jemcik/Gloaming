@@ -250,12 +250,14 @@ class RowFitTest {
      * face, and only on a phone that applies the zen effects; so both faces
      * are measured here on a Galaxy of their own. Absence is a failure.
      */
-    private fun galaxyRowsFitIn(locale: String, adopted: Boolean, scale: Float = 1f) {
+    private fun galaxyRowsFitIn(locale: String, adopted: Boolean, scale: Float = 1f, pending: Boolean = false) {
         RuntimeEnvironment.setQualifiers("+$locale-w360dp-h800dp")
         val ctx = ApplicationProvider.getApplicationContext<android.content.Context>()
         val fake = ctx.asGalaxyWithRoutines()
         val prefs = Prefs(ctx)
         prefs.enabled = true
+        // The third face: an offer left open, so the row says "not saved".
+        if (pending) prefs.routineOffered = com.jemcik.gloaming.core.RoutineEffect.GRAYSCALE.key
         if (adopted) {
             fake.rows += com.jemcik.gloaming.core.FakeRoutines.Row(10, "g")
             fake.rows += com.jemcik.gloaming.core.FakeRoutines.Row(11, "d")
@@ -274,7 +276,9 @@ class RowFitTest {
 
         val missing = mutableListOf<String>()
         val tall = titles.mapNotNull { title ->
-            val match = hasText(title, substring = true)
+            // EXACT, not substring: the note strip above these rows names both
+            // effects in a sentence, and a substring match found it too.
+            val match = hasText(title)
             if (compose.onAllNodes(match).fetchSemanticsNodes().isEmpty()) {
                 missing += title
                 return@mapNotNull null
@@ -293,6 +297,9 @@ class RowFitTest {
     @Test fun `a Galaxy's switch rows fit in English`() = galaxyRowsFitIn("en", adopted = true)
     @Test fun `a Galaxy's switch rows fit in Russian`() = galaxyRowsFitIn("ru", adopted = true)
     @Test fun `a Galaxy's switch rows fit in Ukrainian`() = galaxyRowsFitIn("uk", adopted = true)
+    @Test fun `a Galaxy's not-saved row fits in English`() = galaxyRowsFitIn("en", adopted = false, pending = true)
+    @Test fun `a Galaxy's not-saved row fits in Russian`() = galaxyRowsFitIn("ru", adopted = false, pending = true)
+    @Test fun `a Galaxy's not-saved row fits in Ukrainian`() = galaxyRowsFitIn("uk", adopted = false, pending = true)
 
     /**
      * The allowlist's rows have LESS room than Home's - a leading icon and a

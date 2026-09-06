@@ -871,7 +871,35 @@ or `ROUTINE_HOST` as providers, for Routines to read. Good Lock itself is the
 hub - `INSTALL_PACKAGES`, `WRITE_SECURE_SETTINGS`, a deep-linked MainActivity
 and an analytics provider - and names its modules from a server; none of the
 display modules (Theme Park, Wonderland, QuickStar, LockStar) is an automation
-surface. Both stay installed on the S23 for whoever wants to look.
+surface. Both were uninstalled again afterwards.
+
+**The Save, explained - four pieces of UX, same evening.** The owner's
+objection was exact: first open, tap the row, another app appears, and WHAT
+DO I DO WITH IT. And a last check for a permission that would let an app
+create a routine silently: none exists. Every creating permission is
+`signature|privileged` with no `development` or `appop` flag - unholdable and
+ungrantable even from adb - and `EXECUTE_APP_FUNCTIONS` is `internal|
+privileged`, with Routines' own app functions being for calendar and clock.
+So the tap stays, and is explained four ways: a NOTE in the section, before
+any tap, saying that grayscale and the dark theme run through Samsung's
+routines here and each needs one Save, gone once both exist; an EXPLAINER on
+the first tap only - what will open, what it already contains, the one thing
+to do there - with one button, and skipped for the second effect because the
+flow has been seen (`Prefs.routineExplained`); the row's own words, "Set up in
+Samsung's app" before, and "Not saved. Tap to retry" after a trip that came
+back with nothing, which the open offer already tells us; and a snackbar on
+return, "Grayscale is set up", because a switch turning on after a trip
+through another app is a change the eye did not watch. RowFitTest measures all
+three faces of the row in three languages - the first supporting text, "Tap to
+set up in Samsung's app", wrapped in every one of them and lost its verb.
+
+The snackbar took two builds. The first cleared `justAdopted` INSIDE the
+LaunchedEffect keyed on it, which restarted the effect with null and cancelled
+`showSnackbar` before it drew; the screen test could not see this because the
+assertion was not there yet, and the phone showed nothing. Cleared after the
+snackbar has shown instead, asserted in ScreensTest, and caught on the phone
+in a burst of captures 1.2 s after Save - stacked, for a moment, under
+Samsung's own «Файл … сохранен» toast, which is fine.
 
 **A parked alarm is still DELIVERED, so arrival cannot be the test.** The first
 version of the probe scored a blocked phone as healthy, and only the device

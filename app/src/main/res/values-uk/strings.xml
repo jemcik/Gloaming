@@ -117,8 +117,15 @@
     <string name="fx_dark_sub">При розблокуванні</string>
     <string name="fx_ambient_sub">Екран не світиться</string>
     <string name="fx_ambient_grant">Потрібен дозвіл змінювати системні налаштування. Натисніть, щоб дозволити</string>
-    <string name="fx_routine_setup">Натисніть, щоб налаштувати</string>
+    <string name="fx_routine_setup">Налаштувати через Samsung</string>
+    <string name="fx_routine_retry">Не збережено. Повторіть</string>
     <string name="fx_via_routine">Через сценарій</string>
+    <string name="routine_note">Тут відтінки сірого й темна тема працюють через сценарії Samsung. Кожному потрібне одне натискання «Зберегти» в програмі Samsung.</string>
+    <string name="routine_explain_title">Налаштування в програмі Samsung</string>
+    <string name="routine_explain_body">Відкриється програма «Режими й сценарії» з уже заповненим сценарієм «%1$s». Натисніть там «Зберегти» й поверніться: Gloaming запускатиме його щоразу в режимі сну.</string>
+    <string name="routine_open">Відкрити «Режими й сценарії»</string>
+    <string name="routine_done_gray">Відтінки сірого налаштовано</string>
+    <string name="routine_done_dark">Темну тему налаштовано</string>
     <string name="routine_name_gray">Gloaming: відтінки сірого</string>
     <string name="routine_name_dark">Gloaming: темна тема</string>
 

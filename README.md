@@ -279,9 +279,11 @@ install, no prompt, no adb — and its built-in action catalogue carries
 grayscale and the dark theme as routine actions in their own right. So on a
 Galaxy the **Grayscale** and **Dark theme** rows are the same switches every
 other phone has, each backed by one routine Gloaming generates instead of by the
-rule. The first tap on a row hands Samsung's editor the routine already filled
-in; **Save** there is the whole setup, once per effect, and the switch appears
-on when you come back. From then on the routine runs exactly while bedtime does,
+rule. The section says so before you tap anything. The first tap explains what
+is about to open and hands Samsung's editor the routine already filled in;
+**Save** there is the whole setup, once per effect, and when you come back the
+switch is on and the app says so. Come back without saving and the row says
+that too. From then on the routine runs exactly while bedtime does,
 on every path — the alarms, a restart, the tile, the app — and Samsung applies
 the effect with its own privileged code and reverts it the way it reverts any
 routine that ends. Wallpaper dimming has no routine action and is not offered

@@ -279,7 +279,12 @@ is in DECISIONS.md.
   compile. It expires by itself - night mode observed going OFF→ON in step with
   our rule overrules the prior for good. Watch the TRANSITION, never the state:
   the first version asked "is it dark while we want dark", answered yes on a
-  phone that was simply always dark, and un-hid the broken switches.
+  phone that was simply always dark, and un-hid the broken switches. And only a
+  transition the RULE could have made: on a Galaxy a routine of ours drives the
+  dark theme, and the second version took that routine's own work as proof,
+  redrew the zen switches and ended the routine, in one second. Where a dark
+  routine exists there is no evidence either way, and a record made that way is
+  withdrawn. `ScreenEffectsTest` pins it.
 - **One UI 8 stores `ZenDeviceEffects` and applies none of them** - grayscale
   and night mode both, across a screen-off cycle. Not a capability gap: One
   UI's own Sleep mode drives the same `Global saturation`. On a Galaxy the
@@ -557,7 +562,7 @@ compileSdk 37, targetSdk 36, minSdk 35.
 
 ## Tests
 
-`app/src/test/`, 248 cases, no device. They are written as the QUESTION the code
+`app/src/test/`, 251 cases, no device. They are written as the QUESTION the code
 answers rather than as coverage of a method, because none of the bugs were ever
 in a method — they were in an assumption.
 
@@ -614,6 +619,10 @@ in a method — they were in an assumption.
                           the offer. Against FakeRoutines, which carries the
                           provider's contract as read from the decompiled
                           original
+    ScreenEffectsTest     does night mode following the window prove the rule's
+                          effects work - yes on a bare Galaxy, no where a
+                          routine of ours drives the theme, and a record made
+                          that way is withdrawn
     RoutineFileTest       the routine file Samsung's importer is handed, read
                           back the way its reader reads it: the 512-byte
                           header's sizes are true, the padding is NUL, each

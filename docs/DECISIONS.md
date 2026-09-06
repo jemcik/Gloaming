@@ -947,6 +947,24 @@ and 63% of branches (from 76/59); `Routines.kt` 85/80, its uncovered lines
 being the app-opening fallback and the "no answer" branch. Re-run live on the
 S23 afterwards: both routines start with the window and end with it.
 
+**The observer took our own routine's work as evidence, 6 Sep 2026, on the
+owner's first clean run.** Two reports at once - "the dark theme was not
+applied, even across a screen-off" and "a wallpaper-dim switch appeared" - and
+one cause. `ScreenEffects.observeApplied` records that a phone applies the
+rule's effects when night mode goes off→on in step with the window. On the
+Galaxy the dark theme now goes on in step with the window because the
+generated routine turns it on; the observer saw it, set `effectsSeen`, the
+section redrew with the rule's three switches (dimming among them), and
+`Routines.sync`'s gate - routines only where the effects are thrown away -
+ended both routines, which reverted the theme. Journal: `routine start` at
+17:31:22, `device effects observed` at 17:31:23, `routine end` in the same
+second. The fix is a second condition on the evidence: only a transition the
+RULE could have made counts, so where a dark routine exists the observer
+records nothing either way, and withdraws a record made under it - which is
+also how the S23 repaired itself on the next resume. `ScreenEffectsTest` pins
+all three: the honest edge still counts, the routine's edge does not, and the
+false record is withdrawn.
+
 **A parked alarm is still DELIVERED, so arrival cannot be the test.** The first
 version of the probe scored a blocked phone as healthy, and only the device
 caught it. With `RUN_ANY_IN_BACKGROUND` at `ignore` the probe sat in *"Pending

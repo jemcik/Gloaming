@@ -337,6 +337,23 @@ class Prefs(ctx: Context) {
         get() = sp.getString("ambientSaved", null)
         set(v) = sp.edit { putString("ambientSaved", v) }
 
+    /**
+     * The manual routine bedtime runs, by Modes and Routines' own uuid - 0 is
+     * none. Only ever non-zero where [Routines.available] answered yes.
+     */
+    var routineUuid: Long
+        get() = sp.getLong("routineUuid", 0L)
+        set(v) = sp.edit { putLong("routineUuid", v) }
+
+    /**
+     * The routine WE started and have not yet ended - the latch that keeps a
+     * daytime reconcile from ending a run the user began by hand, and keeps a
+     * refused end on the books until it succeeds. See [Routines.sync].
+     */
+    var routineStarted: Long
+        get() = sp.getLong("routineStarted", 0L)
+        set(v) = sp.edit { putLong("routineStarted", v) }
+
     // --- who can interrupt, mapped onto ZenPolicy ---
     // ZenPolicy.PEOPLE_TYPE_*: 1 anyone, 2 contacts, 3 starred, 4 none
     // ZenPolicy.CONVERSATION_SENDERS_*: 1 anyone, 2 important, 3 none

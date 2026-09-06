@@ -652,6 +652,122 @@ The constant is hidden (`Settings.ACTION_BEDTIME_SETTINGS` does not compile
 against compileSdk 37), so the action string is written out; it is an intent
 action matched by the package manager, not a private method and not reflection.
 
+**Samsung round two, 6 Sep 2026: two routes to a grey screen, one of them with
+no computer.** Galaxy S23, One UI 8 / Android 16, Routines 4.9.04.13. The
+brief was to reverse-engineer Good Lock; it is not installed on this phone and
+its modules are Samsung-signed, so their manifests could only have shown
+signature-level permissions - the door that matters turned out to be in
+Samsung's own `Routines.apk`, pulled from `/system/priv-app` and read with
+`aapt2 dump xmltree` and jadx.
+
+*Route one: the AOSP daltonizer keys, behind the adb grant.* The earlier
+"grayscale has no settings key" diff was of One UI's Sleep mode, which goes
+through `SemColorDisplayManager.setSaturationLevel` - in-memory, no key. But
+Android's accessibility Colour correction is a DIFFERENT grey screen, and it is
+two `Settings.Secure` keys that `ColorDisplayService` observes live:
+`accessibility_display_daltonizer=0` (monochromacy) and
+`accessibility_display_daltonizer_enabled=1`. Written from adb: logcat - readable
+on Samsung - printed `SurfaceFlinger: apply a color matrix` 2 ms after the
+put, Samsung's own «Цветовая коррекция» screen flipped to «Включено» with its
+switch on and back to «Выключено» on the revert, and the owner, watching the
+phone, saw it go grey. A screenshot did NOT: mean chroma moved 33 to 28, which
+is noise - the matrix is applied at composition, after the framebuffer
+`screencap` reads, so a capture can never witness this effect on any phone.
+`pm grant com.jemcik.gloaming android.permission.WRITE_SECURE_SETTINGS` takes on
+One UI (`granted=true`), so this is exactly Honor's always-on route: real, and
+adb-only. NOT BUILT, because route two needs no computer and covers more; if it
+is ever built it is `AmbientControl`'s shape - save, write, restore on every
+path through `setActive` - gated on `!ScreenEffects.applied` so it never
+doubles a zen effect that works.
+
+*Route two: Modes and Routines leaves a door open.* Its manifest declares
+eleven permissions at signature|privileged - `WRITE_ROUTINE_INFO`,
+`READ_MODE_INFO`, `WRITE_MODE_INFO`, `ROUTINE_HOST`, `ACCESS_ROUTINES` and the
+rest - and ONE at `protectionLevel normal`: `READ_ROUTINE_INFO`, the one the
+earlier spike had already found granted at install with no prompt. It is the
+`readPermission` on `ExternalRoutineContentProvider`, authority
+`com.samsung.android.app.routines.externalprovider`, and that provider is not
+read-only in any sense that matters. Decompiled:
+
+    query  content://…externalprovider/routine_list
+             ?condition_type=manual|auto  &routine_type=normal|system|…
+             &only_enabled=0|1  (default 1)  &use_case=…
+           → uuid, name, icon_resource_id, icon_color, is_running,
+             is_enabled, is_oneoff
+    call   start_manual_routine  {uuid}  → {success, error?}
+           end_manual_routine    {uuid}
+           toggle_manual_routine {uuid}
+           (and a one-shot execute)
+
+Every `call` resolves the routine, refuses with a named `error` when it is
+missing, not manual, or disabled ("Routine is disabled", "Not a manual
+routine"), answers `success=true` with "Routine is already running" for a
+start that changes nothing, and otherwise `startService`s Samsung's own
+execution service with the caller's package as the running reason - a
+`gamebooster` caller is treated as the quick-settings tile, everyone else as
+`IN_APP`. So a routine the user built with the condition "Start button tapped"
+can be started and ended by uuid from an ordinary app, and Samsung runs its
+actions with the permissions we cannot hold: `display/darkmode/actions` calls
+`UiModeManager.setNightMode` plus `setNightModeActivated` by reflection, and
+`modeandroutine/mode/actions` turns Sleep mode on, whose effects are AOD off,
+grayscale and dark mode - read off the editor itself: «Always On Display:
+Выключено», «Градации серого», «Темный режим». Grayscale is a MODE effect, not
+a routine action; the routine reaches it by turning the mode on.
+
+What stays shut, for the record: `modeinfoprovider` is READ/WRITE_MODE_INFO,
+both signature|privileged, so a mode cannot be switched on directly - only
+through a routine that carries "turn on Sleep mode". `RoutineInfoProvider`'s
+`insert` under `core_service` builds a routine from extras, but that is
+`WRITE_ROUTINE_INFO`. The shell cannot exercise any of it - uid 2000 holds
+none of these permissions, so `content query` answers Permission Denial - which
+is why the live test had to be the app itself.
+
+Two smaller doors, both exported with no permission, both kept for the record
+rather than built: `LifestyleModeDialogActivity` answers
+`com.samsung.android.app.routines.action.LAUNCH_MODE_LIST_DIALOG` with a bottom
+sheet of the user's modes, one tap from Sleep mode on, from any caller - it is
+the lock-screen widget's dialog; and `MainRoutineTabLaunchActivity` opens the
+Routines tab, which the picker uses. The other public TRIGGER is the
+`notification/notificationreceived` condition: Routines runs a notification
+listener and a routine can fire on "a notification from [app] containing
+[keyword]" - group summaries screened out, importance NOT filtered, matched by
+case-insensitive `contains` on the text. It would let a routine follow the
+window with no permission at all, at the cost of posting two notifications a
+night as messages to another app and asking the user to build two event
+routines with no end. Route two makes it unnecessary.
+
+The semantics chosen: the routine runs EXACTLY while bedtime does, on every
+path through `setActive`, with `Prefs.routineStarted` recording what we
+started. That latch is what keeps a daytime reconcile from ending a run the
+user began by hand, and keeps a refused end owed until it succeeds; a start
+that answers "already running" is latched too, because the user chose this
+routine for the night and the night's end is the one thing they will expect to
+end it. `RoutinesTest` pins all of it against a fake carrying the contract
+above.
+
+Measured end to end the same afternoon, on the S23, with the app holding
+nothing but its install-time permissions. A manual routine "Gloaming" whose one
+action is "turn on Sleep mode", picked in the row; the window dragged over the
+present and the master switch flipped. Ours: `routine start
+1961863775940266114: ok`, then `zen state -> ON`. Samsung's, in its own
+readable logcat: `startManualRoutine: routineUuid=…, callingPackage=
+com.jemcik.gloaming`, the Gloaming routine `READY → RUNNING`, then Sleep mode
+`READY → RUNNING`. The phone: `Global saturation: Activated: true` - Samsung's
+own grey screen, the one no zen rule could reach - `zen_mode=1`, `aod_mode=0`.
+Switched off thirty seconds later: `routine end …: ok`, `endManualRoutine`
+with our package named, both routines back to `READY`, saturation `false`,
+`zen_mode=0`, `aod_mode=1`. The shell could not have run this test: uid 2000
+does not hold `READ_ROUTINE_INFO`, so `content query` is refused where the app
+is answered.
+
+One thing RowFitTest caught before the phone did: the row's first draft named
+Samsung's app in full under a 40dp avatar and a chevron, and wrapped to 88dp in
+all three languages - English included, at "Choose one from Modes and
+Routines". Home's card is 311dp and the routine row has less of it than any
+other. The supporting texts now name the TAB - "Choose from Routines",
+«Выберите в «Сценариях»» - and the app's full name lives in the picker, where
+there is room for the sentence that explains it.
+
 **A parked alarm is still DELIVERED, so arrival cannot be the test.** The first
 version of the probe scored a blocked phone as healthy, and only the device
 caught it. With `RUN_ANY_IN_BACKGROUND` at `ignore` the probe sat in *"Pending

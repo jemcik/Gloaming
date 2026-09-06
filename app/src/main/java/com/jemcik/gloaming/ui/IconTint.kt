@@ -55,6 +55,12 @@ enum class IconTint(private val dark: Color, private val light: Color) {
     Dark(Color(0xFF84C8FF), Color(0xFF0079B4)),
     /** always-on - teal */
     Ambient(Color(0xFF51D3D1), Color(0xFF00807E)),
+    /**
+     * a routine in Samsung's app - deliberately Cal's orange again. It is the
+     * one pair here already measured on the panel that none of the four rows
+     * it sits beside uses, and the calendar row is a screen away.
+     */
+    Routine(Color(0xFFFFB075), Color(0xFFB15B00)),
     /** calls - green, universally a phone */
     Call(Color(0xFF97D07F), Color(0xFF3A8123)),
     /** messages - blue */

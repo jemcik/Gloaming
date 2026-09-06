@@ -782,4 +782,37 @@ class ScreensTest {
         assertEquals("off must not move the handle", alarm, p.endTime)
         assertTrue("and it must actually be off", !p.exitAtAlarm)
     }
+
+    /**
+     * Picking a routine mid-window starts it NOW, through the same setActive
+     * every alarm goes through - not at the next window. The pick is the one
+     * act the row has, and a pick that took effect tomorrow would look, all
+     * evening, exactly like a pick that did nothing.
+     */
+    @Test
+    fun `picking a routine mid-window starts it now`() {
+        val ctx = ctx()
+        val fake = com.jemcik.gloaming.core.FakeRoutines.install(ctx)
+        fake.rows += com.jemcik.gloaming.core.FakeRoutines.Row(10, "Sleep")
+        val prefs = Prefs(ctx)
+        prefs.enabled = true
+        val now = LocalTime.now()
+        prefs.startTime = now.minusHours(1)
+        prefs.endTime = now.plusHours(1)
+        prefs.days = DayOfWeek.entries.toSet()
+
+        compose.setContent {
+            GloamingTheme(dark = false) {
+                Home(rememberScrollState(), onOpenSettings = {}, onOpenInterruptions = {})
+            }
+        }
+        compose.onNodeWithText(ctx.getString(R.string.fx_routine)).performScrollTo().performClick()
+        compose.onNodeWithText("Sleep").performClick()
+
+        assertEquals(10L, prefs.routineUuid)
+        assertEquals(listOf("start 10"), fake.calls)
+        assertEquals("and it is on the books as ours", 10L, prefs.routineStarted)
+        // The row now says which one, off Samsung's own answer.
+        compose.onNodeWithText("Sleep").assertExists()
+    }
 }

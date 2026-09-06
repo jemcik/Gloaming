@@ -20,10 +20,20 @@
     <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS"
         tools:ignore="ProtectedPermissions" />
 
+    <!-- Samsung's Modes and Routines lists a user's manual routines and starts or
+         ends one on request, through a content provider it gates on THIS - and
+         it is protectionLevel normal: granted at install, no prompt. Undefined
+         on every other phone, where declaring it costs nothing. See Routines. -->
+    <uses-permission android:name="com.samsung.android.app.routines.permission.READ_ROUTINE_INFO" />
+
     <!-- Without this, resolveActivity cannot see the vendor's auto-launch
          screen at all and BootWatch would always fall back to app details. -->
     <queries>
         <package android:name="com.hihonor.systemmanager" />
+        <!-- Samsung's Modes and Routines: the provider Routines drives, and the
+             package so its Routines tab can be opened from the picker. -->
+        <package android:name="com.samsung.android.app.routines" />
+        <provider android:authorities="com.samsung.android.app.routines.externalprovider" />
         <!-- So resolveActivity can SEE the contacts app's starred screen. We
              never read contacts - launching an activity needs no permission -
              but without this the resolve returns null and the row would hide

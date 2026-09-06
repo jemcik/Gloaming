@@ -338,6 +338,10 @@ object ZenController {
         // goes above the early return below, and a phone that died mid-window
         // restores the display when it reboots without a case of its own.
         AmbientControl.sync(ctx, p, active)
+        // Samsung's own automation, for the same reason and on the same path:
+        // the chosen routine runs exactly while the window does, whichever way
+        // the window opened or closed.
+        Routines.sync(ctx, p, active)
         val id = syncRule(ctx, p) ?: return false
         val want = if (active) Condition.STATE_TRUE else Condition.STATE_FALSE
         val label = if (active) "ON" else "OFF"

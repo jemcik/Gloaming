@@ -117,6 +117,14 @@
     <string name="fx_dark_sub">При разблокировке</string>
     <string name="fx_ambient_sub">Экран не светится</string>
     <string name="fx_ambient_grant">Требуется разрешение на изменение системных настроек. Нажмите, чтобы разрешить</string>
+    <string name="fx_routine">Сценарий</string>
+    <string name="fx_routine_pick">Выберите в «Сценариях»</string>
+    <string name="fx_routine_missing">Уже не существует</string>
+    <string name="fx_routine_disabled">Выключен в «Сценариях»</string>
+    <string name="routine_how">Gloaming запускает его в начале сна и завершает в конце. Создайте его в приложении «Режимы и сценарии» с условием «Запускать вручную».</string>
+    <string name="routine_none_yet">Ручных сценариев пока нет. Создайте в приложении «Режимы и сценарии» сценарий с условием «Запускать вручную» и нужными на ночь действиями: Gloaming запустит его в начале сна и завершит в конце.</string>
+    <string name="routine_none">Нет</string>
+    <string name="routine_open">Открыть «Режимы и сценарии»</string>
 
     <!-- ============ Home: end-bedtime dialog ============ -->
     <string name="action_set">Задать</string>

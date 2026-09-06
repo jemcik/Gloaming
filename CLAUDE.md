@@ -63,6 +63,15 @@ indefinitely is background restriction — see `core/BackgroundLimit.kt`.
                                  effects. The one question here with no probe,
                                  so a manufacturer prior that a measured
                                  transition can overrule
+    core/Routines.kt             Samsung's Modes and Routines, driven through
+                                 the door it leaves open: a content provider
+                                 behind a NORMAL permission that lists the
+                                 user's manual routines and starts or ends one
+                                 by uuid. The chosen routine runs exactly while
+                                 the window does, and WHAT it does stays the
+                                 user's choice inside Samsung's app - which is
+                                 why no copy names an effect. A capability
+                                 probe, like Doors, never a manufacturer test
     core/BackgroundProbe.kt      one throwaway alarm that asks whether this
                                  phone delivers alarms at all. Silent unless
                                  the answer is no
@@ -293,6 +302,14 @@ is in DECISIONS.md.
   weak evidence; it is none. The rule in `dumpsys notification` is the answer.
 - `am broadcast` cannot reach `BedtimeReceiver` — it is `exported="false"`,
   correctly. Test through real alarms.
+- **Samsung's Modes and Routines can be driven, and only from the APP.** Its
+  external provider (`Routines.kt`) sits behind `READ_ROUTINE_INFO`, which is
+  `protectionLevel normal` - but the shell does not hold it, so `content query`
+  from adb is refused where the app is answered. Test through the app and read
+  Samsung's side in logcat (`Routine@Core`), which is readable there. A MODE
+  cannot be switched on directly (`READ/WRITE_MODE_INFO` are signature); only a
+  manual routine that turns the mode on. Measured 6 Sep 2026; DECISIONS has the
+  contract.
 - `dumpsys notification` prints a `Zen Log:` history as well as live config, so
   `sed '/Zen Log:/q'` before grepping or long-deleted rules read as present.
   It also prints the live config TWICE, so count rules by id, not occurrence.
@@ -514,7 +531,7 @@ compileSdk 37, targetSdk 36, minSdk 35.
 
 ## Tests
 
-`app/src/test/`, 213 cases, no device. They are written as the QUESTION the code
+`app/src/test/`, 230 cases, no device. They are written as the QUESTION the code
 answers rather than as coverage of a method, because none of the bugs were ever
 in a method — they were in an assumption.
 
@@ -561,6 +578,13 @@ in a method — they were in an assumption.
     BackgroundProbeTest   the delivery probe: lateness rather than arrival is
                           the verdict, and the latch that stops its own retest
                           erasing it
+    RoutinesTest          Samsung's routine, run for the night: it runs exactly
+                          while the window does, a daytime reconcile never ends
+                          a run the user began by hand, a refused end is owed
+                          until it succeeds, and a pick moved mid-window ends
+                          the old one before starting the new. Against
+                          FakeRoutines, which carries the provider's contract
+                          as read from the decompiled original
     ResetTest             starting over: no rule survives - not even one whose
                           id was already lost - the store comes back EMPTY so
                           the next launch takes the fresh-install branch and not

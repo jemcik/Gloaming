@@ -19,6 +19,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.ScrollState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -1213,7 +1214,12 @@ private fun ScreenEffectsSection(s: HomeState, runningNow: Boolean) {
     val ambientRow = remember(s.tick) {
         ambientZen || AmbientControl.canControl(ctx) || ambientGrant
     }
-    if (!zenEffects && !ambientRow) return
+    // The fifth: Samsung's own automation, on the phone that throws the zen
+    // effects away. A capability probe like the rest - the provider either
+    // resolves or it does not - and where it does, the row is the one working
+    // route to a grey screen that needs no computer. See Routines.
+    val routines = remember(s.tick) { Routines.available(ctx) }
+    if (!zenEffects && !ambientRow && !routines) return
 
     // A card of rows, the same shape as "What can wake you" above it,
     // because it is the same kind of thing: a list of switches with
@@ -1264,6 +1270,7 @@ private fun ScreenEffectsSection(s: HomeState, runningNow: Boolean) {
                     stringResource(R.string.fx_dark_sub), s.fxDark
                 ) { s.fxDark = !s.fxDark; haptics.toggle(s.fxDark); s.commit() }
             }
+            if (routines) add { RoutineRow(s) }
             // No divider to remove with it: a grouped list just has one
             // item fewer, and the corners re-form around what is left.
             if (ambientRow) add {
@@ -1287,6 +1294,81 @@ private fun ScreenEffectsSection(s: HomeState, runningNow: Boolean) {
             }
         })
     }
+}
+
+/**
+ * The routine Samsung's app will run for the night, and the picker behind it.
+ *
+ * A link row rather than a switch, because the thing it controls is a CHOICE
+ * among the user's own routines, not an on/off - and "none" is one of the
+ * choices. The subtitle is what Modes and Routines says about the pick NOW:
+ * its name, or that it is gone, or that it has been switched off over there.
+ * A switch that read "on" over a routine Samsung had deleted would be the
+ * lying switch this section exists to avoid.
+ */
+@Composable
+private fun RoutineRow(s: HomeState) {
+    val haptics = s.haptics
+    var picking by remember { mutableStateOf(false) }
+    val r = s.routine
+    LinkRow(
+        stringResource(R.string.fx_routine),
+        supporting = when {
+            s.routineUuid == 0L -> stringResource(R.string.fx_routine_pick)
+            r == null -> stringResource(R.string.fx_routine_missing)
+            !r.enabled -> stringResource(R.string.fx_routine_disabled)
+            else -> r.name
+        },
+        leading = { FxIcon(Fx.Routine) }
+    ) { haptics.open(); picking = true }
+    if (picking) RoutinePicker(s) { picking = false }
+}
+
+/**
+ * Every manual routine Samsung's app holds, and none. A pick commits at once
+ * and closes, the way the theme picker works - there is nothing to confirm.
+ * The door to Samsung's app is the other button, because the routine has to
+ * be MADE there first, and the empty state says so in as many words.
+ */
+@Composable
+private fun RoutinePicker(s: HomeState, onClose: () -> Unit) {
+    val ctx = LocalContext.current
+    val g = gloam
+    val haptics = s.haptics
+    val routines = remember { Routines.list(ctx) }
+    AlertDialog(
+        onDismissRequest = onClose,
+        containerColor = g.raise,
+        shape = RoundedCornerShape(32.dp),
+        title = { Text(stringResource(R.string.fx_routine)) },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState())) {
+                Text(
+                    stringResource(
+                        if (routines.isEmpty()) R.string.routine_none_yet else R.string.routine_how
+                    ),
+                    style = MaterialTheme.typography.bodyMedium, color = g.onSurfaceLow
+                )
+                Spacer(Modifier.height(12.dp))
+                RadioRow(stringResource(R.string.routine_none), s.routineUuid == 0L) {
+                    haptics.select(); s.pickRoutine(null); onClose()
+                }
+                routines.forEach { r ->
+                    RadioRow(r.name, s.routineUuid == r.uuid) {
+                        haptics.select(); s.pickRoutine(r); onClose()
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { haptics.open(); Routines.openApp(ctx); onClose() }) {
+                Text(stringResource(R.string.routine_open))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onClose) { Text(stringResource(R.string.action_cancel)) }
+        }
+    )
 }
 
 /**

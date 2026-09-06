@@ -5,10 +5,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import com.jemcik.gloaming.core.Routines
 import com.jemcik.gloaming.core.AlarmWatch
 import com.jemcik.gloaming.core.BackgroundLimit
 import com.jemcik.gloaming.core.Bedtime
@@ -74,6 +76,15 @@ class HomeState(
     var fxDim by mutableStateOf(prefs.fxDimWallpaper)
     var fxDark by mutableStateOf(prefs.fxDarkTheme)
     var fxAmbient by mutableStateOf(prefs.fxHideAmbient)
+    /** The manual routine bedtime runs on a Galaxy, by Samsung's uuid; 0 is none. */
+    var routineUuid by mutableLongStateOf(prefs.routineUuid)
+    /**
+     * What Modes and Routines says about [routineUuid] NOW - null when nothing
+     * is chosen or it has been deleted there. Asked on resume and on pick, not
+     * per tick: it is a query into another app's process, and a name does not
+     * change by the minute.
+     */
+    var routine by mutableStateOf<Routines.Routine?>(null)
 
     /** Whether the morning alarm may end the night early. */
     var endAtAlarm by mutableStateOf(prefs.exitAtAlarm)
@@ -197,6 +208,18 @@ class HomeState(
         prefs.fxDimWallpaper = fxDim; prefs.fxDarkTheme = fxDark
         prefs.fxHideAmbient = fxAmbient
         prefs.exitAtAlarm = endAtAlarm
+        prefs.routineUuid = routineUuid
+    }
+
+    /**
+     * The routine picker's one act. Commits at once, like every effect row: a
+     * pick made mid-window starts the routine now, through the same setActive
+     * every alarm goes through, rather than at the next window.
+     */
+    fun pickRoutine(r: Routines.Routine?) {
+        routineUuid = r?.uuid ?: 0L
+        routine = r
+        commit()
     }
 
     fun commit() {
@@ -281,6 +304,8 @@ class HomeState(
         fxDim = prefs.fxDimWallpaper; fxDark = prefs.fxDarkTheme
         fxAmbient = prefs.fxHideAmbient
         endAtAlarm = prefs.exitAtAlarm
+        routineUuid = prefs.routineUuid
+        routine = Routines.chosen(ctx, prefs)
         // Re-asked here so the notice clears itself the moment a boot is
         // handled properly - the only confirmation available, since the
         // vendor's own setting cannot be read.

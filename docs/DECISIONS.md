@@ -1053,6 +1053,18 @@ one end, no start, key 1; flip off, one start, key 0; off, one end, key 1.
 The lesson for the file: never decide against a reading your own action is
 about to change, or has just changed - record it before you act.
 
+**How strong the effect is, so it is never mistaken for broken.** The owner's
+first reaction to the finished switch was that it did nothing; the journal
+showed every flip starting or ending the routine within a second, with the
+key following, and the phone's own captures showed the truth: One UI's dark-
+mode wallpaper dimming is FAINT. Home-screen wallpaper bands, dark theme on,
+switch on against off: 124 against 136, 117 against 132, 34 against 37 - eight
+to eleven percent darker, on the home and lock screens only, never inside an
+app. AOSP's own dim effect, the one the same row drives on other phones, is
+sixty percent. On a dark wallpaper like the S23's it takes a side-by-side to
+see. Kept anyway, on the owner's call - it works, and it is what the phone
+has - with this paragraph as the answer to the next "it does nothing".
+
 **A parked alarm is still DELIVERED, so arrival cannot be the test.** The first
 version of the probe scored a blocked phone as healthy, and only the device
 caught it. With `RUN_ANY_IN_BACKGROUND` at `ignore` the probe sat in *"Pending

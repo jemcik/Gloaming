@@ -1,12 +1,13 @@
 # Samsung Modes and Routines — the reverse-engineered contract
 
-Reference only. **Nothing here is built into the app**, deliberately: the
-provider never got called by One UI, so shipping it would add a dead
-ContentProvider and a Samsung permission to every install for no behaviour. It
-is kept because the contract cost a day to establish and is written nowhere
-public, in any language — English, Korean and Chinese searches all came back
-with nothing, and the SDK is absent from developer.samsung.com's published
-Galaxy SDKs.
+Reference only, and SUPERSEDED on 6 Sep 2026: this is the SDK-provider attempt,
+in which Gloaming offered conditions to Modes and Routines and was never
+called. What is built into the app is the other door - Routines' external
+content provider and its routine-file importer - documented in
+`docs/DECISIONS.md` ("Samsung round two" onwards) and implemented in
+`core/Routines.kt` and `core/RoutineFile.kt`. This directory is kept for the
+SDK contract, which is written nowhere public, in any language, and for the
+record of what was tried first.
 
 Established by decompiling `/system/priv-app/Routines/Routines.apk` (One UI 8,
 Galaxy S23) with jadx, and by reading Samsung Clock's manifest, which is a

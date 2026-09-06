@@ -601,7 +601,8 @@ T['en'] = dict(
         ('Screen effects',
          'Grayscale, wallpaper dimming, dark theme, always-on display. Where the '
          'operating system does not let an app control an effect, the switch is not '
-         'drawn at all, rather than offering one that lies.'),
+         'drawn at all, rather than offering one that lies.'
+         ' On Samsung phones, grayscale, the dark theme and wallpaper dimming run through your own Modes and Routines: Gloaming hands Samsung’s app each routine ready-made, you tap Save once, and from then on they are ordinary switches.'),
         ('It checks rather than assumes',
          'Some phones freeze apps in the background, and the failure that causes is '
          'specific: the end of a window never fires, so bedtime does not end — whatever '
@@ -727,7 +728,8 @@ T['uk'] = dict(
         ('Ефекти екрана',
          'Чорно-білий екран, притемнення шпалер, темна тема, always-on дисплей. Якщо '
          'операційна система не дозволяє застосунку керувати ефектом, перемикач не '
-         'показується взагалі — краще жодного, ніж такий, що бреше.'),
+         'показується взагалі — краще жодного, ніж такий, що бреше.'
+         ' На телефонах Samsung чорно-білий екран, темна тема й притемнення шпалер працюють через ваші власні «Режими й сценарії»: Gloaming передає програмі Samsung готовий сценарій, ви один раз натискаєте «Зберегти», і далі це звичайні перемикачі.'),
         ('Він перевіряє, а не припускає',
          'Деякі телефони заморожують застосунки у фоні, і поломка при цьому конкретна: '
          'кінець проміжку не спрацьовує, тож режим сну не завершується — усе, що він '
@@ -856,7 +858,8 @@ T['ru'] = dict(
         ('Эффекты экрана',
          'Чёрно-белый экран, приглушение обоев, тёмная тема, always-on дисплей. Если '
          'операционная система не позволяет приложению управлять эффектом, переключатель '
-         'не показывается вовсе — лучше никакого, чем такой, который врёт.'),
+         'не показывается вовсе — лучше никакого, чем такой, который врёт.'
+         ' На телефонах Samsung чёрно-белый экран, тёмная тема и приглушение обоев работают через ваши «Режимы и сценарии»: Gloaming передаёт приложению Samsung готовый сценарий, вы один раз нажимаете «Сохранить», и дальше это обычные переключатели.'),
         ('Он проверяет, а не предполагает',
          'Некоторые телефоны замораживают приложения в фоне, и поломка при этом '
          'конкретная: конец промежутка не срабатывает, поэтому режим сна не '

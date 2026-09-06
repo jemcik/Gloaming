@@ -166,6 +166,10 @@ object Routines {
         val found = listed.firstOrNull { it.name == name && it.enabled } ?: return null
         p.setRoutineUuid(effect, found.uuid)
         p.setFxWants(effect, true)
+        // The dark theme's own row brings the wallpaper row with it, and that
+        // switch must open TELLING THE TRUTH: the phone's own setting, which is
+        // what the wallpaper will do tonight until the user asks otherwise.
+        if (effect == RoutineEffect.DARK) p.fxDimWallpaper = phoneDimsByItself(ctx, p)
         p.routineOffered = null
         p.routineOfferedName = null
         Journal.write(ctx, "routine ${effect.key} adopted: " + found.uuid)
@@ -202,14 +206,52 @@ object Routines {
         return adopt(ctx, p, listed)
     }
 
+    /** One UI's own "apply dark mode to wallpaper", readable by anyone. On by default. */
+    fun phoneDims(ctx: Context): Boolean =
+        android.provider.Settings.System.getInt(ctx.contentResolver, DIM_KEY, 1) == 1
+
+    internal const val DIM_KEY = "display_night_theme_wallpaper"
+
     /**
-     * The routines the window wants running: adopted, and switched on - and,
-     * for the wallpaper, only with the dark theme, because One UI dims the
-     * wallpaper only in dark mode and a routine that dims a light phone does
-     * nothing but run.
+     * The phone's own setting AS IT WAS before any routine of ours touched it.
+     * While the window is open the live key reads what WE made it, or is
+     * mid-revert in Samsung's process a second after we ended a routine -
+     * deciding against the live key ended a routine it had just started, and
+     * then started the other polarity on a value that was still being put
+     * back. So [sync] records the setting once, when the window opens, and
+     * every decision until it closes is made against that record.
      */
-    internal fun wanted(p: Prefs): Set<Long> = RoutineEffect.entries
-        .filter { p.fxWants(it) && (it != RoutineEffect.DIM || p.fxWants(RoutineEffect.DARK)) }
+    fun phoneDimsByItself(ctx: Context, p: Prefs): Boolean =
+        if (p.dimBaseline >= 0) p.dimBaseline == 1 else phoneDims(ctx)
+
+    /**
+     * The dim routine the window would need for the switch's state, or null
+     * where the phone's own setting already gives it. On most Galaxies that
+     * setting is ON, so "dim" needs nothing and "do not dim" needs the OFF
+     * routine; on one where it is off, the reverse. The routine is only ever
+     * needed to make the night DIFFER from the day.
+     */
+    fun dimRoutineFor(ctx: Context, p: Prefs, dim: Boolean): RoutineEffect? = when {
+        dim == phoneDimsByItself(ctx, p) -> null
+        dim -> RoutineEffect.DIM
+        else -> RoutineEffect.DIM_OFF
+    }
+
+    /**
+     * The routines the window wants running: adopted, and switched on. The
+     * wallpaper's two are wanted only with the dark theme - One UI dims the
+     * wallpaper only in dark mode - and only the one that makes the night
+     * differ from the phone's own setting; the other would run for nothing.
+     */
+    internal fun wanted(ctx: Context, p: Prefs): Set<Long> = RoutineEffect.entries
+        .filter { p.fxWants(it) }
+        .filter {
+            when (it) {
+                RoutineEffect.DIM, RoutineEffect.DIM_OFF ->
+                    p.fxWants(RoutineEffect.DARK) && dimRoutineFor(ctx, p, p.fxDimWallpaper) == it
+                else -> true
+            }
+        }
         .map { p.routineUuid(it) }
         .filter { it != 0L }
         .toSet()
@@ -222,11 +264,25 @@ object Routines {
      * is refused stays unrecorded, so the next sync asks again.
      */
     fun sync(ctx: Context, p: Prefs, windowActive: Boolean) {
+        // The phone's own dimming, recorded at the window's opening and held
+        // until its close - before anything of ours has moved the key.
+        if (windowActive) {
+            // Normally read before anything of ours has moved the key. If one
+            // of our dim routines is already running - an upgrade mid-window -
+            // the key is ours, and what it holds says what was under it.
+            if (p.dimBaseline < 0) p.dimBaseline = when {
+                p.routineUuid(RoutineEffect.DIM) in p.routinesStarted -> 0
+                p.routineUuid(RoutineEffect.DIM_OFF) in p.routinesStarted -> 1
+                else -> if (phoneDims(ctx)) 1 else 0
+            }
+        } else {
+            p.dimBaseline = -1
+        }
         // Only where the zen effects are thrown away. The day a Galaxy applies
         // them - ScreenEffects notices the transition on its own - the rule
         // does the work and the routines fall silent, rather than two
         // mechanisms driving one display.
-        val want = if (windowActive && !ScreenEffects.applied(ctx)) wanted(p) else emptySet()
+        val want = if (windowActive && !ScreenEffects.applied(ctx)) wanted(ctx, p) else emptySet()
         val started = p.routinesStarted
         if (started == want) return
         val still = started.toMutableSet()

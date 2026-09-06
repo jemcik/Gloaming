@@ -73,8 +73,11 @@ indefinitely is background restriction — see `core/BackgroundLimit.kt`.
                                  backed by one generated routine - Samsung's
                                  own built-in actions; dimming only WITH the
                                  dark theme, because One UI dims only in dark
-                                 mode, so its row lives under that switch -
-                                 saved once (the Save in Samsung's
+                                 mode, so its row lives under that switch, and
+                                 as a PAIR of polarities of which the window
+                                 runs only the one that makes the night differ
+                                 from the phone's own setting, which dims by
+                                 default - saved once (the Save in Samsung's
                                  editor is the floor: inserting directly is
                                  signature-level), then run exactly while the
                                  window does. Adoption is on EVIDENCE - the
@@ -305,6 +308,12 @@ is in DECISIONS.md.
 - minSdk is **35** because `ZenDeviceEffects`, `AutomaticZenRule.Builder` and
   `getAutomaticZenRuleState` are all API 35, and a missing method raises `Error`,
   which none of the `runCatching` here would catch.
+- **Never decide against a reading your own action changes.** The dim
+  routines flip One UI's own "apply dark mode to wallpaper" key, and the
+  choice of which polarity the night needs was read off that very key - twice,
+  in two builds, and flickered both times, because our routine had just set it
+  or Samsung's revert had not yet landed. `Prefs.dimBaseline` records the
+  phone's setting when the window opens, before anything of ours moves it.
 - **A shell write to `Settings.System` proves nothing about the APP's write.**
   A third-party app may write only AOSP's `PUBLIC_SETTINGS` keys there, whatever
   it holds; `aod_mode` works only because Samsung allowlists it, and
@@ -571,7 +580,7 @@ compileSdk 37, targetSdk 36, minSdk 35.
 
 ## Tests
 
-`app/src/test/`, 254 cases, no device. They are written as the QUESTION the code
+`app/src/test/`, 261 cases, no device. They are written as the QUESTION the code
 answers rather than as coverage of a method, because none of the bugs were ever
 in a method — they were in an assumption.
 

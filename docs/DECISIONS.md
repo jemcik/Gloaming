@@ -1006,6 +1006,53 @@ file: a shell write proves nothing about an app's write, and the rule's own
 dim row on every other phone is untouched, because this one is drawn only
 where the rule's effects are thrown away.
 
+**And the switch did nothing, 6 Sep 2026, on the owner's phone.** The journal
+showed every flip starting or ending the dim routine within a second, and
+Samsung ran it every time - and the wallpaper never changed, because One UI
+dims the wallpaper in dark mode BY DEFAULT: `display_night_theme_wallpaper` is
+1 on this S23 out of the box. The routine turned on what was already on, and
+its revert restored an already-on value. "Off" could not un-dim, because the
+only routine there was turned the setting on. So the effect is now a PAIR:
+`DIM` and `DIM_OFF`, the same action with `toggle_value` true and false, and
+the window runs at most one of them - the one that makes the night DIFFER
+from the phone's own setting, which is readable by anyone
+(`Routines.dimRoutineFor`). On a phone that dims already, "dim" needs
+nothing and "do not dim" needs the OFF routine; on one that does not, the
+reverse. The switch is a switch from the start, opening in the phone's own
+state the moment the dark theme is adopted, so it never shows off over a
+wallpaper that dims; a flip to the state the phone does not give offers that
+polarity's routine and moves only on adoption. Most Galaxies will therefore
+pay one Save for this switch, for "off", and none for "on". Routines that
+match the phone's setting are never run: a routine that changes nothing is
+still a routine running all night.
+
+A runner artefact found on the way, for the file: androidx `FileProvider`
+caches its path strategy per authority in a static map, and Robolectric
+gives every test a fresh cache directory, so the second test in a JVM to
+offer a routine asked a strategy rooted in the previous test's directory and
+threw. The Galaxy test helper clears that map; the test that failed passed
+alone, which is the signature of exactly this.
+
+Two flickers on the way to that switch, both from reading the phone's setting
+at the wrong moment. First: the decision "which polarity does the night need"
+read the live key, and our own OFF routine had just set it to 0, so the next
+sync concluded "the phone does not dim, nothing is needed", ended the routine,
+Samsung's revert put the key back, and the sync after that started it again -
+start, end, start, in one second. Second, after deciding from the started set
+instead: flipping the switch on ended the OFF routine, and the sync a moment
+later found the started set empty and the key STILL 0, because Samsung's
+revert lands asynchronously, and started the ON routine on a value that was
+being put back. So the phone's own setting is now RECORDED once, when the
+window opens and before anything of ours has moved the key
+(`Prefs.dimBaseline`), every decision until the window closes is made against
+that record, and the record is let go with the window so tomorrow reads the
+phone afresh. An upgrade mid-window, where one of our routines already holds
+the key, records what was under it from the started set instead. Measured
+from a fresh window on the S23: on, the OFF routine starts, key 0; flip on,
+one end, no start, key 1; flip off, one start, key 0; off, one end, key 1.
+The lesson for the file: never decide against a reading your own action is
+about to change, or has just changed - record it before you act.
+
 **A parked alarm is still DELIVERED, so arrival cannot be the test.** The first
 version of the probe scored a blocked phone as healthy, and only the device
 caught it. With `RUN_ANY_IN_BACKGROUND` at `ignore` the probe sat in *"Pending

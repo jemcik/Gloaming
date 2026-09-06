@@ -877,20 +877,22 @@ class ScreensTest {
 
     /**
      * On a Galaxy the wallpaper-dim row lives UNDER the dark theme, and only
-     * while that is on: One UI dims the wallpaper only in dark mode. So the row
-     * is absent with the dark theme off, present with it on - and the rule's
-     * own dim row is never the one drawn here.
+     * while that is on: One UI dims the wallpaper only in dark mode. It is a
+     * switch from the start, mirroring the phone's own setting; and a flip to
+     * the state the phone does not give is an OFFER of that polarity's
+     * routine, not a flip - the switch moves on adoption, never before.
      */
     @Test
     fun `a Galaxy's wallpaper dim row exists only under a dark theme that is on`() {
         val ctx = ctx()
         val fake = ctx.asGalaxyWithRoutines()
         fake.rows += FakeRoutines.Row(11, "d")
-        fake.rows += FakeRoutines.Row(12, "w")
         val prefs = Prefs(ctx)
         prefs.setRoutineUuid(RoutineEffect.DARK, 11)
-        prefs.setRoutineUuid(RoutineEffect.DIM, 12)
         prefs.fxDarkTheme = false
+        // The phone dims in dark mode by itself, and the switch says so.
+        android.provider.Settings.System.putInt(ctx.contentResolver, com.jemcik.gloaming.core.Routines.DIM_KEY, 1)
+        prefs.fxDimWallpaper = true
         compose.setContent {
             GloamingTheme(dark = false) {
                 Home(rememberScrollState(), onOpenSettings = {}, onOpenInterruptions = {})
@@ -899,12 +901,17 @@ class ScreensTest {
         val dim = ctx.getString(R.string.fx_dim)
         val dark = ctx.getString(R.string.fx_dark)
         assertTrue("no dark theme, no dim row", compose.onAllNodesWithText(dim).fetchSemanticsNodes().isEmpty())
-        // Switch the dark theme on through its own row; the dim row follows.
         compose.onNode(hasText(dark) and isToggleable()).performScrollTo().performClick()
         assertTrue(prefs.fxDarkTheme)
-        // Its own routine adopted, so the row is the switch itself, subtitled
-        // with the one condition it carries.
-        compose.onNode(hasText(dim) and isToggleable()).performScrollTo().assertExists()
+        compose.onNode(hasText(dim) and isToggleable()).performScrollTo().assertIsOn()
         compose.onNodeWithText(ctx.getString(R.string.fx_dim_dark_sub)).assertExists()
+
+        // Off is the state this phone does not give: the OFF routine is offered,
+        // and the switch stays where the night can deliver.
+        compose.onNode(hasText(dim) and isToggleable()).performClick()
+        assertEquals("dimoff", prefs.routineOffered)
+        assertTrue("not flipped until the routine exists", prefs.fxDimWallpaper)
+        compose.onNode(hasText(dim) and isToggleable()).assertIsOn()
+        compose.onNodeWithText(ctx.getString(R.string.fx_routine_retry)).assertExists()
     }
 }

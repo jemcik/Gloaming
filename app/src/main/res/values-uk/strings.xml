@@ -128,9 +128,11 @@
     <string name="routine_done_gray">Відтінки сірого налаштовано</string>
     <string name="routine_done_dark">Темну тему налаштовано</string>
     <string name="routine_done_dim">Затемнення шпалер налаштовано</string>
+    <string name="routine_done_dimoff">Шпалери без затемнення налаштовано</string>
     <string name="routine_name_gray">Gloaming: відтінки сірого</string>
     <string name="routine_name_dark">Gloaming: темна тема</string>
     <string name="routine_name_dim">Gloaming: затемнення шпалер</string>
+    <string name="routine_name_dimoff">Gloaming: шпалери без затемнення</string>
 
     <!-- ============ Home: end-bedtime dialog ============ -->
     <string name="action_set">Установити</string>

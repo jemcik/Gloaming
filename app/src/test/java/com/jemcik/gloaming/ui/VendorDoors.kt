@@ -34,5 +34,16 @@ internal fun Context.withLaunchManager() {
  */
 internal fun Context.asGalaxyWithRoutines(): FakeRoutines {
     org.robolectric.util.ReflectionHelpers.setStaticField(android.os.Build::class.java, "MANUFACTURER", "samsung")
+    // FileProvider caches its path strategy per authority in a STATIC map, and
+    // Robolectric gives every test a fresh cache directory. The second test
+    // in a JVM to offer a routine therefore asked a strategy rooted in the
+    // previous test's directory, which threw, and the offer never went out -
+    // an artefact of the runner, not of the app. Cleared here, where every
+    // Galaxy test starts.
+    runCatching {
+        val cache = androidx.core.content.FileProvider::class.java.getDeclaredField("sCache")
+        cache.isAccessible = true
+        (cache.get(null) as MutableMap<*, *>).clear()
+    }
     return FakeRoutines.install(this)
 }

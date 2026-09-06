@@ -272,20 +272,144 @@ class RoutinesTest {
         assertFalse(p.fxDarkTheme)
     }
 
+    private fun phoneDims(on: Boolean) =
+        android.provider.Settings.System.putInt(ctx.contentResolver, Routines.DIM_KEY, if (on) 1 else 0)
+
     @Test
-    fun `the wallpaper dims only with the dark theme`() {
+    fun `on a phone that dims by itself, only NOT dimming needs a routine`() {
         val f = phone()
         f.rows += FakeRoutines.Row(12, "Gloaming: dim wallpaper")
-        val p = prefs(gray = false, dark = false).apply {
+        f.rows += FakeRoutines.Row(13, "Gloaming: undimmed wallpaper")
+        phoneDims(true)
+        val p = prefs(gray = false, dark = true).apply {
             setRoutineUuid(RoutineEffect.DIM, 12)
-            fxDimWallpaper = true
+            setRoutineUuid(RoutineEffect.DIM_OFF, 13)
         }
-        // One UI dims the wallpaper only in dark mode: without the dark theme
-        // the dimming routine would run and change nothing, so it is not asked.
+        // Dim on: the phone does that already, so nothing but the dark theme runs.
+        p.fxDimWallpaper = true
+        Routines.sync(ctx, p, windowActive = true)
+        assertEquals(listOf("start 11"), f.calls)
+        // Dim off: the night must differ from the day - the OFF routine runs.
+        p.fxDimWallpaper = false
+        Routines.sync(ctx, p, windowActive = true)
+        assertEquals(listOf("start 11", "start 13"), f.calls)
+        assertNull(Routines.dimRoutineFor(ctx, p, true))
+        assertEquals(RoutineEffect.DIM_OFF, Routines.dimRoutineFor(ctx, p, false))
+    }
+
+    @Test
+    fun `on a phone that does not dim, only dimming needs a routine`() {
+        val f = phone()
+        f.rows += FakeRoutines.Row(12, "Gloaming: dim wallpaper")
+        f.rows += FakeRoutines.Row(13, "Gloaming: undimmed wallpaper")
+        phoneDims(false)
+        val p = prefs(gray = false, dark = true).apply {
+            setRoutineUuid(RoutineEffect.DIM, 12)
+            setRoutineUuid(RoutineEffect.DIM_OFF, 13)
+        }
+        p.fxDimWallpaper = false
+        Routines.sync(ctx, p, windowActive = true)
+        assertEquals(listOf("start 11"), f.calls)
+        p.fxDimWallpaper = true
+        Routines.sync(ctx, p, windowActive = true)
+        assertEquals(listOf("start 11", "start 12"), f.calls)
+        assertEquals(RoutineEffect.DIM, Routines.dimRoutineFor(ctx, p, true))
+        assertNull(Routines.dimRoutineFor(ctx, p, false))
+    }
+
+    @Test
+    fun `the wallpaper is never touched without the dark theme`() {
+        val f = phone()
+        f.rows += FakeRoutines.Row(13, "Gloaming: undimmed wallpaper")
+        phoneDims(true)
+        val p = prefs(gray = false, dark = false).apply {
+            setRoutineUuid(RoutineEffect.DIM_OFF, 13)
+            fxDimWallpaper = false
+        }
+        // One UI dims the wallpaper only in dark mode: with the dark theme off
+        // the routine would run and change nothing, so it is not asked.
         Routines.sync(ctx, p, windowActive = true)
         assertTrue("nothing to dim with: " + f.calls, f.calls.isEmpty())
-        p.fxDarkTheme = true
+    }
+
+    @Test
+    fun `the wallpaper switch opens telling the truth about the phone`() {
+        val f = FakeRoutines.install(ctx)
+        f.rows += FakeRoutines.Row(11, "Gloaming: dark theme")
+        phoneDims(true)
+        val p = Prefs(ctx)
+        p.fxDimWallpaper = false
+        p.routineOffered = RoutineEffect.DARK.key
+        p.routineOfferedName = "Gloaming: dark theme"
+        assertEquals(RoutineEffect.DARK, Routines.adopt(ctx, p))
+        assertTrue("the phone dims in dark mode, so the switch says so", p.fxDimWallpaper)
+    }
+
+    @Test
+    fun `our own routine's work is not mistaken for the phone's setting`() {
+        val f = phone()
+        f.rows += FakeRoutines.Row(13, "Gloaming: undimmed wallpaper")
+        phoneDims(true)
+        val p = prefs(gray = false, dark = true).apply {
+            setRoutineUuid(RoutineEffect.DIM_OFF, 13)
+            fxDimWallpaper = false
+        }
         Routines.sync(ctx, p, windowActive = true)
-        assertEquals(setOf("start 11", "start 12"), f.calls.toSet())
+        assertEquals(listOf("start 11", "start 13"), f.calls)
+        // Samsung ran it: the key now reads what WE made it. The next sync -
+        // and there is always a next sync - must not read that as "the phone
+        // does not dim, so nothing is needed" and end the routine it just
+        // started. Measured: start, end, start, within a second.
+        phoneDims(false)
+        Routines.sync(ctx, p, windowActive = true)
+        assertEquals("nothing ended, nothing restarted", listOf("start 11", "start 13"), f.calls)
+        assertTrue("the setting under our routine is still ON", Routines.phoneDimsByItself(ctx, p))
+        // And the window's end puts it back, as the routine's own revert does.
+        Routines.sync(ctx, p, windowActive = false)
+        assertEquals(setOf("end 11", "end 13"), f.calls.drop(2).toSet())
+    }
+
+    @Test
+    fun `a flip is one call, even while Samsung's revert is still landing`() {
+        val f = phone()
+        f.rows += FakeRoutines.Row(12, "Gloaming: dim wallpaper")
+        f.rows += FakeRoutines.Row(13, "Gloaming: undimmed wallpaper")
+        phoneDims(true)
+        val p = prefs(gray = false, dark = true).apply {
+            setRoutineUuid(RoutineEffect.DIM, 12)
+            setRoutineUuid(RoutineEffect.DIM_OFF, 13)
+            fxDimWallpaper = false
+        }
+        Routines.sync(ctx, p, windowActive = true)
+        assertEquals(listOf("start 11", "start 13"), f.calls)
+        phoneDims(false) // Samsung ran the OFF routine
+        // The switch goes back on. The OFF routine ends - and its revert has
+        // not landed yet, so the key still reads 0 at the next sync. That must
+        // not start the ON routine: the phone dims by itself, as recorded when
+        // the window opened. Measured: end, then a needless start, in one second.
+        p.fxDimWallpaper = true
+        Routines.sync(ctx, p, windowActive = true)
+        Routines.sync(ctx, p, windowActive = true)
+        assertEquals(listOf("start 11", "start 13", "end 13"), f.calls)
+        // And the record is let go with the window, so tomorrow reads the phone afresh.
+        Routines.sync(ctx, p, windowActive = false)
+        assertEquals(-1, p.dimBaseline)
+    }
+
+    @Test
+    fun `a record made while our routine already holds the key reads what was under it`() {
+        val f = phone()
+        f.rows += FakeRoutines.Row(13, "Gloaming: undimmed wallpaper")
+        // An upgrade mid-window: the OFF routine is on the books and the key
+        // reads what it made it, and no record exists yet.
+        phoneDims(false)
+        val p = prefs(gray = false, dark = true).apply {
+            setRoutineUuid(RoutineEffect.DIM_OFF, 13)
+            fxDimWallpaper = false
+            routinesStarted = setOf(11L, 13L)
+        }
+        Routines.sync(ctx, p, windowActive = true)
+        assertEquals("the phone dims by itself; our routine is what says 0", 1, p.dimBaseline)
+        assertTrue("nothing ended: " + f.calls, f.calls.isEmpty())
     }
 }

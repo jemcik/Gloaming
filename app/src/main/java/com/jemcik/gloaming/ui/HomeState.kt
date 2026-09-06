@@ -238,6 +238,23 @@ class HomeState(
     }
 
     /**
+     * The wallpaper switch on a Galaxy. Flipping it to a state the phone's own
+     * setting already gives is just a flip; flipping it to the other state
+     * needs the routine of that polarity, which is offered once if it has not
+     * been saved yet - the switch then flips on adoption, not before, so it is
+     * never shown in a state the night cannot deliver.
+     */
+    fun tapDim() {
+        val want = !fxDim
+        val needed = Routines.dimRoutineFor(ctx, prefs, want)
+        if (needed == null || hasRoutine(needed)) {
+            fxDim = want; haptics.toggle(want); commit()
+        } else {
+            haptics.open(); offerRoutine(needed)
+        }
+    }
+
+    /**
      * The row's tap. The first time, an explainer stands between the tap and
      * Samsung's editor, because a jump into another app with nothing said is
      * the one part of this flow a first-time user cannot work out alone. Once
@@ -345,7 +362,7 @@ class HomeState(
         adopted = Routines.adopted(prefs).toSet()
         pendingOffer = RoutineEffect.entries.firstOrNull { it.key == prefs.routineOffered }
         if (adoptedNow != null) {
-            fxGray = prefs.fxGrayscale; fxDark = prefs.fxDarkTheme
+            fxGray = prefs.fxGrayscale; fxDark = prefs.fxDarkTheme; fxDim = prefs.fxDimWallpaper
             justAdopted = adoptedNow
             commit()
         }
@@ -430,6 +447,7 @@ internal val RoutineEffect.nameRes: Int
         RoutineEffect.GRAYSCALE -> R.string.routine_name_gray
         RoutineEffect.DARK -> R.string.routine_name_dark
         RoutineEffect.DIM -> R.string.routine_name_dim
+        RoutineEffect.DIM_OFF -> R.string.routine_name_dimoff
     }
 
 internal val RoutineEffect.doneRes: Int
@@ -437,4 +455,5 @@ internal val RoutineEffect.doneRes: Int
         RoutineEffect.GRAYSCALE -> R.string.routine_done_gray
         RoutineEffect.DARK -> R.string.routine_done_dark
         RoutineEffect.DIM -> R.string.routine_done_dim
+        RoutineEffect.DIM_OFF -> R.string.routine_done_dimoff
     }

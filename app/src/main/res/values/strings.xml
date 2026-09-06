@@ -230,9 +230,11 @@
     <string name="routine_done_gray">Grayscale is set up</string>
     <string name="routine_done_dark">Dark theme is set up</string>
     <string name="routine_done_dim">Wallpaper dimming is set up</string>
+    <string name="routine_done_dimoff">Undimmed wallpaper is set up</string>
     <string name="routine_name_gray">Gloaming: grayscale</string>
     <string name="routine_name_dark">Gloaming: dark theme</string>
     <string name="routine_name_dim">Gloaming: dim wallpaper</string>
+    <string name="routine_name_dimoff">Gloaming: undimmed wallpaper</string>
 
     <!-- ============ Home: end-bedtime dialog ============ -->
     <string name="action_set">Set</string>

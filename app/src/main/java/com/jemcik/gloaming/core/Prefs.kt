@@ -347,12 +347,15 @@ class Prefs(ctx: Context) {
         RoutineEffect.GRAYSCALE -> fxGrayscale
         RoutineEffect.DARK -> fxDarkTheme
         RoutineEffect.DIM -> fxDimWallpaper
+        // The opposite polarity of the same switch: wanted when dimming is NOT.
+        RoutineEffect.DIM_OFF -> !fxDimWallpaper
     }
 
     fun setFxWants(effect: RoutineEffect, on: Boolean) = when (effect) {
         RoutineEffect.GRAYSCALE -> fxGrayscale = on
         RoutineEffect.DARK -> fxDarkTheme = on
         RoutineEffect.DIM -> fxDimWallpaper = on
+        RoutineEffect.DIM_OFF -> fxDimWallpaper = !on
     }
 
     /**
@@ -384,6 +387,16 @@ class Prefs(ctx: Context) {
     var routineOfferedName: String?
         get() = sp.getString("routineOfferedName", null)
         set(v) = sp.edit { putString("routineOfferedName", v) }
+
+    /**
+     * The phone's own "apply dark mode to wallpaper", recorded once when the
+     * window opens and forgotten when it closes: -1 none, 0 off, 1 on. While
+     * the window is open the live key reads what OUR routines made it, or is
+     * mid-revert, and deciding against it flickered. See [Routines.phoneDimsByItself].
+     */
+    var dimBaseline: Int
+        get() = sp.getInt("dimBaseline", -1)
+        set(v) = sp.edit { putInt("dimBaseline", v) }
 
     /**
      * The one-time explainer before the first jump into Samsung's editor has

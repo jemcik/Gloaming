@@ -97,4 +97,11 @@ class RoutineFileTest {
         assertEquals("wallpaper_apply_dark_mode", body(b).getJSONArray("actions").getJSONObject(0).getString("tag"))
         assertEquals("true", params(b).getValue("toggle_value").getString("VALUE"))
     }
+
+    @Test
+    fun `the undimmed wallpaper is the same action, switched off`() {
+        val b = RoutineFile.bytes("Gloaming: undimmed wallpaper", RoutineEffect.DIM_OFF)
+        assertEquals("wallpaper_apply_dark_mode", body(b).getJSONArray("actions").getJSONObject(0).getString("tag"))
+        assertEquals("false", params(b).getValue("toggle_value").getString("VALUE"))
+    }
 }

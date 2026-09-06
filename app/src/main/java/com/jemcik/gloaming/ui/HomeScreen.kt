@@ -1320,12 +1320,19 @@ private fun ScreenEffectsSection(s: HomeState, runningNow: Boolean) {
             // coming and going is the honest statement of that. The rule's own
             // dim row above is untouched: this one is drawn only where the
             // rule's effects are thrown away.
+            // A SWITCH from the start, mirroring the phone's own setting, because
+            // One UI dims in dark mode by default and a switch shown off over
+            // a wallpaper that dims would lie. Only a flip to the state the
+            // phone does not give needs a routine - offered then, once.
             if (viaRoutines && s.fxDark && s.hasRoutine(RoutineEffect.DARK)) add {
-                RoutineEffectRow(
-                    s, RoutineEffect.DIM, Fx.Dim,
-                    stringResource(R.string.fx_dim), s.fxDim,
-                    subtitle = R.string.fx_dim_dark_sub
-                ) { s.fxDim = !s.fxDim; haptics.toggle(s.fxDim); s.commit() }
+                EffectRow(
+                    Fx.Dim, stringResource(R.string.fx_dim),
+                    stringResource(
+                        if (s.pendingOffer == RoutineEffect.DIM || s.pendingOffer == RoutineEffect.DIM_OFF)
+                            R.string.fx_routine_retry else R.string.fx_dim_dark_sub
+                    ),
+                    s.fxDim
+                ) { s.tapDim() }
             }
             // No divider to remove with it: a grouped list just has one
             // item fewer, and the corners re-form around what is left.

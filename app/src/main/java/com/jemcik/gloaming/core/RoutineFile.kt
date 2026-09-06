@@ -28,10 +28,20 @@ enum class RoutineEffect(val key: String, val tag: String) {
      * key to 1, stop put it back. It runs only with the dark theme - see
      * [Routines.wanted] - and its row lives under the dark-theme switch.
      */
-    DIM("dim", "wallpaper_apply_dark_mode");
+    DIM("dim", "wallpaper_apply_dark_mode"),
+
+    /**
+     * The same action with its toggle OFF. One UI dims in dark mode by DEFAULT,
+     * so on most Galaxies the switch's "off" is the one that needs a routine:
+     * the "on" one would turn on what is already on, and could not turn it
+     * off. Which of the two the window runs is decided against the phone's own
+     * setting at the time - see [Routines.wanted].
+     */
+    DIM_OFF("dimoff", "wallpaper_apply_dark_mode");
 
     internal fun params(): JSONArray = when (this) {
         GRAYSCALE, DIM -> JSONArray().put(param("toggle_value", "BOOLEAN", "true"))
+        DIM_OFF -> JSONArray().put(param("toggle_value", "BOOLEAN", "false"))
         DARK -> JSONArray()
             .put(param("enable_dark_mode", "STRING", "2"))
             .put(param("enable_dark_theme", "BOOLEAN", "true"))

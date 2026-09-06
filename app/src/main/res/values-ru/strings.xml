@@ -128,9 +128,11 @@
     <string name="routine_done_gray">Оттенки серого настроены</string>
     <string name="routine_done_dark">Темная тема настроена</string>
     <string name="routine_done_dim">Затемнение обоев настроено</string>
+    <string name="routine_done_dimoff">Обои без затемнения настроены</string>
     <string name="routine_name_gray">Gloaming: оттенки серого</string>
     <string name="routine_name_dark">Gloaming: темная тема</string>
     <string name="routine_name_dim">Gloaming: затемнение обоев</string>
+    <string name="routine_name_dimoff">Gloaming: обои без затемнения</string>
 
     <!-- ============ Home: end-bedtime dialog ============ -->
     <string name="action_set">Задать</string>

@@ -13,6 +13,14 @@ android {
     defaultConfig {
         applicationId = "com.jemcik.gloaming"
         minSdk = 35
+        // OldTargetApi fires here ON PURPOSE - the second of the two lint
+        // findings this project keeps. compileSdk is 37, so the new APIs
+        // compile and lint checks against them; the TARGET is what opts into a
+        // platform's behaviour changes, and no phone this app is measured on
+        // runs 37 - the Honor reports ro.build.version.sdk 36, and LineageOS 23
+        // is Android 16, which is the same level. Raising it would mean
+        // shipping behaviour changes no device here can exercise. It moves when
+        // one of them does.
         targetSdk = 36
         // The RELEASE workflow passes these from the git tag; a local build
         // takes the fallbacks. They were hardcoded, and the consequence was not

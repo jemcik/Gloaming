@@ -1773,6 +1773,34 @@ with nothing on screen to explain it. Not taken - it needs its own decision.
   what the tile actually holds — sharing the state object's own instance would
   prove nothing about two of them agreeing. Confirmed failing without the fix
   before it was kept.
+- **The tile picker draws the MANIFEST icon, and `render()` cannot have run
+  yet.** Reported on the Honor, 6 Sep 2026, against the Play build 0.13: adding
+  the tile for the first time shows a crescent that is not the app's mark, and
+  the app's mark appears only once the tile is on the panel. Both of those are
+  correct behaviour on their own, and the fault was in a third place.
+
+  `android:icon` on the `<service>` is what the "Add tile" tray draws, and it is
+  the ONLY face the tile has before it is added: there is no bound `Tile` for
+  `onStartListening` to render into, because the tile is not on the panel for
+  anything to listen to it. It was `@drawable/ic_bedtime` — chosen when the
+  manifest entry was written, and never revisited once `render()` grew three
+  faces of its own. That is the SWITCH's running glyph, so the tray was
+  announcing "a window is in effect" about a tile that did not exist yet, three
+  rows below the system's own Do Not Disturb tile, which is also a bare
+  crescent. That twin problem is the whole reason `ic_gloaming_tile` was drawn,
+  and the manifest reintroduced it at the one surface that never calls it.
+
+  It is `ic_gloaming_tile` now, the same drawable `render()` picks when bedtime
+  is off, so the icon a user chooses in the tray is the icon they get. Verified
+  by uninstalling 0.13, installing the debug build and walking the tray by hand:
+  picker and panel draw the same mark, and it is distinguishable from the DND
+  tile three rows up.
+
+  The same property belongs to everything else that service declares.
+  `android:label` names the tile in the tray before `tile.label` has run too —
+  it is invisible here only because both are set from `@string/bedtime_mode`. A
+  divergence there would show up in exactly the same place and would be read the
+  same way, as the tile changing its mind on being added.
 - **The allowlist waited for the exit, and one row of it is AUDIBLE while you
   change it.** Reported: bedtime running, music playing, switch media sounds off
   — and the music kept playing until Back or Home. Batching the push until

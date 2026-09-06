@@ -111,7 +111,13 @@ indefinitely is background restriction — see `core/BackgroundLimit.kt`.
                                  bedtime did nothing is what a tick must not
                                  mean. NEVER Tile.STATE_UNAVAILABLE: SystemUI
                                  does not dispatch a click to one at all, so a
-                                 tap it cannot honour opens the APP instead
+                                 tap it cannot honour opens the APP instead.
+                                 A FOURTH face lives in the MANIFEST, not here:
+                                 `android:icon` on the service is what the "Add
+                                 tile" tray draws, and render() cannot have run
+                                 for a tile nothing is listening to yet, so it
+                                 must be the mark the tile wears at rest or
+                                 adding it changes its icon under your hand
     ui/HomeParts.kt              what only Home draws — status pill, notice
                                  strip, day row, numerals, moon and sun glyphs
     ui/Sentences.kt              the schedule as language: windowSentence,
@@ -394,7 +400,12 @@ is in DECISIONS.md.
   (neuter) and «код» (masculine), so it read as the code.
 
 - There is not one `fontSize` or `fontWeight` override outside `Theme.kt`. Keep
-  it that way.
+  it that way — and note that the grep does not come back empty. Two call sites
+  hand `MaterialTheme.typography.<role>.fontSize` to `TextAutoSize` as the
+  CEILING a shrinking label may not exceed, which reads a size the scale owns
+  rather than inventing one. Both say so where they stand, and `Theme.kt` states
+  the rule beside the scale it governs, because a rule whose exceptions are
+  unmarked cannot be told from a rule that has rotted.
 - Tabular figures (`tnum`) belong on the **display** family only. Numerals get
   them; sentences do not.
 - **A screenshot cannot settle a colour on this phone.** The panel runs a vendor
@@ -425,7 +436,10 @@ is in DECISIONS.md.
     ./gradlew test       the whole suite, on the JVM, in seconds
     ./gradlew coverage   JaCoCo, HTML + XML under app/build/reports/jacoco
     ./gradlew lint       0 errors; 2 findings left are policy (targetSdk currency,
-                         and one ModifierParameter in BedtimeDial)
+                         and one ModifierParameter in BedtimeDial). Both are
+                         DELIBERATE and both now carry the reason at the line
+                         lint points at, so neither reads as an oversight to
+                         whoever runs it next
     python3 tools/check_translation.py app/src/main/res/values-ru/strings.xml ru
     python3 tools/render_icon.py        re-render docs/icon.png from the drawable
     python3 tools/play_assets.py        the Play store assets into docs/play/.

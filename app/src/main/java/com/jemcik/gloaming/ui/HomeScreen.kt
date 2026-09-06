@@ -1025,6 +1025,12 @@ private fun DaysSection(s: HomeState) {
                                 maxLines = 1,
                                 autoSize = TextAutoSize.StepBased(
                                     minFontSize = floor,
+                                    // NOT a fontSize override - see Theme.kt,
+                                    // which states the rule this is the
+                                    // exception to. It reads labelLarge's own
+                                    // size as the ceiling, so the label may
+                                    // shrink to fit and can never grow past the
+                                    // scale, and a scale change carries here.
                                     maxFontSize = MaterialTheme.typography.labelLarge.fontSize
                                 )
                             )

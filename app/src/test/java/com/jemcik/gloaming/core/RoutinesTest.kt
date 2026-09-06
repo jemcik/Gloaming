@@ -27,10 +27,17 @@ class RoutinesTest {
 
     private val ctx: Context get() = ApplicationProvider.getApplicationContext()
 
-    /** A Galaxy with our two routines saved: grayscale is 10, the dark theme 11. */
-    private fun phone(): FakeRoutines = FakeRoutines.install(ctx).apply {
+    /**
+     * A Galaxy with our two routines saved: grayscale is 10, the dark theme 11.
+     * A GALAXY, because the routines run only where the zen effects are thrown
+     * away, and that is the one manufacturer prior in the app.
+     */
+    private fun phone(): FakeRoutines {
+        org.robolectric.util.ReflectionHelpers.setStaticField(android.os.Build::class.java, "MANUFACTURER", "samsung")
+        return FakeRoutines.install(ctx).apply {
         rows += FakeRoutines.Row(10, "Gloaming: grayscale")
         rows += FakeRoutines.Row(11, "Gloaming: dark theme")
+        }
     }
 
     private fun prefs(gray: Boolean = true, dark: Boolean = true): Prefs = Prefs(ctx).apply {
@@ -198,5 +205,16 @@ class RoutinesTest {
         assertEquals(listOf(RoutineEffect.DARK), Routines.prune(ctx, p))
         assertEquals(0L, p.routineUuid(RoutineEffect.DARK))
         assertEquals(10L, p.routineUuid(RoutineEffect.GRAYSCALE))
+    }
+
+    @Test
+    fun `where the zen effects are applied, the routines stay silent`() {
+        val f = phone()
+        val p = prefs()
+        // The day this Galaxy is seen applying the rule's effects, ScreenEffects
+        // records it for good - and from then on the rule does the work.
+        p.effectsSeen = true
+        Routines.sync(ctx, p, windowActive = true)
+        assertTrue("the rule does this job, not the routines: " + f.calls, f.calls.isEmpty())
     }
 }

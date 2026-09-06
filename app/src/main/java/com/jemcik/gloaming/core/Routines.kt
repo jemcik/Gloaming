@@ -209,7 +209,11 @@ object Routines {
      * is refused stays unrecorded, so the next sync asks again.
      */
     fun sync(ctx: Context, p: Prefs, windowActive: Boolean) {
-        val want = if (windowActive) wanted(p) else emptySet()
+        // Only where the zen effects are thrown away. The day a Galaxy applies
+        // them - ScreenEffects notices the transition on its own - the rule
+        // does the work and the routines fall silent, rather than two
+        // mechanisms driving one display.
+        val want = if (windowActive && !ScreenEffects.applied(ctx)) wanted(p) else emptySet()
         val started = p.routinesStarted
         if (started == want) return
         val still = started.toMutableSet()

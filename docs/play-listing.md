@@ -47,7 +47,7 @@ WHAT YOU GET
 
 • An allowlist for the window — who can call, who can message, conversations, repeat callers, reminders, calendar events, media. The screen reports the system's current state, not the one the app switched on and assumes is in effect.
 
-• Screen effects: grayscale, wallpaper dimming, dark theme, always-on display. Where the operating system does not let an app control an effect, the switch is not drawn at all, rather than offering one that lies.
+• Screen effects: grayscale, wallpaper dimming, dark theme, always-on display. Where the operating system does not let an app control an effect, the switch is not drawn at all, rather than offering one that lies. On Samsung phones, grayscale, the dark theme and wallpaper dimming run through your own Modes and Routines: Gloaming hands Samsung’s app each routine ready-made, you tap Save once, and from then on they are ordinary switches.
 
 • It checks rather than assumes. Some phones freeze apps in the background, and the failure that causes is specific: the end of a window never fires, so bedtime does not end — whatever it switched on stays on into your day. Gloaming watches every end and says when one is late, with a button to the background setting that is usually the cause. It also asks once, eleven minutes after install, whether this phone delivers background alarms at all — silent unless the answer is no.
 
@@ -105,7 +105,7 @@ Gloaming не користується фоновим завданням. Він
 
 • Список винятків на час проміжку — хто може подзвонити, хто написати, розмови, повторні дзвінки, нагадування, події календаря, медіа. Екран показує поточний стан системи, а не той, який застосунок увімкнув і вважає чинним.
 
-• Ефекти екрана: чорно-білий екран, притемнення шпалер, темна тема, always-on дисплей. Якщо операційна система не дозволяє застосунку керувати ефектом, перемикач не показується взагалі — краще жодного, ніж такий, що бреше.
+• Ефекти екрана: чорно-білий екран, притемнення шпалер, темна тема, always-on дисплей. Якщо операційна система не дозволяє застосунку керувати ефектом, перемикач не показується взагалі — краще жодного, ніж такий, що бреше. На телефонах Samsung чорно-білий екран, темна тема й притемнення шпалер працюють через ваші власні «Режими й сценарії»: Gloaming передає програмі Samsung готовий сценарій, ви один раз натискаєте «Зберегти», і далі це звичайні перемикачі.
 
 • Він перевіряє, а не припускає. Деякі телефони заморожують застосунки у фоні, і поломка при цьому конкретна: кінець проміжку не спрацьовує, тож режим сну не завершується — усе, що він увімкнув, лишається увімкненим уже вдень. Gloaming стежить за кожним кінцем і повідомляє, коли той запізнився, — із кнопкою до налаштування фонової роботи, яке зазвичай і є причиною. А ще одноразово, через одинадцять хвилин після встановлення, питає, чи доставляє цей телефон фонові сигнали взагалі, — і мовчить, якщо все гаразд.
 
@@ -159,7 +159,7 @@ Gloaming не пользуется фоновой задачей. Он запр�
 
 • Список исключений на заданное время — кто может позвонить, кто написать, разговоры, повторные звонки, напоминания, события календаря, медиа. Экран показывает текущее состояние системы, а не то, которое приложение включило и считает действующим.
 
-• Эффекты экрана: чёрно-белый экран, приглушение обоев, тёмная тема, always-on дисплей. Если операционная система не позволяет приложению управлять эффектом, переключатель не показывается вовсе — лучше никакого, чем такой, который врёт.
+• Эффекты экрана: чёрно-белый экран, приглушение обоев, тёмная тема, always-on дисплей. Если операционная система не позволяет приложению управлять эффектом, переключатель не показывается вовсе — лучше никакого, чем такой, который врёт. На телефонах Samsung чёрно-белый экран, тёмная тема и приглушение обоев работают через ваши «Режимы и сценарии»: Gloaming передаёт приложению Samsung готовый сценарий, вы один раз нажимаете «Сохранить», и дальше это обычные переключатели.
 
 • Он проверяет, а не предполагает. Некоторые телефоны замораживают приложения в фоне, и поломка при этом конкретная: конец промежутка не срабатывает, поэтому режим сна не заканчивается — всё, что он включил, остаётся включённым уже днём. Gloaming следит за каждым концом и сообщает, когда тот опоздал, — с кнопкой к настройке фоновой работы, которая обычно и есть причина. А ещё однократно, через одиннадцать минут после установки, спрашивает, доставляет ли этот телефон фоновые сигналы вообще, — и молчит, если всё в порядке.
 
@@ -178,6 +178,28 @@ Android 15 или новее. Два разрешения, оба выдаютс
 ОТКРЫТЫЙ КОД
 
 Лицензия Apache 2.0. Всё приложение открыто: github.com/jemcik/Gloaming
+```
+
+---
+
+# What’s new — 0.14 (500 max each)
+
+en-US
+
+```
+Samsung phones: grayscale, dark theme and wallpaper dimming now work. Each runs through your own Modes and Routines — Gloaming hands Samsung’s app the routine ready-made, you tap Save once, and from then on it is an ordinary switch. The app explains that one step before it, confirms when it is done, and says where the routines live so you can remove them. The Quick Settings tile keeps its own icon in the tile picker.
+```
+
+uk-UA
+
+```
+Телефони Samsung: чорно-білий екран, темна тема й притемнення шпалер тепер працюють. Кожен — через ваші «Режими й сценарії»: Gloaming передає програмі Samsung готовий сценарій, ви один раз натискаєте «Зберегти», і далі це звичайний перемикач. Застосунок пояснює цей крок наперед, підтверджує, коли все готово, і показує, де лежать сценарії, щоб їх можна було видалити. Плитка швидких налаштувань зберігає свій значок у списку плиток.
+```
+
+ru-RU
+
+```
+Телефоны Samsung: чёрно-белый экран, тёмная тема и приглушение обоев теперь работают. Каждый — через ваши «Режимы и сценарии»: Gloaming передаёт приложению Samsung готовый сценарий, вы один раз нажимаете «Сохранить», и дальше это обычный переключатель. Приложение объясняет этот шаг заранее, подтверждает, когда всё готово, и показывает, где лежат сценарии, чтобы их можно было удалить. Плитка быстрых настроек сохраняет свой значок в списке плиток.
 ```
 
 ---

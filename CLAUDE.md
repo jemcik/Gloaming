@@ -111,7 +111,13 @@ indefinitely is background restriction — see `core/BackgroundLimit.kt`.
                                  bedtime did nothing is what a tick must not
                                  mean. NEVER Tile.STATE_UNAVAILABLE: SystemUI
                                  does not dispatch a click to one at all, so a
-                                 tap it cannot honour opens the APP instead
+                                 tap it cannot honour opens the APP instead.
+                                 A FOURTH face lives in the MANIFEST, not here:
+                                 `android:icon` on the service is what the "Add
+                                 tile" tray draws, and render() cannot have run
+                                 for a tile nothing is listening to yet, so it
+                                 must be the mark the tile wears at rest or
+                                 adding it changes its icon under your hand
     ui/HomeParts.kt              what only Home draws — status pill, notice
                                  strip, day row, numerals, moon and sun glyphs
     ui/Sentences.kt              the schedule as language: windowSentence,

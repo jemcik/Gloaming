@@ -290,8 +290,10 @@ routine that ends. Wallpaper dimming has no routine action and is not offered
 there; always-on display takes the `WRITE_SETTINGS` route above.
 
 That one Save is the floor: inserting a routine directly, and every other path
-that creates one, is signature-level. A routine you later delete in Samsung's
-app is noticed on the next resume, and its row goes back to offering one.
+that creates one, is signature-level. So is deleting: Reset ends the routines
+and forgets them but cannot remove them, and says so; Settings links to them in
+Samsung's app, where deleting is one tap. A routine you delete there is noticed
+on the next resume, and its row goes back to offering one.
 
 Settings still offers **System bedtime mode**, which opens One UI's own Sleep
 mode editor.

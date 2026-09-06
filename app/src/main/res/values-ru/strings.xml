@@ -64,6 +64,8 @@
     <string name="launch_link_why">Автозапуск и работа в фоне</string>
     <string name="bedtime_settings_row">Системный режим сна</string>
     <string name="bedtime_settings_why">От производителя</string>
+    <string name="routines_row">Сценарии в приложении Samsung</string>
+    <string name="routines_why">Два сценария Gloaming</string>
     <string name="launch_tip_title">Сделайте сон надёжным</string>
     <string name="launch_tip_why">Этот телефон может останавливать приложения, пока они закрыты. Тогда режим сна включается позже или не выключается утром. Два переключателя в разделе «Запуск приложений» это предотвращают: автозапуск и работа в фоне.</string>
     <string name="launch_tip_action">Настроить</string>
@@ -221,6 +223,7 @@
     <string name="reset_why">Как после установки</string>
     <string name="reset_confirm_title">Сбросить Gloaming?</string>
     <string name="reset_confirm_body">Режим сна выключится, график и список разрешённых вернутся к исходным значениям, а правило Gloaming будет удалено из «Не беспокоить». Журнал диагностики сохранится.</string>
+    <string name="reset_routines_stay">Два сценария в приложении «Режимы и сценарии» останутся: при желании удалите их там.</string>
     <string name="action_reset">Сбросить</string>
     <string name="section_about">о приложении</string>
     <string name="settings_version">Версия %1$s</string>

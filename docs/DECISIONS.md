@@ -901,6 +901,23 @@ snackbar has shown instead, asserted in ScreensTest, and caught on the phone
 in a burst of captures 1.2 s after Save - stacked, for a moment, under
 Samsung's own «Файл … сохранен» toast, which is fine.
 
+Three questions before the PR, answered from the phone. The handling is
+conditional on One UI twice over: the rows draw only where the zen effects are
+thrown away AND Samsung's provider resolves with the permission held, and
+`sync` is now gated the same way, so the day a Galaxy is seen applying the
+rule's effects the routines fall silent rather than doubling the rule. One UI
+8.5 or 9 cannot be checked from here without their `Routines.apk` - the door
+is in the app, not the OS, and the Galaxy Store has no standalone listing to
+update it from on this phone («Нет элементов»); a newer APK read statically,
+or installed over (same Samsung signature), is the test, and the probe covers
+the rest. And the routines cannot be deleted on Reset or uninstall: the
+external provider's `delete` is a stub returning 0 and its calls are start,
+end and toggle; deleting is `WRITE_ROUTINE_INFO`. Reset ends what we started
+and forgets both uuids, the routines stay as inert manual routines, and two
+things now say so: a "Routines in Samsung's app" link under Settings' "this
+phone", and one more sentence in the Reset confirmation on a Galaxy that has
+them.
+
 **A parked alarm is still DELIVERED, so arrival cannot be the test.** The first
 version of the probe scored a blocked phone as healthy, and only the device
 caught it. With `RUN_ANY_IN_BACKGROUND` at `ignore` the probe sat in *"Pending

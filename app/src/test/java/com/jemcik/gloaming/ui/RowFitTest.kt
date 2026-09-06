@@ -192,6 +192,8 @@ class RowFitTest {
     private fun withVendorDoors(ctx: android.content.Context) {
         ctx.withLaunchManager()
         ctx.withSystemBedtime()
+        // And Samsung's routines, so the third door in that section is drawn.
+        ctx.asGalaxyWithRoutines()
     }
 
     private fun settingsRowsFitIn(locale: String, scale: Float = 1f) {
@@ -200,8 +202,8 @@ class RowFitTest {
         withVendorDoors(ctx)
         val titles = listOf(
             R.string.settings_language, R.string.launch_setup_row,
-            R.string.bedtime_settings_row, R.string.diagnostics_row,
-            R.string.reset_row
+            R.string.bedtime_settings_row, R.string.routines_row,
+            R.string.diagnostics_row, R.string.reset_row
         )
             .map { ctx.getString(it) }
 

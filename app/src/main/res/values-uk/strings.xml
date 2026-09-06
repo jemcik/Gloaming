@@ -62,8 +62,8 @@
     <string name="launch_setup_why">Знайдіть Gloaming через пошук, виберіть «Керувати вручну», потім увімкніть автозапуск і роботу у фоні</string>
     <string name="section_this_phone">цей телефон</string>
     <string name="launch_link_why">Автозапуск і робота у фоні</string>
-    <string name="bedtime_settings_row">Системний режим сну</string>
-    <string name="bedtime_settings_why">Від виробника</string>
+    <string name="routines_row">Сценарії в програмі Samsung</string>
+    <string name="routines_why">Змінити або видалити</string>
     <string name="launch_tip_title">Зробіть сон надійним</string>
     <string name="launch_tip_why">Цей телефон може зупиняти застосунки, поки вони закриті. Тоді режим сну вмикається пізніше або не вимикається вранці. Два перемикачі в розділі «Запуск застосунків» цьому запобігають: автозапуск і робота у фоні.</string>
     <string name="launch_tip_action">Налаштувати</string>
@@ -116,7 +116,23 @@
     <string name="fx_dim_sub">Шпалери темнішають</string>
     <string name="fx_dark_sub">При розблокуванні</string>
     <string name="fx_ambient_sub">Екран не світиться</string>
+    <string name="fx_dim_dark_sub">Разом із темною темою</string>
     <string name="fx_ambient_grant">Потрібен дозвіл змінювати системні налаштування. Натисніть, щоб дозволити</string>
+    <string name="fx_routine_setup">Налаштувати через Samsung</string>
+    <string name="fx_routine_retry">Не збережено. Повторіть</string>
+    <string name="fx_via_routine">Через сценарій</string>
+    <string name="routine_note">Тут відтінки сірого й темна тема працюють через сценарії Samsung. Кожному потрібне одне натискання «Зберегти» в програмі Samsung.</string>
+    <string name="routine_explain_title">Налаштування в програмі Samsung</string>
+    <string name="routine_explain_body">Відкриється програма «Режими й сценарії» з уже заповненим сценарієм «%1$s». Натисніть там «Зберегти» й поверніться: Gloaming запускатиме його щоразу в режимі сну.</string>
+    <string name="routine_open">Відкрити «Режими й сценарії»</string>
+    <string name="routine_done_gray">Відтінки сірого налаштовано</string>
+    <string name="routine_done_dark">Темну тему налаштовано</string>
+    <string name="routine_done_dim">Затемнення шпалер налаштовано</string>
+    <string name="routine_done_dimoff">Шпалери без затемнення налаштовано</string>
+    <string name="routine_name_gray">Gloaming: відтінки сірого</string>
+    <string name="routine_name_dark">Gloaming: темна тема</string>
+    <string name="routine_name_dim">Gloaming: затемнення шпалер</string>
+    <string name="routine_name_dimoff">Gloaming: шпалери без затемнення</string>
 
     <!-- ============ Home: end-bedtime dialog ============ -->
     <string name="action_set">Установити</string>
@@ -210,6 +226,7 @@
     <string name="reset_why">Як після встановлення</string>
     <string name="reset_confirm_title">Скинути Gloaming?</string>
     <string name="reset_confirm_body">Режим сну вимкнеться, розклад і список дозволених повернуться до початкових значень, а правило Gloaming буде вилучено з «Не турбувати». Журнал діагностики збережеться.</string>
+    <string name="reset_routines_stay">Два сценарії в програмі «Режими й сценарії» залишаться: за бажання видаліть їх там.</string>
     <string name="action_reset">Скинути</string>
     <string name="section_about">про застосунок</string>
     <string name="settings_version">Версія %1$s</string>

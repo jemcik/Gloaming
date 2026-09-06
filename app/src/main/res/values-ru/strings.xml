@@ -62,8 +62,8 @@
     <string name="launch_setup_why">Найдите Gloaming через поиск, выберите «Управлять вручную», затем включите автозапуск и работу в фоне</string>
     <string name="section_this_phone">этот телефон</string>
     <string name="launch_link_why">Автозапуск и работа в фоне</string>
-    <string name="bedtime_settings_row">Системный режим сна</string>
-    <string name="bedtime_settings_why">От производителя</string>
+    <string name="routines_row">Сценарии в приложении Samsung</string>
+    <string name="routines_why">Изменить или удалить</string>
     <string name="launch_tip_title">Сделайте сон надёжным</string>
     <string name="launch_tip_why">Этот телефон может останавливать приложения, пока они закрыты. Тогда режим сна включается позже или не выключается утром. Два переключателя в разделе «Запуск приложений» это предотвращают: автозапуск и работа в фоне.</string>
     <string name="launch_tip_action">Настроить</string>
@@ -116,7 +116,23 @@
     <string name="fx_dim_sub">Обои темнеют</string>
     <string name="fx_dark_sub">При разблокировке</string>
     <string name="fx_ambient_sub">Экран не светится</string>
+    <string name="fx_dim_dark_sub">Вместе с темной темой</string>
     <string name="fx_ambient_grant">Требуется разрешение на изменение системных настроек. Нажмите, чтобы разрешить</string>
+    <string name="fx_routine_setup">Настроить через Samsung</string>
+    <string name="fx_routine_retry">Не сохранено. Повторите</string>
+    <string name="fx_via_routine">Через сценарий</string>
+    <string name="routine_note">Здесь оттенки серого и темная тема работают через сценарии Samsung. Каждому нужно одно нажатие «Сохранить» в приложении Samsung.</string>
+    <string name="routine_explain_title">Настройка в приложении Samsung</string>
+    <string name="routine_explain_body">Откроется приложение «Режимы и сценарии» с уже заполненным сценарием «%1$s». Нажмите там «Сохранить» и вернитесь: Gloaming будет запускать его каждый раз в режиме сна.</string>
+    <string name="routine_open">Открыть «Режимы и сценарии»</string>
+    <string name="routine_done_gray">Оттенки серого настроены</string>
+    <string name="routine_done_dark">Темная тема настроена</string>
+    <string name="routine_done_dim">Затемнение обоев настроено</string>
+    <string name="routine_done_dimoff">Обои без затемнения настроены</string>
+    <string name="routine_name_gray">Gloaming: оттенки серого</string>
+    <string name="routine_name_dark">Gloaming: темная тема</string>
+    <string name="routine_name_dim">Gloaming: затемнение обоев</string>
+    <string name="routine_name_dimoff">Gloaming: обои без затемнения</string>
 
     <!-- ============ Home: end-bedtime dialog ============ -->
     <string name="action_set">Задать</string>
@@ -210,6 +226,7 @@
     <string name="reset_why">Как после установки</string>
     <string name="reset_confirm_title">Сбросить Gloaming?</string>
     <string name="reset_confirm_body">Режим сна выключится, график и список разрешённых вернутся к исходным значениям, а правило Gloaming будет удалено из «Не беспокоить». Журнал диагностики сохранится.</string>
+    <string name="reset_routines_stay">Два сценария в приложении «Режимы и сценарии» останутся: при желании удалите их там.</string>
     <string name="action_reset">Сбросить</string>
     <string name="section_about">о приложении</string>
     <string name="settings_version">Версия %1$s</string>

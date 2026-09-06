@@ -337,6 +337,76 @@ class Prefs(ctx: Context) {
         get() = sp.getString("ambientSaved", null)
         set(v) = sp.edit { putString("ambientSaved", v) }
 
+    /**
+     * The switch behind a screen effect - what the user asked for, whichever
+     * mechanism carries it: the rule's device effect on most phones, a routine
+     * on a Galaxy. Written ONCE, here, so the two never disagree about which
+     * key an effect lives under.
+     */
+    fun fxWants(effect: RoutineEffect): Boolean = when (effect) {
+        RoutineEffect.GRAYSCALE -> fxGrayscale
+        RoutineEffect.DARK -> fxDarkTheme
+        RoutineEffect.DIM -> fxDimWallpaper
+        // The opposite polarity of the same switch: wanted when dimming is NOT.
+        RoutineEffect.DIM_OFF -> !fxDimWallpaper
+    }
+
+    fun setFxWants(effect: RoutineEffect, on: Boolean) = when (effect) {
+        RoutineEffect.GRAYSCALE -> fxGrayscale = on
+        RoutineEffect.DARK -> fxDarkTheme = on
+        RoutineEffect.DIM -> fxDimWallpaper = on
+        RoutineEffect.DIM_OFF -> fxDimWallpaper = !on
+    }
+
+    /**
+     * The routine Samsung's app holds for one screen effect, by Modes and
+     * Routines' own uuid - 0 is none. Only ever non-zero where
+     * [Routines.available] answered yes.
+     */
+    fun routineUuid(effect: RoutineEffect): Long = sp.getLong("routine." + effect.key, 0L)
+    fun setRoutineUuid(effect: RoutineEffect, uuid: Long) = sp.edit { putLong("routine." + effect.key, uuid) }
+
+    /**
+     * The routines WE started and have not yet ended - the latch that keeps a
+     * daytime reconcile from ending a run the user began by hand, and keeps a
+     * refused end on the books until it succeeds. See [Routines.sync].
+     */
+    var routinesStarted: Set<Long>
+        get() = sp.getString("routinesStarted", "")!!.split(',').mapNotNull { it.toLongOrNull() }.toSet()
+        set(v) = sp.edit { putString("routinesStarted", v.joinToString(",")) }
+
+    /**
+     * The effect we handed Samsung's app a routine for, and the exact name that
+     * file carried - open until [Routines.adopt] finds it on the phone. Cleared
+     * on that evidence, never on the screen having been shown.
+     */
+    var routineOffered: String?
+        get() = sp.getString("routineOffered", null)
+        set(v) = sp.edit { putString("routineOffered", v) }
+
+    var routineOfferedName: String?
+        get() = sp.getString("routineOfferedName", null)
+        set(v) = sp.edit { putString("routineOfferedName", v) }
+
+    /**
+     * The phone's own "apply dark mode to wallpaper", recorded once when the
+     * window opens and forgotten when it closes: -1 none, 0 off, 1 on. While
+     * the window is open the live key reads what OUR routines made it, or is
+     * mid-revert, and deciding against it flickered. See [Routines.phoneDimsByItself].
+     */
+    var dimBaseline: Int
+        get() = sp.getInt("dimBaseline", -1)
+        set(v) = sp.edit { putInt("dimBaseline", v) }
+
+    /**
+     * The one-time explainer before the first jump into Samsung's editor has
+     * been shown and acted on. The second effect skips it: the user has seen
+     * the whole flow once, and a sheet that repeats itself is a nag.
+     */
+    var routineExplained: Boolean
+        get() = sp.getBoolean("routineExplained", false)
+        set(v) = sp.edit { putBoolean("routineExplained", v) }
+
     // --- who can interrupt, mapped onto ZenPolicy ---
     // ZenPolicy.PEOPLE_TYPE_*: 1 anyone, 2 contacts, 3 starred, 4 none
     // ZenPolicy.CONVERSATION_SENDERS_*: 1 anyone, 2 important, 3 none

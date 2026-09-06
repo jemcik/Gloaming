@@ -28,6 +28,7 @@ import com.jemcik.gloaming.core.Diagnostics
 import com.jemcik.gloaming.core.Doors
 import com.jemcik.gloaming.core.Prefs
 import com.jemcik.gloaming.core.Reset
+import com.jemcik.gloaming.core.Routines
 
 /**
  * Everything that is a preference about the APP rather than about tonight.
@@ -46,6 +47,9 @@ fun SettingsScreen(themeMode: Int, onThemeMode: (Int) -> Unit, onBack: () -> Uni
     val g = gloam
     val haptics = rememberHaptics()
     var confirmReset by remember { mutableStateOf(false) }
+    // Samsung's routines, once one EXISTS: the "this phone" door to them, and
+    // the Reset sentence that says they stay. Both read the same answer.
+    val routines = remember { Routines.available(ctx) && Routines.adopted(Prefs(ctx)).isNotEmpty() }
     val version = remember {
         runCatching {
             ctx.packageManager.getPackageInfo(ctx.packageName, 0).versionName
@@ -119,8 +123,11 @@ fun SettingsScreen(themeMode: Int, onThemeMode: (Int) -> Unit, onBack: () -> Uni
         // Hidden where no launch manager resolves, on the same capability probe
         // the notices use - never a Build.MANUFACTURER test.
         val launchManager = Doors.hasLaunchManager(ctx)
-        val systemBedtime = Doors.hasSystemBedtime(ctx)
-        if (launchManager || systemBedtime) {
+        // And, on a Galaxy, the routines: the app can make them and cannot
+        // delete them, so the place to do that is one tap from here - drawn
+        // only once one EXISTS. Before that the row pointed at nothing and its
+        // text counted two, on a phone with none; reported on a clean install.
+        if (launchManager || routines) {
             Section(stringResource(R.string.section_this_phone)) {
                 SettingsCard {
                     if (launchManager) {
@@ -130,12 +137,12 @@ fun SettingsScreen(themeMode: Int, onThemeMode: (Int) -> Unit, onBack: () -> Uni
                             leading = rowIcon(R.drawable.ic_restart)
                         ) { haptics.open(); Doors.openAutoStart(ctx) }
                     }
-                    if (systemBedtime) {
+                    if (routines) {
                         LinkRow(
-                            stringResource(R.string.bedtime_settings_row),
-                            supporting = stringResource(R.string.bedtime_settings_why),
-                            leading = rowIcon(R.drawable.ic_bedtime)
-                        ) { haptics.open(); Doors.openSystemBedtime(ctx) }
+                            stringResource(R.string.routines_row),
+                            supporting = stringResource(R.string.routines_why),
+                            leading = rowIcon(R.drawable.ic_routine)
+                        ) { haptics.open(); Routines.openApp(ctx) }
                     }
                 }
             }
@@ -191,7 +198,12 @@ fun SettingsScreen(themeMode: Int, onThemeMode: (Int) -> Unit, onBack: () -> Uni
             containerColor = g.raise,
             shape = RoundedCornerShape(32.dp),
             title = { Text(stringResource(R.string.reset_confirm_title)) },
-            text = { Text(stringResource(R.string.reset_confirm_body)) },
+            // On a Galaxy with the routines saved, one more sentence: Reset ends
+            // and forgets them, and cannot delete them - only the user can.
+            text = {
+                val body = stringResource(R.string.reset_confirm_body)
+                Text(if (routines) body + "\n\n" + stringResource(R.string.reset_routines_stay) else body)
+            },
             confirmButton = {
                 Button(
                     onClick = {

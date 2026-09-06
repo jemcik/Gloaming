@@ -34,6 +34,8 @@ import org.robolectric.shadows.ShadowAlarmManager
 import java.time.LocalDate
 import com.jemcik.gloaming.R
 import com.jemcik.gloaming.core.Prefs
+import com.jemcik.gloaming.core.FakeRoutines
+import com.jemcik.gloaming.core.RoutineEffect
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -191,7 +193,10 @@ class RowFitTest {
      */
     private fun withVendorDoors(ctx: android.content.Context) {
         ctx.withLaunchManager()
-        ctx.withSystemBedtime()
+        // And Samsung's routines - with one ADOPTED, because the door is drawn
+        // only once a routine exists to open it on.
+        ctx.asGalaxyWithRoutines()
+        Prefs(ctx).setRoutineUuid(RoutineEffect.GRAYSCALE, 10)
     }
 
     private fun settingsRowsFitIn(locale: String, scale: Float = 1f) {
@@ -200,8 +205,8 @@ class RowFitTest {
         withVendorDoors(ctx)
         val titles = listOf(
             R.string.settings_language, R.string.launch_setup_row,
-            R.string.bedtime_settings_row, R.string.diagnostics_row,
-            R.string.reset_row
+            R.string.routines_row,
+            R.string.diagnostics_row, R.string.reset_row
         )
             .map { ctx.getString(it) }
 
@@ -241,6 +246,71 @@ class RowFitTest {
     @Test fun `settings rows fit in English`() = settingsRowsFitIn("en")
     @Test fun `settings rows fit in Russian`() = settingsRowsFitIn("ru")
     @Test fun `settings rows fit in Ukrainian`() = settingsRowsFitIn("uk")
+
+    /**
+     * On a Galaxy the grayscale and dark-theme rows wear TWO faces - a link
+     * row offering the routine, then the switch backed by it - and each face
+     * has its own supporting text, in three languages, under an avatar and a
+     * chevron or a switch. The Home measurement above sees only the switch
+     * face, and only on a phone that applies the zen effects; so both faces
+     * are measured here on a Galaxy of their own. Absence is a failure.
+     */
+    private fun galaxyRowsFitIn(locale: String, adopted: Boolean, scale: Float = 1f, pending: Boolean = false) {
+        RuntimeEnvironment.setQualifiers("+$locale-w360dp-h800dp")
+        val ctx = ApplicationProvider.getApplicationContext<android.content.Context>()
+        val fake = ctx.asGalaxyWithRoutines()
+        val prefs = Prefs(ctx)
+        prefs.enabled = true
+        // The third face: an offer left open, so the row says "not saved".
+        if (pending) prefs.routineOffered = RoutineEffect.GRAYSCALE.key
+        if (adopted) {
+            fake.rows += FakeRoutines.Row(10, "g")
+            fake.rows += FakeRoutines.Row(11, "d")
+            prefs.setRoutineUuid(RoutineEffect.GRAYSCALE, 10)
+            prefs.setRoutineUuid(RoutineEffect.DARK, 11)
+            // And the wallpaper-dim row under the dark theme, with its own
+            // routine and the dark theme on.
+            fake.rows += FakeRoutines.Row(12, "w")
+            prefs.setRoutineUuid(RoutineEffect.DIM, 12)
+            prefs.fxDarkTheme = true
+        }
+        val titles = (if (adopted) listOf(R.string.fx_grayscale, R.string.fx_dark, R.string.fx_dim)
+            else listOf(R.string.fx_grayscale, R.string.fx_dark)).map { ctx.getString(it) }
+
+        compose.setContent {
+            GloamingTheme(dark = false) {
+                AtFontScale(scale) {
+                    Home(rememberScrollState(), onOpenSettings = {}, onOpenInterruptions = {})
+                }
+            }
+        }
+
+        val missing = mutableListOf<String>()
+        val tall = titles.mapNotNull { title ->
+            // EXACT, not substring: the note strip above these rows names both
+            // effects in a sentence, and a substring match found it too.
+            val match = hasText(title)
+            if (compose.onAllNodes(match).fetchSemanticsNodes().isEmpty()) {
+                missing += title
+                return@mapNotNull null
+            }
+            val b = compose.onNode(match).getUnclippedBoundsInRoot()
+            val h = b.bottom - b.top
+            if (h >= ceiling(scale)) "$title is ${h.value}dp" else null
+        }
+        assertTrue("in '$locale' (adopted=$adopted) these rows were never drawn: $missing", missing.isEmpty())
+        assertTrue("in '$locale' (adopted=$adopted) these rows wrapped to three lines: $tall", tall.isEmpty())
+    }
+
+    @Test fun `a Galaxy's set-up rows fit in English`() = galaxyRowsFitIn("en", adopted = false)
+    @Test fun `a Galaxy's set-up rows fit in Russian`() = galaxyRowsFitIn("ru", adopted = false)
+    @Test fun `a Galaxy's set-up rows fit in Ukrainian`() = galaxyRowsFitIn("uk", adopted = false)
+    @Test fun `a Galaxy's switch rows fit in English`() = galaxyRowsFitIn("en", adopted = true)
+    @Test fun `a Galaxy's switch rows fit in Russian`() = galaxyRowsFitIn("ru", adopted = true)
+    @Test fun `a Galaxy's switch rows fit in Ukrainian`() = galaxyRowsFitIn("uk", adopted = true)
+    @Test fun `a Galaxy's not-saved row fits in English`() = galaxyRowsFitIn("en", adopted = false, pending = true)
+    @Test fun `a Galaxy's not-saved row fits in Russian`() = galaxyRowsFitIn("ru", adopted = false, pending = true)
+    @Test fun `a Galaxy's not-saved row fits in Ukrainian`() = galaxyRowsFitIn("uk", adopted = false, pending = true)
 
     /**
      * The allowlist's rows have LESS room than Home's - a leading icon and a

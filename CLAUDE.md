@@ -63,6 +63,38 @@ indefinitely is background restriction — see `core/BackgroundLimit.kt`.
                                  effects. The one question here with no probe,
                                  so a manufacturer prior that a measured
                                  transition can overrule
+    core/Routines.kt             Samsung's Modes and Routines, driven through
+                                 the door it leaves open: a content provider
+                                 behind a NORMAL permission that lists the
+                                 user's manual routines and starts or ends one
+                                 by uuid, and an importer that takes a routine
+                                 FILE we write. On a Galaxy the grayscale,
+                                 dark-theme and wallpaper-dim switches are each
+                                 backed by one generated routine - Samsung's
+                                 own built-in actions; dimming only WITH the
+                                 dark theme, because One UI dims only in dark
+                                 mode, so its row lives under that switch, and
+                                 as a PAIR of polarities of which the window
+                                 runs only the one that makes the night differ
+                                 from the phone's own setting, which dims by
+                                 default - saved once (the Save in Samsung's
+                                 editor is the floor: inserting directly is
+                                 signature-level), then run exactly while the
+                                 window does. Adoption is on EVIDENCE - the
+                                 provider lists the routine by the name the
+                                 file carried - never on the screen having
+                                 been shown. The Save is EXPLAINED, four ways:
+                                 a note in the section, a one-time explainer
+                                 on the first tap, the row's own "not saved"
+                                 after a trip back with nothing, a snackbar on
+                                 adoption. A capability probe, like Doors
+    core/RoutineFile.kt          the routine file Samsung's importer takes,
+                                 byte for byte as its own writer lays it out:
+                                 512-byte header, plain JSON body, footer.
+                                 One built-in action per effect, with the
+                                 parameters its handler reads; the dark
+                                 theme's is UiModeManager's NUMBER as a
+                                 string, and "true" there draws the row OFF
     core/BackgroundProbe.kt      one throwaway alarm that asks whether this
                                  phone delivers alarms at all. Silent unless
                                  the answer is no
@@ -253,13 +285,20 @@ is in DECISIONS.md.
   compile. It expires by itself - night mode observed going OFF→ON in step with
   our rule overrules the prior for good. Watch the TRANSITION, never the state:
   the first version asked "is it dark while we want dark", answered yes on a
-  phone that was simply always dark, and un-hid the broken switches.
-- **One UI 8 stores `ZenDeviceEffects` and applies none of them** - grayscale and
-  night mode both, across a screen-off cycle. Not a capability gap: One UI's own
-  Sleep mode drives the same `Global saturation`. `BootWatch.hasSystemBedtime`
-  offers the system's own bedtime screen where it resolves, which is the only
-  working route to a grey screen there. Samsung's Routines SDK was tried and its
-  discovery is closed to non-privileged apps.
+  phone that was simply always dark, and un-hid the broken switches. And only a
+  transition the RULE could have made: on a Galaxy a routine of ours drives the
+  dark theme, and the second version took that routine's own work as proof,
+  redrew the zen switches and ended the routine, in one second. Where a dark
+  routine exists there is no evidence either way, and a record made that way is
+  withdrawn. `ScreenEffectsTest` pins it.
+- **One UI 8 stores `ZenDeviceEffects` and applies none of them** - grayscale
+  and night mode both, across a screen-off cycle. Not a capability gap: One
+  UI's own Sleep mode drives the same `Global saturation`. On a Galaxy the
+  grayscale and dark-theme switches therefore run through routines Gloaming
+  generates (`Routines.kt`); the link to One UI's own Sleep mode editor that
+  used to stand in for them is gone, because a second bedtime system with its
+  own schedule and DND fights this one. Samsung's Routines SDK was tried and
+  its discovery is closed to non-privileged apps.
 - Honor's auto-launch and run-in-background states are **unreadable** — absent
   from settings, appops and the package dump, measured either side of a clean
   toggle. Run-in-background is answered by `BackgroundProbe` instead, whose
@@ -269,6 +308,18 @@ is in DECISIONS.md.
 - minSdk is **35** because `ZenDeviceEffects`, `AutomaticZenRule.Builder` and
   `getAutomaticZenRuleState` are all API 35, and a missing method raises `Error`,
   which none of the `runCatching` here would catch.
+- **Never decide against a reading your own action changes.** The dim
+  routines flip One UI's own "apply dark mode to wallpaper" key, and the
+  choice of which polarity the night needs was read off that very key - twice,
+  in two builds, and flickered both times, because our routine had just set it
+  or Samsung's revert had not yet landed. `Prefs.dimBaseline` records the
+  phone's setting when the window opens, before anything of ours moves it.
+- **A shell write to `Settings.System` proves nothing about the APP's write.**
+  A third-party app may write only AOSP's `PUBLIC_SETTINGS` keys there, whatever
+  it holds; `aod_mode` works only because Samsung allowlists it, and
+  `display_night_theme_wallpaper` was refused with "You cannot keep your
+  settings in the secure settings" after a shell test had passed. Measure a
+  vendor key through the app before building on it.
 - **A granted-looking DND setting proves nothing.**
   `enabled_notification_policy_access_packages` has listed this package while
   `NotificationManager` still refused every call. `cmd notification allow_dnd`
@@ -293,6 +344,21 @@ is in DECISIONS.md.
   weak evidence; it is none. The rule in `dumpsys notification` is the answer.
 - `am broadcast` cannot reach `BedtimeReceiver` — it is `exported="false"`,
   correctly. Test through real alarms.
+- **Samsung's Modes and Routines can be driven, and only from the APP.** Its
+  external provider (`Routines.kt`) sits behind `READ_ROUTINE_INFO`, which is
+  `protectionLevel normal` - but the shell does not hold it, so `content query`
+  from adb is refused where the app is answered. Test through the app and read
+  Samsung's side in logcat (`Routine@Core`), which is readable there. The
+  importer DOES take a file from the shell over `file:///sdcard/…`, which is how
+  a generated routine is tried before it is built in. Grayscale and the dark
+  theme are BUILT-IN routine actions (`gray_scale`, `dark_mode_v3`), absent from
+  the editor's picker but present in the catalogue and executing; a mode cannot
+  be switched on directly (`READ/WRITE_MODE_INFO` are signature). The one step
+  nobody can take for the user is Save in Samsung's editor - every insertion
+  path is signature-level, the Bixby capsule provider included, and Good Lock's
+  Routines+, which HOLDS the insert permission, still hands an imported routine
+  to that same editor. Measured 6 Sep 2026; DECISIONS has the contract, the
+  file format and the Good Lock reading.
 - `dumpsys notification` prints a `Zen Log:` history as well as live config, so
   `sed '/Zen Log:/q'` before grepping or long-deleted rules read as present.
   It also prints the live config TWICE, so count rules by id, not occurrence.
@@ -514,7 +580,7 @@ compileSdk 37, targetSdk 36, minSdk 35.
 
 ## Tests
 
-`app/src/test/`, 213 cases, no device. They are written as the QUESTION the code
+`app/src/test/`, 261 cases, no device. They are written as the QUESTION the code
 answers rather than as coverage of a method, because none of the bugs were ever
 in a method — they were in an assumption.
 
@@ -561,6 +627,25 @@ in a method — they were in an assumption.
     BackgroundProbeTest   the delivery probe: lateness rather than arrival is
                           the verdict, and the latch that stops its own retest
                           erasing it
+    RoutinesTest          Samsung's routines, one per screen effect: they run
+                          exactly while the window does and only where the
+                          switch is on, a daytime reconcile never ends a run
+                          the user began by hand, a refused end is owed until
+                          it succeeds, a routine deleted in Samsung's app is
+                          forgotten while one switched off there is kept, and
+                          an offered routine is adopted on evidence, never on
+                          the offer. Against FakeRoutines, which carries the
+                          provider's contract as read from the decompiled
+                          original
+    ScreenEffectsTest     does night mode following the window prove the rule's
+                          effects work - yes on a bare Galaxy, no where a
+                          routine of ours drives the theme, and a record made
+                          that way is withdrawn
+    RoutineFileTest       the routine file Samsung's importer is handed, read
+                          back the way its reader reads it: the 512-byte
+                          header's sizes are true, the padding is NUL, each
+                          effect's action carries the parameters its handler
+                          reads
     ResetTest             starting over: no rule survives - not even one whose
                           id was already lost - the store comes back EMPTY so
                           the next launch takes the fresh-install branch and not
@@ -570,7 +655,7 @@ in a method — they were in an assumption.
                           distinct from a deleted rule, and does the system's
                           account stay ahead of - and apart from - our own
 
-Coverage: **76% of instructions, 59% of branches**. The shape is the point — what
+Coverage: **78% of instructions, 63% of branches**. The shape is the point — what
 is covered is what can be reasoned about without a phone; what is not is what
 talks to the platform (`BedtimeTile` 0%, `BedtimeReceiver` 1%,
 `AmbientControl` 18%, `Doors` 25%, `Journal` 33%, `ZenController` 71%). That gap

@@ -106,8 +106,11 @@
     <!-- The always-available door: a link in Settings, never a notice. -->
     <string name="section_this_phone">this phone</string>
     <string name="launch_link_why">Autostart and background</string>
-    <string name="bedtime_settings_row">System bedtime mode</string>
-    <string name="bedtime_settings_why">From the vendor</string>
+    <!-- Samsung only, and only once a routine exists: where the generated
+         routines live, one tap away to delete - which the app cannot do for
+         the user. No count in the text: it may be one. -->
+    <string name="routines_row">Routines in Samsung\'s app</string>
+    <string name="routines_why">Edit or delete them there</string>
     <!-- Said once, when bedtime is first switched on. Not an accusation. -->
     <string name="launch_tip_title">Make bedtime reliable</string>
     <string name="launch_tip_why">This phone can stop apps while they are closed. Bedtime then starts late, or never ends in the morning. Two switches in App launch prevent it: Auto-launch and Run in background.</string>
@@ -140,12 +143,12 @@
          25-character English one did not - so these are set for the widest
          script, and were checked by RENDERING the app in Ukrainian, which is
          where two of them were caught.
-         BUDGET-EACH 22 fx_grayscale_sub fx_dim_sub fx_dark_sub fx_ambient_sub settings_language_why diagnostics_why reset_why
+         BUDGET-EACH 22 fx_grayscale_sub fx_dim_sub fx_dark_sub fx_ambient_sub fx_dim_dark_sub settings_language_why diagnostics_why reset_why
          A budget is ONE line: the parser's key list is [a-z0-9_ ]+, which does
          not cross a newline, so keys wrapped onto a second line are silently in
          no budget at all. These two sat there unmeasured until RowFitTest was
          made to draw them.
-         BUDGET-EACH 26 launch_link_why bedtime_settings_why
+         BUDGET-EACH 26 launch_link_why routines_why
          26 rather than 22 because these rows carry a chevron where the four
          above carry a SWITCH, which is 20dp wider - and because 26 is measured,
          not guessed: RowFitTest draws the real screen at 360dp in all three
@@ -205,7 +208,33 @@
     <string name="fx_dim_sub">The wallpaper darkens</string>
     <string name="fx_dark_sub">At the next unlock</string>
     <string name="fx_ambient_sub">The screen stays dark</string>
+    <!-- Samsung only, under the dark theme: One UI dims the wallpaper only while
+         dark mode is on, and the row says so rather than promise a light theme
+         with a dimmed wallpaper, which does not exist there. Its routine's
+         subtitle, in place of "Through a routine". -->
+    <string name="fx_dim_dark_sub">With the dark theme</string>
     <string name="fx_ambient_grant">Needs permission to change system settings. Tap to allow</string>
+    <!-- Samsung only. The grayscale and dark-theme rows are backed by a routine
+         in Modes and Routines rather than by the rule; until that routine has
+         been saved once the row offers it. The routine NAMES are what the app
+         looks for afterwards, so they carry the app's name and the effect. -->
+    <string name="fx_routine_setup">Set up in Samsung\'s app</string>
+    <string name="fx_routine_retry">Not saved. Tap to retry</string>
+    <string name="fx_via_routine">Through a routine</string>
+    <!-- The note above the rows, until both routines exist; the explainer
+         before the first jump into Samsung's app; the confirmation after. -->
+    <string name="routine_note">Grayscale and dark theme run through Samsung\'s routines here. Each needs one Save in Samsung\'s app.</string>
+    <string name="routine_explain_title">Set up in Samsung\'s app</string>
+    <string name="routine_explain_body">Modes and Routines will open with a routine named “%1$s” already filled in. Tap Save there, then come back. Gloaming will run it every bedtime.</string>
+    <string name="routine_open">Open Modes and Routines</string>
+    <string name="routine_done_gray">Grayscale is set up</string>
+    <string name="routine_done_dark">Dark theme is set up</string>
+    <string name="routine_done_dim">Wallpaper dimming is set up</string>
+    <string name="routine_done_dimoff">Undimmed wallpaper is set up</string>
+    <string name="routine_name_gray">Gloaming: grayscale</string>
+    <string name="routine_name_dark">Gloaming: dark theme</string>
+    <string name="routine_name_dim">Gloaming: dim wallpaper</string>
+    <string name="routine_name_dimoff">Gloaming: undimmed wallpaper</string>
 
     <!-- ============ Home: end-bedtime dialog ============ -->
     <string name="action_set">Set</string>
@@ -311,6 +340,8 @@
     <string name="reset_why">Back to a fresh start</string>
     <string name="reset_confirm_title">Reset Gloaming?</string>
     <string name="reset_confirm_body">Bedtime switches off, the schedule and everything you have allowed go back to their defaults, and Gloaming’s rule is removed from Do Not Disturb. The diagnostics log is kept.</string>
+    <!-- Appended on a Galaxy that has the routines: Reset cannot delete them. -->
+    <string name="reset_routines_stay">The two routines in Modes and Routines stay. Delete them there if you like.</string>
     <string name="action_reset">Reset</string>
     <string name="section_about">about</string>
     <string name="settings_version">Version %1$s</string>

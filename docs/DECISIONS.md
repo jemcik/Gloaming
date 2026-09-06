@@ -643,7 +643,15 @@ almost certainly restricted to privileged packages. The SDK is also absent from
 developer.samsung.com's published Galaxy SDKs. Spike left on `samsung-spike`,
 unmerged.
 
-**What DOES work is an AOSP action: `android.settings.BEDTIME_SETTINGS`.** It
+**What DOES work is an AOSP action: `android.settings.BEDTIME_SETTINGS`.**
+*(Superseded 6 Sep 2026: the door is removed. The grayscale and dark-theme
+switches now run through generated routines - see "Round three" below - so the
+link no longer gave a Samsung owner anything the app lacked, and what it gave
+instead was a second bedtime system with its own schedule and its own Do Not
+Disturb, whose stricter policy would override the allowlist chosen here. It
+also resolved on any phone with a bedtime screen, a Pixel's included, where it
+pointed at the very feature this app replaces. The probe, the opener, the two
+strings and the test helper went with it; the finding below stands.)* It
 resolves on the Galaxy - landing on One UI's `LifestyleModeEditorActivity`, the
 Sleep mode editor where greyscale actually is configurable - and resolves to
 nothing on the Honor. So it is a capability probe like every other here, not a
@@ -651,6 +659,411 @@ vendor test, and it gives Samsung owners the one working route to a grey screen.
 The constant is hidden (`Settings.ACTION_BEDTIME_SETTINGS` does not compile
 against compileSdk 37), so the action string is written out; it is an intent
 action matched by the package manager, not a private method and not reflection.
+
+**Samsung round two, 6 Sep 2026: two routes to a grey screen, one of them with
+no computer.** Galaxy S23, One UI 8 / Android 16, Routines 4.9.04.13. The
+brief was to reverse-engineer Good Lock; it is not installed on this phone and
+its modules are Samsung-signed, so their manifests could only have shown
+signature-level permissions - the door that matters turned out to be in
+Samsung's own `Routines.apk`, pulled from `/system/priv-app` and read with
+`aapt2 dump xmltree` and jadx.
+
+*Route one: the AOSP daltonizer keys, behind the adb grant.* The earlier
+"grayscale has no settings key" diff was of One UI's Sleep mode, which goes
+through `SemColorDisplayManager.setSaturationLevel` - in-memory, no key. But
+Android's accessibility Colour correction is a DIFFERENT grey screen, and it is
+two `Settings.Secure` keys that `ColorDisplayService` observes live:
+`accessibility_display_daltonizer=0` (monochromacy) and
+`accessibility_display_daltonizer_enabled=1`. Written from adb: logcat - readable
+on Samsung - printed `SurfaceFlinger: apply a color matrix` 2 ms after the
+put, Samsung's own «Цветовая коррекция» screen flipped to «Включено» with its
+switch on and back to «Выключено» on the revert, and the owner, watching the
+phone, saw it go grey. A screenshot did NOT: mean chroma moved 33 to 28, which
+is noise - the matrix is applied at composition, after the framebuffer
+`screencap` reads, so a capture can never witness this effect on any phone.
+`pm grant com.jemcik.gloaming android.permission.WRITE_SECURE_SETTINGS` takes on
+One UI (`granted=true`), so this is exactly Honor's always-on route: real, and
+adb-only. NOT BUILT, because route two needs no computer and covers more; if it
+is ever built it is `AmbientControl`'s shape - save, write, restore on every
+path through `setActive` - gated on `!ScreenEffects.applied` so it never
+doubles a zen effect that works.
+
+*Route two: Modes and Routines leaves a door open.* Its manifest declares
+eleven permissions at signature|privileged - `WRITE_ROUTINE_INFO`,
+`READ_MODE_INFO`, `WRITE_MODE_INFO`, `ROUTINE_HOST`, `ACCESS_ROUTINES` and the
+rest - and ONE at `protectionLevel normal`: `READ_ROUTINE_INFO`, the one the
+earlier spike had already found granted at install with no prompt. It is the
+`readPermission` on `ExternalRoutineContentProvider`, authority
+`com.samsung.android.app.routines.externalprovider`, and that provider is not
+read-only in any sense that matters. Decompiled:
+
+    query  content://…externalprovider/routine_list
+             ?condition_type=manual|auto  &routine_type=normal|system|…
+             &only_enabled=0|1  (default 1)  &use_case=…
+           → uuid, name, icon_resource_id, icon_color, is_running,
+             is_enabled, is_oneoff
+    call   start_manual_routine  {uuid}  → {success, error?}
+           end_manual_routine    {uuid}
+           toggle_manual_routine {uuid}
+           (and a one-shot execute)
+
+Every `call` resolves the routine, refuses with a named `error` when it is
+missing, not manual, or disabled ("Routine is disabled", "Not a manual
+routine"), answers `success=true` with "Routine is already running" for a
+start that changes nothing, and otherwise `startService`s Samsung's own
+execution service with the caller's package as the running reason - a
+`gamebooster` caller is treated as the quick-settings tile, everyone else as
+`IN_APP`. So a routine the user built with the condition "Start button tapped"
+can be started and ended by uuid from an ordinary app, and Samsung runs its
+actions with the permissions we cannot hold: `display/darkmode/actions` calls
+`UiModeManager.setNightMode` plus `setNightModeActivated` by reflection, and
+`modeandroutine/mode/actions` turns Sleep mode on, whose effects are AOD off,
+grayscale and dark mode - read off the editor itself: «Always On Display:
+Выключено», «Градации серого», «Темный режим». Grayscale is a MODE effect, not
+a routine action; the routine reaches it by turning the mode on.
+
+What stays shut, for the record: `modeinfoprovider` is READ/WRITE_MODE_INFO,
+both signature|privileged, so a mode cannot be switched on directly - only
+through a routine that carries "turn on Sleep mode". `RoutineInfoProvider`'s
+`insert` under `core_service` builds a routine from extras, but that is
+`WRITE_ROUTINE_INFO`. The shell cannot exercise any of it - uid 2000 holds
+none of these permissions, so `content query` answers Permission Denial - which
+is why the live test had to be the app itself.
+
+Two smaller doors, both exported with no permission, both kept for the record
+rather than built: `LifestyleModeDialogActivity` answers
+`com.samsung.android.app.routines.action.LAUNCH_MODE_LIST_DIALOG` with a bottom
+sheet of the user's modes, one tap from Sleep mode on, from any caller - it is
+the lock-screen widget's dialog; and `MainRoutineTabLaunchActivity` opens the
+Routines tab, which the picker uses. The other public TRIGGER is the
+`notification/notificationreceived` condition: Routines runs a notification
+listener and a routine can fire on "a notification from [app] containing
+[keyword]" - group summaries screened out, importance NOT filtered, matched by
+case-insensitive `contains` on the text. It would let a routine follow the
+window with no permission at all, at the cost of posting two notifications a
+night as messages to another app and asking the user to build two event
+routines with no end. Route two makes it unnecessary.
+
+The semantics chosen: the routine runs EXACTLY while bedtime does, on every
+path through `setActive`, with `Prefs.routineStarted` recording what we
+started. That latch is what keeps a daytime reconcile from ending a run the
+user began by hand, and keeps a refused end owed until it succeeds; a start
+that answers "already running" is latched too, because the user chose this
+routine for the night and the night's end is the one thing they will expect to
+end it. `RoutinesTest` pins all of it against a fake carrying the contract
+above.
+
+Measured end to end the same afternoon, on the S23, with the app holding
+nothing but its install-time permissions. A manual routine "Gloaming" whose one
+action is "turn on Sleep mode", picked in the row; the window dragged over the
+present and the master switch flipped. Ours: `routine start
+1961863775940266114: ok`, then `zen state -> ON`. Samsung's, in its own
+readable logcat: `startManualRoutine: routineUuid=…, callingPackage=
+com.jemcik.gloaming`, the Gloaming routine `READY → RUNNING`, then Sleep mode
+`READY → RUNNING`. The phone: `Global saturation: Activated: true` - Samsung's
+own grey screen, the one no zen rule could reach - `zen_mode=1`, `aod_mode=0`.
+Switched off thirty seconds later: `routine end …: ok`, `endManualRoutine`
+with our package named, both routines back to `READY`, saturation `false`,
+`zen_mode=0`, `aod_mode=1`. The shell could not have run this test: uid 2000
+does not hold `READ_ROUTINE_INFO`, so `content query` is refused where the app
+is answered.
+
+One thing RowFitTest caught before the phone did: the row's first draft named
+Samsung's app in full under a 40dp avatar and a chevron, and wrapped to 88dp in
+all three languages - English included, at "Choose one from Modes and
+Routines". Home's card is 311dp and the routine row has less of it than any
+other. The supporting texts now name the TAB - "Choose from Routines",
+«Выберите в «Сценариях»» - and the app's full name lives in the picker, where
+there is room for the sentence that explains it.
+
+**Round three, the same evening: nobody builds the routine, and the switches
+come back.** The picker above asked the user to build a manual routine by hand
+in Samsung's app and choose it here, and the owner's answer was that this is
+not the product: a Galaxy should show the screen switches preconfigured, out of
+the box. Two more finds closed most of that gap.
+
+*The importer takes a file we write.* `RoutineFileHandleActivity` is exported
+with no permission and handles `VIEW` of `application/vnd.samsung.routines`
+from `file:` or `content:`; its Samsung-signature check guards only its own
+`SHARE_SAVE` action. The format, read from `RoutineFileWriter`/`Reader`: a
+512-byte header - JSON `{version, valid_state, body_size, footer_size,
+description}` then NUL - the body, a footer `{"resource_table":[]}`. Version
+"1.0" is the PLAIN body, which is what Samsung's own writer produces for a QR
+share; "2.0" bodies are AES-GCM under the first 32 chars of the app's signing
+certificate, and `valid_state` is an HMAC under the same key, and the reader
+checks neither on a 1.0 file. The body is kotlinx-serialized `JsonRoutine`:
+`version, name, conditions[], actions[]` plus optional `icon, icon_color,
+icon_image, is_recovery_off, scheduled_end_time, condition_combination_type`
+(the serializer for the routine itself is one jadx refuses to emit -
+DONT_GENERATE - so those names were confirmed against the dex string pool; the
+optional ones are simply omitted). Each condition and action is `{package,
+tag, uuid, label, intent_param[], is_negative, instance_extra, extra_info,
+version}`, the metas looked up by `package=? AND tag=?` against the preload
+providers' own package, parameters as `{KEY, TYPE, VALUE}` with TYPE from
+Samsung's `ValueType`. `RoutineFileTest` pins the layout.
+
+*The effects are built-in ACTIONS, not only Sleep-mode settings.*
+`builtin_actions_provider.xml` declares `gray_scale` (TOGGLE template, param
+`toggle_value` BOOLEAN, `reversible="forced"`) and `dark_mode_v3` (params
+`enable_dark_mode` as UiModeManager's night-mode NUMBER as a string - "2" is
+YES; "true" drew the editor's row as Off - and `enable_dark_theme` BOOLEAN,
+reversible). Neither is offered in the routine editor's action picker on this
+phone, which is why the first pass concluded grayscale was a mode-only effect;
+both are in the catalogue and both execute. Measured: a routine carrying only
+`gray_scale`, imported from a generated file and started from Samsung's list,
+flipped `Global saturation: Activated` to true, and Stop put it back. Dimming
+has no action of its own (`wallpaper_apply_dark_mode` is Samsung's "dark
+wallpaper with dark mode", delegated to its wallpaper app), and always-on has
+none either - it is a mode effect, and ours goes through `AmbientControl`'s
+WRITE_SETTINGS route regardless.
+
+So the Galaxy now draws Grayscale and Dark theme as the SAME switches every
+other phone has, each backed by one generated routine instead of the rule.
+Until its routine exists the row is a link, "Tap to set up": one tap hands
+Samsung's editor the file, Save there is the whole setup, and on return
+`Routines.adopt` finds the routine by the exact name the file carried and turns
+the switch on - on that evidence, never on the screen having been shown. The
+generic picker is gone with its strings. Measured end to end on the S23 at
+16:09: `routine gray offered`, Save, `routine gray adopted: 5738…7716`, the row
+reading «Через сценарий» with its switch on; bedtime on at 16:11 - `routine
+start …: ok`, saturation true; off - `routine end …: ok`, saturation false.
+
+Two things the phone taught along the way. The importer must be started in
+OUR task: launched with NEW_TASK it joined Samsung's own, which still held the
+Sleep-mode editor from an earlier probe, and Save returned there rather than
+to Home. And the single tap that remains - Save - is the floor: inserting a
+routine is `WRITE_ROUTINE_INFO`, the suggestion service that creates routines
+is `RECEIVE_SUGGESTION`, and the GTS and Smart Switch restore receivers are
+behind `WRITE_SECURE_SETTINGS` or Samsung's own permissions, every one
+signature-level. One Save per effect is what "out of the box" costs on this
+phone.
+
+Recorded, not verified: the Automate community's flow for the same external
+provider states a minimum of One UI 8.0 and that "One UI 8.5 has broken" it.
+The provider is therefore new in 8.0 and may have changed in 8.5; the S23
+here is on 8.0. `available` is a probe, so a phone where it has changed draws
+nothing rather than a switch that lies - and a Galaxy on 7 never had the door.
+
+Asked, at the end, whether the Save can be avoided at all: no, and the list is
+now complete. `RoutineInfoProvider`'s insert is `WRITE_ROUTINE_INFO`;
+`RoutineSuggestionReceiverService`'s `ACTION_CREATE_ROUTINE` is
+`RECEIVE_SUGGESTION`; `RoutineRestoreEventReceiver` and `RoutineGtsCellProvider`
+are `WRITE_SECURE_SETTINGS`; Smart Switch's receiver is `COM_WSSNPS`; the
+Bixby `CapsuleProvider`, exported with no manifest permission, checks the
+caller is `com.samsung.android.bixby.agent` under two hardcoded Samsung
+certificates and throws otherwise; `DetailActivity` itself is `ROUTINE_HOST`.
+An accessibility service could tap Save for the user, and that is a larger,
+scarier grant than the tap it would save. The routine deleted in Samsung's app
+is handled too: `Routines.prune` on resume forgets an adopted uuid the provider
+no longer lists, and the row offers again.
+
+**Good Lock, read rather than reasoned about, 6 Sep 2026.** The owner asked
+twice whether the modules had been decompiled, and the honest answer was no -
+none was installed, and "they are Samsung-signed" is an argument. So Routines+
+1.1.28 and Good Lock 3.0.16.6 were installed from the Galaxy Store on the S23
+(Samsung account present), pulled, and read. Routines+ holds
+`WRITE_ROUTINE_INFO` and `ROUTINE_HOST` and exports two doors with no
+permission: `RoutineBuilderActivity`, which takes only `routineId` and an
+`extra_action_type` of `briefAction`/`notificationAction` - its own Now Brief
+builder, a UI - and `RoutinePlusActivity`, which handles a `routineplus://…?
+json_data=<gzip>` link or a content URI as an IMPORT: it validates a JSON
+document (`document_id` "com.samsung.android.app.routines/routine", version
+"1") and then starts Routines' own `ACTION_MAKE_ROUTINE` editor with it as
+`routine_json`. So even Samsung's own module, with the permission to insert,
+hands an imported routine to the editor for the user's Save. The tap is the
+design, not merely a permission this app lacks. Its catalogue adds nothing for
+the display: `close_app`, `hide_apps`, `shortcut`, `direction_key`, `tts`,
+`navigation_bar_type`, a REST call, a Now Brief action, and `custom_key`,
+`finger_print`, `air_action` conditions - all behind `WRITE_SECURE_SETTINGS`
+or `ROUTINE_HOST` as providers, for Routines to read. Good Lock itself is the
+hub - `INSTALL_PACKAGES`, `WRITE_SECURE_SETTINGS`, a deep-linked MainActivity
+and an analytics provider - and names its modules from a server; none of the
+display modules (Theme Park, Wonderland, QuickStar, LockStar) is an automation
+surface. Both were uninstalled again afterwards.
+
+**The Save, explained - four pieces of UX, same evening.** The owner's
+objection was exact: first open, tap the row, another app appears, and WHAT
+DO I DO WITH IT. And a last check for a permission that would let an app
+create a routine silently: none exists. Every creating permission is
+`signature|privileged` with no `development` or `appop` flag - unholdable and
+ungrantable even from adb - and `EXECUTE_APP_FUNCTIONS` is `internal|
+privileged`, with Routines' own app functions being for calendar and clock.
+So the tap stays, and is explained four ways: a NOTE in the section, before
+any tap, saying that grayscale and the dark theme run through Samsung's
+routines here and each needs one Save, gone once both exist; an EXPLAINER on
+the first tap only - what will open, what it already contains, the one thing
+to do there - with one button, and skipped for the second effect because the
+flow has been seen (`Prefs.routineExplained`); the row's own words, "Set up in
+Samsung's app" before, and "Not saved. Tap to retry" after a trip that came
+back with nothing, which the open offer already tells us; and a snackbar on
+return, "Grayscale is set up", because a switch turning on after a trip
+through another app is a change the eye did not watch. RowFitTest measures all
+three faces of the row in three languages - the first supporting text, "Tap to
+set up in Samsung's app", wrapped in every one of them and lost its verb.
+
+The snackbar took two builds. The first cleared `justAdopted` INSIDE the
+LaunchedEffect keyed on it, which restarted the effect with null and cancelled
+`showSnackbar` before it drew; the screen test could not see this because the
+assertion was not there yet, and the phone showed nothing. Cleared after the
+snackbar has shown instead, asserted in ScreensTest, and caught on the phone
+in a burst of captures 1.2 s after Save - stacked, for a moment, under
+Samsung's own «Файл … сохранен» toast, which is fine.
+
+Three questions before the PR, answered from the phone. The handling is
+conditional on One UI twice over: the rows draw only where the zen effects are
+thrown away AND Samsung's provider resolves with the permission held, and
+`sync` is now gated the same way, so the day a Galaxy is seen applying the
+rule's effects the routines fall silent rather than doubling the rule. One UI
+8.5 or 9 cannot be checked from here without their `Routines.apk` - the door
+is in the app, not the OS, and the Galaxy Store has no standalone listing to
+update it from on this phone («Нет элементов»); a newer APK read statically,
+or installed over (same Samsung signature), is the test, and the probe covers
+the rest. And the routines cannot be deleted on Reset or uninstall: the
+external provider's `delete` is a stub returning 0 and its calls are start,
+end and toggle; deleting is `WRITE_ROUTINE_INFO`. Reset ends what we started
+and forgets both uuids, the routines stay as inert manual routines, and two
+things now say so: a "Routines in Samsung's app" link under Settings' "this
+phone", and one more sentence in the Reset confirmation on a Galaxy that has
+them.
+
+And with the switches real, the "System bedtime mode" link in Settings lost
+its reason: it was the stand-in for them, and it now offered a second bedtime
+with its own schedule and DND. Removed, on the owner's call; its DECISIONS
+entry above is marked superseded rather than deleted.
+
+A quality pass over the branch before the PR, on the owner's usual ask. What
+changed: resume reads Samsung's app ONCE (`Routines.refresh`, which forgets
+what was deleted and adopts what was saved off one cursor, and does not touch
+the provider at all where nothing is adopted and nothing offered - every
+phone but a set-up Galaxy); the effect-to-switch mapping is written once, in
+`Prefs.fxWants`/`setFxWants`, where three `when` blocks had repeated it; Home
+holds the adopted effects as one set rather than two parallel fields; the
+routine's name and confirmation strings hang off the effect beside the state
+that uses them; the offer catches the FileProvider lookup with the write; and
+the tests import the fake instead of naming it in full. Four tests added for
+the failure paths - a provider that throws, a cursor whose columns moved, the
+single read, the one key behind each switch. 248 cases, 78% of instructions
+and 63% of branches (from 76/59); `Routines.kt` 85/80, its uncovered lines
+being the app-opening fallback and the "no answer" branch. Re-run live on the
+S23 afterwards: both routines start with the window and end with it.
+
+**The observer took our own routine's work as evidence, 6 Sep 2026, on the
+owner's first clean run.** Two reports at once - "the dark theme was not
+applied, even across a screen-off" and "a wallpaper-dim switch appeared" - and
+one cause. `ScreenEffects.observeApplied` records that a phone applies the
+rule's effects when night mode goes off→on in step with the window. On the
+Galaxy the dark theme now goes on in step with the window because the
+generated routine turns it on; the observer saw it, set `effectsSeen`, the
+section redrew with the rule's three switches (dimming among them), and
+`Routines.sync`'s gate - routines only where the effects are thrown away -
+ended both routines, which reverted the theme. Journal: `routine start` at
+17:31:22, `device effects observed` at 17:31:23, `routine end` in the same
+second. The fix is a second condition on the evidence: only a transition the
+RULE could have made counts, so where a dark routine exists the observer
+records nothing either way, and withdraws a record made under it - which is
+also how the S23 repaired itself on the next resume. `ScreenEffectsTest` pins
+all three: the honest edge still counts, the routine's edge does not, and the
+false record is withdrawn.
+
+And from the same clean run: Settings' "Routines in Samsung's app" row was
+drawn on the provider's presence alone, on a phone with no routine yet, and
+its text counted two. It is drawn only once a routine exists now, and the text
+says what the row is for - "Edit or delete them there" - rather than how many
+there are, which may be one. The Reset sentence reads the same answer.
+
+**Wallpaper dimming on a Galaxy, under the dark theme, 6 Sep 2026.** The
+owner asked whether "no dimming on Samsung" was right, and the honest answer
+was "not quite". One UI has no dimming of its own but has "apply dark mode to
+wallpaper", a darker wallpaper WHILE dark mode is on, and Samsung's routine
+action for it writes exactly one thing: `Settings.System.
+display_night_theme_wallpaper` (its handler, decompiled). Measured from the
+shell with dark mode on, wallpaper-band luminance: 124 with the key at 1, 136
+at 0, 124 at 1 again, honoured live within two seconds; 142 in light mode with
+the key at 1. That last number is the design: a light theme with a dimmed
+wallpaper does not exist on this phone, from any app or from Samsung's own
+screens, so a standalone switch would lie to exactly the person who wanted
+it. The row lives UNDER the dark theme and only while that switch is on and
+has its routine, subtitled "With the dark theme" - the owner's call, as
+product manager, over leaving it out.
+
+The first build wrote the key itself, behind the WRITE_SETTINGS grant the
+always-on row already asks for - and the phone refused it:
+`IllegalArgumentException: You cannot keep your settings in the secure
+settings`. That is AOSP's `SettingsProvider`: a third-party app may write only
+the `Settings.System` keys in `Settings.System.PUBLIC_SETTINGS`, whatever it
+holds, and a vendor key is not among them. The shell had passed because uid
+2000 is privileged, and `aod_mode` works only because Samsung's provider
+allowlists that one key. So `WallpaperDim.kt`, its prefs key, its hook and its
+seven tests were deleted the same hour, and dimming became what the other two
+effects already are: a generated routine, `wallpaper_apply_dark_mode` with
+`toggle_value` true, whose handler has a reverse path - measured by file
+import, start took the key to 1 and stop put it back. `Routines.wanted` runs
+it only with the dark theme, because a routine that dims a light phone does
+nothing but run. Measured through the app on the S23: dark set up, the dim row
+appearing under it, set up, both routines starting with the window - key 1,
+wallpaper band 124 - and ending with it - key 0, band 142. Two lessons for the
+file: a shell write proves nothing about an app's write, and the rule's own
+dim row on every other phone is untouched, because this one is drawn only
+where the rule's effects are thrown away.
+
+**And the switch did nothing, 6 Sep 2026, on the owner's phone.** The journal
+showed every flip starting or ending the dim routine within a second, and
+Samsung ran it every time - and the wallpaper never changed, because One UI
+dims the wallpaper in dark mode BY DEFAULT: `display_night_theme_wallpaper` is
+1 on this S23 out of the box. The routine turned on what was already on, and
+its revert restored an already-on value. "Off" could not un-dim, because the
+only routine there was turned the setting on. So the effect is now a PAIR:
+`DIM` and `DIM_OFF`, the same action with `toggle_value` true and false, and
+the window runs at most one of them - the one that makes the night DIFFER
+from the phone's own setting, which is readable by anyone
+(`Routines.dimRoutineFor`). On a phone that dims already, "dim" needs
+nothing and "do not dim" needs the OFF routine; on one that does not, the
+reverse. The switch is a switch from the start, opening in the phone's own
+state the moment the dark theme is adopted, so it never shows off over a
+wallpaper that dims; a flip to the state the phone does not give offers that
+polarity's routine and moves only on adoption. Most Galaxies will therefore
+pay one Save for this switch, for "off", and none for "on". Routines that
+match the phone's setting are never run: a routine that changes nothing is
+still a routine running all night.
+
+A runner artefact found on the way, for the file: androidx `FileProvider`
+caches its path strategy per authority in a static map, and Robolectric
+gives every test a fresh cache directory, so the second test in a JVM to
+offer a routine asked a strategy rooted in the previous test's directory and
+threw. The Galaxy test helper clears that map; the test that failed passed
+alone, which is the signature of exactly this.
+
+Two flickers on the way to that switch, both from reading the phone's setting
+at the wrong moment. First: the decision "which polarity does the night need"
+read the live key, and our own OFF routine had just set it to 0, so the next
+sync concluded "the phone does not dim, nothing is needed", ended the routine,
+Samsung's revert put the key back, and the sync after that started it again -
+start, end, start, in one second. Second, after deciding from the started set
+instead: flipping the switch on ended the OFF routine, and the sync a moment
+later found the started set empty and the key STILL 0, because Samsung's
+revert lands asynchronously, and started the ON routine on a value that was
+being put back. So the phone's own setting is now RECORDED once, when the
+window opens and before anything of ours has moved the key
+(`Prefs.dimBaseline`), every decision until the window closes is made against
+that record, and the record is let go with the window so tomorrow reads the
+phone afresh. An upgrade mid-window, where one of our routines already holds
+the key, records what was under it from the started set instead. Measured
+from a fresh window on the S23: on, the OFF routine starts, key 0; flip on,
+one end, no start, key 1; flip off, one start, key 0; off, one end, key 1.
+The lesson for the file: never decide against a reading your own action is
+about to change, or has just changed - record it before you act.
+
+**How strong the effect is, so it is never mistaken for broken.** The owner's
+first reaction to the finished switch was that it did nothing; the journal
+showed every flip starting or ending the routine within a second, with the
+key following, and the phone's own captures showed the truth: One UI's dark-
+mode wallpaper dimming is FAINT. Home-screen wallpaper bands, dark theme on,
+switch on against off: 124 against 136, 117 against 132, 34 against 37 - eight
+to eleven percent darker, on the home and lock screens only, never inside an
+app. AOSP's own dim effect, the one the same row drives on other phones, is
+sixty percent. On a dark wallpaper like the S23's it takes a side-by-side to
+see. Kept anyway, on the owner's call - it works, and it is what the phone
+has - with this paragraph as the answer to the next "it does nothing".
 
 **A parked alarm is still DELIVERED, so arrival cannot be the test.** The first
 version of the probe scored a blocked phone as healthy, and only the device

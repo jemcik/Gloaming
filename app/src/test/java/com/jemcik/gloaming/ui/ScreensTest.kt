@@ -30,9 +30,12 @@ import java.time.LocalTime
 import androidx.compose.foundation.rememberScrollState
 import com.jemcik.gloaming.R
 import com.jemcik.gloaming.core.Prefs
+import com.jemcik.gloaming.core.FakeRoutines
+import com.jemcik.gloaming.core.RoutineEffect
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import org.junit.Assert.assertNull
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -781,5 +784,134 @@ class ScreensTest {
         ).performScrollTo().performClick()
         assertEquals("off must not move the handle", alarm, p.endTime)
         assertTrue("and it must actually be off", !p.exitAtAlarm)
+    }
+
+    /**
+     * The routine we offered, once saved in Samsung's app, becomes the effect's
+     * own switch - on - and is started NOW if the window is open, not at the
+     * next one. And the link row it replaces is gone: a switch is drawn only
+     * over a routine the provider lists, never over an offer.
+     */
+    @Test
+    fun `a saved routine turns its link row into a switch that is on, and starts now`() {
+        val ctx = ctx()
+        val fake = ctx.asGalaxyWithRoutines()
+        val prefs = Prefs(ctx)
+        prefs.enabled = true
+        val now = LocalTime.now()
+        prefs.startTime = now.minusHours(1)
+        prefs.endTime = now.plusHours(1)
+        prefs.days = DayOfWeek.entries.toSet()
+        // As Routines.offer leaves things: the file was handed over under this
+        // name, and Samsung's editor saved it while we were away.
+        prefs.routineOffered = RoutineEffect.GRAYSCALE.key
+        prefs.routineOfferedName = "Gloaming: grayscale"
+        fake.rows += FakeRoutines.Row(42, "Gloaming: grayscale")
+
+        compose.setContent {
+            GloamingTheme(dark = false) {
+                Home(rememberScrollState(), onOpenSettings = {}, onOpenInterruptions = {})
+            }
+        }
+        val gray = ctx.getString(R.string.fx_grayscale)
+        compose.onNode(hasText(gray, substring = true) and isToggleable()).performScrollTo().assertIsOn()
+        assertEquals(42L, prefs.routineUuid(RoutineEffect.GRAYSCALE))
+        assertEquals(listOf("start 42"), fake.calls)
+        // And it is said out loud, once: the confirmation the eye needs after a
+        // trip through another app.
+        compose.onNodeWithText(ctx.getString(R.string.routine_done_gray)).assertExists()
+        // The dark theme was never offered, so its row still only offers.
+        val dark = ctx.getString(R.string.fx_dark)
+        assertTrue(compose.onAllNodes(hasText(dark, substring = true) and isToggleable()).fetchSemanticsNodes().isEmpty())
+    }
+
+    /**
+     * The first tap on a Galaxy's effect row does not jump into another app
+     * unannounced: it explains, once. Its one button remembers that the
+     * explanation was seen and makes the offer; the row then says the routine
+     * is not saved yet - the app knows from the offer left open - and the
+     * SECOND effect goes straight through, because the flow has been seen.
+     */
+    @Test
+    fun `the first tap explains, the button offers, and the second effect skips the explainer`() {
+        val ctx = ctx()
+        ctx.asGalaxyWithRoutines()
+        val prefs = Prefs(ctx)
+        compose.setContent {
+            GloamingTheme(dark = false) {
+                Home(rememberScrollState(), onOpenSettings = {}, onOpenInterruptions = {})
+            }
+        }
+        val gray = ctx.getString(R.string.fx_grayscale)
+        val open = ctx.getString(R.string.routine_open)
+        compose.onNodeWithText(gray).performScrollTo().performClick()
+        compose.onNodeWithText(open).assertExists()
+        assertNull("the explainer is not the offer", prefs.routineOffered)
+
+        compose.onNodeWithText(open).performClick()
+        assertTrue(prefs.routineExplained)
+        assertEquals("the offer went out for grayscale", "gray", prefs.routineOffered)
+        compose.onNodeWithText(ctx.getString(R.string.fx_routine_retry)).assertExists()
+
+        // The dark theme: no dialog this time, the offer goes straight out.
+        compose.onNodeWithText(ctx.getString(R.string.fx_dark)).performScrollTo().performClick()
+        assertTrue(compose.onAllNodesWithText(open).fetchSemanticsNodes().isEmpty())
+        assertEquals("dark", prefs.routineOffered)
+    }
+
+    @Test
+    fun `the note about Samsung's routines is drawn until both are set up`() {
+        val ctx = ctx()
+        val fake = ctx.asGalaxyWithRoutines()
+        val prefs = Prefs(ctx)
+        fake.rows += FakeRoutines.Row(10, "g")
+        prefs.setRoutineUuid(RoutineEffect.GRAYSCALE, 10)
+        compose.setContent {
+            GloamingTheme(dark = false) {
+                Home(rememberScrollState(), onOpenSettings = {}, onOpenInterruptions = {})
+            }
+        }
+        // One of two set up: still something to ask.
+        compose.onNodeWithText(ctx.getString(R.string.routine_note)).assertExists()
+    }
+
+    /**
+     * On a Galaxy the wallpaper-dim row lives UNDER the dark theme, and only
+     * while that is on: One UI dims the wallpaper only in dark mode. It is a
+     * switch from the start, mirroring the phone's own setting; and a flip to
+     * the state the phone does not give is an OFFER of that polarity's
+     * routine, not a flip - the switch moves on adoption, never before.
+     */
+    @Test
+    fun `a Galaxy's wallpaper dim row exists only under a dark theme that is on`() {
+        val ctx = ctx()
+        val fake = ctx.asGalaxyWithRoutines()
+        fake.rows += FakeRoutines.Row(11, "d")
+        val prefs = Prefs(ctx)
+        prefs.setRoutineUuid(RoutineEffect.DARK, 11)
+        prefs.fxDarkTheme = false
+        // The phone dims in dark mode by itself, and the switch says so.
+        android.provider.Settings.System.putInt(ctx.contentResolver, com.jemcik.gloaming.core.Routines.DIM_KEY, 1)
+        prefs.fxDimWallpaper = true
+        compose.setContent {
+            GloamingTheme(dark = false) {
+                Home(rememberScrollState(), onOpenSettings = {}, onOpenInterruptions = {})
+            }
+        }
+        val dim = ctx.getString(R.string.fx_dim)
+        val dark = ctx.getString(R.string.fx_dark)
+        assertTrue("no dark theme, no dim row", compose.onAllNodesWithText(dim).fetchSemanticsNodes().isEmpty())
+        compose.onNode(hasText(dark) and isToggleable()).performScrollTo().performClick()
+        assertTrue(prefs.fxDarkTheme)
+        compose.onNode(hasText(dim) and isToggleable()).performScrollTo().assertIsOn()
+        compose.onNodeWithText(ctx.getString(R.string.fx_dim_dark_sub)).assertExists()
+
+        // Off is the state this phone does not give: the OFF routine is offered,
+        // and the switch stays where the night can deliver.
+        compose.onNode(hasText(dim) and isToggleable()).performClick()
+        assertEquals("dimoff", prefs.routineOffered)
+        assertTrue("not flipped until the routine exists", prefs.fxDimWallpaper)
+        compose.onNode(hasText(dim) and isToggleable()).assertIsOn()
+        compose.onNodeWithText(ctx.getString(R.string.fx_routine_retry)).assertExists()
     }
 }

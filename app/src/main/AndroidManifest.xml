@@ -20,10 +20,20 @@
     <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS"
         tools:ignore="ProtectedPermissions" />
 
+    <!-- Samsung's Modes and Routines lists a user's manual routines and starts or
+         ends one on request, through a content provider it gates on THIS - and
+         it is protectionLevel normal: granted at install, no prompt. Undefined
+         on every other phone, where declaring it costs nothing. See Routines. -->
+    <uses-permission android:name="com.samsung.android.app.routines.permission.READ_ROUTINE_INFO" />
+
     <!-- Without this, resolveActivity cannot see the vendor's auto-launch
          screen at all and BootWatch would always fall back to app details. -->
     <queries>
         <package android:name="com.hihonor.systemmanager" />
+        <!-- Samsung's Modes and Routines: the provider Routines drives, and the
+             package so its Routines tab can be opened from the picker. -->
+        <package android:name="com.samsung.android.app.routines" />
+        <provider android:authorities="com.samsung.android.app.routines.externalprovider" />
         <!-- So resolveActivity can SEE the contacts app's starred screen. We
              never read contacts - launching an activity needs no permission -
              but without this the resolve returns null and the row would hide
@@ -86,6 +96,19 @@
                 <action android:name="android.app.action.NEXT_ALARM_CLOCK_CHANGED" />
             </intent-filter>
         </receiver>
+        <!-- How the routine file reaches Samsung's importer. Not exported; the
+             importer gets a one-off read grant on one cache file, and nothing
+             else of ours is reachable through it. See Routines.offer. -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="com.jemcik.gloaming.routine"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/routine_paths" />
+        </provider>
+
         <!-- The master switch in the shade. It is the same control as the app
              bar's, sharing Bedtime.set and statusLine, so the two cannot drift.
              BIND_QUICK_SETTINGS_TILE is what lets SystemUI bind it, and is

@@ -9,6 +9,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import com.jemcik.gloaming.core.RoutineEffect
+import com.jemcik.gloaming.core.Routines
+import com.jemcik.gloaming.R
 import com.jemcik.gloaming.core.AlarmWatch
 import com.jemcik.gloaming.core.BackgroundLimit
 import com.jemcik.gloaming.core.Bedtime
@@ -74,6 +77,31 @@ class HomeState(
     var fxDim by mutableStateOf(prefs.fxDimWallpaper)
     var fxDark by mutableStateOf(prefs.fxDarkTheme)
     var fxAmbient by mutableStateOf(prefs.fxHideAmbient)
+    /**
+     * The routines Samsung's app holds for our screen effects, on a Galaxy -
+     * one per effect, 0 while none. Re-read on resume, which is when the user
+     * comes back from Samsung's editor with a new one saved.
+     */
+    var adopted by mutableStateOf(Routines.adopted(prefs).toSet())
+    fun hasRoutine(e: RoutineEffect): Boolean = e in adopted
+
+    /**
+     * The effect we last handed Samsung's app a routine for and have not yet
+     * seen come back - so its row can say "not saved yet" rather than repeat
+     * the first invitation. Mirrors [Prefs.routineOffered].
+     */
+    var pendingOffer by mutableStateOf(RoutineEffect.entries.firstOrNull { it.key == prefs.routineOffered })
+
+    /** The effect whose one-time explainer is on screen, or null. */
+    var explaining by mutableStateOf<RoutineEffect?>(null)
+
+    /**
+     * The effect whose routine was adopted on THIS resume - the one thing the
+     * screen confirms out loud, because a switch quietly turning on is a change
+     * the eye does not always catch after a trip through another app.
+     * Cleared by the screen once shown.
+     */
+    var justAdopted by mutableStateOf<RoutineEffect?>(null)
 
     /** Whether the morning alarm may end the night early. */
     var endAtAlarm by mutableStateOf(prefs.exitAtAlarm)
@@ -199,6 +227,52 @@ class HomeState(
         prefs.exitAtAlarm = endAtAlarm
     }
 
+    /**
+     * Hand Samsung's app the ready-made routine for one effect. Nothing is
+     * chosen here: the switch appears on return, in [onResume], on evidence.
+     */
+    fun offerRoutine(e: RoutineEffect): Boolean {
+        val ok = Routines.offer(ctx, prefs, e, ctx.getString(e.nameRes))
+        if (ok) pendingOffer = e
+        return ok
+    }
+
+    /**
+     * The wallpaper switch on a Galaxy. Flipping it to a state the phone's own
+     * setting already gives is just a flip; flipping it to the other state
+     * needs the routine of that polarity, which is offered once if it has not
+     * been saved yet - the switch then flips on adoption, not before, so it is
+     * never shown in a state the night cannot deliver.
+     */
+    fun tapDim() {
+        val want = !fxDim
+        val needed = Routines.dimRoutineFor(ctx, prefs, want)
+        if (needed == null || hasRoutine(needed)) {
+            fxDim = want; haptics.toggle(want); commit()
+        } else {
+            haptics.open(); offerRoutine(needed)
+        }
+    }
+
+    /**
+     * The row's tap. The first time, an explainer stands between the tap and
+     * Samsung's editor, because a jump into another app with nothing said is
+     * the one part of this flow a first-time user cannot work out alone. Once
+     * seen and acted on, every later tap goes straight through.
+     */
+    fun tapRoutine(e: RoutineEffect) {
+        if (prefs.routineExplained) offerRoutine(e) else explaining = e
+    }
+
+    /** The explainer's one button: remember it was seen, then go. */
+    fun explainedAndGo() {
+        val e = explaining ?: return
+        explaining = null
+        prefs.routineExplained = true
+        offerRoutine(e)
+    }
+
+
     fun commit() {
         writePrefs()
         // rescheduleAll -> setActive -> syncRule, so syncing here as well
@@ -281,6 +355,17 @@ class HomeState(
         fxDim = prefs.fxDimWallpaper; fxDark = prefs.fxDarkTheme
         fxAmbient = prefs.fxHideAmbient
         endAtAlarm = prefs.exitAtAlarm
+        // Back from Samsung's editor, perhaps: if the routine we offered is
+        // there now, its switch is on - and it is started at once if the
+        // window is open, through the same commit every switch takes.
+        val adoptedNow = Routines.refresh(ctx, prefs)
+        adopted = Routines.adopted(prefs).toSet()
+        pendingOffer = RoutineEffect.entries.firstOrNull { it.key == prefs.routineOffered }
+        if (adoptedNow != null) {
+            fxGray = prefs.fxGrayscale; fxDark = prefs.fxDarkTheme; fxDim = prefs.fxDimWallpaper
+            justAdopted = adoptedNow
+            commit()
+        }
         // Re-asked here so the notice clears itself the moment a boot is
         // handled properly - the only confirmation available, since the
         // vendor's own setting cannot be read.
@@ -355,3 +440,20 @@ fun rememberHomeState(): HomeState {
     val prefs = remember { Prefs(ctx) }
     return remember { HomeState(ctx, prefs, haptics) }
 }
+
+/** The strings an effect's routine carries, and the one that confirms it - beside the state that uses them. */
+internal val RoutineEffect.nameRes: Int
+    get() = when (this) {
+        RoutineEffect.GRAYSCALE -> R.string.routine_name_gray
+        RoutineEffect.DARK -> R.string.routine_name_dark
+        RoutineEffect.DIM -> R.string.routine_name_dim
+        RoutineEffect.DIM_OFF -> R.string.routine_name_dimoff
+    }
+
+internal val RoutineEffect.doneRes: Int
+    get() = when (this) {
+        RoutineEffect.GRAYSCALE -> R.string.routine_done_gray
+        RoutineEffect.DARK -> R.string.routine_done_dark
+        RoutineEffect.DIM -> R.string.routine_done_dim
+        RoutineEffect.DIM_OFF -> R.string.routine_done_dimoff
+    }

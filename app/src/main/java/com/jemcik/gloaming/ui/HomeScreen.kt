@@ -19,6 +19,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.ScrollState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -167,9 +168,26 @@ fun Home(
             .drawBehind { drawRect(ground) }
     ) {
         val bar = TopAppBarDefaults.pinnedScrollBehavior()
+        // The one thing Home says out loud: a routine adopted on this resume.
+        // The switch turning on is the real confirmation, but it happens after
+        // a trip through another app, and a change the eye did not watch is a
+        // change it may not notice.
+        val snack = remember { SnackbarHostState() }
+        val adopted = s.justAdopted
+        val adoptedText = adopted?.let { stringResource(it.doneRes) }
+        // Cleared AFTER the snackbar has been shown, not before: this effect is
+        // keyed on the value, and clearing it first restarts the effect with
+        // null - which cancels the coroutine that was about to show it. That
+        // is how the first build confirmed nothing, measured on the phone.
+        LaunchedEffect(adopted) {
+            if (adopted == null || adoptedText == null) return@LaunchedEffect
+            snack.showSnackbar(adoptedText)
+            if (s.justAdopted == adopted) s.justAdopted = null
+        }
         Scaffold(
             containerColor = Color.Transparent,
             modifier = Modifier.nestedScroll(bar.nestedScrollConnection),
+            snackbarHost = { SnackbarHost(snack) },
             topBar = {
                 Column {
                     HomeBar(s, runningNow, ready, bar, onOpenSettings)
@@ -232,6 +250,7 @@ fun Home(
     }
 
     TimePickerDialog(s)
+    RoutineExplainDialog(s)
 }
 
 
@@ -1213,7 +1232,15 @@ private fun ScreenEffectsSection(s: HomeState, runningNow: Boolean) {
     val ambientRow = remember(s.tick) {
         ambientZen || AmbientControl.canControl(ctx) || ambientGrant
     }
-    if (!zenEffects && !ambientRow) return
+    // The fifth: Samsung's own automation, on the phone that throws the zen
+    // effects away. A capability probe like the rest - the provider either
+    // resolves or it does not - and where it does, the row is the one working
+    // route to a grey screen that needs no computer. See Routines.
+    val routines = remember(s.tick) { Routines.available(ctx) }
+    // Grayscale and the dark theme go through routines exactly where the rule's
+    // effects are thrown away AND Samsung's door is open - never both ways.
+    val viaRoutines = !zenEffects && routines
+    if (!zenEffects && !ambientRow && !routines) return
 
     // A card of rows, the same shape as "What can wake you" above it,
     // because it is the same kind of thing: a list of switches with
@@ -1242,10 +1269,27 @@ private fun ScreenEffectsSection(s: HomeState, runningNow: Boolean) {
             if (!runningNow) add {
                 NoticeStrip(planNote(ctx, s.enabled, s.start, s.end, s.days, loc))
             }
+            // On a Galaxy, before either routine exists: what these two rows
+            // are about to ask, said once, where the rows are. Gone the moment
+            // both are set up, because then there is nothing left to ask.
+            if (viaRoutines && (RoutineEffect.GRAYSCALE !in s.adopted || RoutineEffect.DARK !in s.adopted)) add {
+                NoticeStrip(stringResource(R.string.routine_note))
+            }
             if (zenEffects) add {
                 EffectRow(
                     Fx.Grayscale, stringResource(R.string.fx_grayscale),
                     stringResource(R.string.fx_grayscale_sub), s.fxGray
+                ) { s.fxGray = !s.fxGray; haptics.toggle(s.fxGray); s.commit() }
+            }
+            // On a phone that throws the zen effects away but runs routines,
+            // the SAME switch is drawn, backed by a routine of its own instead
+            // of the rule - or, until that routine has been saved once in
+            // Samsung's app, the row that offers it. Dimming has no routine
+            // action and is not drawn there at all.
+            if (viaRoutines) add {
+                RoutineEffectRow(
+                    s, RoutineEffect.GRAYSCALE, Fx.Grayscale,
+                    stringResource(R.string.fx_grayscale), s.fxGray
                 ) { s.fxGray = !s.fxGray; haptics.toggle(s.fxGray); s.commit() }
             }
             if (zenEffects) add {
@@ -1263,6 +1307,32 @@ private fun ScreenEffectsSection(s: HomeState, runningNow: Boolean) {
                     Fx.Dark, stringResource(R.string.fx_dark),
                     stringResource(R.string.fx_dark_sub), s.fxDark
                 ) { s.fxDark = !s.fxDark; haptics.toggle(s.fxDark); s.commit() }
+            }
+            if (viaRoutines) add {
+                RoutineEffectRow(
+                    s, RoutineEffect.DARK, Fx.Dark,
+                    stringResource(R.string.fx_dark), s.fxDark
+                ) { s.fxDark = !s.fxDark; haptics.toggle(s.fxDark); s.commit() }
+            }
+            // Under the dark theme, and only while it is ON and has its routine:
+            // One UI dims the wallpaper only in dark mode, so a light theme with
+            // a dimmed wallpaper does not exist on this phone, and the row's
+            // coming and going is the honest statement of that. The rule's own
+            // dim row above is untouched: this one is drawn only where the
+            // rule's effects are thrown away.
+            // A SWITCH from the start, mirroring the phone's own setting, because
+            // One UI dims in dark mode by default and a switch shown off over
+            // a wallpaper that dims would lie. Only a flip to the state the
+            // phone does not give needs a routine - offered then, once.
+            if (viaRoutines && s.fxDark && s.hasRoutine(RoutineEffect.DARK)) add {
+                EffectRow(
+                    Fx.Dim, stringResource(R.string.fx_dim),
+                    stringResource(
+                        if (s.pendingOffer == RoutineEffect.DIM || s.pendingOffer == RoutineEffect.DIM_OFF)
+                            R.string.fx_routine_retry else R.string.fx_dim_dark_sub
+                    ),
+                    s.fxDim
+                ) { s.tapDim() }
             }
             // No divider to remove with it: a grouped list just has one
             // item fewer, and the corners re-form around what is left.
@@ -1287,6 +1357,72 @@ private fun ScreenEffectsSection(s: HomeState, runningNow: Boolean) {
             }
         })
     }
+}
+
+/**
+ * One screen effect on a Galaxy: the app's own switch, backed by a routine in
+ * Samsung's app - or, until that routine exists, the row that offers it.
+ *
+ * Two faces, and the split is on EVIDENCE: the switch is drawn only once the
+ * provider has listed a routine by the name we offered, so a switch is never
+ * shown over an effect the phone cannot yet apply. Before that, the row is a
+ * link: one tap opens Samsung's editor with the routine filled in, Save there
+ * is the whole setup, and the switch appears - on - when the user comes back.
+ */
+@Composable
+private fun RoutineEffectRow(
+    s: HomeState,
+    effect: RoutineEffect,
+    icon: Fx,
+    title: String,
+    checked: Boolean,
+    subtitle: Int = R.string.fx_via_routine,
+    onToggle: () -> Unit
+) {
+    val haptics = s.haptics
+    if (s.hasRoutine(effect)) {
+        EffectRow(icon, title, stringResource(subtitle), checked, onToggle)
+    } else {
+        LinkRow(
+            title,
+            // "Not saved" once the user has been to Samsung's editor for this
+            // effect and come back with nothing - the app knows, from the offer
+            // still open, and saying so beats repeating the first invitation.
+            supporting = stringResource(
+                if (s.pendingOffer == effect) R.string.fx_routine_retry else R.string.fx_routine_setup
+            ),
+            leading = { FxIcon(icon) }
+        ) { haptics.open(); s.tapRoutine(effect) }
+    }
+}
+
+/**
+ * The one-time explainer between the first tap and Samsung's editor: what will
+ * open, what it will already contain, and the one thing to do there. One
+ * button, because there is one act; Cancel is the dismiss.
+ */
+@Composable
+private fun RoutineExplainDialog(s: HomeState) {
+    val ctx = LocalContext.current
+    val g = gloam
+    val haptics = s.haptics
+    val effect = s.explaining ?: return
+    val name = stringResource(effect.nameRes)
+    AlertDialog(
+        onDismissRequest = { s.explaining = null },
+        containerColor = g.raise,
+        shape = RoundedCornerShape(32.dp),
+        title = { Text(stringResource(R.string.routine_explain_title)) },
+        text = { Text(stringResource(R.string.routine_explain_body, name)) },
+        confirmButton = {
+            Button(onClick = { haptics.confirm(); s.explainedAndGo() }, shape = CircleShape) {
+                Text(stringResource(R.string.routine_open))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = { s.explaining = null }) { Text(stringResource(R.string.action_cancel)) }
+        }
+    )
 }
 
 /**

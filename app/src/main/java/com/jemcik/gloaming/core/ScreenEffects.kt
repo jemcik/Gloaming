@@ -67,6 +67,21 @@ object ScreenEffects {
      */
     fun observeApplied(ctx: Context, wantsNight: Boolean, ruleActive: Boolean) {
         val p = Prefs(ctx)
+        // Not while a routine of OURS can move the theme. On a Galaxy the dark
+        // theme is driven by a generated routine, and a theme that follows our
+        // window is then exactly what we asked Samsung's app for - not the rule
+        // at work. The first Galaxy to run one recorded it as proof within a
+        // second of the routine starting, which redrew the section with the
+        // rule's switches and, through Routines.sync's own gate, ended the
+        // routine that had made the evidence. So: no evidence either way here,
+        // and a record made this way is withdrawn.
+        if (p.routineUuid(RoutineEffect.DARK) != 0L) {
+            if (p.effectsSeen) {
+                p.effectsSeen = false
+                Journal.write(ctx, "device effects evidence withdrawn - a routine drives the dark theme")
+            }
+            return
+        }
         if (p.effectsSeen) return
         val night = ctx.resources.configuration.uiMode and
             Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES

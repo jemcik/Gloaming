@@ -182,8 +182,9 @@ own, before the app compensates — not what Gloaming does on it:
 Gloaming repairs the middle row, so bedtime does survive a restart on all three.
 It works around the second and the last — a notice for the withheld broadcast, a
 vendor route for the display. The fourth it cannot repair, and rather than leave
-switches that quietly do nothing, it hides them there and offers the phone's own
-bedtime screen instead.
+switches that quietly do nothing, it draws the same switches over the phone's
+own automation instead: one generated routine per effect in Modes and Routines,
+saved once, started and ended by Gloaming.
 
 None of that is looked up in a device list. Each row is a question the app asks
 at runtime, and the answers shape what it draws: a switch that cannot move is
@@ -263,20 +264,40 @@ written, and restored on END, on boot, and after a crash.
 The keys were found by diffing every settings namespace across One UI's own
 Sleep mode, which is also how Honor's were found.
 
-### Samsung: the screen effects are not shown, and that is deliberate
+### Samsung: the screen effects run as routines of their own
 
 One UI accepts the zen rule's `ZenDeviceEffects` and applies none of them —
 grayscale, wallpaper dimming and dark theme are all inert, checked across a
-screen-off cycle because AOSP defers night mode there on purpose. A switch that
-does nothing is worse than an absent one, so those three are hidden on such a
-phone.
+screen-off cycle because AOSP defers night mode there on purpose. Every direct
+route to the display is behind a signature permission; the results are in
+[docs/DECISIONS.md](docs/DECISIONS.md).
 
-Settings then offers **System bedtime mode**, which opens One UI's own Sleep
-mode — where its grayscale genuinely works. Every other route was chased to a
-measured dead end and the results are in
-[docs/DECISIONS.md](docs/DECISIONS.md): there is no settings key for grayscale,
-`setWallpaperDimAmount` is `@hide`, and `UiModeManager.setNightMode` compiles,
-throws nothing and changes nothing without a signature permission.
+What One UI does leave open is its own automation. **Modes and Routines** lists
+a user's manual routines and starts or ends one on request, through a content
+provider it gates on a permission of `protectionLevel normal` — granted at
+install, no prompt, no adb — and its built-in action catalogue carries
+grayscale and the dark theme as routine actions in their own right. So on a
+Galaxy the **Grayscale** and **Dark theme** rows are the same switches every
+other phone has, each backed by one routine Gloaming generates instead of by the
+rule. The section says so before you tap anything. The first tap explains what
+is about to open and hands Samsung's editor the routine already filled in;
+**Save** there is the whole setup, once per effect, and when you come back the
+switch is on and the app says so. Come back without saving and the row says
+that too. From then on the routine runs exactly while bedtime does,
+on every path — the alarms, a restart, the tile, the app — and Samsung applies
+the effect with its own privileged code and reverts it the way it reverts any
+routine that ends. Wallpaper dimming is One UI's own "apply dark mode to
+wallpaper", and its **Dim wallpaper** row appears under the dark theme, and only
+while that is on, because on a Galaxy the wallpaper dims only in dark mode. That
+switch opens in the phone's own state, which is dimmed by default, and a flip to
+the other state is what needs a routine, saved once. Always-on display takes the
+`WRITE_SETTINGS` route above.
+
+That one Save is the floor: inserting a routine directly, and every other path
+that creates one, is signature-level. So is deleting: Reset ends the routines
+and forgets them but cannot remove them, and says so; Settings links to them in
+Samsung's app, where deleting is one tap. A routine you delete there is noticed
+on the next resume, and its row goes back to offering one.
 
 ### When something goes wrong, the app says so
 

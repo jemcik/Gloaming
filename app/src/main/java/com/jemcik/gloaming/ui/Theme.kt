@@ -517,6 +517,21 @@ val gloam: GloamColors
 // way an unset ColorScheme role falls back to baseline violet, and for the same
 // reason it is invisible until some component reaches for it. TimePicker reaches
 // for displayLarge, which is how Roboto got into the time picker's numerals.
+//
+// AND THE SIZES LIVE ONLY HERE. There is no `fontSize` or `fontWeight` anywhere
+// outside this file, which is a rule worth stating where it is kept because it
+// is one a grep can check:
+//
+//     grep -rn "fontSize\|fontWeight" app/src/main/java
+//
+// Every hit should be in Theme.kt. Two are not, and both are the same shape and
+// the same exception - `maxFontSize = MaterialTheme.typography.<role>.fontSize`
+// handed to TextAutoSize as the CEILING a shrinking label may not exceed. That
+// READS a size the scale already owns rather than inventing one; writing the
+// number there instead is the whole thing the rule exists to prevent, and a
+// scale change would silently stop reaching it. Both carry that reason at the
+// call site. Anything else the grep finds is a violation, and the point of
+// saying so here is that nothing else distinguishes the two.
 private val GloamType = Typography(
     // Reached by components, not by us: TimePicker's hour and minute fields.
     displayLarge = TextStyle(

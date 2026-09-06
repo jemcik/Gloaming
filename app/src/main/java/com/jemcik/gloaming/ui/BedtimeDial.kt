@@ -138,6 +138,15 @@ fun BedtimeDial(
     enabled: Boolean,
     centreValue: String,
     centreLabel: String,
+    // ModifierParameter fires here ON PURPOSE - one of the two lint findings
+    // this project keeps, and the only one in the app's own source. Lint wants
+    // `modifier` to be the first optional parameter, and [endTonight] is.
+    //
+    // It stays because [endTonight] belongs beside [end]: it is the same
+    // value's other reading, and the one bug this dial has actually had was a
+    // caller passing one and not the other. A parameter list that puts the
+    // width of the box between them makes that easier, not harder. Lint is
+    // right about the convention and wrong about which cost is larger here.
     modifier: Modifier = Modifier,
     centreIndex: Int = 0,
     centreCount: Int = 1,
@@ -489,6 +498,10 @@ fun BedtimeDial(
                 maxLines = 1,
                 autoSize = TextAutoSize.StepBased(
                     minFontSize = floor,
+                    // NOT a fontSize override - see Theme.kt, which states the
+                    // rule this is the exception to. It reads labelSmall's own
+                    // size as the ceiling, so the label may shrink to fit and
+                    // can never grow past the scale.
                     maxFontSize = MaterialTheme.typography.labelSmall.fontSize
                 )
             )

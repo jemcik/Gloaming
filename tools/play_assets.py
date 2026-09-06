@@ -162,8 +162,13 @@ def build_feature(lang='en'):
     img.paste(tile, (left, (H - TILE) // 2), tile)
 
     x = left + TILE + GAP
-    d.text((x, 186), WORDMARK, font=mark_f, fill=hx(ON_SURFACE))
-    d.text((x, 286), tagline, font=tag_f, fill=hx(ON_SURFACE_LOW))
+    # Wordmark, then the rule, then the tagline: the rule separates the name
+    # from what it does, the way it does on the site under the title. It used
+    # to sit under the tagline, where it read as an underline of the wrong line.
+    # Centred on the tile as a block, 178 to 323 of ink against the tile's 152
+    # to 348 - measured, since the old block sat twelve pixels low.
+    d.text((x, 160), WORDMARK, font=mark_f, fill=hx(ON_SURFACE))
+    d.text((x, 290), tagline, font=tag_f, fill=hx(ON_SURFACE_LOW))
 
     # The dial's own sweep, as a rule under the tagline. Night to dawn, left to
     # right, from the same stops the arc and the crescent use. As WIDE AS THE
@@ -172,7 +177,7 @@ def build_feature(lang='en'):
     # that had stopped. Measured from the glyphs, not the advance width, so a
     # face with side bearings does not leave a gap at either end.
     bx0, _, bx1, _ = mark_f.getbbox(WORDMARK)
-    rw, rh, ry = int(round(bx1 - bx0)), 7, 340
+    rw, rh, ry = int(round(bx1 - bx0)), 7, 266
     lut = np.array([ramp(ARC, i / (rw - 1)) for i in range(rw)])
     rule = Image.fromarray(
         np.repeat(lut[None, :, :], rh, axis=0).clip(0, 255).astype(np.uint8), 'RGB')

@@ -116,6 +116,7 @@
     <string name="fx_dim_sub">Шпалери темнішають</string>
     <string name="fx_dark_sub">При розблокуванні</string>
     <string name="fx_ambient_sub">Екран не світиться</string>
+    <string name="fx_dim_dark_sub">Разом із темною темою</string>
     <string name="fx_ambient_grant">Потрібен дозвіл змінювати системні налаштування. Натисніть, щоб дозволити</string>
     <string name="fx_routine_setup">Налаштувати через Samsung</string>
     <string name="fx_routine_retry">Не збережено. Повторіть</string>
@@ -126,8 +127,10 @@
     <string name="routine_open">Відкрити «Режими й сценарії»</string>
     <string name="routine_done_gray">Відтінки сірого налаштовано</string>
     <string name="routine_done_dark">Темну тему налаштовано</string>
+    <string name="routine_done_dim">Затемнення шпалер налаштовано</string>
     <string name="routine_name_gray">Gloaming: відтінки сірого</string>
     <string name="routine_name_dark">Gloaming: темна тема</string>
+    <string name="routine_name_dim">Gloaming: затемнення шпалер</string>
 
     <!-- ============ Home: end-bedtime dialog ============ -->
     <string name="action_set">Установити</string>

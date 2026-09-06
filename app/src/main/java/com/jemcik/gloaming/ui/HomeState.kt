@@ -429,10 +429,12 @@ internal val RoutineEffect.nameRes: Int
     get() = when (this) {
         RoutineEffect.GRAYSCALE -> R.string.routine_name_gray
         RoutineEffect.DARK -> R.string.routine_name_dark
+        RoutineEffect.DIM -> R.string.routine_name_dim
     }
 
 internal val RoutineEffect.doneRes: Int
     get() = when (this) {
         RoutineEffect.GRAYSCALE -> R.string.routine_done_gray
         RoutineEffect.DARK -> R.string.routine_done_dark
+        RoutineEffect.DIM -> R.string.routine_done_dim
     }

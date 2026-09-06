@@ -90,4 +90,11 @@ class RoutineFileTest {
         val footer = JSONObject(String(b.copyOfRange(start, start + h.getInt("footer_size")), Charsets.UTF_8))
         assertEquals(0, footer.getJSONArray("resource_table").length())
     }
+
+    @Test
+    fun `the wallpaper is Samsung's own dark-mode dimming, switched on`() {
+        val b = RoutineFile.bytes("Gloaming: dim wallpaper", RoutineEffect.DIM)
+        assertEquals("wallpaper_apply_dark_mode", body(b).getJSONArray("actions").getJSONObject(0).getString("tag"))
+        assertEquals("true", params(b).getValue("toggle_value").getString("VALUE"))
+    }
 }

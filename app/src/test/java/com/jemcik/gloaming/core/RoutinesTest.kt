@@ -271,4 +271,21 @@ class RoutinesTest {
         assertTrue("it is the grayscale switch the rule reads too", p.fxGrayscale)
         assertFalse(p.fxDarkTheme)
     }
+
+    @Test
+    fun `the wallpaper dims only with the dark theme`() {
+        val f = phone()
+        f.rows += FakeRoutines.Row(12, "Gloaming: dim wallpaper")
+        val p = prefs(gray = false, dark = false).apply {
+            setRoutineUuid(RoutineEffect.DIM, 12)
+            fxDimWallpaper = true
+        }
+        // One UI dims the wallpaper only in dark mode: without the dark theme
+        // the dimming routine would run and change nothing, so it is not asked.
+        Routines.sync(ctx, p, windowActive = true)
+        assertTrue("nothing to dim with: " + f.calls, f.calls.isEmpty())
+        p.fxDarkTheme = true
+        Routines.sync(ctx, p, windowActive = true)
+        assertEquals(setOf("start 11", "start 12"), f.calls.toSet())
+    }
 }

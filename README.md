@@ -286,8 +286,10 @@ switch is on and the app says so. Come back without saving and the row says
 that too. From then on the routine runs exactly while bedtime does,
 on every path — the alarms, a restart, the tile, the app — and Samsung applies
 the effect with its own privileged code and reverts it the way it reverts any
-routine that ends. Wallpaper dimming has no routine action and is not offered
-there; always-on display takes the `WRITE_SETTINGS` route above.
+routine that ends. Wallpaper dimming is a third such routine, One UI's own
+"apply dark mode to wallpaper", and its **Dim wallpaper** row appears under the
+dark theme, and only while that is on, because on a Galaxy the wallpaper dims
+only in dark mode. Always-on display takes the `WRITE_SETTINGS` route above.
 
 That one Save is the floor: inserting a routine directly, and every other path
 that creates one, is signature-level. So is deleting: Reset ends the routines

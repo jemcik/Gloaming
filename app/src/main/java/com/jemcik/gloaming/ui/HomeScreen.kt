@@ -1272,7 +1272,7 @@ private fun ScreenEffectsSection(s: HomeState, runningNow: Boolean) {
             // On a Galaxy, before either routine exists: what these two rows
             // are about to ask, said once, where the rows are. Gone the moment
             // both are set up, because then there is nothing left to ask.
-            if (viaRoutines && s.adopted.size < RoutineEffect.entries.size) add {
+            if (viaRoutines && (RoutineEffect.GRAYSCALE !in s.adopted || RoutineEffect.DARK !in s.adopted)) add {
                 NoticeStrip(stringResource(R.string.routine_note))
             }
             if (zenEffects) add {
@@ -1313,6 +1313,19 @@ private fun ScreenEffectsSection(s: HomeState, runningNow: Boolean) {
                     s, RoutineEffect.DARK, Fx.Dark,
                     stringResource(R.string.fx_dark), s.fxDark
                 ) { s.fxDark = !s.fxDark; haptics.toggle(s.fxDark); s.commit() }
+            }
+            // Under the dark theme, and only while it is ON and has its routine:
+            // One UI dims the wallpaper only in dark mode, so a light theme with
+            // a dimmed wallpaper does not exist on this phone, and the row's
+            // coming and going is the honest statement of that. The rule's own
+            // dim row above is untouched: this one is drawn only where the
+            // rule's effects are thrown away.
+            if (viaRoutines && s.fxDark && s.hasRoutine(RoutineEffect.DARK)) add {
+                RoutineEffectRow(
+                    s, RoutineEffect.DIM, Fx.Dim,
+                    stringResource(R.string.fx_dim), s.fxDim,
+                    subtitle = R.string.fx_dim_dark_sub
+                ) { s.fxDim = !s.fxDim; haptics.toggle(s.fxDim); s.commit() }
             }
             // No divider to remove with it: a grouped list just has one
             // item fewer, and the corners re-form around what is left.
@@ -1356,11 +1369,12 @@ private fun RoutineEffectRow(
     icon: Fx,
     title: String,
     checked: Boolean,
+    subtitle: Int = R.string.fx_via_routine,
     onToggle: () -> Unit
 ) {
     val haptics = s.haptics
     if (s.hasRoutine(effect)) {
-        EffectRow(icon, title, stringResource(R.string.fx_via_routine), checked, onToggle)
+        EffectRow(icon, title, stringResource(subtitle), checked, onToggle)
     } else {
         LinkRow(
             title,

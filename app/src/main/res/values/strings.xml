@@ -143,7 +143,7 @@
          25-character English one did not - so these are set for the widest
          script, and were checked by RENDERING the app in Ukrainian, which is
          where two of them were caught.
-         BUDGET-EACH 22 fx_grayscale_sub fx_dim_sub fx_dark_sub fx_ambient_sub settings_language_why diagnostics_why reset_why
+         BUDGET-EACH 22 fx_grayscale_sub fx_dim_sub fx_dark_sub fx_ambient_sub fx_dim_dark_sub settings_language_why diagnostics_why reset_why
          A budget is ONE line: the parser's key list is [a-z0-9_ ]+, which does
          not cross a newline, so keys wrapped onto a second line are silently in
          no budget at all. These two sat there unmeasured until RowFitTest was
@@ -208,6 +208,11 @@
     <string name="fx_dim_sub">The wallpaper darkens</string>
     <string name="fx_dark_sub">At the next unlock</string>
     <string name="fx_ambient_sub">The screen stays dark</string>
+    <!-- Samsung only, under the dark theme: One UI dims the wallpaper only while
+         dark mode is on, and the row says so rather than promise a light theme
+         with a dimmed wallpaper, which does not exist there. Its routine's
+         subtitle, in place of "Through a routine". -->
+    <string name="fx_dim_dark_sub">With the dark theme</string>
     <string name="fx_ambient_grant">Needs permission to change system settings. Tap to allow</string>
     <!-- Samsung only. The grayscale and dark-theme rows are backed by a routine
          in Modes and Routines rather than by the rule; until that routine has
@@ -224,8 +229,10 @@
     <string name="routine_open">Open Modes and Routines</string>
     <string name="routine_done_gray">Grayscale is set up</string>
     <string name="routine_done_dark">Dark theme is set up</string>
+    <string name="routine_done_dim">Wallpaper dimming is set up</string>
     <string name="routine_name_gray">Gloaming: grayscale</string>
     <string name="routine_name_dark">Gloaming: dark theme</string>
+    <string name="routine_name_dim">Gloaming: dim wallpaper</string>
 
     <!-- ============ Home: end-bedtime dialog ============ -->
     <string name="action_set">Set</string>

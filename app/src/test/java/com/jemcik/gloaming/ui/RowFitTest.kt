@@ -268,8 +268,14 @@ class RowFitTest {
             fake.rows += FakeRoutines.Row(11, "d")
             prefs.setRoutineUuid(RoutineEffect.GRAYSCALE, 10)
             prefs.setRoutineUuid(RoutineEffect.DARK, 11)
+            // And the wallpaper-dim row under the dark theme, with its own
+            // routine and the dark theme on.
+            fake.rows += FakeRoutines.Row(12, "w")
+            prefs.setRoutineUuid(RoutineEffect.DIM, 12)
+            prefs.fxDarkTheme = true
         }
-        val titles = listOf(R.string.fx_grayscale, R.string.fx_dark).map { ctx.getString(it) }
+        val titles = (if (adopted) listOf(R.string.fx_grayscale, R.string.fx_dark, R.string.fx_dim)
+            else listOf(R.string.fx_grayscale, R.string.fx_dark)).map { ctx.getString(it) }
 
         compose.setContent {
             GloamingTheme(dark = false) {

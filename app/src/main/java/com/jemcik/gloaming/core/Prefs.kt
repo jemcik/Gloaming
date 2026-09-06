@@ -346,11 +346,13 @@ class Prefs(ctx: Context) {
     fun fxWants(effect: RoutineEffect): Boolean = when (effect) {
         RoutineEffect.GRAYSCALE -> fxGrayscale
         RoutineEffect.DARK -> fxDarkTheme
+        RoutineEffect.DIM -> fxDimWallpaper
     }
 
     fun setFxWants(effect: RoutineEffect, on: Boolean) = when (effect) {
         RoutineEffect.GRAYSCALE -> fxGrayscale = on
         RoutineEffect.DARK -> fxDarkTheme = on
+        RoutineEffect.DIM -> fxDimWallpaper = on
     }
 
     /**

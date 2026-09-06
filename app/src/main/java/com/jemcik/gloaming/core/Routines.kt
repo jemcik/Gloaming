@@ -202,9 +202,14 @@ object Routines {
         return adopt(ctx, p, listed)
     }
 
-    /** The routines the window wants running: adopted, and switched on. */
-    private fun wanted(p: Prefs): Set<Long> = RoutineEffect.entries
-        .filter { p.fxWants(it) }
+    /**
+     * The routines the window wants running: adopted, and switched on - and,
+     * for the wallpaper, only with the dark theme, because One UI dims the
+     * wallpaper only in dark mode and a routine that dims a light phone does
+     * nothing but run.
+     */
+    internal fun wanted(p: Prefs): Set<Long> = RoutineEffect.entries
+        .filter { p.fxWants(it) && (it != RoutineEffect.DIM || p.fxWants(RoutineEffect.DARK)) }
         .map { p.routineUuid(it) }
         .filter { it != 0L }
         .toSet()

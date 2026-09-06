@@ -971,6 +971,41 @@ its text counted two. It is drawn only once a routine exists now, and the text
 says what the row is for - "Edit or delete them there" - rather than how many
 there are, which may be one. The Reset sentence reads the same answer.
 
+**Wallpaper dimming on a Galaxy, under the dark theme, 6 Sep 2026.** The
+owner asked whether "no dimming on Samsung" was right, and the honest answer
+was "not quite". One UI has no dimming of its own but has "apply dark mode to
+wallpaper", a darker wallpaper WHILE dark mode is on, and Samsung's routine
+action for it writes exactly one thing: `Settings.System.
+display_night_theme_wallpaper` (its handler, decompiled). Measured from the
+shell with dark mode on, wallpaper-band luminance: 124 with the key at 1, 136
+at 0, 124 at 1 again, honoured live within two seconds; 142 in light mode with
+the key at 1. That last number is the design: a light theme with a dimmed
+wallpaper does not exist on this phone, from any app or from Samsung's own
+screens, so a standalone switch would lie to exactly the person who wanted
+it. The row lives UNDER the dark theme and only while that switch is on and
+has its routine, subtitled "With the dark theme" - the owner's call, as
+product manager, over leaving it out.
+
+The first build wrote the key itself, behind the WRITE_SETTINGS grant the
+always-on row already asks for - and the phone refused it:
+`IllegalArgumentException: You cannot keep your settings in the secure
+settings`. That is AOSP's `SettingsProvider`: a third-party app may write only
+the `Settings.System` keys in `Settings.System.PUBLIC_SETTINGS`, whatever it
+holds, and a vendor key is not among them. The shell had passed because uid
+2000 is privileged, and `aod_mode` works only because Samsung's provider
+allowlists that one key. So `WallpaperDim.kt`, its prefs key, its hook and its
+seven tests were deleted the same hour, and dimming became what the other two
+effects already are: a generated routine, `wallpaper_apply_dark_mode` with
+`toggle_value` true, whose handler has a reverse path - measured by file
+import, start took the key to 1 and stop put it back. `Routines.wanted` runs
+it only with the dark theme, because a routine that dims a light phone does
+nothing but run. Measured through the app on the S23: dark set up, the dim row
+appearing under it, set up, both routines starting with the window - key 1,
+wallpaper band 124 - and ending with it - key 0, band 142. Two lessons for the
+file: a shell write proves nothing about an app's write, and the rule's own
+dim row on every other phone is untouched, because this one is drawn only
+where the rule's effects are thrown away.
+
 **A parked alarm is still DELIVERED, so arrival cannot be the test.** The first
 version of the probe scored a blocked phone as healthy, and only the device
 caught it. With `RUN_ANY_IN_BACKGROUND` at `ignore` the probe sat in *"Pending

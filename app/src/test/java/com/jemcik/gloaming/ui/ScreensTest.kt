@@ -874,4 +874,37 @@ class ScreensTest {
         // One of two set up: still something to ask.
         compose.onNodeWithText(ctx.getString(R.string.routine_note)).assertExists()
     }
+
+    /**
+     * On a Galaxy the wallpaper-dim row lives UNDER the dark theme, and only
+     * while that is on: One UI dims the wallpaper only in dark mode. So the row
+     * is absent with the dark theme off, present with it on - and the rule's
+     * own dim row is never the one drawn here.
+     */
+    @Test
+    fun `a Galaxy's wallpaper dim row exists only under a dark theme that is on`() {
+        val ctx = ctx()
+        val fake = ctx.asGalaxyWithRoutines()
+        fake.rows += FakeRoutines.Row(11, "d")
+        fake.rows += FakeRoutines.Row(12, "w")
+        val prefs = Prefs(ctx)
+        prefs.setRoutineUuid(RoutineEffect.DARK, 11)
+        prefs.setRoutineUuid(RoutineEffect.DIM, 12)
+        prefs.fxDarkTheme = false
+        compose.setContent {
+            GloamingTheme(dark = false) {
+                Home(rememberScrollState(), onOpenSettings = {}, onOpenInterruptions = {})
+            }
+        }
+        val dim = ctx.getString(R.string.fx_dim)
+        val dark = ctx.getString(R.string.fx_dark)
+        assertTrue("no dark theme, no dim row", compose.onAllNodesWithText(dim).fetchSemanticsNodes().isEmpty())
+        // Switch the dark theme on through its own row; the dim row follows.
+        compose.onNode(hasText(dark) and isToggleable()).performScrollTo().performClick()
+        assertTrue(prefs.fxDarkTheme)
+        // Its own routine adopted, so the row is the switch itself, subtitled
+        // with the one condition it carries.
+        compose.onNode(hasText(dim) and isToggleable()).performScrollTo().assertExists()
+        compose.onNodeWithText(ctx.getString(R.string.fx_dim_dark_sub)).assertExists()
+    }
 }

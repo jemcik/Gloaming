@@ -116,6 +116,7 @@
     <string name="fx_dim_sub">Обои темнеют</string>
     <string name="fx_dark_sub">При разблокировке</string>
     <string name="fx_ambient_sub">Экран не светится</string>
+    <string name="fx_dim_dark_sub">Вместе с темной темой</string>
     <string name="fx_ambient_grant">Требуется разрешение на изменение системных настроек. Нажмите, чтобы разрешить</string>
     <string name="fx_routine_setup">Настроить через Samsung</string>
     <string name="fx_routine_retry">Не сохранено. Повторите</string>
@@ -126,8 +127,10 @@
     <string name="routine_open">Открыть «Режимы и сценарии»</string>
     <string name="routine_done_gray">Оттенки серого настроены</string>
     <string name="routine_done_dark">Темная тема настроена</string>
+    <string name="routine_done_dim">Затемнение обоев настроено</string>
     <string name="routine_name_gray">Gloaming: оттенки серого</string>
     <string name="routine_name_dark">Gloaming: темная тема</string>
+    <string name="routine_name_dim">Gloaming: затемнение обоев</string>
 
     <!-- ============ Home: end-bedtime dialog ============ -->
     <string name="action_set">Задать</string>

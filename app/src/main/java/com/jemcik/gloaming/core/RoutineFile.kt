@@ -16,10 +16,22 @@ import org.json.JSONObject
  */
 enum class RoutineEffect(val key: String, val tag: String) {
     GRAYSCALE("gray", "gray_scale"),
-    DARK("dark", "dark_mode_v3");
+    DARK("dark", "dark_mode_v3"),
+
+    /**
+     * One UI's "apply dark mode to wallpaper": a darker wallpaper WHILE DARK
+     * MODE IS ON, and nothing at all while it is off. Its handler writes one
+     * `Settings.System` key, which a third-party app is refused - Android lets
+     * an app write only AOSP's public System keys, even holding WRITE_SETTINGS,
+     * and the always-on key works only because Samsung allowlists that one.
+     * So this too is a routine, with a reverse path measured: start took the
+     * key to 1, stop put it back. It runs only with the dark theme - see
+     * [Routines.wanted] - and its row lives under the dark-theme switch.
+     */
+    DIM("dim", "wallpaper_apply_dark_mode");
 
     internal fun params(): JSONArray = when (this) {
-        GRAYSCALE -> JSONArray().put(param("toggle_value", "BOOLEAN", "true"))
+        GRAYSCALE, DIM -> JSONArray().put(param("toggle_value", "BOOLEAN", "true"))
         DARK -> JSONArray()
             .put(param("enable_dark_mode", "STRING", "2"))
             .put(param("enable_dark_theme", "BOOLEAN", "true"))

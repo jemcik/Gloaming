@@ -68,10 +68,13 @@ indefinitely is background restriction — see `core/BackgroundLimit.kt`.
                                  behind a NORMAL permission that lists the
                                  user's manual routines and starts or ends one
                                  by uuid, and an importer that takes a routine
-                                 FILE we write. On a Galaxy the grayscale and
-                                 dark-theme switches are each backed by one
-                                 generated routine - Samsung's own built-in
-                                 actions - saved once (the Save in Samsung's
+                                 FILE we write. On a Galaxy the grayscale,
+                                 dark-theme and wallpaper-dim switches are each
+                                 backed by one generated routine - Samsung's
+                                 own built-in actions; dimming only WITH the
+                                 dark theme, because One UI dims only in dark
+                                 mode, so its row lives under that switch -
+                                 saved once (the Save in Samsung's
                                  editor is the floor: inserting directly is
                                  signature-level), then run exactly while the
                                  window does. Adoption is on EVIDENCE - the
@@ -302,6 +305,12 @@ is in DECISIONS.md.
 - minSdk is **35** because `ZenDeviceEffects`, `AutomaticZenRule.Builder` and
   `getAutomaticZenRuleState` are all API 35, and a missing method raises `Error`,
   which none of the `runCatching` here would catch.
+- **A shell write to `Settings.System` proves nothing about the APP's write.**
+  A third-party app may write only AOSP's `PUBLIC_SETTINGS` keys there, whatever
+  it holds; `aod_mode` works only because Samsung allowlists it, and
+  `display_night_theme_wallpaper` was refused with "You cannot keep your
+  settings in the secure settings" after a shell test had passed. Measure a
+  vendor key through the app before building on it.
 - **A granted-looking DND setting proves nothing.**
   `enabled_notification_policy_access_packages` has listed this package while
   `NotificationManager` still refused every call. `cmd notification allow_dnd`
@@ -562,7 +571,7 @@ compileSdk 37, targetSdk 36, minSdk 35.
 
 ## Tests
 
-`app/src/test/`, 251 cases, no device. They are written as the QUESTION the code
+`app/src/test/`, 254 cases, no device. They are written as the QUESTION the code
 answers rather than as coverage of a method, because none of the bugs were ever
 in a method — they were in an assumption.
 

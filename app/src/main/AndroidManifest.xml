@@ -89,11 +89,21 @@
         <!-- The master switch in the shade. It is the same control as the app
              bar's, sharing Bedtime.set and statusLine, so the two cannot drift.
              BIND_QUICK_SETTINGS_TILE is what lets SystemUI bind it, and is
-             declared on the service rather than requested by the app. -->
+             declared on the service rather than requested by the app.
+
+             THE ICON HERE IS THE PICKER'S, and it is the only face the tile has
+             before the service has ever run. "Add tile" draws this one; render()
+             has not been reached, because the tile is not on the panel yet to be
+             listened to. So it must be the mark the tile wears at REST -
+             ic_gloaming_tile, the same drawable render() picks when bedtime is
+             off - or adding the tile changes its icon under the user's hand.
+             It was ic_bedtime, Google's crescent, which is the switch's RUNNING
+             glyph and, in a picker three rows from the system's own moons, not
+             recognisably this app at all. -->
         <service
             android:name=".ui.BedtimeTile"
             android:exported="true"
-            android:icon="@drawable/ic_bedtime"
+            android:icon="@drawable/ic_gloaming_tile"
             android:label="@string/bedtime_mode"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter>

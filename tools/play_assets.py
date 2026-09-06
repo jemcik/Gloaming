@@ -166,14 +166,19 @@ def build_feature(lang='en'):
     d.text((x, 286), tagline, font=tag_f, fill=hx(ON_SURFACE_LOW))
 
     # The dial's own sweep, as a rule under the tagline. Night to dawn, left to
-    # right, from the same stops the arc and the crescent use.
-    rw, rh, ry = 300, 7, 340
+    # right, from the same stops the arc and the crescent use. As WIDE AS THE
+    # WORDMARK'S INK, and starting where the ink starts: it was a fixed 300px,
+    # which ended under the "n" of a 420px title and looked like a progress bar
+    # that had stopped. Measured from the glyphs, not the advance width, so a
+    # face with side bearings does not leave a gap at either end.
+    bx0, _, bx1, _ = mark_f.getbbox(WORDMARK)
+    rw, rh, ry = int(round(bx1 - bx0)), 7, 340
     lut = np.array([ramp(ARC, i / (rw - 1)) for i in range(rw)])
     rule = Image.fromarray(
         np.repeat(lut[None, :, :], rh, axis=0).clip(0, 255).astype(np.uint8), 'RGB')
     round_ = Image.new('L', (rw, rh), 0)
     ImageDraw.Draw(round_).rounded_rectangle([0, 0, rw - 1, rh - 1], radius=rh // 2, fill=255)
-    img.paste(rule, (x, ry), round_)
+    img.paste(rule, (x + int(round(bx0)), ry), round_)
 
     name = 'feature-graphic.png' if lang == 'en' else f'feature-graphic-{lang}.png'
     dest = os.path.join(OUT, name)

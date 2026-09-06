@@ -965,6 +965,12 @@ also how the S23 repaired itself on the next resume. `ScreenEffectsTest` pins
 all three: the honest edge still counts, the routine's edge does not, and the
 false record is withdrawn.
 
+And from the same clean run: Settings' "Routines in Samsung's app" row was
+drawn on the provider's presence alone, on a phone with no routine yet, and
+its text counted two. It is drawn only once a routine exists now, and the text
+says what the row is for - "Edit or delete them there" - rather than how many
+there are, which may be one. The Reset sentence reads the same answer.
+
 **A parked alarm is still DELIVERED, so arrival cannot be the test.** The first
 version of the probe scored a blocked phone as healthy, and only the device
 caught it. With `RUN_ANY_IN_BACKGROUND` at `ignore` the probe sat in *"Pending

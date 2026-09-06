@@ -47,6 +47,9 @@ fun SettingsScreen(themeMode: Int, onThemeMode: (Int) -> Unit, onBack: () -> Uni
     val g = gloam
     val haptics = rememberHaptics()
     var confirmReset by remember { mutableStateOf(false) }
+    // Samsung's routines, once one EXISTS: the "this phone" door to them, and
+    // the Reset sentence that says they stay. Both read the same answer.
+    val routines = remember { Routines.available(ctx) && Routines.adopted(Prefs(ctx)).isNotEmpty() }
     val version = remember {
         runCatching {
             ctx.packageManager.getPackageInfo(ctx.packageName, 0).versionName
@@ -121,8 +124,9 @@ fun SettingsScreen(themeMode: Int, onThemeMode: (Int) -> Unit, onBack: () -> Uni
         // the notices use - never a Build.MANUFACTURER test.
         val launchManager = Doors.hasLaunchManager(ctx)
         // And, on a Galaxy, the routines: the app can make them and cannot
-        // delete them, so the place to do that is one tap from here.
-        val routines = Routines.available(ctx)
+        // delete them, so the place to do that is one tap from here - drawn
+        // only once one EXISTS. Before that the row pointed at nothing and its
+        // text counted two, on a phone with none; reported on a clean install.
         if (launchManager || routines) {
             Section(stringResource(R.string.section_this_phone)) {
                 SettingsCard {
@@ -198,8 +202,7 @@ fun SettingsScreen(themeMode: Int, onThemeMode: (Int) -> Unit, onBack: () -> Uni
             // and forgets them, and cannot delete them - only the user can.
             text = {
                 val body = stringResource(R.string.reset_confirm_body)
-                val stay = remember { Routines.adopted(Prefs(ctx)).isNotEmpty() }
-                Text(if (stay) body + "\n\n" + stringResource(R.string.reset_routines_stay) else body)
+                Text(if (routines) body + "\n\n" + stringResource(R.string.reset_routines_stay) else body)
             },
             confirmButton = {
                 Button(

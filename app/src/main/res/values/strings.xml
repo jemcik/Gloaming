@@ -106,10 +106,11 @@
     <!-- The always-available door: a link in Settings, never a notice. -->
     <string name="section_this_phone">this phone</string>
     <string name="launch_link_why">Autostart and background</string>
-    <!-- Samsung only: where the two generated routines live, one tap away to
-         delete - which the app cannot do for the user. -->
+    <!-- Samsung only, and only once a routine exists: where the generated
+         routines live, one tap away to delete - which the app cannot do for
+         the user. No count in the text: it may be one. -->
     <string name="routines_row">Routines in Samsung\'s app</string>
-    <string name="routines_why">The two Gloaming routines</string>
+    <string name="routines_why">Edit or delete them there</string>
     <!-- Said once, when bedtime is first switched on. Not an accusation. -->
     <string name="launch_tip_title">Make bedtime reliable</string>
     <string name="launch_tip_why">This phone can stop apps while they are closed. Bedtime then starts late, or never ends in the morning. Two switches in App launch prevent it: Auto-launch and Run in background.</string>

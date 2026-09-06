@@ -63,7 +63,7 @@
     <string name="section_this_phone">цей телефон</string>
     <string name="launch_link_why">Автозапуск і робота у фоні</string>
     <string name="routines_row">Сценарії в програмі Samsung</string>
-    <string name="routines_why">Два сценарії Gloaming</string>
+    <string name="routines_why">Змінити або видалити</string>
     <string name="launch_tip_title">Зробіть сон надійним</string>
     <string name="launch_tip_why">Цей телефон може зупиняти застосунки, поки вони закриті. Тоді режим сну вмикається пізніше або не вимикається вранці. Два перемикачі в розділі «Запуск застосунків» цьому запобігають: автозапуск і робота у фоні.</string>
     <string name="launch_tip_action">Налаштувати</string>

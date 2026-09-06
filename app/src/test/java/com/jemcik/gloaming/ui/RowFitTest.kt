@@ -193,8 +193,10 @@ class RowFitTest {
      */
     private fun withVendorDoors(ctx: android.content.Context) {
         ctx.withLaunchManager()
-        // And Samsung's routines, so the third door in that section is drawn.
+        // And Samsung's routines - with one ADOPTED, because the door is drawn
+        // only once a routine exists to open it on.
         ctx.asGalaxyWithRoutines()
+        Prefs(ctx).setRoutineUuid(RoutineEffect.GRAYSCALE, 10)
     }
 
     private fun settingsRowsFitIn(locale: String, scale: Float = 1f) {

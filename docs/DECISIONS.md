@@ -849,6 +849,30 @@ scarier grant than the tap it would save. The routine deleted in Samsung's app
 is handled too: `Routines.prune` on resume forgets an adopted uuid the provider
 no longer lists, and the row offers again.
 
+**Good Lock, read rather than reasoned about, 6 Sep 2026.** The owner asked
+twice whether the modules had been decompiled, and the honest answer was no -
+none was installed, and "they are Samsung-signed" is an argument. So Routines+
+1.1.28 and Good Lock 3.0.16.6 were installed from the Galaxy Store on the S23
+(Samsung account present), pulled, and read. Routines+ holds
+`WRITE_ROUTINE_INFO` and `ROUTINE_HOST` and exports two doors with no
+permission: `RoutineBuilderActivity`, which takes only `routineId` and an
+`extra_action_type` of `briefAction`/`notificationAction` - its own Now Brief
+builder, a UI - and `RoutinePlusActivity`, which handles a `routineplus://…?
+json_data=<gzip>` link or a content URI as an IMPORT: it validates a JSON
+document (`document_id` "com.samsung.android.app.routines/routine", version
+"1") and then starts Routines' own `ACTION_MAKE_ROUTINE` editor with it as
+`routine_json`. So even Samsung's own module, with the permission to insert,
+hands an imported routine to the editor for the user's Save. The tap is the
+design, not merely a permission this app lacks. Its catalogue adds nothing for
+the display: `close_app`, `hide_apps`, `shortcut`, `direction_key`, `tts`,
+`navigation_bar_type`, a REST call, a Now Brief action, and `custom_key`,
+`finger_print`, `air_action` conditions - all behind `WRITE_SECURE_SETTINGS`
+or `ROUTINE_HOST` as providers, for Routines to read. Good Lock itself is the
+hub - `INSTALL_PACKAGES`, `WRITE_SECURE_SETTINGS`, a deep-linked MainActivity
+and an analytics provider - and names its modules from a server; none of the
+display modules (Theme Park, Wonderland, QuickStar, LockStar) is an automation
+surface. Both stay installed on the S23 for whoever wants to look.
+
 **A parked alarm is still DELIVERED, so arrival cannot be the test.** The first
 version of the probe scored a blocked phone as healthy, and only the device
 caught it. With `RUN_ANY_IN_BACKGROUND` at `ignore` the probe sat in *"Pending

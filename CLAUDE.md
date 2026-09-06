@@ -326,8 +326,10 @@ is in DECISIONS.md.
   the editor's picker but present in the catalogue and executing; a mode cannot
   be switched on directly (`READ/WRITE_MODE_INFO` are signature). The one step
   nobody can take for the user is Save in Samsung's editor - every insertion
-  path is signature-level, the Bixby capsule provider included. Measured 6 Sep
-  2026; DECISIONS has the contract and the file format.
+  path is signature-level, the Bixby capsule provider included, and Good Lock's
+  Routines+, which HOLDS the insert permission, still hands an imported routine
+  to that same editor. Measured 6 Sep 2026; DECISIONS has the contract, the
+  file format and the Good Lock reading.
 - `dumpsys notification` prints a `Zen Log:` history as well as live config, so
   `sed '/Zen Log:/q'` before grepping or long-deleted rules read as present.
   It also prints the live config TWICE, so count rules by id, not occurrence.

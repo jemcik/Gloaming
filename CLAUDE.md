@@ -221,15 +221,19 @@ is in DECISIONS.md.
   switches the rule off on a real move, and stays separate from `commit`, which
   the switch itself calls. The switch used to COPY the alarm into the handle so
   the two could not disagree; they could, the moment the alarm moved in the
-  clock app, in both directions - and the user's own wake time was gone. It is
-  a STANDING rule, kept on through a morning with no alarm: the platform
-  reports "no alarm" identically for a deleted one, a disabled one and a
-  one-time one that has just rung, so a switch that went off with the alarm
-  would need re-enabling every morning after a one-time alarm. The row carries
-  the live state instead - "Next alarm" under tonight's, the alarm's day when
-  it is not tonight's, "No alarm set", and what tonight ends at instead. The
-  platform names ONE alarm, the next to ring; there is no list to choose from,
-  so the row says which one the way the lock screen does. The door to the
+  clock app, in both directions - and the user's own wake time was gone. With
+  NO ALARM ON THE PHONE the rule switches itself off, in `rescheduleAll`, and
+  the switch is drawn off and DISABLED; nothing switches it on by itself. A
+  standing rule was built first and the owner rejected it on sight: ON over
+  "No alarm set" reads as on-but-doing-nothing. The cost, chosen knowingly: the
+  platform reports "no alarm" identically for a deleted one and a one-time one
+  that has rung, so after a one-time alarm the rule is off until switched on
+  again. The SECTION IS ALWAYS DRAWN - it used to leave with the switch, and a
+  control must never remove itself when used. The row carries the live state -
+  "Next alarm" under tonight's, the alarm's day when it is not tonight's, "No
+  alarm set", and what tonight ends at instead. The platform names ONE alarm,
+  the next to ring; there is no list to choose from, so the row says which one
+  the way the lock screen does. The door to the
   clock app is an ASSIST CHIP under the card, wearing the open-in-new mark and
   the app's own name - never a second row: a row with the same icon and a
   chevron under a row with a switch read as twin settings, and Material

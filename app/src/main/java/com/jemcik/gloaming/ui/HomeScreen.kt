@@ -811,20 +811,22 @@ private fun WindowBlock(
  * next alarm". Both let the alarm only shorten; this one moves the end either
  * way - see [Scheduler.endAt].
  *
- * WHAT THE SWITCH MEANS: a standing rule, like Repeat. "When there is an alarm
- * on the morning bedtime ends on, end bedtime at it." It stays on through a
- * morning with no alarm, because the platform reports "no alarm" identically
- * for one deleted, one switched off in the clock app, and a one-time alarm
- * that has just rung - a switch that went off with the alarm would go off
- * every morning after a one-time alarm, and need remembering. The ROW carries
- * the live state instead.
+ * WHAT THE SWITCH MEANS: linked to an alarm. With no alarm on the phone the
+ * rule switches itself off (Scheduler.rescheduleAll) and the switch is drawn
+ * OFF AND DISABLED: nothing to link to, so nothing to switch on, and the row
+ * says why and the chip says how. Material's disabled state is for exactly
+ * this - unavailable for now, with the reason beside it - and it is not the
+ * lying control the screen-effects rule forbids: it shows the true value. A
+ * standing rule was built first, kept on through mornings with no alarm
+ * because the platform reports "no alarm" identically for one deleted and a
+ * one-time one that has rung; the owner saw it sit ON over "No alarm set" and
+ * called it what it looked like. DECISIONS has the trade.
  *
- * THE SECTION EXISTS WHILE THE SWITCH IS ON OR AN ALARM DOES. Off with no
- * alarm there is nothing to offer and nothing to act on, and a control that
- * cannot act is worse than an absent one. On with no alarm there is a rule to
- * show and a door to the clock app, and the row says "No alarm set" and what
- * tonight ends at instead. It used to vanish with the alarm while the rule
- * stayed on, silently, which is a state a tester could not explain.
+ * THE SECTION IS ALWAYS DRAWN. It used to leave with the alarm, and then with
+ * the switch: turn the rule off with no alarm and the whole section vanished
+ * under the finger, which was designed, tested, and wrong - a control must
+ * never remove itself when used. With no alarm the row reads "No alarm set"
+ * and what tonight ends at; the chip is the way to change that.
  *
  * THE ROW is the alarm: its time, and its DAY when it is not this night's -
  * "Mon 06:30" on a Friday. The supporting line answers, in every state, the
@@ -854,7 +856,6 @@ private fun EndsSection(s: HomeState) {
     val locale = LocalLocale.current.platformLocale
 
     val alarm = remember(s.tick) { Scheduler.nextAlarm(ctx) }
-    if (alarm == null && !s.endAtAlarm) return
     // A capability of the phone, not of the moment: asked once.
     val hasDoor = remember { Doors.hasAlarms(ctx) }
     val tonights = remember(s.tick, s.start, s.end, s.days, s.enabled) {
@@ -896,6 +897,9 @@ private fun EndsSection(s: HomeState) {
                         res.getString(R.string.row_end_at_alarm, headline) + ". " + supporting
                 },
                 checked = s.endAtAlarm,
+                // Nothing to link to, nothing to switch on. The chip beneath
+                // is the way to change that.
+                enabled = alarm != null,
                 leading = { RowIcon(R.drawable.ic_alarm, IconTint.Alarm) }
             ) { s.followAlarm(it) }
         })

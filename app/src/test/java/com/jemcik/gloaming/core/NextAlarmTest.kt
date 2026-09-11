@@ -136,6 +136,17 @@ class NextAlarmTest {
     }
 
     @Test
+    fun `no alarm on the phone switches the rule off, and an alarm appearing does not switch it back`() {
+        ShadowAlarmManager.setCanScheduleExactAlarms(true)
+        val p = prefs()
+        Scheduler.rescheduleAll(ctx(), p, from = LocalDateTime.of(2026, 9, 11, 12, 0))
+        assertEquals("nothing to link to", false, p.exitAtAlarm)
+        setAlarm(LocalDateTime.of(2026, 9, 12, 9, 0))
+        Scheduler.rescheduleAll(ctx(), p, from = LocalDateTime.of(2026, 9, 11, 12, 1))
+        assertEquals("off is off until the user says otherwise", false, p.exitAtAlarm)
+    }
+
+    @Test
     fun `the receiver records the END by its DUE instant, not its landing`() {
         // A parked END released at 23:00 by opening the app must not end the
         // night that began at 22:30 - see Scheduler.over.

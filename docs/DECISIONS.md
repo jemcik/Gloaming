@@ -1211,6 +1211,23 @@ theirs. Verified on the Honor the same afternoon: switch on, NEXT ALARM over
 09:00, "10h 30m", "From 22:30 today to 09:00 tomorrow", the handle still at
 08:30 underneath, END armed for 09:00.
 
+**The standing rule lasted one afternoon.** The owner disabled every alarm in
+the clock app, came back, found the switch ON over "No alarm set", turned it
+off - and the whole section left with it, because it was drawn only while the
+switch was on or an alarm existed. Both were designed and tested, and both
+were wrong on sight: a switch that is on with nothing to act on reads as
+broken however the row beneath explains it, and a control must never remove
+itself when used. So, his original point 3 after all: with no alarm on the
+phone the rule switches itself off - in `rescheduleAll`, the one place every
+path that learns the alarm has gone passes through - and the switch is drawn
+off and DISABLED, Material's own state for "not available now", with "No
+alarm set" beside it and the chip beneath as the way out. Nothing switches it
+on by itself when an alarm appears. The section is always drawn. The cost he
+accepted, having seen the alternative: the platform reports "no alarm"
+identically for a deleted alarm and a one-time one that has just rung, so a
+one-time alarm leaves the rule off the next evening until it is switched on
+again. `NextAlarmTest` and `ScreensTest` pin the new shape.
+
 The door was a second row first - alarm icon, "Your alarms", a chevron - under
 a row with the same icon and a switch, and the owner's verdict was that the
 two read as twin settings with one control each, the second's meaning

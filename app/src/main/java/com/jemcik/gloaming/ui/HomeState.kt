@@ -363,6 +363,9 @@ class HomeState(
         // rescheduleAll -> setActive -> syncRule, so syncing here as well
         // pushed the rule twice for every tap.
         Scheduler.rescheduleAll(ctx, prefs)
+        // The one value the scheduler may write back: with no alarm on the
+        // phone the rule switches itself off, and the switch must show it.
+        endAtAlarm = prefs.exitAtAlarm
         tick++
     }
 

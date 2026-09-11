@@ -2,6 +2,8 @@ package com.jemcik.gloaming.ui
 
 import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsOff
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasText
@@ -963,28 +965,50 @@ class ScreensTest {
     }
 
     @Test
-    fun `with no alarm the section stays while the rule is on, and says what tonight ends at`() {
-        // It used to vanish with the alarm while the rule stayed on, silently.
+    fun `with no alarm the rule switches itself off, the switch is disabled, and the section stays`() {
+        // The owner's verdict on the standing version: a switch ON over "No
+        // alarm set" reads as on-but-doing-nothing. Off, and not switchable
+        // until there is an alarm to link to; the row says why and the chip
+        // says how.
         val p = armed()
         val wake = minutesFromNow(60)
         p.endTime = wake
         p.exitAtAlarm = true
         home()
 
-        compose.onNodeWithText(ctx().getString(R.string.row_no_alarm)).assertExists()
+        assertFalse("no alarm, no rule", p.exitAtAlarm)
+        compose.onNode(hasText(ctx().getString(R.string.row_no_alarm)) and isToggleable())
+            .assertIsOff().assertIsNotEnabled()
         compose.onNodeWithText(ctx().getString(R.string.row_alarm_fallback, t(wake))).assertExists()
     }
 
     @Test
-    fun `with no alarm and the rule off there is no section`() {
+    fun `with no alarm and the rule off the section is still there`() {
+        // It used to leave with the switch: turn the rule off with no alarm
+        // and the section vanished under the finger. A control must never
+        // remove itself when used.
         val p = armed()
         p.exitAtAlarm = false
         home()
 
-        compose.onNodeWithText(ctx().getString(R.string.row_no_alarm)).assertDoesNotExist()
+        compose.onNodeWithText(ctx().getString(R.string.row_no_alarm)).assertExists()
         compose.onNodeWithText(
             ctx().getString(R.string.section_end_at_alarm).uppercase()
-        ).assertDoesNotExist()
+        ).assertExists()
+    }
+
+    @Test
+    fun `an alarm that appears does not switch the rule on by itself`() {
+        // Off is off until the user says otherwise; the only thing that
+        // changes with the alarm is that the switch can be used again.
+        val p = armed()
+        p.exitAtAlarm = false
+        setAlarm(minutesFromNow(30))
+        home()
+
+        assertFalse(p.exitAtAlarm)
+        compose.onNode(hasText(ctx().getString(R.string.row_alarm_next)) and isToggleable())
+            .assertIsOff().assertIsEnabled()
     }
 
     @Test

@@ -21,6 +21,7 @@ import com.jemcik.gloaming.core.Doors
 import com.jemcik.gloaming.core.Prefs
 import com.jemcik.gloaming.core.ScreenEffects
 import com.jemcik.gloaming.core.Scheduler
+import java.time.LocalDateTime
 import com.jemcik.gloaming.core.ZenController
 
 /**
@@ -124,6 +125,62 @@ class HomeState(
      */
     var missedAlarm by mutableStateOf(AlarmWatch.missed(prefs))
         private set
+
+    /**
+     * What the miss looked like - when bedtime actually ended, and whether
+     * opening the app is what ended it - so the card can say so rather than
+     * guess. Null for a latch with no record behind it.
+     */
+    var miss by mutableStateOf(AlarmWatch.report(prefs))
+        private set
+
+    /**
+     * Allow has been pressed for THIS miss. The switch behind the button is
+     * unreadable, so on return the card stops accusing and says when it will
+     * know - the launch tip's second face, which this card did not have, and
+     * the reason "I pressed Allow and it is still there" was reported as a bug.
+     */
+    var missVisited by mutableStateOf(AlarmWatch.visited(prefs))
+        private set
+
+    /** Got it has been pressed for THIS miss. The next late END is a new one. */
+    var missAcked by mutableStateOf(AlarmWatch.acknowledged(prefs))
+        private set
+
+    fun showMissedAlarm(): Boolean = missedAlarm && !missAcked
+
+    fun visitMiss() {
+        AlarmWatch.visit(prefs)
+        missVisited = true
+    }
+
+    fun ackMiss() {
+        AlarmWatch.acknowledge(prefs)
+        missAcked = true
+    }
+
+    /**
+     * WHAT TONIGHT ACTUALLY ENDS AT, which is not always the wake handle.
+     *
+     * With "at your alarm" on and an alarm inside the window, the night ends
+     * at the alarm, and every reading that names tonight's end has to say so -
+     * the numeral, the arc, the handle, the countdown, the sentence, and now
+     * the missed-END card's "it will know at". Shipping the alarm to some of
+     * them and not others produced one screen giving two answers to when
+     * tonight ends, which is what was reported, twice. Derived HERE, once, and
+     * called from wherever the answer is drawn.
+     */
+    fun endsTonight(): LocalDateTime? {
+        val dur = Scheduler.duration(start, end)
+        val scheduled = Scheduler.liveWindowEnd(prefs, start, end, days)
+            ?: Scheduler.nextStart(start, end, days)?.plus(dur)
+        return scheduled?.let {
+            Scheduler.endAt(
+                it.minus(dur), it,
+                Scheduler.endingAlarm(ctx, endAtAlarm), endAtAlarm
+            )
+        }
+    }
 
     /**
      * This phone was measured holding one of our alarms, so bedtime cannot be
@@ -372,6 +429,9 @@ class HomeState(
         missedBoot = BootWatch.missed(prefs)
         restricted = BackgroundLimit.isRestricted(ctx)
         missedAlarm = AlarmWatch.missed(prefs)
+        miss = AlarmWatch.report(prefs)
+        missVisited = AlarmWatch.visited(prefs)
+        missAcked = AlarmWatch.acknowledged(prefs)
         // Resume is when an overdue probe becomes knowable, exactly as for a
         // missed END - the alarm was eaten while nobody was watching.
         BackgroundProbe.check(prefs)

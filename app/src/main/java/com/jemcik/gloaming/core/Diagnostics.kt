@@ -192,7 +192,17 @@ object Diagnostics {
 
         head("OVERNIGHT CHECKS")
         row("END alarm", ask {
-            if (AlarmWatch.missed(p)) "MISSED - did not arrive on time" else "no miss recorded"
+            val m = AlarmWatch.report(p)
+            when {
+                !AlarmWatch.missed(p) -> "no miss recorded"
+                m == null -> "MISSED - did not arrive on time"
+                // The record the card reads from, so a report and a screenshot
+                // can be compared line for line.
+                else -> "MISSED - due " + stamp(m.due) + ", ended " + stamp(m.endedAt) +
+                    (if (m.atOpen) " when the app was opened" else " by itself") +
+                    (if (AlarmWatch.visited(p)) ", Allow pressed" else "") +
+                    (if (AlarmWatch.acknowledged(p)) ", Got it pressed" else "")
+            }
         })
         row("delivery probe", ask {
             when {

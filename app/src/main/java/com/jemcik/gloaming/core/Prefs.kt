@@ -127,6 +127,39 @@ class Prefs(ctx: Context) {
         set(v) = sp.edit { putBoolean("alarmMissed", v) }
 
     /**
+     * What the miss LOOKED like, so the card can say it rather than guess it:
+     * the END instant that was missed, when bedtime actually ended, and whether
+     * the app being opened is what ended it. [NO_DUE] on [missedDue] means no
+     * record - a miss latched by a build before these existed.
+     *
+     * The due instant doubles as the incident's identity. "Got it" and "Allow"
+     * below are remembered AGAINST it, so putting one late END away cannot put
+     * the next one away with it. Their default is 0, not [NO_DUE], on purpose:
+     * an unrecorded miss must not read as already answered.
+     */
+    var missedDue: Long
+        get() = sp.getLong("missedDue", NO_DUE)
+        set(v) = sp.edit { putLong("missedDue", v) }
+
+    var missedEndedAt: Long
+        get() = sp.getLong("missedEndedAt", NO_DUE)
+        set(v) = sp.edit { putLong("missedEndedAt", v) }
+
+    var missedAtOpen: Boolean
+        get() = sp.getBoolean("missedAtOpen", false)
+        set(v) = sp.edit { putBoolean("missedAtOpen", v) }
+
+    /** The miss "Got it" was pressed for, by its due instant. */
+    var missAckedFor: Long
+        get() = sp.getLong("missAckedFor", 0L)
+        set(v) = sp.edit { putLong("missAckedFor", v) }
+
+    /** The miss "Allow" was pressed for - been to look, not necessarily done. */
+    var missVisitedFor: Long
+        get() = sp.getLong("missVisitedFor", 0L)
+        set(v) = sp.edit { putLong("missVisitedFor", v) }
+
+    /**
      * The user has been sent to the vendor's launch screen at least once.
      *
      * Set when they tap the card, not when they finish - because whether they

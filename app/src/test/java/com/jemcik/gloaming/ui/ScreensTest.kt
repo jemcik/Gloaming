@@ -29,7 +29,11 @@ import java.time.DayOfWeek
 import java.time.LocalTime
 import androidx.compose.foundation.rememberScrollState
 import com.jemcik.gloaming.R
+import com.jemcik.gloaming.core.AlarmWatch
+import com.jemcik.gloaming.core.Clock
 import com.jemcik.gloaming.core.Prefs
+import java.time.LocalDateTime
+import java.time.ZoneId
 import com.jemcik.gloaming.core.FakeRoutines
 import com.jemcik.gloaming.core.RoutineEffect
 import org.junit.Assert.assertEquals
@@ -322,6 +326,84 @@ class ScreensTest {
             }
         }
         compose.onNodeWithText(ctx().getString(R.string.launch_tip_dismiss)).assertDoesNotExist()
+    }
+
+    // ---------- the missed-END card ----------
+
+    /**
+     * Last night's END, delivered 4m20s late - the Honor's grid, 11 Sep 2026.
+     * Returns the two times the card must name: when bedtime ended, and when it
+     * should have.
+     */
+    private fun missedEnd(p: Prefs, atOpen: Boolean): Pair<String, String> {
+        val due = LocalDateTime.now().minusHours(3).withSecond(0).withNano(0)
+        val dueMs = due.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+        val endedMs = dueMs + 260_000
+        AlarmWatch.arming(p, dueMs)
+        AlarmWatch.handled(p, dueMs, endedMs, atOpen)
+        return Clock.hhmm(ctx(), due.plusSeconds(260).toLocalTime()) to Clock.hhmm(ctx(), due.toLocalTime())
+    }
+
+    @Test
+    fun `the missed-END card names the two times, and Got it puts it away`() {
+        // The sentence is the record. It used to say "stayed on until you
+        // opened the app" for every miss, and said it about an END the phone
+        // had delivered by itself, four minutes late, with the app closed.
+        val p = armed()
+        val (ended, due) = missedEnd(p, atOpen = false)
+        compose.setContent {
+            GloamingTheme(dark = false) {
+                Home(rememberScrollState(), onOpenSettings = {}, onOpenInterruptions = {})
+            }
+        }
+        val late = ctx().getString(R.string.missed_alarm_late, ended, due)
+        compose.onNodeWithText(late).assertExists()
+        compose.onNodeWithText(ctx().getString(R.string.missed_alarm_held, ended, due)).assertDoesNotExist()
+
+        compose.onNodeWithText(ctx().getString(R.string.notice_got_it)).performClick()
+        compose.onNodeWithText(late).assertDoesNotExist()
+        assertTrue("Got it must be remembered, or the card returns on resume", AlarmWatch.acknowledged(p))
+        assertTrue("Got it hides the card; it does not un-happen the miss", AlarmWatch.missed(p))
+    }
+
+    @Test
+    fun `an END released by opening the app says so`() {
+        val p = armed()
+        val (ended, due) = missedEnd(p, atOpen = true)
+        compose.setContent {
+            GloamingTheme(dark = false) {
+                Home(rememberScrollState(), onOpenSettings = {}, onOpenInterruptions = {})
+            }
+        }
+        compose.onNodeWithText(ctx().getString(R.string.missed_alarm_held, ended, due)).assertExists()
+    }
+
+    @Test
+    fun `Allow keeps the card, in its second face, until Got it`() {
+        // Reported on the Honor: press Allow, set the switch, come back - and
+        // the same accusation with the same button was still there, with no
+        // way to say "seen". The switch cannot be read, so after Allow the card
+        // says when it WILL know, and only Got it closes it.
+        val p = armed()
+        missedEnd(p, atOpen = false)
+        compose.setContent {
+            GloamingTheme(dark = false) {
+                Home(rememberScrollState(), onOpenSettings = {}, onOpenInterruptions = {})
+            }
+        }
+        compose.onNodeWithText(ctx().getString(R.string.perm_allow)).performClick()
+        assertTrue("Allow must be remembered for this miss", AlarmWatch.visited(p))
+        assertFalse("going to look is not an answer", AlarmWatch.acknowledged(p))
+
+        // The live window from armed() ends at p.endTime, so that is the instant
+        // the card promises to know by.
+        val known = ctx().getString(R.string.missed_alarm_check, Clock.hhmm(ctx(), p.endTime))
+        compose.onNodeWithText(known).assertExists()
+        compose.onNodeWithText(ctx().getString(R.string.perm_allow)).assertDoesNotExist()
+
+        compose.onNodeWithText(ctx().getString(R.string.notice_got_it)).performClick()
+        compose.onNodeWithText(known).assertDoesNotExist()
+        assertTrue(AlarmWatch.acknowledged(p))
     }
 
     // ---------- Settings ----------

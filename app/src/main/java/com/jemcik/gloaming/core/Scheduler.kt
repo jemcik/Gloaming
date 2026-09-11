@@ -60,6 +60,15 @@ object Scheduler {
      */
     const val ACTION_PROBE = "com.jemcik.gloaming.PROBE"
 
+    /**
+     * The instant a START or END was armed for, carried IN the alarm. The
+     * receiver judges the alarm by this rather than by what prefs say is due,
+     * because prefs can have moved on: a parked END released by the app being
+     * opened can land after the resume's reschedule has re-armed `endDue` for
+     * tomorrow. See [AlarmWatch.handled] and [Delivery.asOf].
+     */
+    const val EXTRA_DUE = "due"
+
     private fun am(ctx: Context) = ctx.getSystemService(AlarmManager::class.java)
 
     fun canScheduleExact(ctx: Context) = am(ctx).canScheduleExactAlarms()
@@ -271,10 +280,13 @@ object Scheduler {
         p.enabled &&
             liveWindowEnd(p, p.startTime, p.endTime, p.days, from, alarm) != null
 
-    private fun pending(ctx: Context, action: String, code: Int): PendingIntent =
+    // Extras play no part in matching a PendingIntent, so the one cancelAll
+    // builds without a due instant still cancels the one setExact armed with it.
+    private fun pending(ctx: Context, action: String, code: Int, due: Long? = null): PendingIntent =
         PendingIntent.getBroadcast(
             ctx, code,
-            Intent(ctx, BedtimeReceiver::class.java).setAction(action),
+            Intent(ctx, BedtimeReceiver::class.java).setAction(action)
+                .apply { if (due != null) putExtra(EXTRA_DUE, due) },
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
@@ -285,7 +297,7 @@ object Scheduler {
         // says nothing, which is the failure worth catching.
         if (action == ACTION_END) AlarmWatch.arming(Prefs(ctx), ms)
         try {
-            am(ctx).setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, ms, pending(ctx, action, code))
+            am(ctx).setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, ms, pending(ctx, action, code, ms))
         } catch (e: SecurityException) {
             Journal.write(ctx, "exact alarm denied: " + e)
         }
@@ -337,7 +349,19 @@ object Scheduler {
         }
     }
 
-    fun rescheduleAll(ctx: Context, p: Prefs, force: Boolean = false) {
+    /**
+     * [from] is the instant the schedule is judged at - now, for everyone but
+     * the receiver, which passes the alarm's own due instant when the alarm
+     * landed a little before it. See [Delivery.asOf]: judged at the moment it
+     * landed, a forty-second-early END found the night still running and
+     * walked straight back into it.
+     */
+    fun rescheduleAll(
+        ctx: Context,
+        p: Prefs,
+        force: Boolean = false,
+        from: LocalDateTime = LocalDateTime.now()
+    ) {
         // BEFORE anything is armed: arming overwrites the due instant, so this is
         // the last moment the previous one can still be judged.
         AlarmWatch.check(p)
@@ -353,7 +377,7 @@ object Scheduler {
             return
         }
 
-        val now = LocalDateTime.now()
+        val now = from
         // Read once and used for both branches, so the window we open and the
         // END we arm cannot disagree about when the morning is.
         val alarm = if (p.exitAtAlarm) nextAlarm(ctx) else null

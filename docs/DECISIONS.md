@@ -1088,6 +1088,49 @@ it names a setting that actually exists and clears itself the instant that
 setting changes, where the probe has to be re-run before it will believe a fix.
 Read it if you can; measure it only when you cannot.
 
+**The Honor delivers exact alarms on a five-minute grid of its own, and the
+missed-END card said the wrong thing about it, to someone who could not make it
+go away.** Measured 11 Sep 2026, the morning after a 00:08 reboot with the app
+still on "Manage automatically". The END due 08:30:00 arrived at **08:29:20 —
+40 s early** — and, once the receiver had re-armed it for 08:30:00, again at
+**08:34:20, 4 min 20 s late**. Both landed 8 ms after the system's own
+`com.android.intent.action.HEARTBEAT_FIXER` alarm, which fires every five minutes
+at :x4:20 and :x9:20; every START and END from 4 to 9 Sep had arrived within 2 s
+of its second. The screen was on throughout and the app was not opened until
+11:59, so bedtime ended by itself, four minutes late — and the card said "stayed
+on until you opened the app". The owner pressed Allow, set the Honor's switches,
+came back, and found the same card with the same button, and reported it as a
+bug. It was one, three times over:
+
+- *An early END re-entered the night.* The handler switched zen off; the
+  reschedule, judging at 08:29:20, found forty seconds still to run and switched
+  it back on — the FALSE / `updateAutomaticZenRule` / FALSE / TRUE sequence in
+  the Zen Log — and armed a second END for the phone to hold. `Delivery.asOf`
+  now judges an alarm inside the tolerance at the instant it was armed for. That
+  instant rides IN the alarm (`Scheduler.EXTRA_DUE`) rather than in prefs,
+  because a parked END released by the app being opened can land after the
+  resume's reschedule has re-armed `endDue` for tomorrow, and judged against
+  tomorrow a twelve-hour-late END scored as punctual and un-latched the miss the
+  resume had just recorded.
+- *One sentence for every miss.* A four-minute vendor delay and a twelve-hour
+  park are different reports. A miss now records when bedtime actually ended
+  and whether the app was on screen as the END arrived (`AlarmWatch.appOpen`,
+  `getMyMemoryState`) — which is how a parked alarm is released, and the only
+  evidence there is for "until you opened the app". The card names the two
+  times, and claims the opening only on that evidence.
+- *No way out.* The card cleared itself only on the next punctual END: a day
+  away here, a week on a weekend-only schedule, never if the grid persists — and
+  a fault card that cannot be cleared by fixing anything is the failure the
+  launch tip was rebuilt to escape. It has the tip's two faces now: after Allow
+  it says when it will know, and Got it puts THIS incident away, keyed on the
+  END's due instant, so the next late END is a new card. The fact stands
+  underneath — `missed()` still answers, Diagnostics prints the record.
+
+The timeline came from `dumpsys batterystats --history`, which stamps every alarm
+delivery (`+tmpwhitelist=… com.jemcik.gloaming.END/u0`) and every foreground
+session, and works on the Play build where `run-as` and the journal do not.
+Whether "Manage manually" lifts the alignment is settled only by the next END.
+
 So run-in-background is answered by experiment instead: `BackgroundProbe` arms
 one throwaway exact alarm eleven minutes out and shows nothing. Arriving is the
 whole answer — the background path works on this phone, permanently. Never

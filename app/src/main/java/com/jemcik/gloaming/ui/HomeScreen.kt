@@ -72,8 +72,10 @@ import com.jemcik.gloaming.R
 import com.jemcik.gloaming.core.*
 import java.time.DayOfWeek
 import java.time.Duration
+import java.time.Instant
 import java.time.LocalDateTime
 import java.time.LocalTime
+import java.time.ZoneId
 import kotlinx.coroutines.delay
 /* Spacing rhythm: Organic's 1.10 density scale doesn't survive dp rounding, so
    the app runs a 4dp grid and keeps the ratios. One deliberate deviation.   */
@@ -488,6 +490,19 @@ private fun BackgroundNoticeSection(s: HomeState) {
  *
  * Both cards can appear together, and that is correct rather than redundant: one
  * names a switch to fix, the other reports what already went wrong.
+ *
+ * TWO FACES, and a way out, because the first version had neither and it was
+ * reported as a bug on 11 Sep 2026: press Allow, fix the switch on the Honor's
+ * screen, come back - and the same accusation with the same button was still
+ * there, and would have been until the next punctual END. The switch cannot be
+ * read, so after Allow the card says when it WILL know, and Got it puts this
+ * one late END away; the fact stands, and the next late END is a new card.
+ *
+ * The sentence is the record, not a guess. "Stayed on until you opened the app"
+ * was said for every miss and was false for the one that was measured: the
+ * phone had delivered the END by itself, four minutes late, with the app closed.
+ * Now it names the two times, and claims the app's opening did it only when the
+ * app was on screen as the END arrived.
  */
 @Composable
 private fun MissedAlarmSection(s: HomeState) {
@@ -496,17 +511,40 @@ private fun MissedAlarmSection(s: HomeState) {
     val haptics = s.haptics
     val card = g.raise
 
-    if (s.missedAlarm) {
-        Section(stringResource(R.string.missed_alarm_title), rule = false) {
-            GroupedList(card, listOf {
-                PermissionCard(
-                    stringResource(R.string.missed_alarm_row),
-                    stringResource(R.string.missed_alarm_why),
-                    granted = false,
-                    icon = R.drawable.ic_gloaming, tint = IconTint.Blocked
-                ) { haptics.open(); BackgroundLimit.openSettings(ctx) }
-            })
+    if (!s.showMissedAlarm()) return
+    val res = LocalResources.current
+    val gotIt = stringResource(R.string.notice_got_it)
+    val miss = s.miss
+    // The clock format is a system setting, so it is read where the ticker is
+    // and the ANSWER passed down - see CLAUDE.md on WindowTime.
+    val why = remember(s.tick, miss, s.missVisited, s.start, s.end, s.days, s.endAtAlarm, s.enabled, res) {
+        val zone = ZoneId.systemDefault()
+        fun at(ms: Long) = Clock.hhmm(ctx, LocalDateTime.ofInstant(Instant.ofEpochMilli(ms), zone).toLocalTime())
+        when {
+            s.missVisited -> res.getString(
+                R.string.missed_alarm_check,
+                Clock.hhmm(ctx, s.endsTonight()?.toLocalTime() ?: s.end)
+            )
+            miss == null -> res.getString(R.string.missed_alarm_why)
+            miss.atOpen -> res.getString(R.string.missed_alarm_held, at(miss.endedAt), at(miss.due))
+            else -> res.getString(R.string.missed_alarm_late, at(miss.endedAt), at(miss.due))
         }
+    }
+    Section(stringResource(R.string.missed_alarm_title), rule = false) {
+        GroupedList(card, listOf {
+            NoticeCard(
+                stringResource(R.string.missed_alarm_row), why,
+                icon = R.drawable.ic_gloaming, tint = IconTint.Blocked
+            ) {
+                TextAction(gotIt) { haptics.select(); s.ackMiss() }
+                if (!s.missVisited) {
+                    Spacer(Modifier.width(4.dp))
+                    FilledAction(stringResource(R.string.perm_allow)) {
+                        haptics.open(); s.visitMiss(); BackgroundLimit.openSettings(ctx)
+                    }
+                }
+            }
+        })
     }
 }
 
@@ -532,26 +570,14 @@ private fun WindowBlock(
 
     // WHAT TONIGHT ACTUALLY ENDS AT, which is not always the wake handle.
     //
-    // With "at your alarm" on and an alarm inside the window, the night ends
-    // at the alarm, and every reading on this screen has to say so - the
-    // numeral, the arc, the handle, the countdown, the sentence. Shipping
-    // the alarm to some of them and not others produced one screen giving
-    // two answers to when tonight ends, which is what was reported, twice.
-    //
     // Derived ONCE, as an instant, because the readings below need different
     // things from it - the numeral and the arc want a clock time, the countdown
     // wants a duration - and computing it twice is how the two halves of the
-    // dial centre came to disagree in the first place.
+    // dial centre came to disagree in the first place. The derivation itself
+    // lives in HomeState.endsTonight, because the missed-END card names the
+    // same instant and must not derive its own.
     val endsTonight = remember(s.tick, s.start, s.end, s.days, s.endAtAlarm, s.enabled) {
-        val dur = Scheduler.duration(s.start, s.end)
-        val scheduled = Scheduler.liveWindowEnd(prefs, s.start, s.end, s.days)
-            ?: Scheduler.nextStart(s.start, s.end, s.days)?.plus(dur)
-        scheduled?.let {
-            Scheduler.endAt(
-                it.minus(dur), it,
-                Scheduler.endingAlarm(ctx, s.endAtAlarm), s.endAtAlarm
-            )
-        }
+        s.endsTonight()
     }
 
     // Null when nothing overrides, so the dial can tell "tonight is the

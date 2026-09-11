@@ -34,6 +34,10 @@
     <string name="dur_compact">%1$dh %2$02dm</string>
     <string name="dur_minutes">%1$dm</string>
     <string name="window_span">From %1$s %2$s to %3$s %4$s</string>
+    <!-- One half of the pill under the dial: a time and its day, "22:30
+         today", "9:00 AM Monday". The sentence above is what TalkBack reads
+         for the pair. -->
+    <string name="window_half">%1$s %2$s</string>
     <string name="window_span_same_day">From %1$s to %2$s %3$s</string>
     <string name="day_today">today</string>
     <string name="day_tomorrow">tomorrow</string>
@@ -153,28 +157,17 @@
          the second is the alarm the rule follows, and a door into the clock
          app. It was one row with a switch, then a split row - see DECISIONS,
          11 Sep 2026, for the whole walk. -->
-    <string name="section_sync_alarm">synchronize with alarm</string>
     <string name="row_end_at_alarm_title">End bedtime at your alarm</string>
     <!-- The headline while the phone has no alarm at all and the rule is on.
          A headline, so it must not wrap beside an icon and a switch: about
          14 characters in the widest script. -->
     <string name="row_no_alarm">No alarm set</string>
-    <!-- The face for an alarm that is NOT this night's - Monday's, seen on a
-         Friday. It led with the alarm ("Mon 07:30") over "Ends at 07:35",
-         which repeated the dial a third time and read as two competing end
-         times. Now it leads with what that means for tonight, and names
-         the alarm on the line below. The headline is titleMedium in a body
-         about 160dp wide: 17 Cyrillic characters, measured on the phone -
-         «Ночь без будильника» wrapped, so ru and uk say «Без будильника»
-         and their EMPTY headline moved to «Нет будильников» / «Немає
-         будильників» to stay distinct. -->
-    <string name="row_no_alarm_tonight">No alarm tonight</string>
-    <string name="row_alarm_next_on">Next: %1$s</string>
-    <!-- Under the switch while the alarm IS tonight's: which alarm the row
-         means, which is the tester's own question. Same budget - and at the
-         LARGE font size «Наступний будильник» wrapped and lifted the switch,
-         so the Slavic lines say «Ваш будильник» instead. -->
-    <string name="row_alarm_next">Next alarm</string>
+    <!-- Under an alarm that does not apply to the window this time - Monday's
+         07:30, seen on a Friday - the headline being the alarm with its day.
+         It said "Ends at 07:35" first (the dial's number a third time, and a
+         rival to the alarm's), then "No alarm tonight" - which assumed a
+         night, and a window can be a nap. The dial's own words instead. -->
+    <string name="row_alarm_not_in_window">Not in this sleep window</string>
     <!-- What TalkBack says the alarm row does: it opens the clock app. %1$s
          is that app's own name, read from the app that answers; the second is
          the fallback where no name can be read. Not drawn. -->
@@ -202,7 +195,7 @@
          25-character English one did not - so these are set for the widest
          script, and were checked by RENDERING the app in Ukrainian, which is
          where two of them were caught.
-         BUDGET-EACH 22 fx_grayscale_sub fx_dim_sub fx_dark_sub fx_ambient_sub fx_dim_dark_sub settings_language_why diagnostics_why reset_why row_alarm_next row_alarm_next_on row_alarm_set_any
+         BUDGET-EACH 22 fx_grayscale_sub fx_dim_sub fx_dark_sub fx_ambient_sub fx_dim_dark_sub settings_language_why diagnostics_why reset_why row_alarm_set_any
          A budget is ONE line: the parser's key list is [a-z0-9_ ]+, which does
          not cross a newline, so keys wrapped onto a second line are silently in
          no budget at all. These two sat there unmeasured until RowFitTest was

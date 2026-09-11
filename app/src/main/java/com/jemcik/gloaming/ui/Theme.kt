@@ -493,6 +493,24 @@ object Arc {
        ramp one stop along and takes it to 2.6:1. */
     fun nightOn(dark: Boolean): Color = if (dark) dusk else night
 
+    /* The window pill's two halves. On a dark ground they are EXACTLY the
+       handles' fills - night and dawn, the same two the dial paints - by the
+       owner's instruction; dusk, the ring's dark-ground stand-in for thin
+       strokes, was tried there and is not what the handles wear. On the light
+       theme the owner asked for a wash, "a bit": the
+       same two hues blended 20% toward the page ground - 65% was too much,
+       he said, and it had also cost the night half its light ink. At 20% the
+       light ink still reads at 5.1:1 on the night wash and the sun's ink at
+       7.9:1 on the dawn wash, both past 4.5 for bodyLarge; the next step, 25%,
+       leaves 4.6, and 30% fails. Computed, not screenshotted: the panel cannot
+       settle a colour. */
+    val nightWash = Color(0xFF57667D)
+    val dawnWash = Color(0xFFF6B185)
+    fun pillNight(dark: Boolean): Color = if (dark) night else nightWash
+    val onPillNight = Color(0xFFEEF1F5)
+    fun pillDawn(dark: Boolean): Color = if (dark) dawn else dawnWash
+    val onPillDawn: Color get() = onDawn
+
     fun stopsOn(dark: Boolean): List<Pair<Float, Color>> =
         if (dark) listOf(0f to dusk, 0.42f to dusk, 0.76f to ember, 1f to dawn) else stops
 }

@@ -72,7 +72,7 @@ indefinitely is background restriction — see `core/BackgroundLimit.kt`.
                                  where the clock fills it (Honor's does not).
                                  The list's activity is behind the NORMAL
                                  SET_ALARM permission, declared, and the app
-                                 that answers is named on the chip
+                                 that answers is named to TalkBack
     core/Delivery.kt             the one rule AlarmWatch and BackgroundProbe
                                  share: delivered means ARRIVED ON TIME
     core/ScreenEffects.kt        does this phone APPLY the rule's device
@@ -230,12 +230,14 @@ is in DECISIONS.md.
   that has rung, so after a one-time alarm the rule is off until switched on
   again. The SECTION IS ALWAYS DRAWN - it used to leave with the switch, and a
   control must never remove itself when used. The row carries the live state -
-  "Next alarm" under tonight's, "No alarm tonight" over "Next: Mon 07:30"
-  when it is another morning's, "No alarm set" over what the body does -
-  never when bedtime ends, which the dial says three times already. The platform names ONE alarm,
+  the time alone when it is this window's, "Mon 07:30" over "Not in this
+  sleep window" when it is not - never "tonight": a window can be a nap -
+  and "No alarm set" over what the row does; never when bedtime ends, which
+  the dial says three times already. The platform names ONE alarm,
   the next to ring; there is no list to choose from, so the row says which one
   the way the lock screen does. The section is TWO
-  ROWS WITH TWO ROLES under "synchronize with alarm": the rule, a switch row
+  ROWS WITH TWO ROLES, straight under the window pill with no heading and no
+  rule above - the first row's title is the heading: the rule, a switch row
   with its own title and no icon; and the alarm row - icon, its face, and
   OPEN-IN-NEW, not a chevron, because the tap leaves for the clock app. Four
   shapes preceded it in one day and DECISIONS has them: twin rows with a

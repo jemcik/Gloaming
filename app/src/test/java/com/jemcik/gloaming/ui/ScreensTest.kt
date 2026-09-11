@@ -833,10 +833,8 @@ class ScreensTest {
         compose.onNodeWithText(
             ctx().getString(R.string.dial_until, t(alarm)).uppercase()
         ).assertExists()
-        // The row says which alarm it is while it is tonight's, and not
-        // what the handle would have done.
-        compose.onNodeWithText(ctx().getString(R.string.row_alarm_next)).assertExists()
-        compose.onNodeWithText(ctx().getString(R.string.row_no_alarm_tonight)).assertDoesNotExist()
+        // The alarm the window follows is the time alone: no second line.
+        compose.onNodeWithText(ctx().getString(R.string.row_alarm_not_in_window)).assertDoesNotExist()
     }
 
     @Test
@@ -1002,10 +1000,11 @@ class ScreensTest {
         home()
 
         val day = at.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault())
-        // Leads with what it means for tonight; the alarm, with its day, on
-        // the line beneath. Never "Ends at": the dial already says that.
-        compose.onNodeWithText(ctx().getString(R.string.row_no_alarm_tonight)).assertExists()
-        compose.onNodeWithText(ctx().getString(R.string.row_alarm_next_on, "$day " + t(at.toLocalTime()))).assertExists()
+            .replaceFirstChar { it.titlecase(Locale.getDefault()) }
+        // The alarm with its day, and that it does not apply - in the
+        // dial's words, never "tonight". Never "Ends at": the dial says that.
+        compose.onNodeWithText("$day " + t(at.toLocalTime())).assertExists()
+        compose.onNodeWithText(ctx().getString(R.string.row_alarm_not_in_window)).assertExists()
         compose.onNode(hasText(ctx().getString(R.string.row_end_at_alarm_title)) and isToggleable()).assertExists()
         compose.onNodeWithText(ctx().getString(R.string.label_wake_up).uppercase()).assertExists()
     }
@@ -1040,9 +1039,8 @@ class ScreensTest {
         home()
 
         compose.onNodeWithText(ctx().getString(R.string.row_no_alarm)).assertExists()
-        compose.onNodeWithText(
-            ctx().getString(R.string.section_sync_alarm).uppercase()
-        ).assertExists()
+        // The rule row is there to be switched on once an alarm exists.
+        compose.onNode(hasText(ctx().getString(R.string.row_end_at_alarm_title)) and isToggleable()).assertExists()
     }
 
     @Test

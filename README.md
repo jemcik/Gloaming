@@ -81,14 +81,15 @@ doing it, or on any vendor doing it at all.
   Saturday and the window runs from Friday evening to Saturday morning — so
   asking for the weekend means Friday and Saturday nights.
 - **End bedtime at your alarm.** The next alarm sets when the night ends. Turn
-  it on and the window ends at your alarm whenever the alarm is that night's —
-  after bedtime began, on the morning the window ends on — earlier than the wake
-  time you set or later. A morning with no alarm on it, or an alarm on another
-  day (Monday's, seen from Friday night), ends at your own wake time, which the
-  app never touches. Dragging the wake time, or setting it in the picker, is how
-  you let go of the alarm. The row says which alarm it means — the next one to
-  ring, the one on your lock screen, which is the only one Android will name —
-  with its day when it is not tonight's, and opens your clock app's alarm list.
+  it on and the window ends at your alarm whenever the alarm is that window's —
+  after bedtime began, on the day the window ends on — earlier than the wake
+  time you set or later. A window with no alarm on its ending day, or an alarm
+  on another day (Monday's, seen on a Friday), ends at your own wake time, which
+  the app never touches. Dragging the wake time, or setting it in the picker, is
+  how you let go of the alarm. The alarm row says which alarm it means — the
+  next one to ring, the one on your lock screen, which is the only one Android
+  will name — with its day when it is not this window's, and tapping it opens
+  your clock app's alarm list.
   Android's own rule lets an alarm end a schedule only *early*, and this app
   once copied the alarm into the wake time at the tap; DECISIONS records why
   both went.

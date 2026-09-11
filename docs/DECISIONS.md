@@ -1332,6 +1332,21 @@ bool picks the un-named form there, and the named translations stay
 complete for lint. `SplitSwitchRow` is gone; `LinkRow` took a `trailing`
 icon.
 
+Three more of the owner's, the same evening. The alarm row's faces lost
+"tonight" - "No alarm tonight" assumed a night, and a window can be a nap -
+and now say what the dial says: the time alone for this window's alarm,
+"Mon 07:30" over "Not in this sleep window" for another day's. The section
+heading and the rule above it went: the first row's title says what the card
+is, and the card sits straight under the window as part of it. And the
+window sentence became a PILL in two halves, the arc's night and dawn with
+the handles' own inks - a plain pill on the card ground was not distinct in
+either theme, and of six sketches this was his - measured before layout so
+that at a large font the halves become two whole pills stacked rather than
+a half-round block over another; TalkBack hears the one sentence. On the
+light theme the halves are washed 20% toward the page: 65% was "too much"
+and had cost the night half its light ink; 20% keeps it at 5.1:1. On the
+dark theme they are exactly the handles' fills, by instruction.
+
 The first build of the drag jumped. The handle sits on the alarm while tonight
 follows it, and the dial drew the grabbed wake handle from `end` - the
 setting - from the instant of the grab, so a finger resting on 10:00 watched

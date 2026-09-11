@@ -31,6 +31,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.clip
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.*
@@ -782,25 +783,13 @@ private fun WindowBlock(
         // The window in words, under the dial. The dial says this
         // spatially and the centre as a duration; neither answers which
         // morning. See windowSentence.
-        windowSentence(ctx, prefs, s.start, s.end, s.days, exitAtAlarm = s.endAtAlarm)?.let { line ->
+        // The window in words, under the dial: the arc's two ends as a
+        // two-tone pill. The dial says this spatially and the centre as a
+        // duration; neither answers which morning. See windowHalves.
+        windowHalves(ctx, prefs, s.start, s.end, s.days, exitAtAlarm = s.endAtAlarm)?.let { halves ->
+            val sentence = windowSentence(ctx, prefs, s.start, s.end, s.days, exitAtAlarm = s.endAtAlarm) ?: ""
             Spacer(Modifier.height(TIGHT))
-            Text(
-                line,
-                // BALANCED, so the last line is not one orphaned word. Centred
-                // text wrapping greedily puts as much as it can on line one and
-                // the remainder on line two, which at a large system font left
-                // «С 11:00 PM сегодня до 8:30 AM» over a lone «завтра». Balanced
-                // shares the words out instead - the same thing CSS calls
-                // text-wrap: balance. It costs nothing when the sentence fits on
-                // one line, which is the usual case.
-                style = MaterialTheme.typography.bodyLarge.copy(
-                    lineBreak = LineBreak.Paragraph.copy(
-                        strategy = LineBreak.Strategy.Balanced
-                    )
-                ),
-                color = g.onSurfaceLow,
-                textAlign = TextAlign.Center
-            )
+            WindowPill(halves, sentence)
         }
     }
 }
@@ -871,38 +860,42 @@ private fun EndsSection(s: HomeState) {
     // nominative is all a label needs; the sentences under the dial decline
     // the weekday and keep their own tables for it.
     val alarmOnDay = alarm?.let {
-        it.dayOfWeek.getDisplayName(TextStyle.SHORT, locale) + " " + hhmm(ctx, it.hour, it.minute)
+        it.dayOfWeek.getDisplayName(TextStyle.SHORT, locale).replaceFirstChar { c -> c.titlecase(locale) } +
+            " " + hhmm(ctx, it.hour, it.minute)
     }
     val headline = when {
         alarm == null -> res.getString(R.string.row_no_alarm)
         tonights -> hhmm(ctx, alarm.hour, alarm.minute)
-        // Not this night's: lead with what that means for tonight, and
-        // name the alarm on the line below.
-        else -> res.getString(R.string.row_no_alarm_tonight)
+        // Not this window's: the alarm with its day, so the reader sees
+        // which alarm the app is looking at and when it is.
+        else -> alarmOnDay ?: ""
     }
     // The app the body opens, by its own name - the alarm's own app where its
     // showIntent names one, so asked as often as the alarm is.
     val app = remember(s.tick) { Doors.alarmsApp(ctx) }
-    // What the second line is FOR differs per face. Under tonight's alarm it
-    // says which alarm; under another morning's it says what tonight ends
-    // at instead, because the row names a time the dial does not. Under "No
-    // alarm set" there is no contradiction to resolve - the dial, the
-    // sentence and the bar already say when bedtime ends - so it says the
-    // one thing the empty state needs: what the body does. Nothing at all
-    // where there is no app to open.
+    // The second line, where one is needed. The alarm the window follows
+    // needs none: the time is the whole fact, and the heading says what it
+    // is for. An alarm on another day says that it does not apply, in the
+    // dial's own words - never "tonight", since a window can be a nap. "No
+    // alarm set" says what the body does, and nothing where there is no
+    // app to open. None of them repeats when bedtime ends: the dial, the
+    // sentence and the bar say that three times already.
     val supporting = when {
         alarm == null -> if (!hasDoor) null
             else if (app != null && res.getBoolean(R.bool.alarm_set_names_app))
                 res.getString(R.string.row_alarm_set, app)
             else res.getString(R.string.row_alarm_set_any)
-        tonights -> res.getString(R.string.row_alarm_next)
-        else -> res.getString(R.string.row_alarm_next_on, alarmOnDay)
+        tonights -> null
+        else -> res.getString(R.string.row_alarm_not_in_window)
     }
 
     val openLabel = if (app != null) res.getString(R.string.chip_open_app, app)
     else res.getString(R.string.chip_open_alarms)
 
-    Section(stringResource(R.string.section_sync_alarm)) {
+    // No heading and no rule above: the first row's own title says what the
+    // card is, and a heading over it said it a second time. The card sits
+    // under the sentence as part of the window it acts on. Owner's proposal.
+    Column(Modifier.fillMaxWidth()) {
         GroupedList(card, listOf(
             {
                 // The rule. Its own title, no icon: a row that governs the

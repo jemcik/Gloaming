@@ -49,23 +49,16 @@ import java.util.Locale
  * so the day words cannot drift from what is scheduled: a one-off, a window five
  * days out and a window running right now each name their own days.
  */
+/** The window's two ends, as instants. Null with nothing scheduled. */
 @Composable
-internal fun windowSentence(
+internal fun windowSpan(
     ctx: Context,
     prefs: Prefs,
     start: LocalTime,
     end: LocalTime,
     days: Set<DayOfWeek>,
-    /**
-     * The screen's own value, not the stored one: during a wake-handle drag
-     * following ends at the first movement and prefs are written on release,
-     * and this sentence was the one reader still naming the alarm while the
-     * finger, the numeral and the arc had all moved away from it.
-     */
     exitAtAlarm: Boolean = prefs.exitAtAlarm
-): String? {
-    val res = ctx.resources
-    val locale = LocalLocale.current.platformLocale
+): Pair<LocalDateTime, LocalDateTime>? {
     val now = LocalDateTime.now()
     // The window you are IN, or else the next one - and "in" is asked with
     // enabled = true regardless of the switch, deliberately.
@@ -81,10 +74,7 @@ internal fun windowSentence(
     //
     // Asked WITH the alarm, because it can extend a night past the handle:
     // asked without it at 08:45 under a 09:00 alarm this said the night was
-    // over and named tomorrow's. It used to be asked without on purpose - the
-    // end was only ever wanted to work back to where the window BEGAN, and an
-    // alarm-moved end minus the full duration is not a start time. The window
-    // now says where it began directly, so nothing is worked back.
+    // over and named tomorrow's. The window now says where it began directly.
     val alarm = Scheduler.endingAlarm(ctx, exitAtAlarm)
     val running = Scheduler.liveWindow(
         enabled = true, activeDay = prefs.activeDay,
@@ -92,14 +82,29 @@ internal fun windowSentence(
         alarm = alarm, exitAtAlarm = exitAtAlarm, endedAt = Scheduler.endedAt(prefs)
     )
     val from = (running?.began ?: Scheduler.nextStart(start, end, days, now)) ?: return null
-    // The alarm belongs on the OTHER end. Without it this sentence said "to 8:30
-    // AM today" while the app bar and the alarm row both said 7:30 - the same
-    // screen answering "when does tonight end" two ways. endAt is the rule
-    // itself, so an alarm on another morning still changes nothing here.
-    val to = Scheduler.endAt(
-        from, from.plus(Scheduler.duration(start, end)), alarm, exitAtAlarm
-    )
+    // The alarm belongs on the OTHER end. Without it this said "to 8:30 AM
+    // today" while the app bar said 7:30 - the same screen answering "when
+    // does tonight end" two ways. endAt is the rule itself.
+    val to = Scheduler.endAt(from, from.plus(Scheduler.duration(start, end)), alarm, exitAtAlarm)
+    return from to to
+}
 
+/**
+ * The window as ONE sentence - "From 11:05 PM today to 7:15 AM tomorrow".
+ * What a screen reader gets for the pill, and what the tests read.
+ */
+@Composable
+internal fun windowSentence(
+    ctx: Context,
+    prefs: Prefs,
+    start: LocalTime,
+    end: LocalTime,
+    days: Set<DayOfWeek>,
+    exitAtAlarm: Boolean = prefs.exitAtAlarm
+): String? {
+    val res = ctx.resources
+    val now = LocalDateTime.now()
+    val (from, to) = windowSpan(ctx, prefs, start, end, days, exitAtAlarm) ?: return null
     fun day(at: LocalDateTime): String = dayWord(ctx, at, now, DaySlot.SPAN)
     // One day word when both ends fall on it. "From 2:40 AM tomorrow to 8:40 AM
     // tomorrow" is correct and says it twice.
@@ -111,6 +116,31 @@ internal fun windowSentence(
         hhmm(ctx, from.hour, from.minute), day(from),
         hhmm(ctx, to.hour, to.minute), day(to)
     )
+}
+
+/**
+ * The window as TWO halves - "22:30 today" and "9:00 AM tomorrow" - for the
+ * pill under the dial, which paints them in the arc's night and dawn. Each
+ * half is a time and a day standing on its own, so the weekday takes the
+ * NOTE form, the one with its preposition inside ("у понеділок"), not the
+ * genitive the sentence uses after "до".
+ */
+@Composable
+internal fun windowHalves(
+    ctx: Context,
+    prefs: Prefs,
+    start: LocalTime,
+    end: LocalTime,
+    days: Set<DayOfWeek>,
+    exitAtAlarm: Boolean = prefs.exitAtAlarm
+): Pair<String, String>? {
+    val res = ctx.resources
+    val now = LocalDateTime.now()
+    val (from, to) = windowSpan(ctx, prefs, start, end, days, exitAtAlarm) ?: return null
+    fun half(at: LocalDateTime) = res.getString(
+        R.string.window_half, hhmm(ctx, at.hour, at.minute), dayWord(ctx, at, now, DaySlot.NOTE)
+    )
+    return half(from) to half(to)
 }
 
 /**

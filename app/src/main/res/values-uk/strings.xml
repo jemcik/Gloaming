@@ -17,6 +17,7 @@
     <string name="dur_compact">%1$dг %2$02dхв</string>
     <string name="dur_minutes">%1$dхв</string>
     <string name="window_span">З %1$s %2$s до %3$s %4$s</string>
+    <string name="window_half">%1$s %2$s</string>
     <string name="window_span_same_day">З %1$s до %2$s %3$s</string>
     <string name="day_today">сьогодні</string>
     <string name="day_tomorrow">завтра</string>
@@ -88,12 +89,9 @@
 
     <!-- ============ Home: which days ============ -->
     <string name="section_which_days">в які дні</string>
-    <string name="section_sync_alarm">синхронізація з будильником</string>
     <string name="row_end_at_alarm_title">Вимикати за будильником</string>
     <string name="row_no_alarm">Немає будильників</string>
-    <string name="row_no_alarm_tonight">Ніч без будильника</string>
-    <string name="row_alarm_next_on">Найближчий: %1$s</string>
-    <string name="row_alarm_next">Найближчий будильник</string>
+    <string name="row_alarm_not_in_window">Не в цьому проміжку сну</string>
     <string name="chip_open_app">Відкрити %1$s</string>
     <string name="chip_open_alarms">Відкрити будильники</string>
     <string name="row_alarm_set">Торкніться, щоб додати в %1$s</string>

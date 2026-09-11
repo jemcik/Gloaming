@@ -394,15 +394,17 @@ class RowFitTest {
         val ctx = ApplicationProvider.getApplicationContext<android.content.Context>()
         val loc = Locale.forLanguageTag(locale)
         val time = "12:30 AM"
-        val heading = ctx.getString(R.string.section_sync_alarm)
+        val heading = ctx.getString(R.string.section_which_days)
         // The widest short day name the locale has, for the not-tonight face.
-        val day = DayOfWeek.entries.map { it.getDisplayName(TextStyle.SHORT, loc) }.maxByOrNull { it.length }!!
+        val day = DayOfWeek.entries
+            .map { it.getDisplayName(TextStyle.SHORT, loc).replaceFirstChar { c -> c.titlecase(loc) } }
+            .maxByOrNull { it.length }!!
         // The rule row, then every face the alarm row has: tonight's alarm
         // (which alarm it is), another morning's (what that means for
         // tonight, and the alarm with its day), and no alarm at all.
         val rows = listOf(
-            time to ctx.getString(R.string.row_alarm_next),
-            ctx.getString(R.string.row_no_alarm_tonight) to ctx.getString(R.string.row_alarm_next_on, "$day $time"),
+            time to null,
+            "$day $time" to ctx.getString(R.string.row_alarm_not_in_window),
             ctx.getString(R.string.row_no_alarm) to
                 if (ctx.resources.getBoolean(R.bool.alarm_set_names_app)) ctx.getString(R.string.row_alarm_set, "Clock")
                 else ctx.getString(R.string.row_alarm_set_any)

@@ -87,12 +87,13 @@ class WindowSentenceTest {
                 Home(rememberScrollState(), onOpenSettings = {}, onOpenInterruptions = {})
             }
         }
+        // The pill draws the window as two halves and SPEAKS it as the one
+        // sentence, which is what these tests read.
         val opener = ctx().getString(R.string.window_span).substringBefore(" %1")
         return compose
-            .onAllNodes(SemanticsMatcher.keyIsDefined(SemanticsProperties.Text), useUnmergedTree = true)
+            .onAllNodes(SemanticsMatcher.keyIsDefined(SemanticsProperties.ContentDescription))
             .fetchSemanticsNodes()
-            .flatMap { it.config.getOrNull(SemanticsProperties.Text).orEmpty() }
-            .map { it.text }
+            .flatMap { it.config.getOrNull(SemanticsProperties.ContentDescription).orEmpty() }
             .first { it.startsWith(opener) }
     }
 

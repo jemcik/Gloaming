@@ -120,14 +120,17 @@ fun BedtimeDial(
     start: LocalTime,
     end: LocalTime,
     /**
-     * Where the night will ACTUALLY end tonight, when an alarm is cutting it
-     * short; null when nothing overrides [end].
+     * Where the night will ACTUALLY end tonight, when the next alarm is
+     * setting it - earlier than [end] or later; null when nothing overrides
+     * [end].
      *
      * The dial draws this and edits [end]. They are the same value almost
-     * always, and when they are not it is because "at your alarm" is on with an
-     * alarm inside the window - in which case the arc, the handle and the
-     * numeral above all have to show the shorter night, or the screen contains
-     * a window that is not going to happen. Reported exactly that way.
+     * always, and when they are not it is because "at your alarm" is on with
+     * an alarm that is tonight's - in which case the arc, the handle and the
+     * numeral above all have to show the night as the alarm makes it, or the
+     * screen contains a window that is not going to happen. Reported exactly
+     * that way. Dragging the handle then lets go of the alarm, so the finger
+     * takes [end] from where the alarm was drawn; see HomeState.commitWake.
      */
     endTonight: LocalTime? = null,
     now: LocalTime,

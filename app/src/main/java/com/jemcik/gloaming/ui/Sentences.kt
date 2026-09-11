@@ -71,20 +71,24 @@ internal fun windowSentence(
     // begins immediately, because liveWindowEnd treats a one-off as running the
     // moment the switch is on. The sentence would have promised tomorrow and
     // the app would have started that second.
-    // Deliberately asked WITHOUT the alarm, because this answer is only used to
-    // find where the window BEGAN - and an alarm-shortened end minus the full
-    // duration is not a start time, it is nonsense an hour before the real one.
-    val endsAt = Scheduler.liveWindowEnd(
+    //
+    // Asked WITH the alarm, because it can extend a night past the handle:
+    // asked without it at 08:45 under a 09:00 alarm this said the night was
+    // over and named tomorrow's. It used to be asked without on purpose - the
+    // end was only ever wanted to work back to where the window BEGAN, and an
+    // alarm-moved end minus the full duration is not a start time. The window
+    // now says where it began directly, so nothing is worked back.
+    val alarm = Scheduler.endingAlarm(ctx, prefs.exitAtAlarm)
+    val running = Scheduler.liveWindow(
         enabled = true, activeDay = prefs.activeDay,
-        start = start, end = end, days = days, from = now
+        start = start, end = end, days = days, from = now,
+        alarm = alarm, exitAtAlarm = prefs.exitAtAlarm, endedAt = Scheduler.endedAt(prefs)
     )
-    val from = (endsAt?.minus(Scheduler.duration(start, end))
-        ?: Scheduler.nextStart(start, end, days, now)) ?: return null
+    val from = (running?.began ?: Scheduler.nextStart(start, end, days, now)) ?: return null
     // The alarm belongs on the OTHER end. Without it this sentence said "to 8:30
     // AM today" while the app bar and the alarm row both said 7:30 - the same
     // screen answering "when does tonight end" two ways. endAt is the rule
-    // itself, so a 2pm alarm outside the window still changes nothing here.
-    val alarm = Scheduler.endingAlarm(ctx, prefs.exitAtAlarm)
+    // itself, so an alarm on another morning still changes nothing here.
     val to = Scheduler.endAt(
         from, from.plus(Scheduler.duration(start, end)), alarm, prefs.exitAtAlarm
     )
@@ -221,7 +225,9 @@ fun statusLine(
      * Can the app actually do the job - both permissions in place? Without them
      * every path here is a promise it cannot keep.
      */
-    ready: Boolean = true
+    ready: Boolean = true,
+    /** The last END's due instant - a night closed by it is not "on until". */
+    endedAt: LocalDateTime? = null
 ): String {
     if (!enabled) return res.getString(R.string.bedtime_off)
     // BEFORE any countdown. Revoke Do Not Disturb access mid-schedule and the
@@ -237,7 +243,7 @@ fun statusLine(
     // The end the alarm actually produces, so the bar and the rule agree - and
     // so flipping the switch changes the headline reading, not just a subtitle.
     val ends = Scheduler.liveWindowEnd(
-        enabled, activeDay, start, end, days, now, alarm, exitAtAlarm
+        enabled, activeDay, start, end, days, now, alarm, exitAtAlarm, endedAt
     )
     if (ends != null) {
         return res.getString(R.string.state_on_until, hhmm(ctx, ends.hour, ends.minute))

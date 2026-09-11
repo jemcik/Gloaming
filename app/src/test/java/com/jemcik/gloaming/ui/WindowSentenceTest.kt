@@ -146,18 +146,38 @@ class WindowSentenceTest {
     }
 
     @Test
-    fun `an alarm PAST the window changes nothing`() {
-        // endAt's own rule, copied from AOSP: the alarm ends the night only when
-        // it falls INSIDE it. A 2pm alarm is a real alarm and naming it here
-        // would promise something that is never going to happen.
+    fun `a later alarm on the same morning is the hour the sentence ends on`() {
+        // The alarm extends the night now - see Scheduler.endAt. It and the
+        // handle's end must share a calendar day, and for the hour before
+        // midnight they do not; then the handle stands, and the test says so
+        // rather than passing only in the hours it was written in. The rule
+        // itself is pinned in SchedulerTest; this pins that the sentence asks.
+        val wakeAt = LocalDateTime.now().plusHours(6).withSecond(0).withNano(0)
+        val alarmAt = wakeAt.plusHours(1)
+        setAlarm(alarmAt)
+        val s = sentence(
+            enabled = true, from = now.minusHours(2), to = wakeAt.toLocalTime(),
+            days = DayOfWeek.entries.toSet(), exitAtAlarm = true
+        )
+        val expected = if (alarmAt.toLocalDate() == wakeAt.toLocalDate()) alarmAt else wakeAt
+        assertTrue(
+            "the sentence must end where the night does: $s",
+            s.contains(hhmm(ctx(), expected.hour, expected.minute))
+        )
+    }
+
+    @Test
+    fun `an alarm on another morning changes nothing`() {
+        // Monday's alarm, seen from Friday night. Naming it here would promise
+        // a night that is never going to happen.
         val wake = now.plusHours(6)
-        setAlarm(LocalDateTime.now().plusHours(9).withSecond(0).withNano(0))
+        setAlarm(LocalDateTime.now().plusDays(2).withSecond(0).withNano(0))
         val s = sentence(
             enabled = true, from = now.minusHours(2), to = wake,
             days = DayOfWeek.entries.toSet(), exitAtAlarm = true
         )
         assertTrue(
-            "a later alarm must leave the wake time alone: $s",
+            "an alarm on another morning must leave the wake time alone: $s",
             s.contains(hhmm(ctx(), wake.hour, wake.minute))
         )
     }

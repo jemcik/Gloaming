@@ -104,7 +104,7 @@ class HomeState(
      */
     var justAdopted by mutableStateOf<RoutineEffect?>(null)
 
-    /** Whether the morning alarm may end the night early. */
+    /** Whether the next alarm sets when the night ends. See [Scheduler.endAt]. */
     var endAtAlarm by mutableStateOf(prefs.exitAtAlarm)
 
     var missedBoot by mutableStateOf(BootWatch.missed(prefs))
@@ -160,27 +160,54 @@ class HomeState(
     }
 
     /**
+     * Tonight's window as the SCHEDULE describes it - the one running, or else
+     * the next - before the alarm has its say. Null with nothing to run.
+     *
+     * The running one is found WITH the alarm, because the alarm can now
+     * extend a night past the handle: asked without it at 08:45 under a 09:00
+     * alarm this would answer "over" and hand back tomorrow's window while zen
+     * was still on. The end returned is the scheduled one regardless; the
+     * alarm is applied by the callers, each in its own way.
+     */
+    private fun scheduledTonight(): Scheduler.Window? {
+        val dur = Scheduler.duration(start, end)
+        val running = Scheduler.liveWindow(
+            prefs, start, end, days, alarm = Scheduler.endingAlarm(ctx, endAtAlarm)
+        )
+        val began = running?.began ?: Scheduler.nextStart(start, end, days) ?: return null
+        return Scheduler.Window(began, began.plus(dur))
+    }
+
+    /**
      * WHAT TONIGHT ACTUALLY ENDS AT, which is not always the wake handle.
      *
-     * With "at your alarm" on and an alarm inside the window, the night ends
+     * With "at your alarm" on and an alarm that is tonight's, the night ends
      * at the alarm, and every reading that names tonight's end has to say so -
-     * the numeral, the arc, the handle, the countdown, the sentence, and now
-     * the missed-END card's "it will know at". Shipping the alarm to some of
+     * the numeral, the arc, the handle, the countdown, the sentence, and the
+     * missed-END card's "it will know at". Shipping the alarm to some of
      * them and not others produced one screen giving two answers to when
      * tonight ends, which is what was reported, twice. Derived HERE, once, and
      * called from wherever the answer is drawn.
      */
-    fun endsTonight(): LocalDateTime? {
-        val dur = Scheduler.duration(start, end)
-        val scheduled = Scheduler.liveWindowEnd(prefs, start, end, days)
-            ?: Scheduler.nextStart(start, end, days)?.plus(dur)
-        return scheduled?.let {
-            Scheduler.endAt(
-                it.minus(dur), it,
-                Scheduler.endingAlarm(ctx, endAtAlarm), endAtAlarm
-            )
-        }
+    fun endsTonight(): LocalDateTime? = scheduledTonight()?.let {
+        Scheduler.endAt(it.began, it.ends, Scheduler.endingAlarm(ctx, endAtAlarm), endAtAlarm)
     }
+
+    /**
+     * Is [alarm] THIS NIGHT'S - the one tonight would end at, were the switch
+     * on? Asked with the switch forced on, deliberately: the row shows the
+     * alarm's day whenever it is not tonight's, whatever the switch says.
+     */
+    fun alarmIsTonights(alarm: LocalDateTime): Boolean = scheduledTonight()?.let {
+        Scheduler.endAt(it.began, it.ends, alarm, exitAtAlarm = true) == alarm
+    } ?: false
+
+    /**
+     * Tonight ends at the next alarm: the switch is on and the alarm is
+     * tonight's. The state the dial marks - WAKE UP becomes NEXT ALARM.
+     */
+    fun followingAlarm(): Boolean =
+        endAtAlarm && Scheduler.nextAlarm(ctx)?.let { alarmIsTonights(it) } == true
 
     /**
      * This phone was measured holding one of our alarms, so bedtime cannot be
@@ -364,36 +391,36 @@ class HomeState(
     }
 
     /**
-     * The wake handle and "at your alarm" are ONE state, in two directions.
+     * The switch's whole action: a standing rule, on or off. Nothing moves.
      *
-     * Turning it on sets the wake time to the alarm; setting the wake time to
-     * the alarm turns it on, and moving it away turns it off. So the dial and
-     * the switch cannot disagree, which is what all the trouble was: the screen
-     * held a wake time of 8:30 and an effective end of 7:30 at the same moment
-     * and had to show both somewhere.
-     *
-     * [followAlarm] is the switch's whole action. Unguarded on purpose - an
-     * alarm at 2pm really would make the night nineteen hours, and the row says
-     * which two times it is choosing between before the tap, so it is a visible
-     * choice rather than a surprise, and one tap back undoes it.
+     * It used to COPY the alarm into the wake handle, so that "on" meant "the
+     * handle equals the alarm" and the two could not disagree. They could,
+     * the moment the alarm moved in the clock app: an earlier alarm shortened
+     * the night while the handle kept the OLD alarm's time for every other
+     * morning, and a later one was ignored while the row went on naming it.
+     * And the user's own wake time was gone. The handle is now theirs, and it
+     * is what a morning with no alarm on it falls back to; the alarm is drawn
+     * over it on the nights it applies, see [followingAlarm].
      */
     fun followAlarm(on: Boolean) {
         haptics.toggle(on)
         endAtAlarm = on
-        if (on) Scheduler.nextAlarm(ctx)?.let { end = it.toLocalTime() }
         commit()
     }
 
     /**
-     * The other direction: a wake time that lands on the alarm IS following it.
+     * The wake handle moved by hand - dragged, or set in the picker - so the
+     * night no longer follows the alarm: the one direction the link has.
+     * A time set by hand IS the wake time, and following would draw the handle
+     * straight back onto the alarm, over the finger that just moved it away.
      *
-     * Separate from [commit] rather than folded into it, because the switch
-     * commits too - and re-deriving there would read "the wake time still equals
-     * the alarm" one instant after the user switched it OFF, and turn it back on.
+     * Only a MOVE switches it off. A handle grabbed and let go where it was,
+     * or set to the time it already held, is not a change of mind. Separate
+     * from [commit] because the switch commits too, and must not switch itself
+     * off for it.
      */
     fun commitWake() {
-        val alarm = Scheduler.nextAlarm(ctx)?.toLocalTime()
-        endAtAlarm = alarm != null && end == alarm
+        if (end != prefs.endTime) endAtAlarm = false
         commit()
     }
 
@@ -486,9 +513,15 @@ class HomeState(
         if (key == null || key == Prefs.KEY_ENABLED) enabled = prefs.enabled
     }
 
-    /** "Are we inside the window" is a different question from "is it armed". */
+    /**
+     * "Are we inside the window" is a different question from "is it armed".
+     * WITH the alarm: it can extend a night past the handle, and asked without
+     * it this said "not running" at 08:45 while zen ran to a 09:00 alarm.
+     */
     fun insideWindow(): Boolean =
-        Scheduler.liveWindowEnd(prefs, start, end, days) != null
+        Scheduler.liveWindowEnd(
+            prefs, start, end, days, alarm = Scheduler.endingAlarm(ctx, endAtAlarm)
+        ) != null
 
     fun runningNow(): Boolean = enabled && insideWindow()
 }

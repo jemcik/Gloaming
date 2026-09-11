@@ -576,6 +576,20 @@ internal fun PhaseGlyph(moon: Boolean, tint: Color, ground: Color) {
     }
 }
 
+/* The alarm's own mark in the sun's place, for the nights that end at the next
+   alarm: the overline reads NEXT ALARM and the glyph says so a second way, the
+   same reasoning the moon and sun were added under. Google's path, at the
+   glyphs' size, in the sun's ink.                                            */
+@Composable
+internal fun AlarmGlyph(tint: Color) {
+    Icon(
+        painterResource(R.drawable.ic_alarm),
+        contentDescription = null,
+        modifier = Modifier.size(13.dp),
+        tint = tint
+    )
+}
+
 /* Every role the picker reads, named. Leave one out and Material's baseline
    palette supplies it - which is where the violet came from.                 */
 @OptIn(ExperimentalMaterial3Api::class)

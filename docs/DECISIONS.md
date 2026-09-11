@@ -1136,6 +1136,110 @@ delivery (`+tmpwhitelist=… com.jemcik.gloaming.END/u0`) and every foreground
 session, and works on the Play build where `run-as` and the journal do not.
 Whether "Manage manually" lifts the alignment is settled only by the next END.
 
+**"End bedtime at your alarm" sets the end both ways, 11 Sep 2026.** A
+closed-testing user with several alarms asked which one the row meant, and
+whether changing the alarm in the clock app would change the wake time. Two
+honest answers, both bad: "the next one to ring", which the row never said,
+and "only if you move it earlier". The section had been built on AOSP's rule -
+`ScheduleCalendar.shouldExitForAlarm`, the alarm ends the night only from
+INSIDE the window - with one addition of this app's own: switching on COPIED
+the alarm into the wake handle, so that "on" meant "the handle equals the
+alarm" and the dial and the switch could not disagree. They could, the moment
+the alarm moved:
+
+- An earlier alarm shortened the night, correctly, while the handle kept the
+  OLD alarm's time - which a weekday alarm had made every morning's wake time,
+  weekends included. The user's own wake time was gone at the tap.
+- A later alarm was ignored while the row went on naming it. The phone in hand
+  was the case exactly: two "Good morning" alarms, weekdays 07:30 and weekends
+  09:00, a window 22:30-08:30, on a Friday. "End bedtime at your alarm, 09:00"
+  ON, and bedtime ending at 08:30.
+- The section vanished with the alarm and the rule stayed on, silently.
+- Dragging the handle onto the alarm switched the rule on with no tap.
+
+What the platform gives, so the fix is honest about it: ONE alarm.
+`getNextAlarmClock` returns the next alarm clock to ring, its time and a
+`showIntent` - no list, no label, no other API. "Which alarm" is therefore
+answered the way the lock screen answers it. The `showIntent` opens that alarm
+in the app that set it where the clock fills it; AOSP and Samsung do, Honor's
+Clock leaves it **null**, read from `dumpsys alarm`. So the door is the alarm
+LIST, `AlarmClock.ACTION_SHOW_ALARMS`, which Honor's Clock resolves to
+`AlarmsMainActivity` and every stock clock answers. It is NOT
+`ACTION_SET_ALARM` with the wake time filled in, which read as the obvious
+door: measured, with and without hour and minute extras, it opened the editor
+of the FIRST EXISTING alarm - 07:30 Mon-Fri, "Good morning" - ignored every
+extra and created nothing; on Google's Clock the same intent creates the alarm
+outright and shows no editor. Package visibility hides `SHOW_ALARMS` from
+`resolveActivity` unless the manifest's `<queries>` declares the intent, so
+it does. And resolving is not opening: the first build drew the row, and a
+tap did nothing. `ActivityTaskManager` said why, readably, once logcat was
+cleared and the tap repeated with the app actually in front - the first
+repeat had landed on the launcher, because the Back after the dead tap had
+left the app:
+
+    Permission Denial: starting Intent { act=android.intent.action.SHOW_ALARMS
+    cmp=com.hihonor.deskclock/com.android.deskclock.HandleSetAlarm } from
+    ProcessRecord{... com.jemcik.gloaming} requires
+    com.android.alarm.permission.SET_ALARM
+
+AOSP's clock guards the one activity that answers both SET_ALARM and
+SHOW_ALARMS with that permission, and Honor's inherits it. It is `normal`,
+granted at install with no prompt, and only has to be DECLARED; the manifest
+now does, and `Doors.openAlarms` journals a refusal rather than swallowing it,
+which is how a door that resolves and then does nothing would have been found
+in a report instead of on the bench. Robolectric enforces no activity
+permissions, so no test could have caught this; the phone did.
+
+The rule now (`Scheduler.endAt`): with the switch on, the night ends at the
+next alarm when it is THIS NIGHT'S - after the night began, and inside the
+window or later on the calendar day the scheduled end falls on - earlier than
+the handle or later; otherwise at the handle, which is the fallback and no
+longer a ceiling. The copy at the tap is gone, and so is the auto-on. Dragging
+the wake handle, or setting it in the picker, switches the rule off
+(`commitWake`, on a real move only); the picker opens on the time the numeral
+shows, which while following is the alarm. The switch is a STANDING rule and
+stays on with no alarm, because the platform reports "no alarm" identically
+for a deleted one, one disabled in the clock app, and a one-time one that has
+just rung - a switch that went off with the alarm would go off every morning
+after a one-time alarm. The section is drawn while the switch is on OR an
+alarm exists; the row is the alarm's time, with its DAY when it is not
+tonight's, "No alarm set" with none, and under the switch - only while it is
+on and the alarm is not what tonight ends at - "Ends at 08:30". The dial's
+WAKE UP overline reads NEXT ALARM with the alarm's glyph while tonight ends at
+the alarm, which is what tells the user the handle sitting there is not
+theirs. Verified on the Honor the same afternoon: switch on, NEXT ALARM over
+09:00, "10h 30m", "From 22:30 today to 09:00 tomorrow", the handle still at
+08:30 underneath, END armed for 09:00.
+
+One thing the old bound gave for free is given up: an alarm at 2pm on the
+morning's own date now extends the night to 2pm. It is drawn on the dial the
+evening before and one drag undoes it; every cap considered was an arbitrary
+number, and the rule was written to avoid one. `SchedulerTest` pins the choice
+by name.
+
+**The END race, found on the way.** At the END the clock app has already moved
+"next alarm" to tomorrow - the ringing instance is no longer "next". Judged
+from the handles the night ends at 08:30 again, contains 06:30, and the
+reschedule walks straight back in until the handle; a snoozed alarm reported
+as next is the same door ten minutes later. `SchedulerTest`'s "after the alarm
+the night is OVER" case passed the RUNG alarm at 07:31, which the phone never
+will, and the copy-at-tap had hidden it: handle equals alarm, so the alarm
+never actually shortened anything. It is the common path now. `Prefs.endedAt`
+records the END's DUE instant, and `liveWindow` refuses any window that had
+begun by then; a window beginning later is a new night, which is what lets two
+test windows run on one afternoon (the journal's 13:05 then 13:30). The DUE
+instant and not the landing, because a parked END released at 23:00 by
+opening the app would otherwise close the night that began at 22:30.
+`NextAlarmTest` drives the real path, receiver included.
+
+Also fixed while there. The pin's date was worked back from the end - end
+minus duration - which lands on the wrong day for a night extended into the
+afternoon, and a pin on the wrong date never sticks; `liveWindow` now says
+where the night began. A night is matched to its morning by the SCHEDULED end,
+not the alarm's date, or an alarm before midnight inside a late window moved
+the night to the evening's day. And `insideWindow` asked without the alarm, so
+the master switch read "not running" at 08:45 under a 09:00 alarm.
+
 So run-in-background is answered by experiment instead: `BackgroundProbe` arms
 one throwaway exact alarm eleven minutes out and shows nothing. Arriving is the
 whole answer — the background path works on this phone, permanently. Never

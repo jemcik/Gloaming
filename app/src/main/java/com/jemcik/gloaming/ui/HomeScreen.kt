@@ -50,6 +50,7 @@ import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.platform.LocalLocale
+import java.time.format.TextStyle
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
@@ -579,9 +580,17 @@ private fun WindowBlock(
     val endsTonight = remember(s.tick, s.start, s.end, s.days, s.endAtAlarm, s.enabled) {
         s.endsTonight()
     }
+    // Tonight ends at the next alarm. The wake side then SAYS so - NEXT ALARM
+    // over the numeral, the alarm's mark for the sun - because the handle
+    // sitting on the alarm is otherwise indistinguishable from a handle the
+    // user put there, and which of the two it is decides what dragging it
+    // does: a handle on the alarm is let go of by dragging it.
+    val following = remember(s.tick, s.start, s.end, s.days, s.endAtAlarm, s.enabled) {
+        s.followingAlarm()
+    }
 
     // Null when nothing overrides, so the dial can tell "tonight is the
-    // schedule" from "tonight is shorter" without asking again.
+    // schedule" from "tonight is different" without asking again.
     val endTonight = endsTonight?.toLocalTime()?.takeIf { it != s.end }
 
     // One block: the two times, the crown that spans them, and the
@@ -643,7 +652,10 @@ private fun WindowBlock(
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            stringResource(R.string.label_wake_up).uppercase(locale),
+                            stringResource(
+                                if (following) R.string.label_next_alarm
+                                else R.string.label_wake_up
+                            ).uppercase(locale),
                             // Same ink as BEDTIME. In Arc.dawn this word sat
                             // at 1.7:1 on the cream - measured, and against
                             // BEDTIME's 14:1 in the same row - which is not
@@ -661,7 +673,8 @@ private fun WindowBlock(
                             color = g.onSurfaceLow
                         )
                         Spacer(Modifier.width(7.dp))
-                        PhaseGlyph(moon = false, tint = Arc.dawn, ground = ground)
+                        if (following) AlarmGlyph(tint = Arc.dawn)
+                        else PhaseGlyph(moon = false, tint = Arc.dawn, ground = ground)
                     }
                     Spacer(Modifier.height(4.dp))
                     // Tonight's end, not the setting behind it. "I see 8:30 in
@@ -788,67 +801,105 @@ private fun WindowBlock(
 }
 
 /**
- * Whether the morning alarm may end the night early.
+ * Whether the next alarm sets when the night ends.
  *
  * AOSP's own schedule rules carry this as `exitAtAlarm` and Settings calls it
  * "Alarm can override end time"; Google's Bedtime mode calls it "Turn off at
- * next alarm". Both apply it only when the alarm falls INSIDE the window, and
- * so does this - see [Scheduler.endAt].
+ * next alarm". Both let the alarm only shorten; this one moves the end either
+ * way - see [Scheduler.endAt].
  *
- * THE SECTION ONLY EXISTS WHEN AN ALARM DOES. With none set there is nothing
- * for the night to end at, so a heading called "when it ends" has no subject and
- * the switch under it no object; what it drew instead was the wake time, which
- * the dial, the countdown, the span sentence and the app bar are all already
- * showing, phrased - "No alarm; ends 8:30 AM" - as though something were wrong.
- * Reported from the phone as an inconsistent state, and it was.
+ * WHAT THE SWITCH MEANS: a standing rule, like Repeat. "When there is an alarm
+ * on the morning bedtime ends on, end bedtime at it." It stays on through a
+ * morning with no alarm, because the platform reports "no alarm" identically
+ * for one deleted, one switched off in the clock app, and a one-time alarm
+ * that has just rung - a switch that went off with the alarm would go off
+ * every morning after a one-time alarm, and need remembering. The ROW carries
+ * the live state instead.
  *
- * That the switch is a STANDING preference is true and does not save it:
- * `BedtimeReceiver` returns early on NEXT_ALARM_CLOCK_CHANGED unless it is set,
- * so leaving it on really does arm the app for an alarm that appears later. But
- * it costs nothing to leave on, changes nothing while no alarm exists, and the
- * section comes back by itself the moment one does - through that same
- * broadcast. So there is nothing to reach it FOR in the meantime, and the same
- * rule the screen-effects section already follows applies: a control that cannot
- * act is worse than an absent one.
+ * THE SECTION EXISTS WHILE THE SWITCH IS ON OR AN ALARM DOES. Off with no
+ * alarm there is nothing to offer and nothing to act on, and a control that
+ * cannot act is worse than an absent one. On with no alarm there is a rule to
+ * show and a door to the clock app, and the row says "No alarm set" and what
+ * tonight ends at instead. It used to vanish with the alarm while the rule
+ * stayed on, silently, which is a state a tester could not explain.
  *
- * The subtitle names the fallback hour rather than describing the rule in the
- * abstract, and appears only while the switch is ON, because the sentence it
- * carries is a claim about tonight.
+ * THE ROW is the alarm: its time, and its DAY when it is not this night's -
+ * "Mon 06:30" on a Friday - which is also the answer to "which of my alarms":
+ * the next to ring, the one the lock screen shows; the platform names no
+ * other. The supporting line appears only while the switch is on and the
+ * alarm is NOT what tonight ends at, and names what does: the wake handle.
+ * Following, the row is the hour and nothing else, the heading carries the
+ * purpose, and the dial's WAKE UP side has become NEXT ALARM.
+ *
+ * THE DOOR beneath opens the clock app's alarm list - "Add an alarm" with
+ * none, "Your alarms" with one - where the phone has one. Not an editor with
+ * the wake time filled in; [Doors.openAlarms] says what that was measured to
+ * do. The row is fixed to the section's own icon: a second, different mark
+ * in the same card read as a third thing to understand.
  */
 @Composable
 private fun EndsSection(s: HomeState) {
     val ctx = LocalContext.current
     val card = gloam.raise
     val res = LocalResources.current
+    val haptics = s.haptics
+    val locale = LocalLocale.current.platformLocale
 
     val alarm = remember(s.tick) { Scheduler.nextAlarm(ctx) }
-    // No alarm, no section: nothing for the night to end AT, so a heading called
-    // "when it ends" has no subject and the switch under it no object.
-    val alarmAt = alarm?.let { hhmm(ctx, it.hour, it.minute) } ?: return
+    if (alarm == null && !s.endAtAlarm) return
+    // A capability of the phone, not of the moment: asked once.
+    val hasDoor = remember { Doors.hasAlarms(ctx) }
+    val tonights = remember(s.tick, s.start, s.end, s.days, s.enabled) {
+        alarm != null && s.alarmIsTonights(alarm)
+    }
+    val fallback = remember(s.tick, s.end) { hhmm(ctx, s.end.hour, s.end.minute) }
 
-    // The HEADING carries the purpose - "end bedtime at your alarm" - because a
-    // heading that only categorises left the section looking like a stray switch
-    // beside a time. "When it ends" was worse than vague, it was wrong: with the
-    // switch off the night ends at the wake handle, not the alarm, so the
-    // heading asked a question the section answered incorrectly half the time.
+    val headline = when {
+        alarm == null -> res.getString(R.string.row_no_alarm)
+        tonights -> hhmm(ctx, alarm.hour, alarm.minute)
+        // Its day, because it is not this night's. The short name in the
+        // nominative is all a label needs; the sentences under the dial
+        // decline the weekday and keep their own tables for it.
+        else -> alarm.dayOfWeek.getDisplayName(TextStyle.SHORT, locale)
+            .replaceFirstChar { it.titlecase(locale) } +
+            " " + hhmm(ctx, alarm.hour, alarm.minute)
+    }
+    val supporting =
+        if (s.endAtAlarm && !tonights) res.getString(R.string.row_alarm_fallback, fallback)
+        else null
+
     Section(stringResource(R.string.section_end_at_alarm)) {
-        GroupedList(card, listOf {
-            SwitchRow(
-                // With the purpose in the heading, the row is the hour and
-                // nothing else - anything more repeated the line above it.
-                headline = alarmAt,
-                // Which leaves TalkBack with "7:30 AM, switch, off" and no idea
-                // what it switches: a heading is not read as part of the row.
-                // So the row SPEAKS the whole sentence even though it shows one
-                // hour. If state is visible it must be in the semantics, and
-                // this is the same rule from the other side.
-                modifier = Modifier.semantics {
-                    contentDescription =
-                        res.getString(R.string.row_end_at_alarm, alarmAt)
-                },
-                checked = s.endAtAlarm,
-                leading = { RowIcon(R.drawable.ic_alarm, IconTint.Alarm) }
-            ) { s.followAlarm(it) }
+        GroupedList(card, buildList<@Composable () -> Unit> {
+            add {
+                SwitchRow(
+                    headline = headline,
+                    supporting = supporting,
+                    // TalkBack would get "06:30, switch, off" and no idea what
+                    // it switches: a heading is not read as part of the row.
+                    // So the row SPEAKS the whole sentence, supporting line
+                    // included - a contentDescription replaces the merged
+                    // text, it does not add to it. If state is visible it
+                    // must be in the semantics; this is that rule from the
+                    // other side.
+                    modifier = Modifier.semantics {
+                        contentDescription =
+                            res.getString(R.string.row_end_at_alarm, headline) +
+                                (supporting?.let { ". $it" } ?: "")
+                    },
+                    checked = s.endAtAlarm,
+                    leading = { RowIcon(R.drawable.ic_alarm, IconTint.Alarm) }
+                ) { s.followAlarm(it) }
+            }
+            if (hasDoor) add {
+                LinkRow(
+                    headline = stringResource(
+                        if (alarm == null) R.string.row_alarms_add
+                        else R.string.row_alarms_open
+                    ),
+                    leading = { RowIcon(R.drawable.ic_alarm, IconTint.Alarm) },
+                    onClick = { haptics.open(); Doors.openAlarms(ctx) }
+                )
+            }
         })
     }
 }
@@ -1464,7 +1515,13 @@ private fun TimePickerDialog(s: HomeState) {
     val haptics = s.haptics
 
     if (s.picking != null) {
-        val init = if (s.picking == "start") s.start else s.end
+        // The wake picker opens on the time the NUMERAL shows, which while
+        // tonight follows the alarm is the alarm, not the handle behind it.
+        // One value, one answer: tapping 06:30 must not open a dial at 08:30.
+        // Set then commits a wake time by hand, and following ends with it -
+        // see HomeState.commitWake.
+        val init = if (s.picking == "start") s.start
+        else s.endsTonight()?.toLocalTime() ?: s.end
         val state = rememberTimePickerState(init.hour, init.minute, Clock.is24Hour(ctx))
         // The picker wears the handle you are editing. The dialog has no title,
         // so colour is what tells you which of the two numbers you tapped.
@@ -1562,7 +1619,8 @@ private fun HomeBar(
             exitAtAlarm = s.endAtAlarm,
             // The bar already knows - it is what disables the switch beside
             // this line - and saying it here stops the two disagreeing.
-            ready = ready
+            ready = ready,
+            endedAt = Scheduler.endedAt(prefs)
         )
     }
 

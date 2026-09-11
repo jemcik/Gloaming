@@ -139,6 +139,9 @@
     <string name="label_bedtime">bedtime</string>
     <string name="label_started">started</string>
     <string name="label_wake_up">wake up</string>
+    <!-- In WAKE UP's place while tonight ends at the next alarm. As short as
+         wake up: it shares its row with BEDTIME and a glyph either side. -->
+    <string name="label_next_alarm">next alarm</string>
     <string name="dial_sleep_window">sleep window</string>
     <string name="dial_until">until %1$s</string>
     <string name="dial_until_bedtime">until bedtime</string>
@@ -146,7 +149,23 @@
     <!-- ============ Home: which days ============ -->
     <string name="section_which_days">which days</string>
     <string name="section_end_at_alarm">end bedtime at your alarm</string>
+    <!-- The row's spoken form. The heading is not read as part of the row, so
+         it says the whole sentence; %1$s is the row's headline. -->
     <string name="row_end_at_alarm">End bedtime at your alarm, %1$s</string>
+    <!-- The headline while the phone has no alarm at all and the rule is on.
+         A headline, so it must not wrap beside an icon and a switch: about
+         14 characters in the widest script. -->
+    <string name="row_no_alarm">No alarm set</string>
+    <!-- Under the switch while the next alarm is NOT what tonight ends at -
+         none, or one on another morning: what tonight ends at instead, which
+         is the wake handle. "Ends" is the heading's own verb, and the subject
+         is the heading's too. One line beside a switch, and at the LARGE font
+         size: "Bedtime ends at 12:30 AM" wrapped there and lifted the switch
+         off its row. About 16 characters with the time in. -->
+    <string name="row_alarm_fallback">Ends at %1$s</string>
+    <!-- The door beneath: the clock app's alarm list. -->
+    <string name="row_alarms_open">Your alarms</string>
+    <string name="row_alarms_add">Add an alarm</string>
     <!-- A row's supporting line must not WRAP. Past one line the row becomes a
          three-line ListItem, and M3 then top-aligns the trailing content, so the
          switch stops being level with its own row. Reported as exactly that.
@@ -157,7 +176,7 @@
          25-character English one did not - so these are set for the widest
          script, and were checked by RENDERING the app in Ukrainian, which is
          where two of them were caught.
-         BUDGET-EACH 22 fx_grayscale_sub fx_dim_sub fx_dark_sub fx_ambient_sub fx_dim_dark_sub settings_language_why diagnostics_why reset_why
+         BUDGET-EACH 22 fx_grayscale_sub fx_dim_sub fx_dark_sub fx_ambient_sub fx_dim_dark_sub settings_language_why diagnostics_why reset_why row_alarm_fallback
          A budget is ONE line: the parser's key list is [a-z0-9_ ]+, which does
          not cross a newline, so keys wrapped onto a second line are silently in
          no budget at all. These two sat there unmeasured until RowFitTest was

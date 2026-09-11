@@ -32,6 +32,8 @@ import android.app.NotificationManager
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.shadows.ShadowAlarmManager
 import java.time.LocalDate
+import java.util.Locale
+import java.time.format.TextStyle
 import com.jemcik.gloaming.R
 import com.jemcik.gloaming.core.Prefs
 import com.jemcik.gloaming.core.FakeRoutines
@@ -387,24 +389,48 @@ class RowFitTest {
     private fun endsSectionFitsIn(locale: String, scale: Float = 1f) {
         RuntimeEnvironment.setQualifiers("+$locale-w360dp-h800dp")
         val ctx = ApplicationProvider.getApplicationContext<android.content.Context>()
-        // The row shows the hour and nothing else now, so the thing that can
-        // still wrap is the HEADING, which carries the whole purpose and is the
-        // longest string in the section in ru and uk.
-        val headline = "12:30 AM"
-
+        val loc = Locale.forLanguageTag(locale)
+        val time = "12:30 AM"
         val heading = ctx.getString(R.string.section_end_at_alarm)
+        val fallback = ctx.getString(R.string.row_alarm_fallback, time)
+        // The widest short day name the locale has, for the not-tonight face.
+        val day = DayOfWeek.entries
+            .map { it.getDisplayName(TextStyle.SHORT, loc).replaceFirstChar { c -> c.titlecase(loc) } }
+            .maxByOrNull { it.length }!!
+        // Every face the switch row has: tonight's alarm (the hour alone),
+        // another morning's (its day, and what tonight ends at instead), and
+        // no alarm at all. Then both labels the door beneath can wear.
+        val rows = listOf(
+            time to null,
+            "$day $time" to fallback,
+            ctx.getString(R.string.row_no_alarm) to fallback
+        )
+        val doors = listOf(R.string.row_alarms_add, R.string.row_alarms_open).map { ctx.getString(it) }
 
         compose.setContent {
             GloamingTheme(dark = false) {
                 AtFontScale(scale) {
                 Box(Modifier.padding(horizontal = 24.dp)) {
                 Section(heading) {
-                GroupedList(gloam.raise, listOf {
-                    SwitchRow(
-                        headline = headline,
-                        checked = false,
-                        leading = { RowIcon(R.drawable.ic_alarm, IconTint.Alarm) }
-                    ) {}
+                GroupedList(gloam.raise, buildList<@Composable () -> Unit> {
+                    rows.forEach { (h, sub) ->
+                        add {
+                            SwitchRow(
+                                headline = h,
+                                supporting = sub,
+                                checked = true,
+                                leading = { RowIcon(R.drawable.ic_alarm, IconTint.Alarm) }
+                            ) {}
+                        }
+                    }
+                    doors.forEach { d ->
+                        add {
+                            LinkRow(
+                                headline = d,
+                                leading = { RowIcon(R.drawable.ic_alarm, IconTint.Alarm) }
+                            ) {}
+                        }
+                    }
                 })
                 }
                 }
@@ -412,24 +438,31 @@ class RowFitTest {
             }
         }
 
-        // The HEADING is the long string here now - it carries the whole purpose
-        // of the section, and in ru and uk that is thirty characters. It is
-        // labelSmall across the full card, so it wraps rather than truncates,
-        // which is untidy rather than broken - but a two-line heading over a
-        // one-line row reads as a paragraph, not a label.
+        // The HEADING carries the whole purpose of the section, and in ru and
+        // uk that is thirty characters. It is labelSmall across the full card,
+        // so it wraps rather than truncates, which is untidy rather than broken
+        // - but a two-line heading over a one-line row reads as a paragraph,
+        // not a label.
         val head = compose.onNode(hasText(heading.uppercase(), substring = true))
             .getUnclippedBoundsInRoot()
         val hh = (head.bottom - head.top).value
         assertTrue("in '$locale' the heading wrapped: ${hh}dp", hh < 24f)
 
-        val b = compose.onNode(hasText(headline, substring = true))
-            .getUnclippedBoundsInRoot()
-        val h = (b.bottom - b.top).value
-        assertTrue(
-            "in '$locale' the ends row is ${h}dp: its subtitle wrapped, and M3 " +
-                "then top-aligns the switch instead of centring it on the row",
-            h < if (scale > 1f) 92f else twoLineCeiling.value
-        )
+        rows.forEach { (h, _) ->
+            val b = compose.onNode(hasText(h) and isToggleable()).getUnclippedBoundsInRoot()
+            val rh = (b.bottom - b.top).value
+            assertTrue(
+                "in '$locale' the ends row '$h' is ${rh}dp: something wrapped, and M3 " +
+                    "then top-aligns the switch instead of centring it on the row",
+                rh < if (scale > 1f) 92f else twoLineCeiling.value
+            )
+        }
+        // A one-line M3 item is 56dp; a wrapped headline makes it 72.
+        doors.forEach { d ->
+            val b = compose.onNode(hasText(d)).getUnclippedBoundsInRoot()
+            val rh = (b.bottom - b.top).value
+            assertTrue("in '$locale' the door '$d' wrapped: ${rh}dp", rh < 64f)
+        }
     }
 
     /**

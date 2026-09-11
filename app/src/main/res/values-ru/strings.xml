@@ -81,6 +81,7 @@
     <string name="label_bedtime">режим сна</string>
     <string name="label_started">начало</string>
     <string name="label_wake_up">пробуждение</string>
+    <string name="label_next_alarm">будильник</string>
     <string name="dial_sleep_window">промежуток сна</string>
     <string name="dial_until">до %1$s</string>
     <string name="dial_until_bedtime">до режима сна</string>
@@ -88,7 +89,11 @@
     <!-- ============ Home: which days ============ -->
     <string name="section_which_days">в какие дни</string>
     <string name="section_end_at_alarm">заканчивать сон по будильнику</string>
-    <string name="row_end_at_alarm">Заканчивать сон по будильнику, в %1$s</string>
+    <string name="row_end_at_alarm">Заканчивать сон по будильнику, %1$s</string>
+    <string name="row_no_alarm">Без будильника</string>
+    <string name="row_alarm_fallback">Сон до %1$s</string>
+    <string name="row_alarms_open">Ваши будильники</string>
+    <string name="row_alarms_add">Добавить будильник</string>
     <!-- BUDGET: these four share one row, 311dp wide, and at 14sp English fills
          it with 17dp of slack between chips. Longer than ~11 characters each and
          the row overflows - see the day-row note in CLAUDE.md. -->

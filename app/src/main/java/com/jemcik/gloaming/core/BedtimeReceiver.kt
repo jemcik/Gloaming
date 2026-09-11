@@ -47,6 +47,14 @@ class BedtimeReceiver : BroadcastReceiver() {
                 // pin would reopen the window and rearm END for the same
                 // instant, over and over.
                 p.activeDay = Prefs.NO_DAY
+                // And record the night as OVER, by the instant this END was
+                // due. The reschedule below reads the next alarm afresh, and
+                // by now the clock app has moved it to tomorrow - so judged
+                // from the handles the night would still contain this moment
+                // and be re-entered. See Scheduler.over. The due instant, not
+                // the landing: a parked END released tonight must not end
+                // tonight's night.
+                p.endedAt = if (due != Prefs.NO_DUE) due else endNow
                 // A one-off is done: switch the app off rather than leaving it
                 // armed with nothing to run.
                 if (Scheduler.isOneOff(p.days)) {
@@ -58,7 +66,11 @@ class BedtimeReceiver : BroadcastReceiver() {
             AlarmManager.ACTION_NEXT_ALARM_CLOCK_CHANGED -> {
                 // Only interesting when the alarm is allowed to end the night.
                 // Re-deriving costs a reschedule; doing it for everyone would
-                // rewrite the rule every time any clock app is touched.
+                // rewrite the rule every time any clock app is touched. The
+                // end moves either way - earlier or later - and a night the
+                // END has already closed stays closed (Prefs.endedAt), so an
+                // alarm snoozed or re-set the moment it rang does not reopen
+                // the morning.
                 if (!p.exitAtAlarm) return
                 Journal.write(ctx, "next alarm changed - re-deriving the end")
             }

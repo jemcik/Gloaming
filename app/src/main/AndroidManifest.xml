@@ -7,6 +7,12 @@
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- Normal, granted at install, no prompt. AOSP's clock guards the activity
+         that answers SHOW_ALARMS with it - the same one that answers SET_ALARM
+         - and Honor's Clock inherits that. Without it the door under "end
+         bedtime at your alarm" RESOLVES, so it is drawn, and the launch is
+         then refused: measured 11 Sep 2026, a tap that did nothing. -->
+    <uses-permission android:name="com.android.alarm.permission.SET_ALARM" />
 
     <!-- Samsung keeps its always-on keys in Settings.System, where WRITE_SETTINGS
          is the guard - and unlike WRITE_SECURE_SETTINGS the user can grant that
@@ -46,6 +52,11 @@
         <intent>
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.APP_CONTACTS" />
+        </intent>
+        <!-- The clock app's alarm list, the door under "end bedtime at your
+             alarm". A platform intent every clock answers; see Doors.hasAlarms. -->
+        <intent>
+            <action android:name="android.intent.action.SHOW_ALARMS" />
         </intent>
     </queries>
 

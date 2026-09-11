@@ -238,14 +238,26 @@ is in DECISIONS.md.
   the app's own name - never a second row: a row with the same icon and a
   chevron under a row with a switch read as twin settings, and Material
   defines the assist chip for exactly this, an action into another app.
-- **A night the END has closed stays closed** until a window that begins later.
-  At the END the clock app has already moved "next alarm" to tomorrow, so judged
-  from the handles the night still contains now and the reschedule walks back
-  in; a snoozed alarm is the same door ten minutes later. `Prefs.endedAt` is
-  the END's DUE instant - not its landing, or a parked END released at 23:00
-  would end the night that began at 22:30 - and `liveWindow` refuses any window
-  begun by then. `SchedulerTest` used to pass the RUNG alarm at 07:31, which the
-  phone never will; `NextAlarmTest` drives the real path.
+- **A night whose END has come DUE is closed**, landed or not, until a window
+  that begins later. At the END the clock app has already moved "next alarm" to
+  tomorrow, so judged from the handles the night still contains now and the
+  reschedule walks back in; a snoozed alarm is the same door ten minutes later;
+  and on the Honor the clock's broadcast beats our grid-held END to the
+  receiver, so the receiver's own write is not enough - `rescheduleAll` closes
+  the night the moment `endDue` has passed, which also ends a night whose END
+  was eaten at the open instead of extending it to the handle. `Prefs.endedAt`
+  is the END's DUE instant - not its landing, or a parked END released at 23:00
+  would end the night that began at 22:30; and NOT written for an END that
+  lands early beyond the tolerance, which re-opens the window as `Delivery`
+  says. `liveWindow` refuses any window begun before it, strictly, so a window
+  set to begin the instant the last one ended is a new night. Deliberately not
+  cleared by a user's edit: drag the handle past now after the END and bedtime
+  waits for tonight; the bar says "Starts in". `SchedulerTest` used to pass the
+  RUNG alarm at 07:31, which the phone never will; `NextAlarmTest` drives the
+  real path, the race included. The alarm may extend a night only to before the
+  NEXT day's start: an evening alarm on the ending date would otherwise run
+  one night into the next. And a BOOT does not switch the rule off for "no
+  alarm": the clock app may not have re-registered yet (`alarmsKnown`).
 - **Every number that describes TONIGHT takes the alarm-set end**, and the
   list is longer than it looks: the wake numeral, the arc, the handle, the
   countdown, its caption, the sleep-window total, the sentence, the row and the

@@ -774,13 +774,15 @@ private fun WindowBlock(
             // handle lets go of the alarm, and every reading follows the
             // finger from that moment rather than from the release.
             onEndChange = { s.dragWake(it) },
-            onDragFinished = { endMoved -> if (endMoved) s.commitWake() else s.commit() }
+            // Whichever handle: the drag has already done its work through
+            // onStartChange or dragWake; the release only commits.
+            onDragFinished = { s.commit() }
         )
 
         // The window in words, under the dial. The dial says this
         // spatially and the centre as a duration; neither answers which
         // morning. See windowSentence.
-        windowSentence(ctx, prefs, s.start, s.end, s.days)?.let { line ->
+        windowSentence(ctx, prefs, s.start, s.end, s.days, exitAtAlarm = s.endAtAlarm)?.let { line ->
             Spacer(Modifier.height(TIGHT))
             Text(
                 line,
@@ -856,8 +858,9 @@ private fun EndsSection(s: HomeState) {
     val locale = LocalLocale.current.platformLocale
 
     val alarm = remember(s.tick) { Scheduler.nextAlarm(ctx) }
-    // A capability of the phone, not of the moment: asked once.
-    val hasDoor = remember { Doors.hasAlarms(ctx) }
+    // Asked as often as the alarm is: both can turn on the alarm's own
+    // showIntent, which exists only while an alarm does.
+    val hasDoor = remember(s.tick) { Doors.hasAlarms(ctx) }
     val tonights = remember(s.tick, s.start, s.end, s.days, s.endAtAlarm, s.enabled) {
         alarm != null && s.alarmIsTonights(alarm)
     }
@@ -876,9 +879,9 @@ private fun EndsSection(s: HomeState) {
     val supporting =
         if (tonights) res.getString(R.string.row_alarm_next)
         else res.getString(R.string.row_alarm_fallback, fallback)
-    // The app the chip opens, by its own name. Asked once: a capability of
-    // the phone, not of the moment.
-    val app = remember { Doors.alarmsApp(ctx) }
+    // The app the chip opens, by its own name - the alarm's own app where its
+    // showIntent names one, so asked as often as the alarm is.
+    val app = remember(s.tick) { Doors.alarmsApp(ctx) }
 
     Section(stringResource(R.string.section_end_at_alarm)) {
         GroupedList(card, listOf {
@@ -1556,7 +1559,7 @@ private fun TimePickerDialog(s: HomeState) {
         // tonight follows the alarm is the alarm, not the handle behind it.
         // One value, one answer: tapping 06:30 must not open a dial at 08:30.
         // Set then commits a wake time by hand, and following ends with it -
-        // see HomeState.commitWake.
+        // see HomeState.setWake.
         val init = if (s.picking == "start") s.start
         else s.endsTonight()?.toLocalTime() ?: s.end
         val state = rememberTimePickerState(init.hour, init.minute, Clock.is24Hour(ctx))
@@ -1586,9 +1589,8 @@ private fun TimePickerDialog(s: HomeState) {
                         haptics.confirm()
                         val t = LocalTime.of(state.hour, state.minute)
                         val wake = s.picking != "start"
-                        if (wake) s.end = t else s.start = t
                         s.picking = null
-                        if (wake) s.commitWake() else s.commit()
+                        if (wake) s.setWake(t) else { s.start = t; s.commit() }
                     },
                     shape = CircleShape
                 ) { Text(stringResource(R.string.action_set)) }

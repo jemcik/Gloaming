@@ -108,7 +108,11 @@ object Scheduler {
      * promises that the alarm sets the end. Now it does. The one thing the old
      * bound gave for free is gone with it: an alarm at 2pm on that same day
      * extends the night to 2pm. It is drawn on the dial the evening before and
-     * one drag undoes it, which is the trade DECISIONS records.
+     * one drag undoes it, which is the trade DECISIONS records. The one bound
+     * that is not arbitrary stays: the alarm must ring before the NEXT day's
+     * start, or an evening alarm on the ending date - 23:00 on Saturday -
+     * would run Friday's night straight through Saturday's, and the END that
+     * closed it would then close Saturday's night as begun-before-it.
      *
      * Applied HERE, where a window's end is decided, rather than when the END
      * alarm is armed. Shortening only the alarm would end the night and then
@@ -125,6 +129,7 @@ object Scheduler {
         exitAtAlarm: Boolean
     ): LocalDateTime =
         if (exitAtAlarm && alarm != null && alarm.isAfter(began) &&
+            alarm.isBefore(began.plusDays(1)) &&
             (alarm.isBefore(scheduledEnd) || alarm.toLocalDate() == scheduledEnd.toLocalDate())
         ) alarm else scheduledEnd
 
@@ -188,13 +193,29 @@ object Scheduler {
      * phone will not do. A snoozed alarm is the same door ten minutes later.
      *
      * Keyed on the instant the night BEGAN, not its date: two test windows on
-     * one afternoon are two nights, and the second must be allowed to start.
-     * And on the END's due instant, not its landing: an END parked overnight
-     * and released at 23:00 by opening the app would otherwise end tonight's
-     * night, which began at 22:30.
+     * one afternoon are two nights, and the second must be allowed to start -
+     * including one that begins the very instant the last one ended, so the
+     * comparison is strict. And on the END's due instant, not its landing: an
+     * END parked overnight and released at 23:00 by opening the app would
+     * otherwise end tonight's night, which began at 22:30.
+     *
+     * It is written by the receiver when the END lands, and by
+     * [rescheduleAll] the moment the END's due instant has PASSED, landed or
+     * not. The Honor holds an END to its five-minute grid, and the clock
+     * app's own alarm rings on the second: its broadcast reached the receiver
+     * with our END still held, the next alarm already read as tomorrow's, and
+     * the reschedule extended the night to the handle and cancelled the held
+     * END - silently, since the only END left armed was then punctual. A due
+     * that has passed is an END that has happened; delivery is a detail.
+     *
+     * DELIBERATELY not cleared by a user's edit after the END. Drag the wake
+     * handle past now at 08:35 and bedtime does not come back until tonight:
+     * an edit reschedules by the same path the re-entry came in by, and there
+     * is no way to tell "let me sleep in" from "the alarm moved". The status
+     * line says "Starts in", so the screen is not lying, only refusing.
      */
     private fun over(began: LocalDateTime, endedAt: LocalDateTime?) =
-        endedAt != null && !began.isAfter(endedAt)
+        endedAt != null && began.isBefore(endedAt)
 
     /** Like [currentWindow] but with every day eligible - the one-off case. */
     private fun windowAnyDay(
@@ -459,7 +480,14 @@ object Scheduler {
         ctx: Context,
         p: Prefs,
         force: Boolean = false,
-        from: LocalDateTime = LocalDateTime.now()
+        from: LocalDateTime = LocalDateTime.now(),
+        /**
+         * False on the boot and upgrade paths: the clock app may not have
+         * re-registered its alarms yet, so "no alarm" is not yet a fact about
+         * the user's alarms and must not switch the rule off. Its own
+         * broadcast follows once it has, and reschedules again.
+         */
+        alarmsKnown: Boolean = true
     ) {
         // BEFORE anything is armed: arming overwrites the due instant, so this is
         // the last moment the previous one can still be judged. Logged as what
@@ -470,6 +498,17 @@ object Scheduler {
                 "END never arrived - ended here " + (it.endedAt - it.due) / 1000 + "s late" +
                     (if (it.atOpen) ", app on screen" else "")
             )
+        }
+        // And, for the same reason, before anything is armed: an END whose due
+        // instant has PASSED has ended its night, landed or not - see [over].
+        // Read here and not from the receiver alone, because on this phone the
+        // clock app's broadcast beats our held END to the receiver, and an END
+        // the app never saw (eaten while frozen, then the app opened) must end
+        // the night at the open rather than let the reschedule extend it.
+        val nowMs = from.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+        if (p.endDue != Prefs.NO_DUE && p.endDue <= nowMs && p.endedAt < p.endDue) {
+            p.endedAt = p.endDue
+            Journal.write(ctx, "END due has passed - night closed")
         }
         cancelAll(ctx)
 
@@ -484,7 +523,7 @@ object Scheduler {
         // read as on-but-doing-nothing. The cost is a one-time alarm: rung, it
         // reads as no alarm, and the rule is off the next evening until it is
         // switched on again. Nothing switches it on by itself.
-        if (p.exitAtAlarm && nextAlarm(ctx) == null) {
+        if (alarmsKnown && p.exitAtAlarm && nextAlarm(ctx) == null) {
             p.exitAtAlarm = false
             Journal.write(ctx, "no alarm on the phone - end at alarm switched off")
         }

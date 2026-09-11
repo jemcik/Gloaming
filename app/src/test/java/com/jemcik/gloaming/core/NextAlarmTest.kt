@@ -173,20 +173,83 @@ class NextAlarmTest {
         assertEquals("off is off until the user says otherwise", false, p.exitAtAlarm)
     }
 
+    private fun endIntent(due: LocalDateTime) = Intent(ctx(), BedtimeReceiver::class.java)
+        .setAction(Scheduler.ACTION_END)
+        .putExtra(Scheduler.EXTRA_DUE, ms(due))
+
     @Test
     fun `the receiver records the END by its DUE instant, not its landing`() {
-        // A parked END released at 23:00 by opening the app must not end the
-        // night that began at 22:30 - see Scheduler.over.
+        // A parked END released hours later by opening the app must not end
+        // the night that began at 22:30 tonight - see Scheduler.over. Due in
+        // the past, so the receiver judges it late and it counts.
         val p = prefs()
-        val due = LocalDateTime.of(2026, 9, 12, 8, 30)
+        val due = LocalDateTime.of(2026, 9, 11, 8, 30)
         AlarmWatch.arming(p, ms(due))
-        BedtimeReceiver().onReceive(
-            ctx(),
-            Intent(ctx(), BedtimeReceiver::class.java)
-                .setAction(Scheduler.ACTION_END)
-                .putExtra(Scheduler.EXTRA_DUE, ms(due))
-        )
+        BedtimeReceiver().onReceive(ctx(), endIntent(due))
         assertEquals(ms(due), p.endedAt)
         assertEquals("and the pin is dropped", Prefs.NO_DAY, p.activeDay)
+    }
+
+    @Test
+    fun `an END landing early beyond the tolerance closes nothing`() {
+        // Delivery.asOf judges it at its landing, the window re-opens and a
+        // fresh END is armed for the real end. Writing the FUTURE due as the
+        // night's end would have closed it early, silently.
+        val p = prefs()
+        val due = LocalDateTime.now().plusMinutes(10)
+        AlarmWatch.arming(p, ms(due))
+        BedtimeReceiver().onReceive(ctx(), endIntent(due))
+        assertEquals(Prefs.NO_DUE, p.endedAt)
+    }
+
+    @Test
+    fun `the clock's broadcast between its alarm ringing and our held END closes the night`() {
+        // The Honor holds our END to its five-minute grid; the clock app's
+        // alarm rings on the second and its broadcast reaches us first, with
+        // the next alarm already reading tomorrow's. Judged from the handles
+        // the night ran to 08:30 again, the held END was cancelled by the
+        // re-arm, and zen stayed on to the handle with nothing to say so.
+        ShadowAlarmManager.setCanScheduleExactAlarms(true)
+        val p = prefs()
+        val alarm = LocalDateTime.of(2026, 9, 12, 6, 30)
+        setAlarm(alarm)
+        Scheduler.rescheduleAll(ctx(), p, from = LocalDateTime.of(2026, 9, 11, 23, 0))
+        assertEquals(alarm, armed(Scheduler.ACTION_END))
+        assertEquals("armed, so due", ms(alarm), p.endDue)
+        // 06:30:01 - the broadcast, our END still held.
+        setAlarm(alarm.plusDays(1))
+        Scheduler.rescheduleAll(ctx(), p, from = alarm.plusSeconds(1))
+        assertEquals("the due has passed: the night is closed", ms(alarm), p.endedAt)
+        assertEquals(Prefs.NO_DAY, p.activeDay)
+        assertEquals("the next night is queued, not tonight's re-armed", LocalDateTime.of(2026, 9, 12, 22, 30), armed(Scheduler.ACTION_START))
+        assertEquals(alarm.plusDays(1), armed(Scheduler.ACTION_END))
+    }
+
+    @Test
+    fun `a lost END is closed at the open, not extended to the handle`() {
+        // Eaten while the app was frozen, then the app opened at 07:00: the
+        // miss is latched, and the night must end there - the card says
+        // "until 07:00" and the bar must not say "on until 08:30".
+        ShadowAlarmManager.setCanScheduleExactAlarms(true)
+        val p = prefs()
+        val alarm = LocalDateTime.of(2026, 9, 12, 6, 30)
+        setAlarm(alarm)
+        Scheduler.rescheduleAll(ctx(), p, from = LocalDateTime.of(2026, 9, 11, 23, 0))
+        setAlarm(alarm.plusDays(1))
+        Scheduler.rescheduleAll(ctx(), p, from = LocalDateTime.of(2026, 9, 12, 7, 0))
+        assertEquals(ms(alarm), p.endedAt)
+        assertEquals("not running", Prefs.NO_DAY, p.activeDay)
+    }
+
+    @Test
+    fun `a boot before the clock app has re-registered keeps the rule`() {
+        // getNextAlarmClock is empty until the clock app re-sets its alarms,
+        // and BOOT_COMPLETED reaches receivers in no promised order. "No
+        // alarm" is not yet a fact, and switching the rule off on every reboot
+        // would be a fault nothing on screen could explain.
+        ShadowAlarmManager.setCanScheduleExactAlarms(true)
+        val p = prefs()
+        Scheduler.rescheduleAll(ctx(), p, from = LocalDateTime.of(2026, 9, 11, 12, 0), alarmsKnown = false)
+        assertEquals(true, p.exitAtAlarm)
     }
 }

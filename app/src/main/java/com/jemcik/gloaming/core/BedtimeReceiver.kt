@@ -17,6 +17,9 @@ class BedtimeReceiver : BroadcastReceiver() {
         // STATE_TRUE while zen_mode is reset to 0, so believing it loses the
         // window. START and END force for their own reasons, below.
         var force = false
+        // Boot and upgrade: the clock app may not have re-registered its
+        // alarms yet, so "no alarm" is not yet a fact. See rescheduleAll.
+        var alarmsKnown = true
         // The instant the schedule is judged at. Now, except for an alarm that
         // landed a little EARLY, which is judged at the instant it was armed
         // for - the Honor delivers on a five-minute grid of its own, and an END
@@ -53,8 +56,14 @@ class BedtimeReceiver : BroadcastReceiver() {
                 // from the handles the night would still contain this moment
                 // and be re-entered. See Scheduler.over. The due instant, not
                 // the landing: a parked END released tonight must not end
-                // tonight's night.
-                p.endedAt = if (due != Prefs.NO_DUE) due else endNow
+                // tonight's night. And only when this END is judged to have
+                // ENDED anything: one that lands early beyond the tolerance
+                // is judged at its landing (Delivery.asOf), the window
+                // re-opens and a fresh END is armed for the real end - writing
+                // the future due here would have closed the night early and
+                // silently instead.
+                val ended = if (due != Prefs.NO_DUE) due else endNow
+                if (asOf >= ended) p.endedAt = ended
                 // A one-off is done: switch the app off rather than leaving it
                 // armed with nothing to run.
                 if (Scheduler.isOneOff(p.days)) {
@@ -90,6 +99,7 @@ class BedtimeReceiver : BroadcastReceiver() {
                 // is the whole evidence that the vendor is not withholding the
                 // broadcast. An app upgrade is not a boot and must not clear it.
                 if (intent.action == Intent.ACTION_BOOT_COMPLETED) BootWatch.record(p)
+                alarmsKnown = false
                 // syncRule skips identical rules, so nothing would ever repair
                 // one edited from Settings. Boot and upgrade force a push.
                 p.ruleSignature = null
@@ -117,7 +127,8 @@ class BedtimeReceiver : BroadcastReceiver() {
         // Always rearm: exact alarms are one-shot.
         Scheduler.rescheduleAll(
             ctx, p, force,
-            from = LocalDateTime.ofInstant(Instant.ofEpochMilli(asOf), ZoneId.systemDefault())
+            from = LocalDateTime.ofInstant(Instant.ofEpochMilli(asOf), ZoneId.systemDefault()),
+            alarmsKnown = alarmsKnown
         )
         // The shade cannot see any of this happen. Ask the tile to re-read, or
         // it keeps showing the face it had when it was last looked at - a tick

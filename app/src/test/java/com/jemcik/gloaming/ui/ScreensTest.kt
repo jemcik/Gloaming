@@ -22,6 +22,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipe
 import androidx.compose.ui.test.up
+import androidx.compose.ui.test.moveTo
 import androidx.compose.ui.test.down
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performSemanticsAction
@@ -925,6 +926,29 @@ class ScreensTest {
         compose.onNodeWithText(ctx().getString(R.string.action_set)).performClick()
         assertFalse("a wake time set by hand follows nothing", p.exitAtAlarm)
         assertEquals("the picker opened on the alarm, and Set kept it", alarm, p.endTime)
+    }
+
+    @Test
+    fun `during a drag the sentence under the dial follows the finger too`() {
+        // The one reader that read the STORED rule, and named the alarm for
+        // the length of the drag while everything else had let go of it.
+        val p = armed()
+        val start = LocalTime.now().minusHours(1).withSecond(0).withNano(0)
+        val alarm = LocalTime.now().plusHours(1).withSecond(0).withNano(0)
+        val to = LocalTime.now().plusHours(2).withSecond(0).withNano(0)
+        p.startTime = start; p.endTime = LocalTime.now().plusHours(3).withSecond(0).withNano(0)
+        p.exitAtAlarm = true
+        setAlarm(alarm)
+        home()
+
+        compose.onNodeWithTag(DIAL_TAG).performScrollTo().performTouchInput {
+            down(handleOffset(degrees(alarm), width, center))
+            moveTo(handleOffset(degrees(to), width, center))
+        }
+        compose.waitForIdle()
+        compose.onNode(hasText(t(alarm), substring = true) and hasText(ctx().getString(R.string.window_span).substringBefore(" %1"), substring = true))
+            .assertDoesNotExist()
+        compose.onNodeWithTag(DIAL_TAG).performTouchInput { up() }
     }
 
     @Test

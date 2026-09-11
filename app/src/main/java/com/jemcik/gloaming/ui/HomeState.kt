@@ -430,18 +430,17 @@ class HomeState(
     }
 
     /**
-     * The wake handle moved by hand - dragged, or set in the picker - so the
-     * night no longer follows the alarm: the one direction the link has.
-     * A time set by hand IS the wake time, and following would draw the handle
-     * straight back onto the alarm, over the finger that just moved it away.
-     *
-     * Only a MOVE switches it off. A handle grabbed and let go where it was,
-     * or set to the time it already held, is not a change of mind. Separate
-     * from [commit] because the switch commits too, and must not switch itself
-     * off for it.
+     * A wake time SET, in the picker. Set is an act whatever the number: the
+     * picker opens on the time the numeral shows, which while following is
+     * the alarm, and confirming it - or the handle's own old time - is a
+     * choice of that time by hand. So following ends here without a
+     * condition. A drag has its own path ([dragWake], on movement), and a
+     * grab that never moves reaches neither, which is what keeps it from
+     * counting as a change of mind.
      */
-    fun commitWake() {
-        if (end != prefs.endTime) endAtAlarm = false
+    fun setWake(t: LocalTime) {
+        end = t
+        endAtAlarm = false
         commit()
     }
 
@@ -535,8 +534,14 @@ class HomeState(
         if (key == null || key == Prefs.KEY_ENABLED) enabled = prefs.enabled
         // The receiver switches the alarm rule off when the last alarm goes -
         // a one-time alarm ringing at 06:30 under an open Home is enough -
-        // and nothing else would tell the switch.
-        if (key == null || key == Prefs.KEY_EXIT_AT_ALARM) endAtAlarm = prefs.exitAtAlarm
+        // and nothing else would tell the switch. With a tick, so the app bar
+        // and "running now", which key on the tick and not on the rule, move
+        // with the numeral and the dial rather than a minute behind them. And
+        // only on a real change: this fires for the screen's own commits too.
+        if ((key == null || key == Prefs.KEY_EXIT_AT_ALARM) && endAtAlarm != prefs.exitAtAlarm) {
+            endAtAlarm = prefs.exitAtAlarm
+            tick++
+        }
     }
 
     /**

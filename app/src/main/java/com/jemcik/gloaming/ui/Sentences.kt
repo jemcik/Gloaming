@@ -55,7 +55,14 @@ internal fun windowSentence(
     prefs: Prefs,
     start: LocalTime,
     end: LocalTime,
-    days: Set<DayOfWeek>
+    days: Set<DayOfWeek>,
+    /**
+     * The screen's own value, not the stored one: during a wake-handle drag
+     * following ends at the first movement and prefs are written on release,
+     * and this sentence was the one reader still naming the alarm while the
+     * finger, the numeral and the arc had all moved away from it.
+     */
+    exitAtAlarm: Boolean = prefs.exitAtAlarm
 ): String? {
     val res = ctx.resources
     val locale = LocalLocale.current.platformLocale
@@ -78,11 +85,11 @@ internal fun windowSentence(
     // end was only ever wanted to work back to where the window BEGAN, and an
     // alarm-moved end minus the full duration is not a start time. The window
     // now says where it began directly, so nothing is worked back.
-    val alarm = Scheduler.endingAlarm(ctx, prefs.exitAtAlarm)
+    val alarm = Scheduler.endingAlarm(ctx, exitAtAlarm)
     val running = Scheduler.liveWindow(
         enabled = true, activeDay = prefs.activeDay,
         start = start, end = end, days = days, from = now,
-        alarm = alarm, exitAtAlarm = prefs.exitAtAlarm, endedAt = Scheduler.endedAt(prefs)
+        alarm = alarm, exitAtAlarm = exitAtAlarm, endedAt = Scheduler.endedAt(prefs)
     )
     val from = (running?.began ?: Scheduler.nextStart(start, end, days, now)) ?: return null
     // The alarm belongs on the OTHER end. Without it this sentence said "to 8:30
@@ -90,7 +97,7 @@ internal fun windowSentence(
     // screen answering "when does tonight end" two ways. endAt is the rule
     // itself, so an alarm on another morning still changes nothing here.
     val to = Scheduler.endAt(
-        from, from.plus(Scheduler.duration(start, end)), alarm, prefs.exitAtAlarm
+        from, from.plus(Scheduler.duration(start, end)), alarm, exitAtAlarm
     )
 
     fun day(at: LocalDateTime): String = dayWord(ctx, at, now, DaySlot.SPAN)

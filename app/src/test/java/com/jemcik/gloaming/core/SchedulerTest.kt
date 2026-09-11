@@ -273,6 +273,23 @@ class SchedulerTest {
     }
 
     @Test
+    fun `an alarm past the next day's start is not this night's, whatever its date`() {
+        // 23:00 on Saturday is on the morning's date, and honouring it would
+        // run Friday's night straight through Saturday's - and the END that
+        // closed it would close Saturday's night too, as begun before it. The
+        // one bound that is not an arbitrary number: before the next day's
+        // start.
+        val alarm = LocalDateTime.of(2026, 8, 29, 23, 0)
+        assertEquals(
+            scheduledEnd(),
+            Scheduler.endAt(began(), scheduledEnd(), alarm, exitAtAlarm = true)
+        )
+        // Right up to it, still this night's.
+        val late = LocalDateTime.of(2026, 8, 29, 22, 29)
+        assertEquals(late, Scheduler.endAt(began(), scheduledEnd(), late, exitAtAlarm = true))
+    }
+
+    @Test
     fun `an alarm on another morning is not this night's`() {
         // Monday's alarm, seen from Friday night - the weekday alarm once
         // Friday's has rung. The handle stands.
@@ -486,6 +503,22 @@ class SchedulerTest {
                 enabled = true, activeDay = Prefs.NO_DAY,
                 start = LocalTime.of(13, 12), end = LocalTime.of(13, 30), days = everyNight,
                 from = LocalDateTime.of(2026, 9, 11, 13, 15),
+                endedAt = endedAt
+            )
+        )
+    }
+
+    @Test
+    fun `a window that begins the instant the last one ended is a new night`() {
+        // A test window set as 13:05-13:30 after an END at 13:05. Strict, or
+        // it would wait until tomorrow.
+        val endedAt = LocalDateTime.of(2026, 9, 11, 13, 5)
+        assertEquals(
+            LocalDateTime.of(2026, 9, 11, 13, 30),
+            Scheduler.liveWindowEnd(
+                enabled = true, activeDay = Prefs.NO_DAY,
+                start = LocalTime.of(13, 5), end = LocalTime.of(13, 30), days = everyNight,
+                from = LocalDateTime.of(2026, 9, 11, 13, 8),
                 endedAt = endedAt
             )
         )

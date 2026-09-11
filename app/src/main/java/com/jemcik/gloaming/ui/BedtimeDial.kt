@@ -131,7 +131,7 @@ fun BedtimeDial(
      * numeral above all have to show the night as the alarm makes it, or the
      * screen contains a window that is not going to happen. Reported exactly
      * that way. Dragging the handle then lets go of the alarm, so the finger
-     * takes [end] from where the alarm was drawn; see HomeState.commitWake.
+     * takes [end] from where the alarm was drawn; see HomeState.dragWake.
      */
     endTonight: LocalTime? = null,
     now: LocalTime,
@@ -158,7 +158,7 @@ fun BedtimeDial(
     onCentreCycle: ((Int) -> Unit)? = null,
     onStartChange: (LocalTime) -> Unit,
     onEndChange: (LocalTime) -> Unit,
-    /** True when it was the WAKE handle that moved - see HomeState.commitWake. */
+    /** True when it was the WAKE handle that was held. Home no longer needs it; the drag itself reports through onEndChange. */
     onDragFinished: (endMoved: Boolean) -> Unit,
     /**
      * Is the page moving under us? A touch that lands mid-fling is how you stop

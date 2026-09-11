@@ -1234,6 +1234,30 @@ the key the receiver writes (`Prefs.KEY_EXIT_AT_ALARM`), because a one-time
 alarm ringing at 06:30 under a resumed Home would otherwise leave the switch
 drawn on with the rule already off.
 
+A fresh-eyes review of the branch found what the bench had not, because it
+needs the Honor's grid: the clock app's alarm rings on the second, its
+broadcast reaches the receiver while our END is still held to :x4:20, the
+next alarm already reads tomorrow's, and the reschedule extended the night
+to the handle and cancelled the held END - with nothing left to say so,
+since the only END then armed was punctual. The same door let a lost END be
+extended at the open, straight under a card saying the night had ended
+there. So `rescheduleAll` closes a night the moment its END's due instant has
+passed, delivery or not; the receiver writes the same instant only when the
+END is judged to have ended anything, so an END landing early beyond the
+tolerance still re-opens the window as `Delivery` describes. Three more from
+the same review: an alarm on the ending date but past the next day's start
+(23:00 on Saturday) ran one night into the next and its END then closed the
+next, so the extension is bounded at the next day's start; a boot switched
+the rule off before the clock app had re-registered, so the boot path does
+not judge "no alarm"; and the sentence under the dial still read the STORED
+rule during a drag, naming the alarm while every other reading had let go.
+Smaller: the guard is strict, so a window beginning the instant the last one
+ended is a new night; Set in the picker always lets go, even at the handle's
+own old time; the chip's probes follow the alarm rather than being asked
+once. What the review took for a bug and is a decision: a user's edit after
+the END does not reopen the night, because an edit reschedules by the same
+path the re-entry came in by.
+
 The door was a second row first - alarm icon, "Your alarms", a chevron - under
 a row with the same icon and a switch, and the owner's verdict was that the
 two read as twin settings with one control each, the second's meaning

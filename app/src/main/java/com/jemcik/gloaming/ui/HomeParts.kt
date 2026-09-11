@@ -43,6 +43,10 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.foundation.layout.BoxWithConstraints
 import com.jemcik.gloaming.R
 import com.jemcik.gloaming.core.*
 import java.time.DayOfWeek
@@ -574,6 +578,74 @@ internal fun PhaseGlyph(moon: Boolean, tint: Color, ground: Color) {
             }
         }
     }
+}
+
+/**
+ * The window under the dial, as the arc's two ends: "22:30 today" on the
+ * night colour, "9:00 AM tomorrow" on dawn, one pill in two halves. Owner's
+ * pick from six: a plain pill on the card ground was not distinct in either
+ * theme, and this one is the dial's own language closed into a label.
+ *
+ * At a large system font the pair may not fit one line. Measured before it
+ * is laid out: when both halves fit side by side they are the two halves of
+ * one pill; when they do not, each becomes a whole pill and they stack -
+ * never a half-round block over another. The inks are the handles' own.
+ * One semantics node, reading the sentence, so TalkBack hears "From 22:30
+ * today to 9:00 AM tomorrow" and not two fragments.
+ */
+@Composable
+internal fun WindowPill(halves: Pair<String, String>, sentence: String) {
+    val g = gloam
+    val style = MaterialTheme.typography.bodyLarge
+    val measurer = rememberTextMeasurer()
+    val density = LocalDensity.current
+    val padH = 16.dp
+    val padV = 8.dp
+    val nightFill = Arc.pillNight(g.dark)
+    val nightInk = Arc.onPillNight
+    val dawnFill = Arc.pillDawn(g.dark)
+    val dawnInk = Arc.onPillDawn
+    BoxWithConstraints(
+        Modifier.fillMaxWidth().semantics(mergeDescendants = true) { contentDescription = sentence },
+        contentAlignment = Alignment.Center
+    ) {
+        val need = with(density) {
+            (measurer.measure(halves.first, style).size.width + measurer.measure(halves.second, style).size.width).toDp()
+        } + padH * 4
+        val joined = need <= maxWidth
+        @Composable
+        fun Half(text: String, fill: Color, ink: Color, shape: Shape) {
+            Text(
+                text, style = style, color = ink, maxLines = 1,
+                modifier = Modifier.clip(shape).background(fill).padding(horizontal = padH, vertical = padV)
+            )
+        }
+        if (joined) {
+            Row {
+                Half(halves.first, nightFill, nightInk, RoundedCornerShape(topStartPercent = 50, bottomStartPercent = 50))
+                Half(halves.second, dawnFill, dawnInk, RoundedCornerShape(topEndPercent = 50, bottomEndPercent = 50))
+            }
+        } else {
+            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Half(halves.first, nightFill, nightInk, CircleShape)
+                Half(halves.second, dawnFill, dawnInk, CircleShape)
+            }
+        }
+    }
+}
+
+/* The alarm's own mark in the sun's place, for the nights that end at the next
+   alarm: the overline reads NEXT ALARM and the glyph says so a second way, the
+   same reasoning the moon and sun were added under. Google's path, at the
+   glyphs' size, in the sun's ink.                                            */
+@Composable
+internal fun AlarmGlyph(tint: Color) {
+    Icon(
+        painterResource(R.drawable.ic_alarm),
+        contentDescription = null,
+        modifier = Modifier.size(13.dp),
+        tint = tint
+    )
 }
 
 /* Every role the picker reads, named. Leave one out and Material's baseline

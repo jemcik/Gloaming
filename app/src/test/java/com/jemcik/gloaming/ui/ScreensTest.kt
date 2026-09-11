@@ -2,9 +2,12 @@ package com.jemcik.gloaming.ui
 
 import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsOff
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -19,10 +22,21 @@ import androidx.compose.foundation.ScrollState
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipe
+import androidx.compose.ui.test.up
+import androidx.compose.ui.test.moveTo
+import androidx.compose.ui.test.down
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performSemanticsAction
 import android.app.NotificationManager
+import android.content.ComponentName
+import android.content.Intent
+import android.content.IntentFilter
+import android.provider.AlarmClock
+import org.robolectric.RuntimeEnvironment
+import java.time.format.TextStyle
+import java.util.Locale
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.assertCountEquals
 import android.provider.Settings
 import androidx.test.core.app.ApplicationProvider
 import java.time.DayOfWeek
@@ -748,24 +762,33 @@ class ScreensTest {
         compose.onNodeWithText(ctx().getString(R.string.row_alarms)).assertExists()
         compose.onNodeWithText(ctx().getString(R.string.row_alarms_why)).assertExists()
     }
-    // ---------- the wake handle and "at your alarm" are one state ----------
+    // ---------- the next alarm sets the end; the handle is the fallback ----------
 
     /** Put a real alarm on the phone, the way a clock app does. */
-    private fun setAlarm(at: LocalTime) {
+    private fun setAlarmAt(at: LocalDateTime) {
         val am = ctx().getSystemService(android.app.AlarmManager::class.java)
-        val next = java.time.LocalDateTime.now().with(at).let {
-            if (it.isAfter(java.time.LocalDateTime.now())) it else it.plusDays(1)
-        }
         am.setAlarmClock(
             android.app.AlarmManager.AlarmClockInfo(
-                next.atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli(), null
+                at.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli(), null
             ),
             android.app.PendingIntent.getBroadcast(
-                ctx(), 0, android.content.Intent("test.alarm"),
+                ctx(), 0, Intent("test.alarm"),
                 android.app.PendingIntent.FLAG_IMMUTABLE
             )
         )
     }
+
+    /** The next time the clock reads [at]. */
+    private fun setAlarm(at: LocalTime) = setAlarmAt(
+        LocalDateTime.now().with(at).let {
+            if (it.isAfter(LocalDateTime.now())) it else it.plusDays(1)
+        }
+    )
+
+    private fun minutesFromNow(m: Long): LocalTime =
+        LocalTime.now().plusMinutes(m).withSecond(0).withNano(0)
+
+    private fun t(at: LocalTime) = hhmm(ctx(), at.hour, at.minute)
 
     private fun home() {
         compose.setContent {
@@ -776,96 +799,309 @@ class ScreensTest {
     }
 
     @Test
-    fun `switching it on moves the wake time onto the alarm`() {
-        // The switch IS the move. It used to be able to sit ON and change
-        // nothing, which took a second row with its own icon and button to
-        // repair - a whole control built to fix a state the switch should never
-        // have reached.
+    fun `switching it on leaves the wake time where it is`() {
+        // It used to COPY the alarm into the handle, so that "on" meant "the
+        // handle equals the alarm" - and froze that morning's alarm as every
+        // morning's wake time. The handle is the user's own time now, and what
+        // a morning with no alarm on it falls back to.
         val p = armed()
-        val alarm = LocalTime.now().plusMinutes(30).withSecond(0).withNano(0)
-        p.endTime = LocalTime.now().plusHours(1)
+        val wake = minutesFromNow(60)
+        val alarm = minutesFromNow(30)
+        p.endTime = wake
         p.exitAtAlarm = false
         setAlarm(alarm)
         home()
 
-        compose.onNode(
-            // The row shows only the hour now.
-            hasText(hhmm(ctx(), alarm.hour, alarm.minute), substring = true)
-                and isToggleable()
-        ).performScrollTo().performClick()
-        assertEquals(
-            "switching on must set the wake time to the alarm",
-            alarm.withSecond(0).withNano(0), p.endTime
-        )
+        compose.onNode(hasText(ctx().getString(R.string.row_end_at_alarm_title)) and isToggleable())
+            .performScrollTo().performClick()
         assertTrue(p.exitAtAlarm)
+        assertEquals("switching on must not move the handle", wake, p.endTime)
     }
 
     @Test
-    fun `a wake time set onto the alarm switches it on by itself`() {
-        // The "vice versa" half: a wake time that lands on the alarm IS
-        // following it, however it got there. Driven through the picker's own
-        // Set button - the wake time already equals the alarm here, so what is
-        // under test is the rule rather than the clock face.
+    fun `following, the wake side reads NEXT ALARM and tonight ends at the alarm`() {
         val p = armed()
-        val alarm = LocalTime.now().plusMinutes(30).withSecond(0).withNano(0)
-        p.endTime = alarm
-        p.exitAtAlarm = false
+        p.endTime = minutesFromNow(60)
+        p.exitAtAlarm = true
+        val alarm = minutesFromNow(30)
         setAlarm(alarm)
         home()
 
+        compose.onNodeWithText(ctx().getString(R.string.label_next_alarm).uppercase()).assertExists()
+        compose.onNodeWithText(ctx().getString(R.string.label_wake_up).uppercase()).assertDoesNotExist()
+        // The dial uppercases its caption, so match what is drawn.
         compose.onNodeWithText(
-            ctx().getString(R.string.label_wake_up).uppercase()
-        ).performScrollTo().performClick()
-        compose.onNodeWithText(ctx().getString(R.string.action_set)).performClick()
-        assertTrue(
-            "a wake time equal to the alarm must switch it on",
-            p.exitAtAlarm
-        )
+            ctx().getString(R.string.dial_until, t(alarm)).uppercase()
+        ).assertExists()
+        // The alarm the window follows is the time alone: no second line.
+        compose.onNodeWithText(ctx().getString(R.string.row_alarm_not_in_window)).assertDoesNotExist()
     }
 
     @Test
-    fun `an alarm that moved leaves the dial showing tonight, not the handle`() {
-        // The reported bug, and the one state where the wake handle and the
-        // alarm can still differ: the switch is ON, so the handle was equal to
-        // the alarm when it was set, but the alarm has moved since - while the
-        // app was closed, say - and nothing has touched the handle to re-derive
-        // it. Every reading that describes TONIGHT has to follow the alarm, or
-        // the screen answers "when does it end" two ways at once. It did: the
-        // countdown and the numeral said one hour while the app bar and the
-        // alarm row said another.
+    fun `a later alarm on the same morning extends tonight to it`() {
+        // The tester's case: a 09:00 weekend alarm over an 08:30 handle. The
+        // night used to end at the handle while the row still named the alarm.
         val p = armed()
-        val alarm = LocalTime.now().plusMinutes(30).withSecond(0).withNano(0)
-        p.endTime = LocalTime.now().plusHours(1)
+        val wake = minutesFromNow(30)
+        val alarmAt = LocalDateTime.now().plusMinutes(60).withSecond(0).withNano(0)
+        p.endTime = wake
+        p.exitAtAlarm = true
+        setAlarmAt(alarmAt)
+        home()
+
+        // Same calendar day as the handle's end is what "the same morning"
+        // means, and the rule itself is pinned in SchedulerTest. For the half
+        // hour a day when midnight falls between the two, the handle stands -
+        // and the test has to say so, or it passes only in the hours it was
+        // written in.
+        val wakeAt = LocalDateTime.now().plusMinutes(30)
+        val expected = if (alarmAt.toLocalDate() == wakeAt.toLocalDate()) alarmAt.toLocalTime() else wake
+        compose.onNodeWithText(
+            ctx().getString(R.string.dial_until, t(expected)).uppercase()
+        ).assertExists()
+    }
+
+    /** Degrees round the 24-hour face, midnight at the top - the dial's own mapping. */
+    private fun degrees(t: LocalTime) = (t.hour * 60 + t.minute) / 4f
+
+    @Test
+    fun `dragging the wake handle lets go of the alarm, from where the alarm was drawn`() {
+        // The handle sits on the alarm while tonight follows it, so that is
+        // where it is grabbed - and where the drag starts from. Reported: the
+        // handle jumped to the setting under a finger that had not moved yet,
+        // then back to the finger with the first move.
+        val p = armed()
+        val start = LocalTime.now().minusHours(1).withSecond(0).withNano(0)
+        val wake = LocalTime.now().plusHours(3).withSecond(0).withNano(0)
+        val alarm = LocalTime.now().plusHours(1).withSecond(0).withNano(0)
+        val to = LocalTime.now().plusHours(2).withSecond(0).withNano(0)
+        p.startTime = start; p.endTime = wake; p.exitAtAlarm = true
+        setAlarm(alarm)
+        home()
+
+        compose.onNodeWithTag(DIAL_TAG).performScrollTo().performTouchInput {
+            swipe(handleOffset(degrees(alarm), width, center), handleOffset(degrees(to), width, center), 300)
+        }
+        compose.waitForIdle()
+        assertFalse("a dragged handle follows nothing", p.exitAtAlarm)
+        val off = java.time.Duration.between(to, p.endTime).abs().toMinutes()
+        assertTrue("the handle landed where the finger went, not at the setting: ${p.endTime}", off <= 20)
+        compose.onNodeWithText(ctx().getString(R.string.label_wake_up).uppercase()).assertExists()
+    }
+
+    @Test
+    fun `a grab that does not move keeps following`() {
+        // Touching the handle and letting go is not a change of mind.
+        val p = armed()
+        val wake = LocalTime.now().plusHours(3).withSecond(0).withNano(0)
+        val alarm = LocalTime.now().plusHours(1).withSecond(0).withNano(0)
+        p.startTime = LocalTime.now().minusHours(1).withSecond(0).withNano(0)
+        p.endTime = wake; p.exitAtAlarm = true
+        setAlarm(alarm)
+        home()
+
+        compose.onNodeWithTag(DIAL_TAG).performScrollTo().performTouchInput {
+            down(handleOffset(degrees(alarm), width, center)); up()
+        }
+        compose.waitForIdle()
+        assertTrue("nothing moved, so nothing changed", p.exitAtAlarm)
+        assertEquals(wake, p.endTime)
+    }
+
+    @Test
+    fun `setting a wake time by hand lets go of the alarm`() {
+        // The one direction the link has. The picker opens on the time the
+        // numeral shows - the alarm - and Set commits it as the user's own.
+        val p = armed()
+        p.endTime = minutesFromNow(60)
+        p.exitAtAlarm = true
+        val alarm = minutesFromNow(30)
+        setAlarm(alarm)
+        home()
+
+        compose.onNodeWithText(ctx().getString(R.string.label_next_alarm).uppercase())
+            .performScrollTo().performClick()
+        compose.onNodeWithText(ctx().getString(R.string.action_set)).performClick()
+        assertFalse("a wake time set by hand follows nothing", p.exitAtAlarm)
+        assertEquals("the picker opened on the alarm, and Set kept it", alarm, p.endTime)
+    }
+
+    @Test
+    fun `during a drag the sentence under the dial follows the finger too`() {
+        // The one reader that read the STORED rule, and named the alarm for
+        // the length of the drag while everything else had let go of it.
+        val p = armed()
+        val start = LocalTime.now().minusHours(1).withSecond(0).withNano(0)
+        val alarm = LocalTime.now().plusHours(1).withSecond(0).withNano(0)
+        val to = LocalTime.now().plusHours(2).withSecond(0).withNano(0)
+        p.startTime = start; p.endTime = LocalTime.now().plusHours(3).withSecond(0).withNano(0)
         p.exitAtAlarm = true
         setAlarm(alarm)
         home()
 
-        // The dial uppercases its caption, so match what is drawn.
-        compose.onNodeWithText(
-            ctx().getString(R.string.dial_until, hhmm(ctx(), alarm.hour, alarm.minute))
-                .uppercase()
-        ).assertExists()
+        compose.onNodeWithTag(DIAL_TAG).performScrollTo().performTouchInput {
+            down(handleOffset(degrees(alarm), width, center))
+            moveTo(handleOffset(degrees(to), width, center))
+        }
+        compose.waitForIdle()
+        compose.onNode(hasText(t(alarm), substring = true) and hasText(ctx().getString(R.string.window_span).substringBefore(" %1"), substring = true))
+            .assertDoesNotExist()
+        compose.onNodeWithTag(DIAL_TAG).performTouchInput { up() }
+    }
+
+    @Test
+    fun `the allowlist's "waits until" names tonight's end, not the handle`() {
+        // Reported: "until 8:30 AM" at the top of What is allowed while the
+        // night followed a 9:00 alarm and every reading on Home said 9:00.
+        val p = armed()
+        val wake = minutesFromNow(60)
+        val alarm = minutesFromNow(90)
+        p.endTime = wake
+        p.exitAtAlarm = true
+        setAlarm(alarm)
+        // Same date for the two, or the handle stands and so should the test.
+        val expected = if (LocalDateTime.now().plusMinutes(90).toLocalDate() ==
+            LocalDateTime.now().plusMinutes(60).toLocalDate()) alarm else wake
+        compose.setContent {
+            GloamingTheme(dark = false) { InterruptionsScreen(onBack = {}, onChanged = {}) }
+        }
+        compose.onNode(hasText(t(expected), substring = true)).assertExists()
+        if (expected == alarm) compose.onNode(hasText(t(wake), substring = true)).assertDoesNotExist()
     }
 
     @Test
     fun `switching it off leaves the wake time where it is`() {
-        // Off does not restore anything, and must not: there is nothing to
-        // restore to, and inventing a previous wake time would be a schedule
-        // the user never set.
+        // Off restores nothing, and must not: the handle was never moved.
         val p = armed()
-        val alarm = LocalTime.now().plusMinutes(30).withSecond(0).withNano(0)
-        p.endTime = alarm
+        val wake = minutesFromNow(60)
+        p.endTime = wake
         p.exitAtAlarm = true
+        val alarm = minutesFromNow(30)
         setAlarm(alarm)
         home()
 
-        compose.onNode(
-            // The row shows only the hour now.
-            hasText(hhmm(ctx(), alarm.hour, alarm.minute), substring = true)
-                and isToggleable()
-        ).performScrollTo().performClick()
-        assertEquals("off must not move the handle", alarm, p.endTime)
-        assertTrue("and it must actually be off", !p.exitAtAlarm)
+        compose.onNode(hasText(ctx().getString(R.string.row_end_at_alarm_title)) and isToggleable())
+            .performScrollTo().performClick()
+        assertFalse("and it must actually be off", p.exitAtAlarm)
+        assertEquals("off must not move the handle", wake, p.endTime)
+    }
+
+    @Test
+    fun `an alarm on another morning shows its day, and the handle stands`() {
+        // Monday's alarm seen from Friday night. The day is the answer to
+        // "which of my alarms", and the supporting line says what tonight
+        // ends at instead.
+        val p = armed()
+        val wake = minutesFromNow(60)
+        p.endTime = wake
+        p.exitAtAlarm = true
+        val at = LocalDateTime.now().plusDays(2).withSecond(0).withNano(0)
+        setAlarmAt(at)
+        home()
+
+        val day = at.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault())
+            .replaceFirstChar { it.titlecase(Locale.getDefault()) }
+        // The alarm with its day, and that it does not apply - in the
+        // dial's words, never "tonight". Never "Ends at": the dial says that.
+        compose.onNodeWithText("$day " + t(at.toLocalTime())).assertExists()
+        compose.onNodeWithText(ctx().getString(R.string.row_alarm_not_in_window)).assertExists()
+        compose.onNode(hasText(ctx().getString(R.string.row_end_at_alarm_title)) and isToggleable()).assertExists()
+        compose.onNodeWithText(ctx().getString(R.string.label_wake_up).uppercase()).assertExists()
+    }
+
+    @Test
+    fun `with no alarm the rule switches itself off, the switch is disabled, and the section stays`() {
+        // The owner's verdict on the standing version: a switch ON over "No
+        // alarm set" reads as on-but-doing-nothing. Off, and not switchable
+        // until there is an alarm to link to; the row says why and the chip
+        // says how.
+        val p = armed()
+        val wake = minutesFromNow(60)
+        p.endTime = wake
+        p.exitAtAlarm = true
+        home()
+
+        assertFalse("no alarm, no rule", p.exitAtAlarm)
+        compose.onNode(hasText(ctx().getString(R.string.row_end_at_alarm_title)) and isToggleable())
+            .assertIsOff().assertIsNotEnabled()
+        // With no clock app there is nothing for a second line to say. The
+        // string that used to say when bedtime ends here is gone from the
+        // resources: the dial says that.
+    }
+
+    @Test
+    fun `with no alarm and the rule off the section is still there`() {
+        // It used to leave with the switch: turn the rule off with no alarm
+        // and the section vanished under the finger. A control must never
+        // remove itself when used.
+        val p = armed()
+        p.exitAtAlarm = false
+        home()
+
+        compose.onNodeWithText(ctx().getString(R.string.row_no_alarm)).assertExists()
+        // The rule row is there to be switched on once an alarm exists.
+        compose.onNode(hasText(ctx().getString(R.string.row_end_at_alarm_title)) and isToggleable()).assertExists()
+    }
+
+    @Test
+    fun `an alarm that appears does not switch the rule on by itself`() {
+        // Off is off until the user says otherwise; the only thing that
+        // changes with the alarm is that the switch can be used again.
+        val p = armed()
+        p.exitAtAlarm = false
+        setAlarm(minutesFromNow(30))
+        home()
+
+        assertFalse(p.exitAtAlarm)
+        compose.onNode(hasText(ctx().getString(R.string.row_end_at_alarm_title)) and isToggleable())
+            .assertIsOff().assertIsEnabled()
+    }
+
+    @Test
+    fun `the alarm row names the clock app and opens its alarm list`() {
+        // Robolectric ships no clock app, so install one to resolve - the
+        // same probe Doors makes on the phone - with a name, which is what
+        // the chip wears.
+        val clock = ComponentName("com.example.clock", "com.example.clock.Alarms")
+        shadowOf(ctx().packageManager).apply {
+            installPackage(android.content.pm.PackageInfo().apply {
+                packageName = clock.packageName
+                applicationInfo = android.content.pm.ApplicationInfo().apply {
+                    packageName = clock.packageName
+                    nonLocalizedLabel = "Clock"
+                }
+            })
+            addActivityIfNotPresent(clock)
+            addIntentFilterForActivity(
+                clock,
+                IntentFilter(AlarmClock.ACTION_SHOW_ALARMS).apply { addCategory(Intent.CATEGORY_DEFAULT) }
+            )
+        }
+        val p = armed()
+        p.exitAtAlarm = true
+        home()
+
+        // With no alarm the second line says what the body does.
+        compose.onNodeWithText(ctx().getString(R.string.row_alarm_set, "Clock")).assertExists()
+        // The alarm row is the door, named after the app it opens; the rule
+        // row above it is the switch.
+        compose.onNode(hasContentDescription(ctx().getString(R.string.chip_open_app, "Clock"), substring = true))
+            .performScrollTo().performClick()
+        val started = shadowOf(RuntimeEnvironment.getApplication()).nextStartedActivity
+        assertEquals(AlarmClock.ACTION_SHOW_ALARMS, started?.action)
+        // No alarm on the phone, so the rule is off before the tap; the tap
+        // must not have switched it on. The body is a door, not the switch.
+        assertFalse(p.exitAtAlarm)
+    }
+
+    @Test
+    fun `no clock app, no door - the alarm row is information only`() {
+        val p = armed()
+        p.exitAtAlarm = true
+        home()
+        compose.onNode(hasContentDescription(ctx().getString(R.string.chip_open_alarms), substring = true))
+            .assertDoesNotExist()
+        compose.onNodeWithText(ctx().getString(R.string.row_no_alarm)).assertExists()
     }
 
     /**

@@ -17,6 +17,9 @@ class BedtimeReceiver : BroadcastReceiver() {
         // STATE_TRUE while zen_mode is reset to 0, so believing it loses the
         // window. START and END force for their own reasons, below.
         var force = false
+        // Boot and upgrade: the clock app may not have re-registered its
+        // alarms yet, so "no alarm" is not yet a fact. See rescheduleAll.
+        var alarmsKnown = true
         // The instant the schedule is judged at. Now, except for an alarm that
         // landed a little EARLY, which is judged at the instant it was armed
         // for - the Honor delivers on a five-minute grid of its own, and an END
@@ -47,6 +50,20 @@ class BedtimeReceiver : BroadcastReceiver() {
                 // pin would reopen the window and rearm END for the same
                 // instant, over and over.
                 p.activeDay = Prefs.NO_DAY
+                // And record the night as OVER, by the instant this END was
+                // due. The reschedule below reads the next alarm afresh, and
+                // by now the clock app has moved it to tomorrow - so judged
+                // from the handles the night would still contain this moment
+                // and be re-entered. See Scheduler.over. The due instant, not
+                // the landing: a parked END released tonight must not end
+                // tonight's night. And only when this END is judged to have
+                // ENDED anything: one that lands early beyond the tolerance
+                // is judged at its landing (Delivery.asOf), the window
+                // re-opens and a fresh END is armed for the real end - writing
+                // the future due here would have closed the night early and
+                // silently instead.
+                val ended = if (due != Prefs.NO_DUE) due else endNow
+                if (asOf >= ended) p.endedAt = ended
                 // A one-off is done: switch the app off rather than leaving it
                 // armed with nothing to run.
                 if (Scheduler.isOneOff(p.days)) {
@@ -58,7 +75,11 @@ class BedtimeReceiver : BroadcastReceiver() {
             AlarmManager.ACTION_NEXT_ALARM_CLOCK_CHANGED -> {
                 // Only interesting when the alarm is allowed to end the night.
                 // Re-deriving costs a reschedule; doing it for everyone would
-                // rewrite the rule every time any clock app is touched.
+                // rewrite the rule every time any clock app is touched. The
+                // end moves either way - earlier or later - and a night the
+                // END has already closed stays closed (Prefs.endedAt), so an
+                // alarm snoozed or re-set the moment it rang does not reopen
+                // the morning.
                 if (!p.exitAtAlarm) return
                 Journal.write(ctx, "next alarm changed - re-deriving the end")
             }
@@ -78,6 +99,7 @@ class BedtimeReceiver : BroadcastReceiver() {
                 // is the whole evidence that the vendor is not withholding the
                 // broadcast. An app upgrade is not a boot and must not clear it.
                 if (intent.action == Intent.ACTION_BOOT_COMPLETED) BootWatch.record(p)
+                alarmsKnown = false
                 // syncRule skips identical rules, so nothing would ever repair
                 // one edited from Settings. Boot and upgrade force a push.
                 p.ruleSignature = null
@@ -105,7 +127,8 @@ class BedtimeReceiver : BroadcastReceiver() {
         // Always rearm: exact alarms are one-shot.
         Scheduler.rescheduleAll(
             ctx, p, force,
-            from = LocalDateTime.ofInstant(Instant.ofEpochMilli(asOf), ZoneId.systemDefault())
+            from = LocalDateTime.ofInstant(Instant.ofEpochMilli(asOf), ZoneId.systemDefault()),
+            alarmsKnown = alarmsKnown
         )
         // The shade cannot see any of this happen. Ask the tile to re-read, or
         // it keeps showing the face it had when it was last looked at - a tick

@@ -49,16 +49,16 @@ import java.util.Locale
  * so the day words cannot drift from what is scheduled: a one-off, a window five
  * days out and a window running right now each name their own days.
  */
+/** The window's two ends, as instants. Null with nothing scheduled. */
 @Composable
-internal fun windowSentence(
+internal fun windowSpan(
     ctx: Context,
     prefs: Prefs,
     start: LocalTime,
     end: LocalTime,
-    days: Set<DayOfWeek>
-): String? {
-    val res = ctx.resources
-    val locale = LocalLocale.current.platformLocale
+    days: Set<DayOfWeek>,
+    exitAtAlarm: Boolean = prefs.exitAtAlarm
+): Pair<LocalDateTime, LocalDateTime>? {
     val now = LocalDateTime.now()
     // The window you are IN, or else the next one - and "in" is asked with
     // enabled = true regardless of the switch, deliberately.
@@ -71,24 +71,40 @@ internal fun windowSentence(
     // begins immediately, because liveWindowEnd treats a one-off as running the
     // moment the switch is on. The sentence would have promised tomorrow and
     // the app would have started that second.
-    // Deliberately asked WITHOUT the alarm, because this answer is only used to
-    // find where the window BEGAN - and an alarm-shortened end minus the full
-    // duration is not a start time, it is nonsense an hour before the real one.
-    val endsAt = Scheduler.liveWindowEnd(
+    //
+    // Asked WITH the alarm, because it can extend a night past the handle:
+    // asked without it at 08:45 under a 09:00 alarm this said the night was
+    // over and named tomorrow's. The window now says where it began directly.
+    val alarm = Scheduler.endingAlarm(ctx, exitAtAlarm)
+    val running = Scheduler.liveWindow(
         enabled = true, activeDay = prefs.activeDay,
-        start = start, end = end, days = days, from = now
+        start = start, end = end, days = days, from = now,
+        alarm = alarm, exitAtAlarm = exitAtAlarm, endedAt = Scheduler.endedAt(prefs)
     )
-    val from = (endsAt?.minus(Scheduler.duration(start, end))
-        ?: Scheduler.nextStart(start, end, days, now)) ?: return null
-    // The alarm belongs on the OTHER end. Without it this sentence said "to 8:30
-    // AM today" while the app bar and the alarm row both said 7:30 - the same
-    // screen answering "when does tonight end" two ways. endAt is the rule
-    // itself, so a 2pm alarm outside the window still changes nothing here.
-    val alarm = Scheduler.endingAlarm(ctx, prefs.exitAtAlarm)
-    val to = Scheduler.endAt(
-        from, from.plus(Scheduler.duration(start, end)), alarm, prefs.exitAtAlarm
-    )
+    val from = (running?.began ?: Scheduler.nextStart(start, end, days, now)) ?: return null
+    // The alarm belongs on the OTHER end. Without it this said "to 8:30 AM
+    // today" while the app bar said 7:30 - the same screen answering "when
+    // does tonight end" two ways. endAt is the rule itself.
+    val to = Scheduler.endAt(from, from.plus(Scheduler.duration(start, end)), alarm, exitAtAlarm)
+    return from to to
+}
 
+/**
+ * The window as ONE sentence - "From 11:05 PM today to 7:15 AM tomorrow".
+ * What a screen reader gets for the pill, and what the tests read.
+ */
+@Composable
+internal fun windowSentence(
+    ctx: Context,
+    prefs: Prefs,
+    start: LocalTime,
+    end: LocalTime,
+    days: Set<DayOfWeek>,
+    exitAtAlarm: Boolean = prefs.exitAtAlarm
+): String? {
+    val res = ctx.resources
+    val now = LocalDateTime.now()
+    val (from, to) = windowSpan(ctx, prefs, start, end, days, exitAtAlarm) ?: return null
     fun day(at: LocalDateTime): String = dayWord(ctx, at, now, DaySlot.SPAN)
     // One day word when both ends fall on it. "From 2:40 AM tomorrow to 8:40 AM
     // tomorrow" is correct and says it twice.
@@ -100,6 +116,31 @@ internal fun windowSentence(
         hhmm(ctx, from.hour, from.minute), day(from),
         hhmm(ctx, to.hour, to.minute), day(to)
     )
+}
+
+/**
+ * The window as TWO halves - "22:30 today" and "9:00 AM tomorrow" - for the
+ * pill under the dial, which paints them in the arc's night and dawn. Each
+ * half is a time and a day standing on its own, so the weekday takes the
+ * NOTE form, the one with its preposition inside ("у понеділок"), not the
+ * genitive the sentence uses after "до".
+ */
+@Composable
+internal fun windowHalves(
+    ctx: Context,
+    prefs: Prefs,
+    start: LocalTime,
+    end: LocalTime,
+    days: Set<DayOfWeek>,
+    exitAtAlarm: Boolean = prefs.exitAtAlarm
+): Pair<String, String>? {
+    val res = ctx.resources
+    val now = LocalDateTime.now()
+    val (from, to) = windowSpan(ctx, prefs, start, end, days, exitAtAlarm) ?: return null
+    fun half(at: LocalDateTime) = res.getString(
+        R.string.window_half, hhmm(ctx, at.hour, at.minute), dayWord(ctx, at, now, DaySlot.NOTE)
+    )
+    return half(from) to half(to)
 }
 
 /**
@@ -221,7 +262,9 @@ fun statusLine(
      * Can the app actually do the job - both permissions in place? Without them
      * every path here is a promise it cannot keep.
      */
-    ready: Boolean = true
+    ready: Boolean = true,
+    /** The last END's due instant - a night closed by it is not "on until". */
+    endedAt: LocalDateTime? = null
 ): String {
     if (!enabled) return res.getString(R.string.bedtime_off)
     // BEFORE any countdown. Revoke Do Not Disturb access mid-schedule and the
@@ -237,7 +280,7 @@ fun statusLine(
     // The end the alarm actually produces, so the bar and the rule agree - and
     // so flipping the switch changes the headline reading, not just a subtitle.
     val ends = Scheduler.liveWindowEnd(
-        enabled, activeDay, start, end, days, now, alarm, exitAtAlarm
+        enabled, activeDay, start, end, days, now, alarm, exitAtAlarm, endedAt
     )
     if (ends != null) {
         return res.getString(R.string.state_on_until, hhmm(ctx, ends.hour, ends.minute))

@@ -169,7 +169,8 @@ class BedtimeTile : TileService() {
             p.startTime, p.endTime, p.days,
             alarm = Scheduler.endingAlarm(this, p.exitAtAlarm),
             exitAtAlarm = p.exitAtAlarm,
-            ready = ready()
+            ready = ready(),
+            endedAt = Scheduler.endedAt(p)
         )
         tile.updateTile()
     }

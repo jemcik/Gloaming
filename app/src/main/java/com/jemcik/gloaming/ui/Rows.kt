@@ -31,6 +31,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.foundation.layout.height
 import com.jemcik.gloaming.R
 
 /**
@@ -122,7 +125,12 @@ fun SwitchRow(
     )
 }
 
-/** A row that leaves for somewhere else. The chevron is Google's own path. */
+/**
+ * A row that leaves for somewhere else. The chevron is Google's own path,
+ * and it means deeper IN; a row that leaves the APP - the alarm row, which
+ * opens the clock app - passes [trailing] = open-in-new, so the mark says
+ * where the tap goes.
+ */
 @Composable
 fun LinkRow(
     headline: String,
@@ -130,6 +138,7 @@ fun LinkRow(
     supporting: String? = null,
     leading: (@Composable () -> Unit)? = null,
     enabled: Boolean = true,
+    trailing: Int = R.drawable.ic_chevron,
     onClick: () -> Unit
 ) {
     ListItem(
@@ -138,7 +147,7 @@ fun LinkRow(
         leadingContent = leading,
         trailingContent = {
             Icon(
-                painterResource(R.drawable.ic_chevron),
+                painterResource(trailing),
                 contentDescription = null,
                 modifier = Modifier.size(24.dp)
             )

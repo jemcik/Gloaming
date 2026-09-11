@@ -151,6 +151,9 @@ object Diagnostics {
         row("active day", if (p.activeDay == Prefs.NO_DAY) "-"
             else runCatching { LocalDate.ofEpochDay(p.activeDay).toString() }
                 .getOrDefault(p.activeDay.toString()))
+        // The instant the last END closed a night. A window that had begun by
+        // then will not reopen, whatever "next alarm" reads above.
+        row("last END due", Scheduler.endedAt(p)?.toString() ?: "-")
         // Samsung's routines, as ITS app sees them now - looked up, never
         // recalled, for the same reason the rule is: what we last wrote is a
         // belief. One line per effect that has a routine here.

@@ -32,17 +32,24 @@ indefinitely is background restriction — see `core/BackgroundLimit.kt`.
                                  87 lines, and it should stay small
 
     core/Scheduler.kt            exact alarms. A window is start + duration,
-                                 never two independent times. `endAt` is AOSP's
-                                 exitAtAlarm rule, copied not invented: the
-                                 morning alarm ends the night only when it falls
-                                 INSIDE the window. The day-of-week
-                                 selection is the MORNING a window ENDS on, and
-                                 Scheduler works backwards to the evening that
-                                 reaches it. `endingAlarm` is the gate the alarm
-                                 passes through - the next alarm, but only where
-                                 the switch lets it act. It is one line and it
-                                 has a name because six callers were writing it
-                                 out and two forgot
+                                 never two independent times. `endAt` lets the
+                                 NEXT alarm set the end, either way: when it is
+                                 this night's - after the night began, inside
+                                 the window or later on the day the scheduled
+                                 end falls on - the night ends at it; otherwise
+                                 at the wake handle, which is the fallback and
+                                 not a ceiling. It was AOSP's shorten-only rule
+                                 until 11 Sep 2026. `liveWindow` is the window
+                                 as a PAIR, began and ends, and refuses a night
+                                 the last END has closed (`Prefs.endedAt`). The
+                                 day-of-week selection is the MORNING a window
+                                 ENDS on, and Scheduler works backwards to the
+                                 evening that reaches it. `endingAlarm` is the
+                                 gate the alarm passes through - the next alarm,
+                                 but only where the switch lets it act. It is
+                                 one line and it has a name because six callers
+                                 were writing it out and two forgot; a seventh,
+                                 `insideWindow`, forgot the alarm itself
     core/Bedtime.kt              the master switch, as one function. The tile
                                  has no HomeState to borrow, so `set` and
                                  `runningNow` live here and both callers share
@@ -56,7 +63,16 @@ indefinitely is background restriction — see `core/BackgroundLimit.kt`.
     core/BootWatch.kt            detects a reboot whose broadcast never arrived
     core/Doors.kt                the system screens we can send someone to, and
                                  whether they exist here. Capability probes, so
-                                 a door that opens onto nothing is never drawn
+                                 a door that opens onto nothing is never drawn.
+                                 Includes the clock app's alarm LIST, by the
+                                 platform intent every clock answers - never a
+                                 prefilled editor, which Honor's Clock answers
+                                 with someone else's alarm and Google's by
+                                 creating one; the alarm's own `showIntent`
+                                 where the clock fills it (Honor's does not).
+                                 The list's activity is behind the NORMAL
+                                 SET_ALARM permission, declared, and the app
+                                 that answers is named to TalkBack
     core/Delivery.kt             the one rule AlarmWatch and BackgroundProbe
                                  share: delivered means ARRIVED ON TIME
     core/ScreenEffects.kt        does this phone APPLY the rule's device
@@ -192,27 +208,82 @@ is in DECISIONS.md.
 
 **Zen and scheduling**
 
-- The alarm-shortened end belongs in the WINDOW calculation, not in the END alarm.
+- The alarm-set end belongs in the WINDOW calculation, not in the END alarm.
   Shortening only the alarm leaves the window still containing `now`, so the next
   reschedule walks back into the night and switches zen on again. `SchedulerTest`
   pins it.
 
-- **The wake handle and "end at your alarm" are ONE state.** On means the wake
-  time EQUALS the alarm: switching on moves the handle there, and setting the
-  handle there switches it on. Two controls for one value is what produced three
-  separate "it is lying" reports - the screen held a wake time of 8:30 and an
-  effective end of 7:30 at once and had to show both somewhere. `commitWake` is
-  deliberately NOT folded into `commit`: the switch commits too, and re-deriving
-  there reads "the handle still equals the alarm" one instant after the user
-  switched it OFF and turns it straight back on.
-- **Every number that describes TONIGHT takes the alarm-shortened end**, and the
+- **The next alarm SETS the end, one way, and the handle is the fallback.** With
+  the switch on, tonight ends at the next alarm when it is this night's -
+  earlier than the wake handle or later - and at the handle otherwise. The
+  handle is the user's own time and is never overwritten. Dragging it, or
+  setting it in the picker, is the one way OUT of following: `commitWake`
+  switches the rule off on a real move, and stays separate from `commit`, which
+  the switch itself calls. The switch used to COPY the alarm into the handle so
+  the two could not disagree; they could, the moment the alarm moved in the
+  clock app, in both directions - and the user's own wake time was gone. With
+  NO ALARM ON THE PHONE the rule switches itself off, in `rescheduleAll`, and
+  the switch is drawn off and DISABLED; nothing switches it on by itself. A
+  standing rule was built first and the owner rejected it on sight: ON over
+  "No alarm set" reads as on-but-doing-nothing. The cost, chosen knowingly: the
+  platform reports "no alarm" identically for a deleted one and a one-time one
+  that has rung, so after a one-time alarm the rule is off until switched on
+  again. The SECTION IS ALWAYS DRAWN - it used to leave with the switch, and a
+  control must never remove itself when used. The row carries the live state -
+  the time alone when it is this window's, "Mon 07:30" over "Not in this
+  sleep window" when it is not - never "tonight": a window can be a nap -
+  and "No alarm set" over what the row does; never when bedtime ends, which
+  the dial says three times already. The platform names ONE alarm,
+  the next to ring; there is no list to choose from, so the row says which one
+  the way the lock screen does. The section is TWO
+  ROWS WITH TWO ROLES, straight under the window pill with no heading and no
+  rule above - the first row's title is the heading: the rule, a switch row
+  with its own title and no icon; and the alarm row - icon, its face, and
+  OPEN-IN-NEW, not a chevron, because the tap leaves for the clock app. Four
+  shapes preceded it in one day and DECISIONS has them: twin rows with a
+  chevron (read as two settings), an assist chip (floated), a split row
+  (Android's Wi-Fi idiom; its 160dp body cut every Slavic line short), and
+  this, the owner's pick from six sketches once the lines had room to mean
+  something. Copy budgets, measured on the phone: the rule title ~22
+  Cyrillic characters, the alarm headline ~24, its second line ~30.
+- **A night whose END has come DUE is closed**, landed or not, until a window
+  that begins later. At the END the clock app has already moved "next alarm" to
+  tomorrow, so judged from the handles the night still contains now and the
+  reschedule walks back in; a snoozed alarm is the same door ten minutes later;
+  and on the Honor the clock's broadcast beats our grid-held END to the
+  receiver, so the receiver's own write is not enough - `rescheduleAll` closes
+  the night the moment `endDue` has passed, which also ends a night whose END
+  was eaten at the open instead of extending it to the handle. `Prefs.endedAt`
+  is the END's DUE instant - not its landing, or a parked END released at 23:00
+  would end the night that began at 22:30; and NOT written for an END that
+  lands early beyond the tolerance, which re-opens the window as `Delivery`
+  says. `liveWindow` refuses any window begun before it, strictly, so a window
+  set to begin the instant the last one ended is a new night. Deliberately not
+  cleared by a user's edit: drag the handle past now after the END and bedtime
+  waits for tonight; the bar says "Starts in". `SchedulerTest` used to pass the
+  RUNG alarm at 07:31, which the phone never will; `NextAlarmTest` drives the
+  real path, the race included. The alarm may extend a night only to before the
+  NEXT day's start: an evening alarm on the ending date would otherwise run
+  one night into the next. And a BOOT does not switch the rule off for "no
+  alarm": the clock app may not have re-registered yet (`alarmsKnown`).
+- **Every number that describes TONIGHT takes the alarm-set end**, and the
   list is longer than it looks: the wake numeral, the arc, the handle, the
   countdown, its caption, the sleep-window total, the sentence, the row and the
-  app bar. It reached the phone twice with some of them converted and some not,
-  and a screen answering one question two ways is worse than either answer being
-  wrong. `endsTonight` is derived ONCE in `WindowBlock` for that reason. The wake
-  handle itself still shows the SETTING while it is being dragged, or it freezes
-  under the finger - the alarm has not moved, so the redraw would not follow.
+  app bar - and `insideWindow`, which asked WITHOUT the alarm and read "not
+  running" at 08:45 under a 09:00 alarm. It reached the phone twice with some of
+  them converted and some not, and a screen answering one question two ways is
+  worse than either answer being wrong. `endsTonight` is derived ONCE in
+  `HomeState` for that reason, and the WAKE UP overline reads NEXT ALARM with
+  the alarm's glyph while tonight ends at the alarm - which is what tells the
+  user that the handle sitting there is not theirs, and that dragging it lets
+  go. The handle lets go at the FIRST
+  MOVEMENT, not at the release: `dragWake` flips the rule as the finger moves,
+  so the numeral, the arc and the overline follow the finger rather than
+  showing the alarm for the length of the drag. Until it moves, the handle
+  stays drawn where it was grabbed, which is the alarm: drawn from the setting
+  on the grab, it jumped to 6:50 under a finger resting on 10:00 and jumped
+  back with the first move. A grab that never moves changes nothing. The
+  picker opens on the time the numeral shows, for the same reason.
 - A rule carries a **`conditionOverride`** as well as a condition, and it wins.
   AOSP's `setManualZenMode` stamps `OVERRIDE_DEACTIVATE` on every active rule
   whenever zen goes off other than by the user in SystemUI — **a reboot
@@ -605,7 +676,7 @@ compileSdk 37, targetSdk 36, minSdk 35.
 
 ## Tests
 
-`app/src/test/`, 273 cases, no device. They are written as the QUESTION the code
+`app/src/test/`, 300 cases, no device. They are written as the QUESTION the code
 answers rather than as coverage of a method, because none of the bugs were ever
 in a method — they were in an assumption.
 
@@ -617,12 +688,22 @@ in a method — they were in an assumption.
                           a rewrite blinks zen - and still OWED afterwards
                           rather than filed as sent
     SchedulerTest         the scheduling core: midnight wrap, days-as-mornings,
-                          the one-off, the activeDay pin, and `endAt` - the
-                          alarm ends the night only from INSIDE the window
+                          the one-off, the activeDay pin, `endAt` - the next
+                          alarm sets the end either way when it is this
+                          night's, and the afternoon case the rule trades for
+                          that - and a night the END has closed staying closed
+                          while the next alarm reads tomorrow
+    NextAlarmTest         the same through the REAL path: rescheduleAll reading
+                          getNextAlarmClock, the END armed at a later alarm,
+                          the pin on the night's own evening, the receiver
+                          recording the END by its due instant
+    DoorsTest             the clock app's alarm list is a door only where it
+                          resolves, and the alarm's own showIntent wins
     SentencesTest         the sentence builders, driven directly
     WindowSentenceTest    the window in words, per locale, through Home, plus
-                          the alarm-shortened end, driven through a real
-                          setAlarmClock so it exercises getNextAlarmClock
+                          the alarm-set end - earlier, later, another morning -
+                          driven through a real setAlarmClock so it exercises
+                          getNextAlarmClock
     PlanNoteTest          the "not in effect" note, through Home
     InterruptionsTest     the allowlist sentence, per locale
     ClockTest             12/24-hour formatting
@@ -633,7 +714,7 @@ in a method — they were in an assumption.
                           must keep them
     RowFitTest            does the text fit, in en/ru/uk, by MEASURING -
                           Home's rows, the allowlist's, Settings', the alarm
-                          section's row AND heading, and the APP BAR's status
+                          section's every face AND its heading, and the APP BAR's status
                           line, which is capped at one line and so truncates
                           rather than wraps - measured on the worst case that
                           is actually reachable, a one-morning-a-week schedule
@@ -643,9 +724,11 @@ in a method — they were in an assumption.
                           is 311, and those 49dp are six characters this test
                           passed for a fortnight
     ScreensTest           interactions, never appearance - including the
-                          wake handle and "at your alarm" moving each other,
-                          and the dial following a moved alarm rather than the
-                          handle left behind
+                          alarm switch leaving the handle alone, NEXT ALARM
+                          over the numeral while tonight ends at the alarm,
+                          the picker letting go of it, the section's faces
+                          with no alarm and with another morning's, and the
+                          door into the clock app
     AlarmWatchTest        did our own END arrive, and ON TIME - the case the
                           notice exists for, which it could not report; what a
                           miss RECORDS; an alarm judged by its own due instant
@@ -684,11 +767,12 @@ in a method — they were in an assumption.
                           distinct from a deleted rule, and does the system's
                           account stay ahead of - and apart from - our own
 
-Coverage: **78% of instructions, 63% of branches**. The shape is the point — what
+Coverage: **81% of instructions, 68% of branches**. The shape is the point — what
 is covered is what can be reasoned about without a phone; what is not is what
-talks to the platform (`BedtimeTile` 0%, `BedtimeReceiver` 1%,
-`AmbientControl` 18%, `Doors` 25%, `Journal` 33%, `ZenController` 71%). That gap
-is what the journal is for.
+talks to the platform (`BedtimeTile` 0%, `AmbientControl` 36%,
+`BedtimeReceiver` 56% - its END and next-alarm branches are driven directly
+now, see `NextAlarmTest` - `Journal` 63%, `Doors` 87%). That gap is what the
+journal is for.
 
 Three things worth knowing before adding tests:
 

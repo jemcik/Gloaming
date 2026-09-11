@@ -20,6 +20,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.layout.Column
 import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.material3.AssistChip
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalDensity
@@ -32,6 +35,8 @@ import android.app.NotificationManager
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.shadows.ShadowAlarmManager
 import java.time.LocalDate
+import java.util.Locale
+import java.time.format.TextStyle
 import com.jemcik.gloaming.R
 import com.jemcik.gloaming.core.Prefs
 import com.jemcik.gloaming.core.FakeRoutines
@@ -387,24 +392,43 @@ class RowFitTest {
     private fun endsSectionFitsIn(locale: String, scale: Float = 1f) {
         RuntimeEnvironment.setQualifiers("+$locale-w360dp-h800dp")
         val ctx = ApplicationProvider.getApplicationContext<android.content.Context>()
-        // The row shows the hour and nothing else now, so the thing that can
-        // still wrap is the HEADING, which carries the whole purpose and is the
-        // longest string in the section in ru and uk.
-        val headline = "12:30 AM"
-
-        val heading = ctx.getString(R.string.section_end_at_alarm)
+        val loc = Locale.forLanguageTag(locale)
+        val time = "12:30 AM"
+        val heading = ctx.getString(R.string.section_which_days)
+        // The widest short day name the locale has, for the not-tonight face.
+        val day = DayOfWeek.entries
+            .map { it.getDisplayName(TextStyle.SHORT, loc).replaceFirstChar { c -> c.titlecase(loc) } }
+            .maxByOrNull { it.length }!!
+        // The rule row, then every face the alarm row has: tonight's alarm
+        // (which alarm it is), another morning's (what that means for
+        // tonight, and the alarm with its day), and no alarm at all.
+        val rows = listOf(
+            time to null,
+            "$day $time" to ctx.getString(R.string.row_alarm_not_in_window),
+            ctx.getString(R.string.row_no_alarm) to
+                if (ctx.resources.getBoolean(R.bool.alarm_set_names_app)) ctx.getString(R.string.row_alarm_set, "Clock")
+                else ctx.getString(R.string.row_alarm_set_any)
+        )
 
         compose.setContent {
             GloamingTheme(dark = false) {
                 AtFontScale(scale) {
                 Box(Modifier.padding(horizontal = 24.dp)) {
                 Section(heading) {
-                GroupedList(gloam.raise, listOf {
-                    SwitchRow(
-                        headline = headline,
-                        checked = false,
-                        leading = { RowIcon(R.drawable.ic_alarm, IconTint.Alarm) }
-                    ) {}
+                GroupedList(gloam.raise, buildList<@Composable () -> Unit> {
+                    add {
+                        SwitchRow(headline = ctx.getString(R.string.row_end_at_alarm_title), checked = true) {}
+                    }
+                    rows.forEach { (h, sub) ->
+                        add {
+                            LinkRow(
+                                headline = h,
+                                supporting = sub,
+                                leading = { RowIcon(R.drawable.ic_alarm, IconTint.Alarm) },
+                                trailing = R.drawable.ic_open_in_new
+                            ) {}
+                        }
+                    }
                 })
                 }
                 }
@@ -412,24 +436,32 @@ class RowFitTest {
             }
         }
 
-        // The HEADING is the long string here now - it carries the whole purpose
-        // of the section, and in ru and uk that is thirty characters. It is
-        // labelSmall across the full card, so it wraps rather than truncates,
-        // which is untidy rather than broken - but a two-line heading over a
-        // one-line row reads as a paragraph, not a label.
+        // The HEADING carries the whole purpose of the section, and in ru and
+        // uk that is thirty characters. It is labelSmall across the full card,
+        // so it wraps rather than truncates, which is untidy rather than broken
+        // - but a two-line heading over a one-line row reads as a paragraph,
+        // not a label.
         val head = compose.onNode(hasText(heading.uppercase(), substring = true))
             .getUnclippedBoundsInRoot()
         val hh = (head.bottom - head.top).value
         assertTrue("in '$locale' the heading wrapped: ${hh}dp", hh < 24f)
 
-        val b = compose.onNode(hasText(headline, substring = true))
+        // The rule row: a one-line title beside a switch. Two lines at the
+        // large font is the allowance Home's other rows get; at 1.0 it must
+        // not wrap, or the switch leaves the title's line.
+        val rule = compose.onNode(hasText(ctx.getString(R.string.row_end_at_alarm_title)) and isToggleable())
             .getUnclippedBoundsInRoot()
-        val h = (b.bottom - b.top).value
-        assertTrue(
-            "in '$locale' the ends row is ${h}dp: its subtitle wrapped, and M3 " +
-                "then top-aligns the switch instead of centring it on the row",
-            h < if (scale > 1f) 92f else twoLineCeiling.value
-        )
+        val ruleH = (rule.bottom - rule.top).value
+        assertTrue("in '$locale' the rule row is ${ruleH}dp: its title wrapped", ruleH < if (scale > 1f) 92f else 64f)
+        rows.forEach { (h, _) ->
+            val b = compose.onNode(hasText(h)).getUnclippedBoundsInRoot()
+            val rh = (b.bottom - b.top).value
+            assertTrue(
+                "in '$locale' the alarm row '$h' is ${rh}dp: something wrapped, and M3 " +
+                    "then top-aligns the trailing icon instead of centring it",
+                rh < if (scale > 1f) 128f else twoLineCeiling.value
+            )
+        }
     }
 
     /**

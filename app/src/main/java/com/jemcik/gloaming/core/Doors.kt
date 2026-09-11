@@ -1,8 +1,10 @@
 package com.jemcik.gloaming.core
 
+import android.app.AlarmManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.provider.AlarmClock
 import android.provider.Settings
 import androidx.core.net.toUri
 
@@ -64,6 +66,71 @@ object Doors {
         VENDOR_SCREENS.any {
             ctx.packageManager.resolveActivity(Intent().setComponent(it), 0) != null
         }
+
+    /**
+     * The clock app's alarm list - or the next alarm itself, where the app
+     * that set it says how.
+     *
+     * `AlarmClock.ACTION_SHOW_ALARMS` is a platform intent, API 19, and every
+     * stock clock declares it because Google Assistant's "show my alarms" goes
+     * through it: AOSP, Samsung, Honor (measured 11 Sep 2026, it resolves to
+     * `AlarmsMainActivity`), and the third-party alarm apps too. Not a vendor
+     * branch. Still PROBED, because a phone with no handler is possible, and
+     * package visibility hides the answer unless the manifest declares the
+     * intent under <queries>.
+     *
+     * NOT `ACTION_SET_ALARM` with the wake time filled in, which read as the
+     * obvious door and is not one. Measured on the Honor: with and without
+     * hour and minute extras it opened the editor of the FIRST EXISTING alarm,
+     * 07:30 Mon-Fri, ignored every extra, and created nothing. On Google's
+     * Clock the same intent creates the alarm at once and shows no editor - a
+     * side effect a "go and set one" row must not have. The list is what
+     * every clock answers the same way, and its + is one tap.
+     *
+     * Where the clock supplies a `showIntent` with its next alarm it is
+     * preferred: it opens THAT alarm in the app that set it, which is the
+     * exact answer to "which alarm". AOSP and Samsung fill it; Honor's Clock
+     * leaves it null, measured the same day.
+     */
+    fun hasAlarms(ctx: Context): Boolean =
+        ctx.getSystemService(AlarmManager::class.java)?.nextAlarmClock?.showIntent != null ||
+            ctx.packageManager.resolveActivity(Intent(AlarmClock.ACTION_SHOW_ALARMS), 0) != null
+
+    /**
+     * The name of the app the alarm door opens - "Clock" almost everywhere,
+     * "Alarmy" where that is the truth - so the chip can say where it leads
+     * rather than promising a "Clock" the phone may not have. The alarm's own
+     * app where it says how to show itself, else whichever app answers the
+     * list. Null where neither can be named; the chip then says "alarms".
+     */
+    fun alarmsApp(ctx: Context): String? = runCatching {
+        val pm = ctx.packageManager
+        val creator = ctx.getSystemService(AlarmManager::class.java)
+            ?.nextAlarmClock?.showIntent?.creatorPackage
+        if (creator != null) return@runCatching pm.getApplicationInfo(creator, 0).loadLabel(pm).toString()
+        pm.resolveActivity(Intent(AlarmClock.ACTION_SHOW_ALARMS), 0)
+            ?.activityInfo?.applicationInfo?.loadLabel(pm)?.toString()
+    }.getOrNull()?.takeIf { it.isNotBlank() }
+
+    fun openAlarms(ctx: Context): Boolean {
+        val show = ctx.getSystemService(AlarmManager::class.java)?.nextAlarmClock?.showIntent
+        if (show != null) {
+            runCatching { show.send() }
+                .onSuccess { return true }
+                .onFailure { Journal.write(ctx, "alarm's showIntent refused: " + it) }
+        }
+        return runCatching {
+            ctx.startActivity(
+                Intent(AlarmClock.ACTION_SHOW_ALARMS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            )
+        }.onFailure {
+            // Say what the call answered. A door that resolves and then does
+            // nothing on a tap is the failure this line exists to name: the
+            // list's activity is behind a normal permission the manifest has
+            // to declare, and the first build did not.
+            Journal.write(ctx, "alarm list refused: " + it)
+        }.isSuccess
+    }
 
     fun openAutoStart(ctx: Context) {
         for (screen in VENDOR_SCREENS) {

@@ -15,10 +15,15 @@ OUT = pathlib.Path("/Users/jemcik/Public/code/Gloaming/docs/screenshots")
 
 # EN reads the clock at 12 hours, the Slavic locales at 24 - asked for, and it
 # is what each audience actually has set.
-LANGS = {"en": ("12", "What is allowed", "Settings"),
-         "uk": ("24", "Що дозволено", "Налаштування"),
-         "ru": ("24", "Что разрешено", "Настройки")}
+LANGS = {"en": ("12", "What is allowed", "Settings", "how the screen will look"),
+         "uk": ("24", "Що дозволено", "Налаштування", "як виглядатиме екран"),
+         "ru": ("24", "Что разрешено", "Настройки", "как будет выглядеть экран")}
 THEMES = {"light": "no", "dark": "yes"}
+
+# Where the effects section's heading sits in the effects shot, in screen
+# pixels: the framing the README has always shown - the day chips just under
+# the bar, WHAT CAN WAKE YOU, and the three effect rows filling the bottom.
+EFFECTS_HEADING_Y = 1677
 
 
 def sh(*a, quiet=True):
@@ -42,8 +47,18 @@ def grab(path):
 
 def bounds(text):
     """Where is the node carrying this text? Returns its centre, or None."""
-    shell("uiautomator dump /sdcard/ui.xml")
-    xml = shell("cat /sdcard/ui.xml")
+    # The OLD dump is removed first, and the dump retried: uiautomator refuses
+    # to dump while the window is still moving, and reading the previous file
+    # then answers from the screen as it was - the top of Home, with nothing
+    # below the fold in it - which is how the effects heading went "missing"
+    # a second after a swipe.
+    xml = ""
+    for _ in range(4):
+        shell("rm -f /sdcard/ui.xml; uiautomator dump /sdcard/ui.xml")
+        xml = shell("cat /sdcard/ui.xml")
+        if "<node" in xml:
+            break
+        time.sleep(1)
     # NODE BY NODE. A single regex over the whole dump reads text="" first and
     # its [^>]* then swallows the content-desc on the same node, so finditer
     # never offers the description - which is the only thing the gear carries.
@@ -69,7 +84,7 @@ def tap(text, what):
 
 
 def shoot(lang, theme):
-    clock, allowed_text, settings_text = LANGS[lang]
+    clock, allowed_text, settings_text, effects_heading = LANGS[lang]
     print(f"  {lang} / {theme} / {clock}h")
     shell(f"cmd locale set-app-locales {PKG} --user 0 --locales {lang}")
     shell(f"settings put system time_12_24 {clock}")
@@ -77,13 +92,41 @@ def shoot(lang, theme):
     time.sleep(1)
     shell(f"am force-stop {PKG}")
     shell(f"am start -n {PKG}/.MainActivity")
-    time.sleep(4)
+    # Long enough for the first composition's re-arm and the resume's
+    # reconcile to settle. At 4s the swipe below landed during a recomposition
+    # that moved the page under the finger, and the UP became a TAP on
+    # whatever row had slid beneath it - "What is allowed" - so effects.png
+    # was the allowlist, in every language, on 11 Sep 2026.
+    time.sleep(7)
 
     d = OUT / lang / theme
     grab(d / "home.png")
 
-    # The effects live below the fold on Home.
-    shell("input swipe 628 2100 628 900 300"); time.sleep(2)
+    # The effects live below the fold on Home. A fixed swipe FLINGS, and where
+    # it lands moved the day the page grew - "end bedtime at your alarm" put a
+    # card and a chip between the dial and the days on 11 Sep 2026, and the
+    # old 1200px stopped on WHICH DAYS with the effects cut off. Lengthening
+    # it overshot; shortening it undershot; the fling is not linear in the
+    # distance. So: a rough swipe, then MEASURE where the section's heading
+    # landed and drag it, slowly enough not to fling, to where the README's
+    # framing has it - again if the first drag flung a little.
+    shell("input swipe 628 2400 628 720 500"); time.sleep(3)
+    for _ in range(3):
+        p = bounds(effects_heading)
+        if not p:
+            print("    !! could not find the effects heading"); break
+        delta = p[1] - EFFECTS_HEADING_Y
+        if abs(delta) <= 48:
+            break
+        # ~150px/s, under the fling threshold on this panel; never off-screen.
+        # And never SHORTER than 60px: a slow drag inside touch slop is a tap
+        # on whatever row sits under y=1500, which was "What is allowed" -
+        # every effects.png was the allowlist for an afternoon. Overshooting
+        # by up to 12px lands inside the 48 above.
+        move = max(60, abs(delta)) * (1 if delta > 0 else -1)
+        end = max(300, min(2600, 1500 - move))
+        shell(f"input swipe 628 1500 628 {end} {max(600, int(abs(1500 - end) / 0.15))}")
+        time.sleep(2)
     grab(d / "effects.png")
 
     if tap(allowed_text, "the allowlist row"):
@@ -100,10 +143,14 @@ def shoot(lang, theme):
 
 if __name__ == "__main__":
     only = sys.argv[1:] or list(LANGS)
+    # No heads-up notifications over the shot: a Gmail banner sat across the
+    # top of home.png once. Restored below.
+    shell("settings put global heads_up_notifications_enabled 0")
     for lang in only:
         for theme in THEMES:
             shoot(lang, theme)
     # Leave the phone as a person would want it.
+    shell("settings put global heads_up_notifications_enabled 1")
     shell("cmd uimode night yes")
     shell(f"cmd locale set-app-locales {PKG} --user 0 --locales en")
     print("done")

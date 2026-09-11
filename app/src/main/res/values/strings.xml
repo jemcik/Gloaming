@@ -34,6 +34,10 @@
     <string name="dur_compact">%1$dh %2$02dm</string>
     <string name="dur_minutes">%1$dm</string>
     <string name="window_span">From %1$s %2$s to %3$s %4$s</string>
+    <!-- One half of the pill under the dial: a time and its day, "22:30
+         today", "9:00 AM Monday". The sentence above is what TalkBack reads
+         for the pair. -->
+    <string name="window_half">%1$s %2$s</string>
     <string name="window_span_same_day">From %1$s to %2$s %3$s</string>
     <string name="day_today">today</string>
     <string name="day_tomorrow">tomorrow</string>
@@ -139,14 +143,48 @@
     <string name="label_bedtime">bedtime</string>
     <string name="label_started">started</string>
     <string name="label_wake_up">wake up</string>
+    <!-- In WAKE UP's place while tonight ends at the next alarm. As short as
+         wake up: it shares its row with BEDTIME and a glyph either side. -->
+    <string name="label_next_alarm">next alarm</string>
     <string name="dial_sleep_window">sleep window</string>
     <string name="dial_until">until %1$s</string>
     <string name="dial_until_bedtime">until bedtime</string>
 
     <!-- ============ Home: which days ============ -->
     <string name="section_which_days">which days</string>
-    <string name="section_end_at_alarm">end bedtime at your alarm</string>
-    <string name="row_end_at_alarm">End bedtime at your alarm, %1$s</string>
+    <!-- The section: two rows with two roles. The heading names the
+         relationship; the first row is the rule, a switch with its own title;
+         the second is the alarm the rule follows, and a door into the clock
+         app. It was one row with a switch, then a split row - see DECISIONS,
+         11 Sep 2026, for the whole walk. -->
+    <string name="row_end_at_alarm_title">End bedtime at your alarm</string>
+    <!-- The headline while the phone has no alarm at all and the rule is on.
+         A headline, so it must not wrap beside an icon and a switch: about
+         14 characters in the widest script. -->
+    <string name="row_no_alarm">No alarm set</string>
+    <!-- Under an alarm that does not apply to the window this time - Monday's
+         07:30, seen on a Friday - the headline being the alarm with its day.
+         It said "Ends at 07:35" first (the dial's number a third time, and a
+         rival to the alarm's), then "No alarm tonight" - which assumed a
+         night, and a window can be a nap. The dial's own words instead. -->
+    <string name="row_alarm_not_in_window">Not in this sleep window</string>
+    <!-- What TalkBack says the alarm row does: it opens the clock app. %1$s
+         is that app's own name, read from the app that answers; the second is
+         the fallback where no name can be read. Not drawn. -->
+    <string name="chip_open_app">Open %1$s</string>
+    <string name="chip_open_alarms">Open alarms</string>
+    <!-- Under "No alarm set", where the phone has a clock app to open: what
+         the row's body does, which is the one thing the empty state needs to
+         say. "Ends at 07:30" stood here and repeated the dial three times.
+         "Tap to", by the owner's choice - the tap is the one affordance
+         the open-in-new mark does not spell out. English names the clock
+         app; the Slavic lines are the owner's own and do not, because tap
+         AND name do not fit the row - so alarm_set_names_app picks the
+         second form there. The named translations stay complete for lint,
+         and TalkBack hears the name either way. -->
+    <string name="row_alarm_set">Tap to set one in %1$s</string>
+    <string name="row_alarm_set_any">Tap to set one</string>
+    <bool name="alarm_set_names_app">true</bool>
     <!-- A row's supporting line must not WRAP. Past one line the row becomes a
          three-line ListItem, and M3 then top-aligns the trailing content, so the
          switch stops being level with its own row. Reported as exactly that.
@@ -157,7 +195,7 @@
          25-character English one did not - so these are set for the widest
          script, and were checked by RENDERING the app in Ukrainian, which is
          where two of them were caught.
-         BUDGET-EACH 22 fx_grayscale_sub fx_dim_sub fx_dark_sub fx_ambient_sub fx_dim_dark_sub settings_language_why diagnostics_why reset_why
+         BUDGET-EACH 22 fx_grayscale_sub fx_dim_sub fx_dark_sub fx_ambient_sub fx_dim_dark_sub settings_language_why diagnostics_why reset_why row_alarm_set_any
          A budget is ONE line: the parser's key list is [a-z0-9_ ]+, which does
          not cross a newline, so keys wrapped onto a second line are silently in
          no budget at all. These two sat there unmeasured until RowFitTest was

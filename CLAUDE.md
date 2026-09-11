@@ -69,7 +69,10 @@ indefinitely is background restriction — see `core/BackgroundLimit.kt`.
                                  prefilled editor, which Honor's Clock answers
                                  with someone else's alarm and Google's by
                                  creating one; the alarm's own `showIntent`
-                                 where the clock fills it (Honor's does not)
+                                 where the clock fills it (Honor's does not).
+                                 The list's activity is behind the NORMAL
+                                 SET_ALARM permission, declared, and the app
+                                 that answers is named on the chip
     core/Delivery.kt             the one rule AlarmWatch and BackgroundProbe
                                  share: delivered means ARRIVED ON TIME
     core/ScreenEffects.kt        does this phone APPLY the rule's device
@@ -223,10 +226,14 @@ is in DECISIONS.md.
   reports "no alarm" identically for a deleted one, a disabled one and a
   one-time one that has just rung, so a switch that went off with the alarm
   would need re-enabling every morning after a one-time alarm. The row carries
-  the live state instead - the alarm's day when it is not tonight's, "No alarm
-  set", and what tonight ends at instead - and a door to the clock app's list.
-  The platform names ONE alarm, the next to ring; there is no list to choose
-  from, so the row says which one the way the lock screen does.
+  the live state instead - "Next alarm" under tonight's, the alarm's day when
+  it is not tonight's, "No alarm set", and what tonight ends at instead. The
+  platform names ONE alarm, the next to ring; there is no list to choose from,
+  so the row says which one the way the lock screen does. The door to the
+  clock app is an ASSIST CHIP under the card, wearing the open-in-new mark and
+  the app's own name - never a second row: a row with the same icon and a
+  chevron under a row with a switch read as twin settings, and Material
+  defines the assist chip for exactly this, an action into another app.
 - **A night the END has closed stays closed** until a window that begins later.
   At the END the clock app has already moved "next alarm" to tomorrow, so judged
   from the handles the night still contains now and the reschedule walks back

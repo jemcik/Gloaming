@@ -96,6 +96,22 @@ object Doors {
         ctx.getSystemService(AlarmManager::class.java)?.nextAlarmClock?.showIntent != null ||
             ctx.packageManager.resolveActivity(Intent(AlarmClock.ACTION_SHOW_ALARMS), 0) != null
 
+    /**
+     * The name of the app the alarm door opens - "Clock" almost everywhere,
+     * "Alarmy" where that is the truth - so the chip can say where it leads
+     * rather than promising a "Clock" the phone may not have. The alarm's own
+     * app where it says how to show itself, else whichever app answers the
+     * list. Null where neither can be named; the chip then says "alarms".
+     */
+    fun alarmsApp(ctx: Context): String? = runCatching {
+        val pm = ctx.packageManager
+        val creator = ctx.getSystemService(AlarmManager::class.java)
+            ?.nextAlarmClock?.showIntent?.creatorPackage
+        if (creator != null) return@runCatching pm.getApplicationInfo(creator, 0).loadLabel(pm).toString()
+        pm.resolveActivity(Intent(AlarmClock.ACTION_SHOW_ALARMS), 0)
+            ?.activityInfo?.applicationInfo?.loadLabel(pm)?.toString()
+    }.getOrNull()?.takeIf { it.isNotBlank() }
+
     fun openAlarms(ctx: Context): Boolean {
         val show = ctx.getSystemService(AlarmManager::class.java)?.nextAlarmClock?.showIntent
         if (show != null) {

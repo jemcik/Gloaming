@@ -827,19 +827,24 @@ private fun WindowBlock(
  * stayed on, silently, which is a state a tester could not explain.
  *
  * THE ROW is the alarm: its time, and its DAY when it is not this night's -
- * "Mon 06:30" on a Friday - which is also the answer to "which of my alarms":
+ * "Mon 06:30" on a Friday. The supporting line answers, in every state, the
+ * question the row raised: "Next alarm" under tonight's - which of my alarms,
  * the next to ring, the one the lock screen shows; the platform names no
- * other. The supporting line appears only while the switch is on and the
- * alarm is NOT what tonight ends at, and names what does: the wake handle.
- * Following, the row is the hour and nothing else, the heading carries the
- * purpose, and the dial's WAKE UP side has become NEXT ALARM.
+ * other - and "Ends at 08:30" under another morning's or under "No alarm
+ * set", naming what tonight ends at instead: the wake handle.
  *
- * THE DOOR beneath opens the clock app's alarm list - "Add an alarm" with
- * none, "Your alarms" with one - where the phone has one. Not an editor with
- * the wake time filled in; [Doors.openAlarms] says what that was measured to
- * do. The row is fixed to the section's own icon: a second, different mark
- * in the same card read as a third thing to understand.
+ * THE DOOR beneath is an ASSIST CHIP, not a second row. It was a row - alarm
+ * icon, "Your alarms", chevron - under a row with the same icon and a
+ * switch, and the two read as twin settings with one control each. Material
+ * defines the assist chip as an action that reaches into another app, which
+ * is exactly this; it carries the open-in-new mark and the clock app's own
+ * name, and nothing about it can be mistaken for a setting. Not an editor
+ * with the wake time filled in; [Doors.openAlarms] says what that was
+ * measured to do. Drawn only where the phone has an app to open.
  */
+/** Half of what the chip's 48dp touch box adds around its 32dp body. */
+private val CHIP_TRIM = 8.dp
+
 @Composable
 private fun EndsSection(s: HomeState) {
     val ctx = LocalContext.current
@@ -868,42 +873,63 @@ private fun EndsSection(s: HomeState) {
             " " + hhmm(ctx, alarm.hour, alarm.minute)
     }
     val supporting =
-        if (s.endAtAlarm && !tonights) res.getString(R.string.row_alarm_fallback, fallback)
-        else null
+        if (tonights) res.getString(R.string.row_alarm_next)
+        else res.getString(R.string.row_alarm_fallback, fallback)
+    // The app the chip opens, by its own name. Asked once: a capability of
+    // the phone, not of the moment.
+    val app = remember { Doors.alarmsApp(ctx) }
 
     Section(stringResource(R.string.section_end_at_alarm)) {
-        GroupedList(card, buildList<@Composable () -> Unit> {
-            add {
-                SwitchRow(
-                    headline = headline,
-                    supporting = supporting,
-                    // TalkBack would get "06:30, switch, off" and no idea what
-                    // it switches: a heading is not read as part of the row.
-                    // So the row SPEAKS the whole sentence, supporting line
-                    // included - a contentDescription replaces the merged
-                    // text, it does not add to it. If state is visible it
-                    // must be in the semantics; this is that rule from the
-                    // other side.
-                    modifier = Modifier.semantics {
-                        contentDescription =
-                            res.getString(R.string.row_end_at_alarm, headline) +
-                                (supporting?.let { ". $it" } ?: "")
-                    },
-                    checked = s.endAtAlarm,
-                    leading = { RowIcon(R.drawable.ic_alarm, IconTint.Alarm) }
-                ) { s.followAlarm(it) }
-            }
-            if (hasDoor) add {
-                LinkRow(
-                    headline = stringResource(
-                        if (alarm == null) R.string.row_alarms_add
-                        else R.string.row_alarms_open
-                    ),
-                    leading = { RowIcon(R.drawable.ic_alarm, IconTint.Alarm) },
-                    onClick = { haptics.open(); Doors.openAlarms(ctx) }
-                )
-            }
+        GroupedList(card, listOf {
+            SwitchRow(
+                headline = headline,
+                supporting = supporting,
+                // TalkBack would get "06:30, switch, off" and no idea what
+                // it switches: a heading is not read as part of the row.
+                // So the row SPEAKS the whole sentence, supporting line
+                // included - a contentDescription replaces the merged
+                // text, it does not add to it. If state is visible it
+                // must be in the semantics; this is that rule from the
+                // other side.
+                modifier = Modifier.semantics {
+                    contentDescription =
+                        res.getString(R.string.row_end_at_alarm, headline) + ". " + supporting
+                },
+                checked = s.endAtAlarm,
+                leading = { RowIcon(R.drawable.ic_alarm, IconTint.Alarm) }
+            ) { s.followAlarm(it) }
         })
+        if (hasDoor) {
+            // No spacer: the section already spaces its children by TIGHT.
+            // One was here and doubled it, and the chip's own 48dp touch box
+            // - 8dp of nothing above and below a 32dp chip - made it 38dp of
+            // air between the card and the chip that belongs to it. The box
+            // is trimmed out of the LAYOUT, the way the dial trims its own
+            // dead space, so the eye gets TIGHT and the finger keeps 48dp.
+            AssistChip(
+                modifier = Modifier.layout { measurable, constraints ->
+                    val placeable = measurable.measure(constraints)
+                    val trim = CHIP_TRIM.roundToPx()
+                    layout(placeable.width, placeable.height - trim * 2) {
+                        placeable.place(0, -trim)
+                    }
+                },
+                onClick = { haptics.open(); Doors.openAlarms(ctx) },
+                label = {
+                    Text(
+                        if (app != null) stringResource(R.string.chip_open_app, app)
+                        else stringResource(R.string.chip_open_alarms)
+                    )
+                },
+                leadingIcon = {
+                    Icon(
+                        painterResource(R.drawable.ic_open_in_new),
+                        contentDescription = null,
+                        modifier = Modifier.size(AssistChipDefaults.IconSize)
+                    )
+                }
+            )
+        }
     }
 }
 

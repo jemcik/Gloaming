@@ -20,6 +20,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.layout.Column
 import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.material3.AssistChip
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalDensity
@@ -397,15 +400,16 @@ class RowFitTest {
         val day = DayOfWeek.entries
             .map { it.getDisplayName(TextStyle.SHORT, loc).replaceFirstChar { c -> c.titlecase(loc) } }
             .maxByOrNull { it.length }!!
-        // Every face the switch row has: tonight's alarm (the hour alone),
+        // Every face the switch row has: tonight's alarm (which alarm it is),
         // another morning's (its day, and what tonight ends at instead), and
-        // no alarm at all. Then both labels the door beneath can wear.
+        // no alarm at all. Then the chip beneath, with the longest clock-app
+        // name these locales are likely to meet.
         val rows = listOf(
-            time to null,
+            time to ctx.getString(R.string.row_alarm_next),
             "$day $time" to fallback,
             ctx.getString(R.string.row_no_alarm) to fallback
         )
-        val doors = listOf(R.string.row_alarms_add, R.string.row_alarms_open).map { ctx.getString(it) }
+        val chip = ctx.getString(R.string.chip_open_app, mapOf("uk" to "Годинник", "ru" to "Часы")[locale] ?: "Clock")
 
         compose.setContent {
             GloamingTheme(dark = false) {
@@ -423,15 +427,8 @@ class RowFitTest {
                             ) {}
                         }
                     }
-                    doors.forEach { d ->
-                        add {
-                            LinkRow(
-                                headline = d,
-                                leading = { RowIcon(R.drawable.ic_alarm, IconTint.Alarm) }
-                            ) {}
-                        }
-                    }
                 })
+                AssistChip(onClick = {}, label = { Text(chip) })
                 }
                 }
                 }
@@ -457,12 +454,10 @@ class RowFitTest {
                 rh < if (scale > 1f) 92f else twoLineCeiling.value
             )
         }
-        // A one-line M3 item is 56dp; a wrapped headline makes it 72.
-        doors.forEach { d ->
-            val b = compose.onNode(hasText(d)).getUnclippedBoundsInRoot()
-            val rh = (b.bottom - b.top).value
-            assertTrue("in '$locale' the door '$d' wrapped: ${rh}dp", rh < 64f)
-        }
+        // The chip is one line by construction; what can go wrong is its
+        // width, and a chip wider than the card is a chip that clips.
+        val c = compose.onNode(hasText(chip)).getUnclippedBoundsInRoot()
+        assertTrue("in '$locale' the chip '$chip' is ${(c.right - c.left).value}dp wide", (c.right - c.left).value < 311f)
     }
 
     /**

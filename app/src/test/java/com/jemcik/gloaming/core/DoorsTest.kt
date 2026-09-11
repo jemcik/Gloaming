@@ -32,6 +32,13 @@ class DoorsTest {
     private fun installClock() {
         val clock = ComponentName("com.example.clock", "com.example.clock.Alarms")
         shadowOf(ctx().packageManager).apply {
+            installPackage(android.content.pm.PackageInfo().apply {
+                packageName = clock.packageName
+                applicationInfo = android.content.pm.ApplicationInfo().apply {
+                    packageName = clock.packageName
+                    nonLocalizedLabel = "Clock"
+                }
+            })
             addActivityIfNotPresent(clock)
             addIntentFilterForActivity(
                 clock,
@@ -47,6 +54,13 @@ class DoorsTest {
         // A door that opens onto nothing is not drawn - the rule every entry
         // in Doors follows.
         assertFalse(Doors.hasAlarms(ctx()))
+        assertEquals("and nothing to name", null, Doors.alarmsApp(ctx()))
+    }
+
+    @Test
+    fun `the chip wears the name of the app it opens`() {
+        installClock()
+        assertEquals("Clock", Doors.alarmsApp(ctx()))
     }
 
     @Test

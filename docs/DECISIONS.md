@@ -1211,6 +1211,27 @@ theirs. Verified on the Honor the same afternoon: switch on, NEXT ALARM over
 09:00, "10h 30m", "From 22:30 today to 09:00 tomorrow", the handle still at
 08:30 underneath, END armed for 09:00.
 
+The door was a second row first - alarm icon, "Your alarms", a chevron - under
+a row with the same icon and a switch, and the owner's verdict was that the
+two read as twin settings with one control each, the second's meaning
+obscure. It is an assist chip under the card now, "Open Clock" with the
+open-in-new mark and the clock app's own name read from the app that answers
+(`Doors.alarmsApp`; the alarm's own app where its `showIntent` names one,
+else the list's handler). Material defines the assist chip as an action that
+reaches into another app, which is this exactly; a chip cannot be mistaken
+for a setting, carries no icon to twin with the row, and TalkBack reads it as
+a button. The row itself now answers in every state the question it raises:
+"Next alarm" under tonight's alarm, "Ends at 08:30" under another morning's
+and under "No alarm set". Two text buttons in a card foot - the tip card's
+idiom - was the alternative and would have turned the list into a card. The
+first build of the chip floated 38dp under the card: the section already
+spaces its children by 10dp, a spacer added another 10, and the chip's 48dp
+touch box puts 8dp of nothing above its 32dp body. The spacer went and the
+box is trimmed out of the layout the way the dial trims its own, so the eye
+gets the section's 10dp and the finger keeps 48. The clock app's name on the
+chip arrives in Gloaming's own language - «Відкрити Годинник» under the
+Ukrainian app locale on an English phone - so nothing mixes.
+
 The first build of the drag jumped. The handle sits on the alarm while tonight
 follows it, and the dial drew the grabbed wake handle from `end` - the
 setting - from the instant of the grab, so a finger resting on 10:00 watched

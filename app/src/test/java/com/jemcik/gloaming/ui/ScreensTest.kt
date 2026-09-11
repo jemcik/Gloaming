@@ -828,7 +828,9 @@ class ScreensTest {
         compose.onNodeWithText(
             ctx().getString(R.string.dial_until, t(alarm)).uppercase()
         ).assertExists()
-        // The row is the hour and nothing else while it is tonight's.
+        // The row says which alarm it is while it is tonight's, and not
+        // what the handle would have done.
+        compose.onNodeWithText(ctx().getString(R.string.row_alarm_next)).assertExists()
         compose.onNodeWithText(
             ctx().getString(R.string.row_alarm_fallback, t(p.endTime))
         ).assertDoesNotExist()
@@ -986,11 +988,19 @@ class ScreensTest {
     }
 
     @Test
-    fun `the door opens the clock app's alarm list`() {
-        // Robolectric ships no clock app, so give it one to resolve - the
-        // same probe Doors makes on the phone.
+    fun `the chip names the clock app and opens its alarm list`() {
+        // Robolectric ships no clock app, so install one to resolve - the
+        // same probe Doors makes on the phone - with a name, which is what
+        // the chip wears.
         val clock = ComponentName("com.example.clock", "com.example.clock.Alarms")
         shadowOf(ctx().packageManager).apply {
+            installPackage(android.content.pm.PackageInfo().apply {
+                packageName = clock.packageName
+                applicationInfo = android.content.pm.ApplicationInfo().apply {
+                    packageName = clock.packageName
+                    nonLocalizedLabel = "Clock"
+                }
+            })
             addActivityIfNotPresent(clock)
             addIntentFilterForActivity(
                 clock,
@@ -1001,10 +1011,19 @@ class ScreensTest {
         p.exitAtAlarm = true
         home()
 
-        compose.onNodeWithText(ctx().getString(R.string.row_alarms_add))
+        compose.onNodeWithText(ctx().getString(R.string.chip_open_app, "Clock"))
             .performScrollTo().performClick()
         val started = shadowOf(RuntimeEnvironment.getApplication()).nextStartedActivity
         assertEquals(AlarmClock.ACTION_SHOW_ALARMS, started?.action)
+    }
+
+    @Test
+    fun `no clock app, no chip`() {
+        val p = armed()
+        p.exitAtAlarm = true
+        home()
+        compose.onNodeWithText(ctx().getString(R.string.chip_open_alarms)).assertDoesNotExist()
+        compose.onNodeWithText(ctx().getString(R.string.row_no_alarm)).assertExists()
     }
 
     /**

@@ -163,9 +163,17 @@
          size: "Bedtime ends at 12:30 AM" wrapped there and lifted the switch
          off its row. About 16 characters with the time in. -->
     <string name="row_alarm_fallback">Ends at %1$s</string>
-    <!-- The door beneath: the clock app's alarm list. -->
-    <string name="row_alarms_open">Your alarms</string>
-    <string name="row_alarms_add">Add an alarm</string>
+    <!-- Under the switch while the alarm IS tonight's: which alarm the row
+         means, which is the tester's own question. Same budget - and at the
+         LARGE font size «Наступний будильник» wrapped and lifted the switch,
+         so the Slavic lines say «Ваш будильник» instead. -->
+    <string name="row_alarm_next">Next alarm</string>
+    <!-- The assist chip under the card: an action that leaves for another
+         app, which is what Material defines the assist chip for. %1$s is the
+         clock app's own name, read from the app that answers; the second is
+         the fallback where no name can be read. -->
+    <string name="chip_open_app">Open %1$s</string>
+    <string name="chip_open_alarms">Open alarms</string>
     <!-- A row's supporting line must not WRAP. Past one line the row becomes a
          three-line ListItem, and M3 then top-aligns the trailing content, so the
          switch stops being level with its own row. Reported as exactly that.
@@ -176,7 +184,7 @@
          25-character English one did not - so these are set for the widest
          script, and were checked by RENDERING the app in Ukrainian, which is
          where two of them were caught.
-         BUDGET-EACH 22 fx_grayscale_sub fx_dim_sub fx_dark_sub fx_ambient_sub fx_dim_dark_sub settings_language_why diagnostics_why reset_why row_alarm_fallback
+         BUDGET-EACH 22 fx_grayscale_sub fx_dim_sub fx_dark_sub fx_ambient_sub fx_dim_dark_sub settings_language_why diagnostics_why reset_why row_alarm_fallback row_alarm_next
          A budget is ONE line: the parser's key list is [a-z0-9_ ]+, which does
          not cross a newline, so keys wrapped onto a second line are silently in
          no budget at all. These two sat there unmeasured until RowFitTest was

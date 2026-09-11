@@ -837,15 +837,18 @@ private fun WindowBlock(
  * other - and "Ends at 08:30" under another morning's or under "No alarm
  * set", naming what tonight ends at instead: the wake handle.
  *
- * THE DOOR is the row itself: a SPLIT row, Android's own Wi-Fi idiom - the
- * body opens the clock app, a hairline, then the switch. It was a second row
- * first (alarm icon, "Your alarms", chevron - twin of the switch row), then
- * an assist chip under the card, which floated and which the owner did not
- * like the look of. The alarm being the door is also what the empty state
- * needs: "No alarm set" opens the clock to set one. Not an editor with the
- * wake time filled in; [Doors.openAlarms] says what that was measured to
- * do. Where the phone has no app to open, the body does nothing and there
- * is no hairline.
+ * TWO ROWS, TWO ROLES, under a heading that names the relationship. The
+ * first row is the rule: a switch with its own title and no icon. The second
+ * is the alarm the rule follows - its faces below - and the door into the
+ * clock app that owns it, marked open-in-new because the tap leaves the app.
+ * The two are not twins: one has a title and a switch, the other an icon, a
+ * time and an exit mark. This is the owner's own pick from six sketches,
+ * after a split row (Android's Wi-Fi idiom) had been built and looked at;
+ * the split row's body was 160dp and every Slavic line had to be cut to fit
+ * it. A full-width second row gives the lines room to say what they mean.
+ * Not an editor with the wake time filled in; [Doors.openAlarms] says what
+ * that was measured to do. Where the phone has no app to open, the second
+ * row is information only.
  */
 @Composable
 private fun EndsSection(s: HomeState) {
@@ -898,24 +901,38 @@ private fun EndsSection(s: HomeState) {
     val openLabel = if (app != null) res.getString(R.string.chip_open_app, app)
     else res.getString(R.string.chip_open_alarms)
 
-    Section(stringResource(R.string.section_end_at_alarm)) {
-        GroupedList(card, listOf {
-            SplitSwitchRow(
-                headline = headline,
-                supporting = supporting,
-                checked = s.endAtAlarm,
-                enabled = alarm != null,
-                // The alarm is the door. Nothing where the phone has no app
-                // to open, and then the row is a plain switch row.
-                onOpen = if (hasDoor) { { haptics.open(); Doors.openAlarms(ctx) } } else null,
-                openLabel = openLabel,
-                // TalkBack would get "switch, off" and no idea what it
-                // switches: a heading is not read as part of the row. If
-                // state is visible it must be in the semantics.
-                switchLabel = res.getString(R.string.row_end_at_alarm, headline),
-                leading = { RowIcon(R.drawable.ic_alarm, IconTint.Alarm) }
-            ) { s.followAlarm(it) }
-        })
+    Section(stringResource(R.string.section_sync_alarm)) {
+        GroupedList(card, listOf(
+            {
+                // The rule. Its own title, no icon: a row that governs the
+                // one beneath it, the shape the Do Not Disturb card uses.
+                SwitchRow(
+                    headline = stringResource(R.string.row_end_at_alarm_title),
+                    checked = s.endAtAlarm,
+                    enabled = alarm != null
+                ) { s.followAlarm(it) }
+            },
+            {
+                // The alarm the rule follows, and the way into the clock
+                // app that owns it: open-in-new, not a chevron, because the
+                // tap leaves. Where no clock app resolves it is information
+                // only.
+                if (hasDoor) LinkRow(
+                    headline = headline,
+                    supporting = supporting,
+                    leading = { RowIcon(R.drawable.ic_alarm, IconTint.Alarm) },
+                    trailing = R.drawable.ic_open_in_new,
+                    modifier = Modifier.semantics {
+                        contentDescription = listOfNotNull(headline, supporting, openLabel).joinToString(". ")
+                    },
+                    onClick = { haptics.open(); Doors.openAlarms(ctx) }
+                ) else StaticRow(
+                    headline = headline,
+                    supporting = supporting,
+                    leading = { RowIcon(R.drawable.ic_alarm, IconTint.Alarm) }
+                )
+            }
+        ))
     }
 }
 

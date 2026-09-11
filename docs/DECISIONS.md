@@ -1314,6 +1314,19 @@ characters at the headline size, measured on the phone: «Ночь без
 owner chose the English and the Russian; Ukrainian follows the Russian.
 "Ends at" is gone from the resources.
 
+And then the split row went too. With every Slavic line cut to a 160dp
+body, the owner picked sketch E from the six - two rows, two roles - under
+a heading of his own, "synchronize with alarm": the rule as a switch row
+with its own title and no icon, and beneath it the alarm row with its
+three faces and an open-in-new mark, since the tap leaves for the clock
+app. A full-width second row is what let the lines say what they mean:
+«Ночь без будильника» / «Ближайший: пн 07:30», «Найближчий будильник».
+Budgets measured on the phone the same hour: the rule title wraps past
+~22 Cyrillic characters («Завершение по будильнику» did, so it is «Сон до
+будильника»), the alarm headline past ~24, the second line past ~30
+(«Торкніться, щоб додати в Годинник» did, so the empty face says «Додати
+в Годинник»). `SplitSwitchRow` is gone; `LinkRow` took a `trailing` icon.
+
 The first build of the drag jumped. The handle sits on the alarm while tonight
 follows it, and the dial drew the grabbed wake handle from `end` - the
 setting - from the instant of the grab, so a finger resting on 10:00 watched

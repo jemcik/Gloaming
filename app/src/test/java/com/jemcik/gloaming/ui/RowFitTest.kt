@@ -394,14 +394,12 @@ class RowFitTest {
         val ctx = ApplicationProvider.getApplicationContext<android.content.Context>()
         val loc = Locale.forLanguageTag(locale)
         val time = "12:30 AM"
-        val heading = ctx.getString(R.string.section_end_at_alarm)
+        val heading = ctx.getString(R.string.section_sync_alarm)
         // The widest short day name the locale has, for the not-tonight face.
         val day = DayOfWeek.entries.map { it.getDisplayName(TextStyle.SHORT, loc) }.maxByOrNull { it.length }!!
-        // Every face the split row has: tonight's alarm (which alarm it is),
-        // another morning's (its day, and what tonight ends at instead), and
-        // no alarm at all. The body has LESS room than a switch row's - the
-        // hairline and the switch's own padding take it - which is why it is
-        // measured as the split row and not as SwitchRow.
+        // The rule row, then every face the alarm row has: tonight's alarm
+        // (which alarm it is), another morning's (what that means for
+        // tonight, and the alarm with its day), and no alarm at all.
         val rows = listOf(
             time to ctx.getString(R.string.row_alarm_next),
             ctx.getString(R.string.row_no_alarm_tonight) to ctx.getString(R.string.row_alarm_next_on, "$day $time"),
@@ -415,16 +413,16 @@ class RowFitTest {
                 Box(Modifier.padding(horizontal = 24.dp)) {
                 Section(heading) {
                 GroupedList(gloam.raise, buildList<@Composable () -> Unit> {
+                    add {
+                        SwitchRow(headline = ctx.getString(R.string.row_end_at_alarm_title), checked = true) {}
+                    }
                     rows.forEach { (h, sub) ->
                         add {
-                            SplitSwitchRow(
+                            LinkRow(
                                 headline = h,
                                 supporting = sub,
-                                checked = true,
-                                onOpen = {},
-                                openLabel = "Open Clock",
-                                switchLabel = h,
-                                leading = { RowIcon(R.drawable.ic_alarm, IconTint.Alarm) }
+                                leading = { RowIcon(R.drawable.ic_alarm, IconTint.Alarm) },
+                                trailing = R.drawable.ic_open_in_new
                             ) {}
                         }
                     }
@@ -445,15 +443,19 @@ class RowFitTest {
         val hh = (head.bottom - head.top).value
         assertTrue("in '$locale' the heading wrapped: ${hh}dp", hh < 24f)
 
+        // The rule row: a one-line title beside a switch. Two lines at the
+        // large font is the allowance Home's other rows get; at 1.0 it must
+        // not wrap, or the switch leaves the title's line.
+        val rule = compose.onNode(hasText(ctx.getString(R.string.row_end_at_alarm_title)) and isToggleable())
+            .getUnclippedBoundsInRoot()
+        val ruleH = (rule.bottom - rule.top).value
+        assertTrue("in '$locale' the rule row is ${ruleH}dp: its title wrapped", ruleH < if (scale > 1f) 92f else 64f)
         rows.forEach { (h, _) ->
             val b = compose.onNode(hasText(h)).getUnclippedBoundsInRoot()
             val rh = (b.bottom - b.top).value
-            // Two lines at 1.0. At the large font the split row keeps its
-            // switch centred whatever the body's height - it is not an M3
-            // trailing slot - so a wrapped line there is the same allowance
-            // Home's other rows get: untidy, not broken.
             assertTrue(
-                "in '$locale' the ends row '$h' is ${rh}dp: something wrapped",
+                "in '$locale' the alarm row '$h' is ${rh}dp: something wrapped, and M3 " +
+                    "then top-aligns the trailing icon instead of centring it",
                 rh < if (scale > 1f) 128f else twoLineCeiling.value
             )
         }

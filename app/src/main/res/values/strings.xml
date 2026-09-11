@@ -148,10 +148,13 @@
 
     <!-- ============ Home: which days ============ -->
     <string name="section_which_days">which days</string>
-    <string name="section_end_at_alarm">end bedtime at your alarm</string>
-    <!-- The row's spoken form. The heading is not read as part of the row, so
-         it says the whole sentence; %1$s is the row's headline. -->
-    <string name="row_end_at_alarm">End bedtime at your alarm, %1$s</string>
+    <!-- The section: two rows with two roles. The heading names the
+         relationship; the first row is the rule, a switch with its own title;
+         the second is the alarm the rule follows, and a door into the clock
+         app. It was one row with a switch, then a split row - see DECISIONS,
+         11 Sep 2026, for the whole walk. -->
+    <string name="section_sync_alarm">synchronize with alarm</string>
+    <string name="row_end_at_alarm_title">End bedtime at your alarm</string>
     <!-- The headline while the phone has no alarm at all and the rule is on.
          A headline, so it must not wrap beside an icon and a switch: about
          14 characters in the widest script. -->
@@ -172,7 +175,7 @@
          LARGE font size «Наступний будильник» wrapped and lifted the switch,
          so the Slavic lines say «Ваш будильник» instead. -->
     <string name="row_alarm_next">Next alarm</string>
-    <!-- What TalkBack says the row's body does: it opens the clock app. %1$s
+    <!-- What TalkBack says the alarm row does: it opens the clock app. %1$s
          is that app's own name, read from the app that answers; the second is
          the fallback where no name can be read. Not drawn. -->
     <string name="chip_open_app">Open %1$s</string>

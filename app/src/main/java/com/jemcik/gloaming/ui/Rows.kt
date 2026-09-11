@@ -33,10 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.material3.VerticalDivider
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.IntrinsicSize
 import com.jemcik.gloaming.R
 
 /**
@@ -129,85 +126,11 @@ fun SwitchRow(
 }
 
 /**
- * A row with TWO targets: the body goes somewhere, the switch toggles a rule
- * about it. Android's own Wi-Fi and Bluetooth rows, with the hairline between
- * body and switch that tells the finger there are two.
- *
- * Built for the alarm section, where the thing the switch governs - the next
- * alarm - lives in another app, and every other way of offering the door was
- * worse: a second row read as a twin setting, a chip under the card floated,
- * an icon button beside the switch crowded it. Here the alarm IS the door,
- * which is also what makes the empty state work: "No alarm set" opens the
- * clock app to set one, with the switch disabled beside it.
- *
- * Two semantics nodes, deliberately: the body is a button that names where it
- * goes, the switch is a switch that names what it rules. One merged node
- * would read the row as a switch and lose the door.
+ * A row that leaves for somewhere else. The chevron is Google's own path,
+ * and it means deeper IN; a row that leaves the APP - the alarm row, which
+ * opens the clock app - passes [trailing] = open-in-new, so the mark says
+ * where the tap goes.
  */
-@Composable
-fun SplitSwitchRow(
-    headline: String,
-    supporting: String?,
-    checked: Boolean,
-    /** What the body's tap does; the row is a plain switch row when null. */
-    onOpen: (() -> Unit)?,
-    /** How TalkBack names the body's action - "Open Clock". */
-    openLabel: String?,
-    /** How TalkBack names the switch - the heading the eye reads above it. */
-    switchLabel: String,
-    modifier: Modifier = Modifier,
-    enabled: Boolean = true,
-    leading: (@Composable () -> Unit)? = null,
-    onCheckedChange: (Boolean) -> Unit
-) {
-    val press = remember { MutableInteractionSource() }
-    Row(modifier.fillMaxWidth().height(IntrinsicSize.Min), verticalAlignment = Alignment.CenterVertically) {
-        ListItem(
-            headlineContent = { Headline(headline) },
-            supportingContent = supporting?.let { { Supporting(it) } },
-            leadingContent = leading,
-            colors = rowColors(),
-            modifier = Modifier
-                .weight(1f)
-                .then(
-                    if (onOpen != null) Modifier
-                        .semantics {
-                            openLabel?.let {
-                                contentDescription = listOfNotNull(headline, supporting, it).joinToString(". ")
-                            }
-                        }
-                        .clickable(role = Role.Button, onClick = onOpen)
-                    else Modifier
-                )
-        )
-        if (onOpen != null) {
-            VerticalDivider(
-                modifier = Modifier.padding(vertical = 14.dp),
-                thickness = 1.dp,
-                color = gloam.outline
-            )
-        }
-        Box(
-            Modifier
-                .fillMaxHeight()
-                .semantics { contentDescription = switchLabel }
-                .toggleable(
-                    value = checked,
-                    enabled = enabled,
-                    interactionSource = press,
-                    indication = ripple(),
-                    role = Role.Switch,
-                    onValueChange = onCheckedChange
-                )
-                .padding(start = 12.dp, end = 16.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            GloamSwitch(checked = checked, enabled = enabled, interactionSource = press)
-        }
-    }
-}
-
-/** A row that leaves for somewhere else. The chevron is Google's own path. */
 @Composable
 fun LinkRow(
     headline: String,
@@ -215,6 +138,7 @@ fun LinkRow(
     supporting: String? = null,
     leading: (@Composable () -> Unit)? = null,
     enabled: Boolean = true,
+    trailing: Int = R.drawable.ic_chevron,
     onClick: () -> Unit
 ) {
     ListItem(
@@ -223,7 +147,7 @@ fun LinkRow(
         leadingContent = leading,
         trailingContent = {
             Icon(
-                painterResource(R.drawable.ic_chevron),
+                painterResource(trailing),
                 contentDescription = null,
                 modifier = Modifier.size(24.dp)
             )

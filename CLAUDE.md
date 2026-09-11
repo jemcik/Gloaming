@@ -234,13 +234,16 @@ is in DECISIONS.md.
   when it is another morning's, "No alarm set" over what the body does -
   never when bedtime ends, which the dial says three times already. The platform names ONE alarm,
   the next to ring; there is no list to choose from, so the row says which one
-  the way the lock screen does. The door to the
-  clock app is the ROW ITSELF - a split row, Android's own Wi-Fi idiom: body
-  opens the clock, hairline, switch (`SplitSwitchRow`). Never a second row: a
-  row with the same icon and a chevron under a row with a switch read as twin
-  settings; and not a chip under the card, which floated and was rejected on
-  sight. The body is one semantics node naming where it goes, the switch
-  another naming what it rules.
+  the way the lock screen does. The section is TWO
+  ROWS WITH TWO ROLES under "synchronize with alarm": the rule, a switch row
+  with its own title and no icon; and the alarm row - icon, its face, and
+  OPEN-IN-NEW, not a chevron, because the tap leaves for the clock app. Four
+  shapes preceded it in one day and DECISIONS has them: twin rows with a
+  chevron (read as two settings), an assist chip (floated), a split row
+  (Android's Wi-Fi idiom; its 160dp body cut every Slavic line short), and
+  this, the owner's pick from six sketches once the lines had room to mean
+  something. Copy budgets, measured on the phone: the rule title ~22
+  Cyrillic characters, the alarm headline ~24, its second line ~30.
 - **A night whose END has come DUE is closed**, landed or not, until a window
   that begins later. At the END the clock app has already moved "next alarm" to
   tomorrow, so judged from the handles the night still contains now and the

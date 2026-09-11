@@ -36,6 +36,7 @@ import org.robolectric.RuntimeEnvironment
 import java.time.format.TextStyle
 import java.util.Locale
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.assertCountEquals
 import android.provider.Settings
 import androidx.test.core.app.ApplicationProvider
 import java.time.DayOfWeek
@@ -835,9 +836,7 @@ class ScreensTest {
         // The row says which alarm it is while it is tonight's, and not
         // what the handle would have done.
         compose.onNodeWithText(ctx().getString(R.string.row_alarm_next)).assertExists()
-        compose.onNodeWithText(
-            ctx().getString(R.string.row_alarm_fallback, t(p.endTime))
-        ).assertDoesNotExist()
+        compose.onNodeWithText(ctx().getString(R.string.row_no_alarm_tonight)).assertDoesNotExist()
     }
 
     @Test
@@ -1003,10 +1002,11 @@ class ScreensTest {
         home()
 
         val day = at.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault())
-            .replaceFirstChar { it.titlecase(Locale.getDefault()) }
-        compose.onNodeWithText("$day " + t(at.toLocalTime())).assertExists()
-        compose.onNode(hasContentDescription(ctx().getString(R.string.row_end_at_alarm, "$day " + t(at.toLocalTime()))) and isToggleable()).assertExists()
-        compose.onNodeWithText(ctx().getString(R.string.row_alarm_fallback, t(wake))).assertExists()
+        // Leads with what it means for tonight; the alarm, with its day, on
+        // the line beneath. Never "Ends at": the dial already says that.
+        compose.onNodeWithText(ctx().getString(R.string.row_no_alarm_tonight)).assertExists()
+        compose.onNodeWithText(ctx().getString(R.string.row_alarm_next_on, "$day " + t(at.toLocalTime()))).assertExists()
+        compose.onNode(hasContentDescription(ctx().getString(R.string.row_end_at_alarm, ctx().getString(R.string.row_no_alarm_tonight))) and isToggleable()).assertExists()
         compose.onNodeWithText(ctx().getString(R.string.label_wake_up).uppercase()).assertExists()
     }
 
@@ -1025,9 +1025,9 @@ class ScreensTest {
         assertFalse("no alarm, no rule", p.exitAtAlarm)
         compose.onNode(hasContentDescription(ctx().getString(R.string.row_end_at_alarm, ctx().getString(R.string.row_no_alarm))) and isToggleable())
             .assertIsOff().assertIsNotEnabled()
-        // "Ends at" is not repeated here: the dial already says it, and with
-        // no clock app there is nothing for a second line to say.
-        compose.onNodeWithText(ctx().getString(R.string.row_alarm_fallback, t(wake))).assertDoesNotExist()
+        // With no clock app there is nothing for a second line to say. The
+        // string that used to say when bedtime ends here is gone from the
+        // resources: the dial says that.
     }
 
     @Test

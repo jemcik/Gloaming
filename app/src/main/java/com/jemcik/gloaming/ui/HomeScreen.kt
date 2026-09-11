@@ -864,15 +864,18 @@ private fun EndsSection(s: HomeState) {
     }
     val fallback = remember(s.tick, s.end) { hhmm(ctx, s.end.hour, s.end.minute) }
 
+    // Another morning's alarm, as "day time": the short name in the
+    // nominative is all a label needs; the sentences under the dial decline
+    // the weekday and keep their own tables for it.
+    val alarmOnDay = alarm?.let {
+        it.dayOfWeek.getDisplayName(TextStyle.SHORT, locale) + " " + hhmm(ctx, it.hour, it.minute)
+    }
     val headline = when {
         alarm == null -> res.getString(R.string.row_no_alarm)
         tonights -> hhmm(ctx, alarm.hour, alarm.minute)
-        // Its day, because it is not this night's. The short name in the
-        // nominative is all a label needs; the sentences under the dial
-        // decline the weekday and keep their own tables for it.
-        else -> alarm.dayOfWeek.getDisplayName(TextStyle.SHORT, locale)
-            .replaceFirstChar { it.titlecase(locale) } +
-            " " + hhmm(ctx, alarm.hour, alarm.minute)
+        // Not this night's: lead with what that means for tonight, and
+        // name the alarm on the line below.
+        else -> res.getString(R.string.row_no_alarm_tonight)
     }
     // The app the body opens, by its own name - the alarm's own app where its
     // showIntent names one, so asked as often as the alarm is.
@@ -889,7 +892,7 @@ private fun EndsSection(s: HomeState) {
             else if (app != null) res.getString(R.string.row_alarm_set, app)
             else res.getString(R.string.row_alarm_set_any)
         tonights -> res.getString(R.string.row_alarm_next)
-        else -> res.getString(R.string.row_alarm_fallback, fallback)
+        else -> res.getString(R.string.row_alarm_next_on, alarmOnDay)
     }
 
     val openLabel = if (app != null) res.getString(R.string.chip_open_app, app)

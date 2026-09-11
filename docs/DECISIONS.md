@@ -1301,6 +1301,19 @@ to the ink, and its 6dp of top padding plus the title's leading showed. The
 top padding is gone and `heightIn(48)` keeps the touch box; measured 21dp to
 the ink now, against a card edge's 18.
 
+The other-morning face was reworked the same evening. "Mon 07:30" over
+"Ends at 07:35" named the wake time a third time on the screen and, beside
+an alarm time, read as two competing ends. It now leads with what the
+alarm means for tonight - "No alarm tonight" - and names the alarm beneath,
+"Next: Mon 07:30". The row's body is about 160dp, which is 17 Cyrillic
+characters at the headline size, measured on the phone: «Ночь без
+будильника» and «Ночь по расписанию» both wrapped, so ru and uk say «Без
+будильника» there and their empty-state headline moved to «Нет
+будильников» / «Немає будильників» to stay distinct; the line beneath is
+«Далее:» / «Далі:» because «Ближайший:» plus a 12-hour time wraps. The
+owner chose the English and the Russian; Ukrainian follows the Russian.
+"Ends at" is gone from the resources.
+
 The first build of the drag jumped. The handle sits on the alarm while tonight
 follows it, and the dial drew the grabbed wake handle from `end` - the
 setting - from the instant of the grab, so a finger resting on 10:00 watched

@@ -90,8 +90,9 @@
     <string name="section_which_days">в какие дни</string>
     <string name="section_end_at_alarm">заканчивать сон по будильнику</string>
     <string name="row_end_at_alarm">Заканчивать сон по будильнику, %1$s</string>
-    <string name="row_no_alarm">Без будильника</string>
-    <string name="row_alarm_fallback">Сон до %1$s</string>
+    <string name="row_no_alarm">Нет будильников</string>
+    <string name="row_no_alarm_tonight">Без будильника</string>
+    <string name="row_alarm_next_on">Далее: %1$s</string>
     <string name="row_alarm_next">Ваш будильник</string>
     <string name="chip_open_app">Открыть %1$s</string>
     <string name="chip_open_alarms">Открыть будильники</string>

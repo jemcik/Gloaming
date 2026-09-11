@@ -395,11 +395,8 @@ class RowFitTest {
         val loc = Locale.forLanguageTag(locale)
         val time = "12:30 AM"
         val heading = ctx.getString(R.string.section_end_at_alarm)
-        val fallback = ctx.getString(R.string.row_alarm_fallback, time)
         // The widest short day name the locale has, for the not-tonight face.
-        val day = DayOfWeek.entries
-            .map { it.getDisplayName(TextStyle.SHORT, loc).replaceFirstChar { c -> c.titlecase(loc) } }
-            .maxByOrNull { it.length }!!
+        val day = DayOfWeek.entries.map { it.getDisplayName(TextStyle.SHORT, loc) }.maxByOrNull { it.length }!!
         // Every face the split row has: tonight's alarm (which alarm it is),
         // another morning's (its day, and what tonight ends at instead), and
         // no alarm at all. The body has LESS room than a switch row's - the
@@ -407,7 +404,7 @@ class RowFitTest {
         // measured as the split row and not as SwitchRow.
         val rows = listOf(
             time to ctx.getString(R.string.row_alarm_next),
-            "$day $time" to fallback,
+            ctx.getString(R.string.row_no_alarm_tonight) to ctx.getString(R.string.row_alarm_next_on, "$day $time"),
             ctx.getString(R.string.row_no_alarm) to
                 ctx.getString(R.string.row_alarm_set, mapOf("uk" to "Годинник", "ru" to "Часы")[locale] ?: "Clock")
         )

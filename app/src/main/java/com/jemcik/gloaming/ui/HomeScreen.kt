@@ -770,7 +770,10 @@ private fun WindowBlock(
                 s.centreMode = ((centreIndex + dir) % n + n) % n
             },
             onStartChange = { s.start = it },
-            onEndChange = { s.end = it },
+            // dragWake, not a bare write: the first movement of the wake
+            // handle lets go of the alarm, and every reading follows the
+            // finger from that moment rather than from the release.
+            onEndChange = { s.dragWake(it) },
             onDragFinished = { endMoved -> if (endMoved) s.commitWake() else s.commit() }
         )
 

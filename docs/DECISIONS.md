@@ -1211,6 +1211,15 @@ theirs. Verified on the Honor the same afternoon: switch on, NEXT ALARM over
 09:00, "10h 30m", "From 22:30 today to 09:00 tomorrow", the handle still at
 08:30 underneath, END armed for 09:00.
 
+The first build of the drag jumped. The handle sits on the alarm while tonight
+follows it, and the dial drew the grabbed wake handle from `end` - the
+setting - from the instant of the grab, so a finger resting on 10:00 watched
+the handle leap to 6:50 and leap back with the first move. The dial now draws
+the grabbed position until the finger actually moves, and the first movement
+is also where following ENDS (`HomeState.dragWake`), so the numeral, the arc
+and the overline follow the finger from that moment instead of showing the
+alarm until the release. A grab that never moves changes nothing.
+
 One thing the old bound gave for free is given up: an alarm at 2pm on the
 morning's own date now extends the night to 2pm. It is drawn on the dial the
 evening before and one drag undoes it; every cap considered was an arbitrary

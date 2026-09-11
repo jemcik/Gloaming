@@ -25,6 +25,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -200,6 +201,13 @@ fun BedtimeDial(
     // finger, and the finger is setting `end`. Let go and it returns to showing
     // what tonight will really do.
     var target by remember { mutableIntStateOf(0) }
+    // And whether the finger has MOVED since the grab. Between the two the
+    // handle stays drawn where it was grabbed - which, while the next alarm is
+    // setting tonight's end, is the alarm and not `end`. Drawn from `end` the
+    // instant it was grabbed, the handle jumped from the alarm to the setting
+    // under a finger that had not moved, and jumped back with the first move.
+    // Reported from the phone as exactly that.
+    var moved by remember { mutableStateOf(false) }
 
     // The grabbed handle GROWS, and stays grown until you let go. A pulse that
     // shrank back while the finger was still down would answer "did I get it"
@@ -217,7 +225,7 @@ fun BedtimeDial(
         label = "endScale"
     )
 
-    val drawnEnd = if (target == 2) end else endTonight ?: end
+    val drawnEnd = if (target == 2 && moved) end else endTonight ?: end
     val windowSecs = ((drawnEnd.toSecondOfDay() - start.toSecondOfDay() + DAY) % DAY)
 
     Box(modifier.size(260.dp).testTag(DIAL_TAG), contentAlignment = Alignment.Center) {
@@ -313,6 +321,7 @@ fun BedtimeDial(
                         if (min(dStart, dEnd) > grab) return@awaitEachGesture
 
                         target = if (dStart <= dEnd) 1 else 2
+                        moved = false
                         haptics.grab()
                         // Ours from here, exactly as a slider thumb is: the
                         // touch landed on the handle, so the page does not get
@@ -332,6 +341,7 @@ fun BedtimeDial(
                                     (en.toSecondOfDay() - st.toSecondOfDay() + DAY) % DAY
                                 if (len in 1..MAX_WINDOW) {
                                     last = t
+                                    moved = true
                                     if (t.minute == 0) haptics.hourTick() else haptics.tick()
                                     if (target == 1) onStartChange(t) else onEndChange(t)
                                 }
@@ -342,6 +352,7 @@ fun BedtimeDial(
                         haptics.release()
                         onDragFinished(target == 2)
                         target = 0
+                        moved = false
                     }
                 }
         ) {

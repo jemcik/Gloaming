@@ -245,10 +245,14 @@ is in DECISIONS.md.
   `HomeState` for that reason, and the WAKE UP overline reads NEXT ALARM with
   the alarm's glyph while tonight ends at the alarm - which is what tells the
   user that the handle sitting there is not theirs, and that dragging it lets
-  go. The wake handle itself still shows the SETTING while it is being dragged,
-  or it freezes under the finger - the alarm has not moved, so the redraw would
-  not follow. The picker opens on the time the numeral shows, for the same
-  reason.
+  go. The handle lets go at the FIRST
+  MOVEMENT, not at the release: `dragWake` flips the rule as the finger moves,
+  so the numeral, the arc and the overline follow the finger rather than
+  showing the alarm for the length of the drag. Until it moves, the handle
+  stays drawn where it was grabbed, which is the alarm: drawn from the setting
+  on the grab, it jumped to 6:50 under a finger resting on 10:00 and jumped
+  back with the first move. A grab that never moves changes nothing. The
+  picker opens on the time the numeral shows, for the same reason.
 - A rule carries a **`conditionOverride`** as well as a condition, and it wins.
   AOSP's `setManualZenMode` stamps `OVERRIDE_DEACTIVATE` on every active rule
   whenever zen goes off other than by the user in SystemUI — **a reboot

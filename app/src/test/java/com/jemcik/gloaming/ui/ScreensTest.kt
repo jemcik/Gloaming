@@ -19,6 +19,8 @@ import androidx.compose.foundation.ScrollState
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipe
+import androidx.compose.ui.test.up
+import androidx.compose.ui.test.down
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performSemanticsAction
 import android.app.NotificationManager
@@ -854,6 +856,53 @@ class ScreensTest {
         compose.onNodeWithText(
             ctx().getString(R.string.dial_until, t(expected)).uppercase()
         ).assertExists()
+    }
+
+    /** Degrees round the 24-hour face, midnight at the top - the dial's own mapping. */
+    private fun degrees(t: LocalTime) = (t.hour * 60 + t.minute) / 4f
+
+    @Test
+    fun `dragging the wake handle lets go of the alarm, from where the alarm was drawn`() {
+        // The handle sits on the alarm while tonight follows it, so that is
+        // where it is grabbed - and where the drag starts from. Reported: the
+        // handle jumped to the setting under a finger that had not moved yet,
+        // then back to the finger with the first move.
+        val p = armed()
+        val start = LocalTime.now().minusHours(1).withSecond(0).withNano(0)
+        val wake = LocalTime.now().plusHours(3).withSecond(0).withNano(0)
+        val alarm = LocalTime.now().plusHours(1).withSecond(0).withNano(0)
+        val to = LocalTime.now().plusHours(2).withSecond(0).withNano(0)
+        p.startTime = start; p.endTime = wake; p.exitAtAlarm = true
+        setAlarm(alarm)
+        home()
+
+        compose.onNodeWithTag(DIAL_TAG).performScrollTo().performTouchInput {
+            swipe(handleOffset(degrees(alarm), width, center), handleOffset(degrees(to), width, center), 300)
+        }
+        compose.waitForIdle()
+        assertFalse("a dragged handle follows nothing", p.exitAtAlarm)
+        val off = java.time.Duration.between(to, p.endTime).abs().toMinutes()
+        assertTrue("the handle landed where the finger went, not at the setting: ${p.endTime}", off <= 20)
+        compose.onNodeWithText(ctx().getString(R.string.label_wake_up).uppercase()).assertExists()
+    }
+
+    @Test
+    fun `a grab that does not move keeps following`() {
+        // Touching the handle and letting go is not a change of mind.
+        val p = armed()
+        val wake = LocalTime.now().plusHours(3).withSecond(0).withNano(0)
+        val alarm = LocalTime.now().plusHours(1).withSecond(0).withNano(0)
+        p.startTime = LocalTime.now().minusHours(1).withSecond(0).withNano(0)
+        p.endTime = wake; p.exitAtAlarm = true
+        setAlarm(alarm)
+        home()
+
+        compose.onNodeWithTag(DIAL_TAG).performScrollTo().performTouchInput {
+            down(handleOffset(degrees(alarm), width, center)); up()
+        }
+        compose.waitForIdle()
+        assertTrue("nothing moved, so nothing changed", p.exitAtAlarm)
+        assertEquals(wake, p.endTime)
     }
 
     @Test

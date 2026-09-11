@@ -22,6 +22,7 @@ import com.jemcik.gloaming.core.Prefs
 import com.jemcik.gloaming.core.ScreenEffects
 import com.jemcik.gloaming.core.Scheduler
 import java.time.LocalDateTime
+import java.time.LocalTime
 import com.jemcik.gloaming.core.ZenController
 
 /**
@@ -406,6 +407,20 @@ class HomeState(
         haptics.toggle(on)
         endAtAlarm = on
         commit()
+    }
+
+    /**
+     * The wake handle is moving under a finger. Following ends HERE, at the
+     * first movement, and not at the release: with the rule still on for the
+     * length of the drag, the numeral, the arc and the overline went on
+     * showing the alarm while the handle followed the finger away from it -
+     * one screen, two answers, for as long as the finger was down. Every
+     * reading keys on [endAtAlarm], so flipping it is what makes them follow.
+     * A finger that has not moved does not reach here; see BedtimeDial.
+     */
+    fun dragWake(t: LocalTime) {
+        end = t
+        endAtAlarm = false
     }
 
     /**

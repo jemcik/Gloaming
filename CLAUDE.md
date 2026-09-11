@@ -230,8 +230,9 @@ is in DECISIONS.md.
   that has rung, so after a one-time alarm the rule is off until switched on
   again. The SECTION IS ALWAYS DRAWN - it used to leave with the switch, and a
   control must never remove itself when used. The row carries the live state -
-  "Next alarm" under tonight's, the alarm's day when it is not tonight's, "No
-  alarm set", and what tonight ends at instead. The platform names ONE alarm,
+  "Next alarm" under tonight's, "No alarm tonight" over "Next: Mon 07:30"
+  when it is another morning's, "No alarm set" over what the body does -
+  never when bedtime ends, which the dial says three times already. The platform names ONE alarm,
   the next to ring; there is no list to choose from, so the row says which one
   the way the lock screen does. The door to the
   clock app is the ROW ITSELF - a split row, Android's own Wi-Fi idiom: body

@@ -1322,10 +1322,15 @@ three faces and an open-in-new mark, since the tap leaves for the clock
 app. A full-width second row is what let the lines say what they mean:
 «Ночь без будильника» / «Ближайший: пн 07:30», «Найближчий будильник».
 Budgets measured on the phone the same hour: the rule title wraps past
-~22 Cyrillic characters («Завершение по будильнику» did, so it is «Сон до
-будильника»), the alarm headline past ~24, the second line past ~30
-(«Торкніться, щоб додати в Годинник» did, so the empty face says «Додати
-в Годинник»). `SplitSwitchRow` is gone; `LinkRow` took a `trailing` icon.
+~23 Cyrillic characters - «Завершение по будильнику» (24) did; of three
+pairs that fit, the owner chose «Вимикати за будильником» / «Выключать по
+будильнику», "switch off at the alarm", 206 and 210dp of 212 - the alarm
+headline past ~24, the second line past ~30. The empty face's second line
+is the owner's own, «Торкніться, щоб додати» / «Нажмите, чтобы задать»,
+without the app's name, which with the tap does not fit; a per-language
+bool picks the un-named form there, and the named translations stay
+complete for lint. `SplitSwitchRow` is gone; `LinkRow` took a `trailing`
+icon.
 
 The first build of the drag jumped. The handle sits on the alarm while tonight
 follows it, and the dial drew the grabbed wake handle from `end` - the

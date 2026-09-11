@@ -404,7 +404,8 @@ class RowFitTest {
             time to ctx.getString(R.string.row_alarm_next),
             ctx.getString(R.string.row_no_alarm_tonight) to ctx.getString(R.string.row_alarm_next_on, "$day $time"),
             ctx.getString(R.string.row_no_alarm) to
-                ctx.getString(R.string.row_alarm_set, mapOf("uk" to "Годинник", "ru" to "Часы")[locale] ?: "Clock")
+                if (ctx.resources.getBoolean(R.bool.alarm_set_names_app)) ctx.getString(R.string.row_alarm_set, "Clock")
+                else ctx.getString(R.string.row_alarm_set_any)
         )
 
         compose.setContent {

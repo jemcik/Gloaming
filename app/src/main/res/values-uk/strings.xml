@@ -89,15 +89,16 @@
     <!-- ============ Home: which days ============ -->
     <string name="section_which_days">в які дні</string>
     <string name="section_sync_alarm">синхронізація з будильником</string>
-    <string name="row_end_at_alarm_title">Сон до будильника</string>
+    <string name="row_end_at_alarm_title">Вимикати за будильником</string>
     <string name="row_no_alarm">Немає будильників</string>
     <string name="row_no_alarm_tonight">Ніч без будильника</string>
     <string name="row_alarm_next_on">Найближчий: %1$s</string>
     <string name="row_alarm_next">Найближчий будильник</string>
     <string name="chip_open_app">Відкрити %1$s</string>
     <string name="chip_open_alarms">Відкрити будильники</string>
-    <string name="row_alarm_set">Додати в %1$s</string>
-    <string name="row_alarm_set_any">Додати будильник</string>
+    <string name="row_alarm_set">Торкніться, щоб додати в %1$s</string>
+    <string name="row_alarm_set_any">Торкніться, щоб додати</string>
+    <bool name="alarm_set_names_app">false</bool>
     <!-- BUDGET: these four share one row, 311dp wide, and at 14sp English fills
          it with 17dp of slack between chips. Longer than ~11 characters each and
          the row overflows - see the day-row note in CLAUDE.md. -->

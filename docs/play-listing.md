@@ -182,6 +182,26 @@ Android 15 или новее. Два разрешения, оба выдаютс
 
 ---
 
+# What’s new — 0.15 (500 max each)
+
+en-US
+
+```
+End bedtime at your alarm now works properly. With the switch on, bedtime ends at whichever alarm rings first (Android shows apps only that one), and the row shows its time. The wake time you set in Gloaming applies on mornings with no alarm (say, alarms on weekdays only). With no alarms the switch is off. The button below opens your clock app with your alarms. Change the wake time by hand and "end bedtime at your alarm" switches off: the manual setting takes priority.
+```
+
+uk-UA
+
+```
+Завершення за будильником тепер працює як слід. З увімкненим перемикачем режим сну закінчується за будильником, який спрацює найпершим (Android показує лише його), а рядок показує, о котрій. Час пробудження, заданий у Gloaming, діє для ранків без будильника (скажімо, будильник лише на будні). Без будильників перемикач вимкнений. Кнопка нижче відкриває годинник із вашими будильниками. Змінили час пробудження вручну — режим за будильником вимикається: ручне налаштування важливіше.
+```
+
+ru-RU
+
+```
+Завершение по будильнику теперь работает как надо. С включённым переключателем режим сна заканчивается по будильнику, что сработает первым (Android показывает лишь его), а строка показывает, во сколько. Время пробуждения, заданное в Gloaming, действует для утр без будильника (скажем, будильник только по будням). Без будильников переключатель выключен. Кнопка ниже открывает часы с вашими будильниками. Изменили время пробуждения вручную — режим по будильнику выключается: ручная настройка важнее.
+```
+
 # What’s new — 0.14 (500 max each)
 
 en-US

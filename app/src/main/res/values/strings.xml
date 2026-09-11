@@ -177,14 +177,15 @@
          the row's body does, which is the one thing the empty state needs to
          say. "Ends at 07:30" stood here and repeated the dial three times.
          "Tap to", by the owner's choice - the body's tap is the one
-         affordance nothing else on the row shows. The named form is used
-         where alarm_set_names_app says the language has room for it; ru and
-         uk do not (33 characters wraps at 1.0), so they show the second,
-         which drops the name. TalkBack hears the name either way. -->
+         affordance nothing else on the row shows. The Slavic lines carry
+         the app's name and not the tap: «Нажмите, чтобы задать» (21) WRAPPED
+         ON THE PHONE while RowFitTest passed it - the phone draws Cyrillic
+         in its own wider fallback face, Robolectric in Roboto - so the
+         budget for this line is ~17 Cyrillic characters, and the name is
+         the more useful half. The second form is for a clock app with no
+         readable name. -->
     <string name="row_alarm_set">Tap to set one in %1$s</string>
     <string name="row_alarm_set_any">Tap to set one</string>
-    <!-- Whether row_alarm_set fits this language's line; see it. -->
-    <bool name="alarm_set_names_app">true</bool>
     <!-- A row's supporting line must not WRAP. Past one line the row becomes a
          three-line ListItem, and M3 then top-aligns the trailing content, so the
          switch stops being level with its own row. Reported as exactly that.
@@ -195,7 +196,7 @@
          25-character English one did not - so these are set for the widest
          script, and were checked by RENDERING the app in Ukrainian, which is
          where two of them were caught.
-         BUDGET-EACH 22 fx_grayscale_sub fx_dim_sub fx_dark_sub fx_ambient_sub fx_dim_dark_sub settings_language_why diagnostics_why reset_why row_alarm_fallback row_alarm_next row_alarm_set_any
+         BUDGET-EACH 22 fx_grayscale_sub fx_dim_sub fx_dark_sub fx_ambient_sub fx_dim_dark_sub settings_language_why diagnostics_why reset_why row_alarm_fallback row_alarm_next row_alarm_set
          A budget is ONE line: the parser's key list is [a-z0-9_ ]+, which does
          not cross a newline, so keys wrapped onto a second line are silently in
          no budget at all. These two sat there unmeasured until RowFitTest was

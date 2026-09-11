@@ -7,6 +7,7 @@ import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -810,7 +811,7 @@ class ScreensTest {
         setAlarm(alarm)
         home()
 
-        compose.onNode(hasText(t(alarm)) and isToggleable())
+        compose.onNode(hasContentDescription(ctx().getString(R.string.row_end_at_alarm, t(alarm))) and isToggleable())
             .performScrollTo().performClick()
         assertTrue(p.exitAtAlarm)
         assertEquals("switching on must not move the handle", wake, p.endTime)
@@ -982,7 +983,7 @@ class ScreensTest {
         setAlarm(alarm)
         home()
 
-        compose.onNode(hasText(t(alarm)) and isToggleable())
+        compose.onNode(hasContentDescription(ctx().getString(R.string.row_end_at_alarm, t(alarm))) and isToggleable())
             .performScrollTo().performClick()
         assertFalse("and it must actually be off", p.exitAtAlarm)
         assertEquals("off must not move the handle", wake, p.endTime)
@@ -1003,7 +1004,8 @@ class ScreensTest {
 
         val day = at.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault())
             .replaceFirstChar { it.titlecase(Locale.getDefault()) }
-        compose.onNode(hasText("$day " + t(at.toLocalTime())) and isToggleable()).assertExists()
+        compose.onNodeWithText("$day " + t(at.toLocalTime())).assertExists()
+        compose.onNode(hasContentDescription(ctx().getString(R.string.row_end_at_alarm, "$day " + t(at.toLocalTime()))) and isToggleable()).assertExists()
         compose.onNodeWithText(ctx().getString(R.string.row_alarm_fallback, t(wake))).assertExists()
         compose.onNodeWithText(ctx().getString(R.string.label_wake_up).uppercase()).assertExists()
     }
@@ -1021,7 +1023,7 @@ class ScreensTest {
         home()
 
         assertFalse("no alarm, no rule", p.exitAtAlarm)
-        compose.onNode(hasText(ctx().getString(R.string.row_no_alarm)) and isToggleable())
+        compose.onNode(hasContentDescription(ctx().getString(R.string.row_end_at_alarm, ctx().getString(R.string.row_no_alarm))) and isToggleable())
             .assertIsOff().assertIsNotEnabled()
         compose.onNodeWithText(ctx().getString(R.string.row_alarm_fallback, t(wake))).assertExists()
     }
@@ -1051,12 +1053,12 @@ class ScreensTest {
         home()
 
         assertFalse(p.exitAtAlarm)
-        compose.onNode(hasText(ctx().getString(R.string.row_alarm_next)) and isToggleable())
+        compose.onNode(hasContentDescription(ctx().getString(R.string.row_end_at_alarm, t(minutesFromNow(30)))) and isToggleable())
             .assertIsOff().assertIsEnabled()
     }
 
     @Test
-    fun `the chip names the clock app and opens its alarm list`() {
+    fun `the row's body names the clock app and opens its alarm list`() {
         // Robolectric ships no clock app, so install one to resolve - the
         // same probe Doors makes on the phone - with a name, which is what
         // the chip wears.
@@ -1079,18 +1081,24 @@ class ScreensTest {
         p.exitAtAlarm = true
         home()
 
-        compose.onNodeWithText(ctx().getString(R.string.chip_open_app, "Clock"))
+        // The row's BODY is the door, named after the app it opens; the
+        // switch beside it is a separate node.
+        compose.onNode(hasContentDescription(ctx().getString(R.string.chip_open_app, "Clock"), substring = true), useUnmergedTree = true)
             .performScrollTo().performClick()
         val started = shadowOf(RuntimeEnvironment.getApplication()).nextStartedActivity
         assertEquals(AlarmClock.ACTION_SHOW_ALARMS, started?.action)
+        // No alarm on the phone, so the rule is off before the tap; the tap
+        // must not have switched it on. The body is a door, not the switch.
+        assertFalse(p.exitAtAlarm)
     }
 
     @Test
-    fun `no clock app, no chip`() {
+    fun `no clock app, no door - the row is a plain switch row`() {
         val p = armed()
         p.exitAtAlarm = true
         home()
-        compose.onNodeWithText(ctx().getString(R.string.chip_open_alarms)).assertDoesNotExist()
+        compose.onNode(hasContentDescription(ctx().getString(R.string.chip_open_alarms), substring = true))
+            .assertDoesNotExist()
         compose.onNodeWithText(ctx().getString(R.string.row_no_alarm)).assertExists()
     }
 

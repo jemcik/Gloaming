@@ -1279,6 +1279,19 @@ gets the section's 10dp and the finger keeps 48. The clock app's name on the
 chip arrives in Gloaming's own language - «Відкрити Годинник» under the
 Ukrainian app locale on an English phone - so nothing mixes.
 
+The chip lasted a day. Trimmed and named, it still floated under the card,
+and the owner asked for redesigns. Six were sketched - split row, icon
+button beside the switch, heading action, card foot, two rows with
+distinct roles, door moved to Settings - and the split row won: Android's
+own Wi-Fi and Bluetooth row, body opens the clock app, a hairline, then
+the switch. One row, nothing under it, and the empty state improves - "No
+alarm set" is itself the door. `SplitSwitchRow` in Rows.kt; two semantics
+nodes on purpose, the body a button named after the app it opens ("Open
+Clock", the app's own label), the switch named by the section's sentence.
+Verified on the Honor: the body opens `AlarmsMainActivity`, the rule is
+untouched by it. A gear was considered and rejected - it promises settings
+this feature does not have.
+
 The first build of the drag jumped. The handle sits on the alarm while tonight
 follows it, and the dial drew the grabbed wake handle from `end` - the
 setting - from the instant of the grab, so a finger resting on 10:00 watched

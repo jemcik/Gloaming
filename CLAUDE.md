@@ -234,10 +234,12 @@ is in DECISIONS.md.
   alarm set", and what tonight ends at instead. The platform names ONE alarm,
   the next to ring; there is no list to choose from, so the row says which one
   the way the lock screen does. The door to the
-  clock app is an ASSIST CHIP under the card, wearing the open-in-new mark and
-  the app's own name - never a second row: a row with the same icon and a
-  chevron under a row with a switch read as twin settings, and Material
-  defines the assist chip for exactly this, an action into another app.
+  clock app is the ROW ITSELF - a split row, Android's own Wi-Fi idiom: body
+  opens the clock, hairline, switch (`SplitSwitchRow`). Never a second row: a
+  row with the same icon and a chevron under a row with a switch read as twin
+  settings; and not a chip under the card, which floated and was rejected on
+  sight. The body is one semantics node naming where it goes, the switch
+  another naming what it rules.
 - **A night whose END has come DUE is closed**, landed or not, until a window
   that begins later. At the END the clock app has already moved "next alarm" to
   tomorrow, so judged from the handles the night still contains now and the

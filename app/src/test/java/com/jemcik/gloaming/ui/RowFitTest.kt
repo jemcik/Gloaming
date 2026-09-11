@@ -400,16 +400,16 @@ class RowFitTest {
         val day = DayOfWeek.entries
             .map { it.getDisplayName(TextStyle.SHORT, loc).replaceFirstChar { c -> c.titlecase(loc) } }
             .maxByOrNull { it.length }!!
-        // Every face the switch row has: tonight's alarm (which alarm it is),
+        // Every face the split row has: tonight's alarm (which alarm it is),
         // another morning's (its day, and what tonight ends at instead), and
-        // no alarm at all. Then the chip beneath, with the longest clock-app
-        // name these locales are likely to meet.
+        // no alarm at all. The body has LESS room than a switch row's - the
+        // hairline and the switch's own padding take it - which is why it is
+        // measured as the split row and not as SwitchRow.
         val rows = listOf(
             time to ctx.getString(R.string.row_alarm_next),
             "$day $time" to fallback,
             ctx.getString(R.string.row_no_alarm) to fallback
         )
-        val chip = ctx.getString(R.string.chip_open_app, mapOf("uk" to "Годинник", "ru" to "Часы")[locale] ?: "Clock")
 
         compose.setContent {
             GloamingTheme(dark = false) {
@@ -419,16 +419,18 @@ class RowFitTest {
                 GroupedList(gloam.raise, buildList<@Composable () -> Unit> {
                     rows.forEach { (h, sub) ->
                         add {
-                            SwitchRow(
+                            SplitSwitchRow(
                                 headline = h,
                                 supporting = sub,
                                 checked = true,
+                                onOpen = {},
+                                openLabel = "Open Clock",
+                                switchLabel = h,
                                 leading = { RowIcon(R.drawable.ic_alarm, IconTint.Alarm) }
                             ) {}
                         }
                     }
                 })
-                AssistChip(onClick = {}, label = { Text(chip) })
                 }
                 }
                 }
@@ -446,7 +448,7 @@ class RowFitTest {
         assertTrue("in '$locale' the heading wrapped: ${hh}dp", hh < 24f)
 
         rows.forEach { (h, _) ->
-            val b = compose.onNode(hasText(h) and isToggleable()).getUnclippedBoundsInRoot()
+            val b = compose.onNode(hasText(h)).getUnclippedBoundsInRoot()
             val rh = (b.bottom - b.top).value
             assertTrue(
                 "in '$locale' the ends row '$h' is ${rh}dp: something wrapped, and M3 " +
@@ -454,10 +456,6 @@ class RowFitTest {
                 rh < if (scale > 1f) 92f else twoLineCeiling.value
             )
         }
-        // The chip is one line by construction; what can go wrong is its
-        // width, and a chip wider than the card is a chip that clips.
-        val c = compose.onNode(hasText(chip)).getUnclippedBoundsInRoot()
-        assertTrue("in '$locale' the chip '$chip' is ${(c.right - c.left).value}dp wide", (c.right - c.left).value < 311f)
     }
 
     /**

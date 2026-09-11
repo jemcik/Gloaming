@@ -168,10 +168,9 @@
          LARGE font size «Наступний будильник» wrapped and lifted the switch,
          so the Slavic lines say «Ваш будильник» instead. -->
     <string name="row_alarm_next">Next alarm</string>
-    <!-- The assist chip under the card: an action that leaves for another
-         app, which is what Material defines the assist chip for. %1$s is the
-         clock app's own name, read from the app that answers; the second is
-         the fallback where no name can be read. -->
+    <!-- What TalkBack says the row's body does: it opens the clock app. %1$s
+         is that app's own name, read from the app that answers; the second is
+         the fallback where no name can be read. Not drawn. -->
     <string name="chip_open_app">Open %1$s</string>
     <string name="chip_open_alarms">Open alarms</string>
     <!-- A row's supporting line must not WRAP. Past one line the row becomes a

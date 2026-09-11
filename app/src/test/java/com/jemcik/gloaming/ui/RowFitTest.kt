@@ -408,7 +408,8 @@ class RowFitTest {
         val rows = listOf(
             time to ctx.getString(R.string.row_alarm_next),
             "$day $time" to fallback,
-            ctx.getString(R.string.row_no_alarm) to fallback
+            ctx.getString(R.string.row_no_alarm) to
+                ctx.getString(R.string.row_alarm_set, mapOf("uk" to "Годинник", "ru" to "Часы")[locale] ?: "Clock")
         )
 
         compose.setContent {

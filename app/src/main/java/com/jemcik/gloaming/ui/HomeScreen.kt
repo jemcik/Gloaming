@@ -828,7 +828,7 @@ private fun WindowBlock(
  * the switch: turn the rule off with no alarm and the whole section vanished
  * under the finger, which was designed, tested, and wrong - a control must
  * never remove itself when used. With no alarm the row reads "No alarm set"
- * and what tonight ends at; the chip is the way to change that.
+ * over "Set one in Clock", which is what its body does.
  *
  * THE ROW is the alarm: its time, and its DAY when it is not this night's -
  * "Mon 06:30" on a Friday. The supporting line answers, in every state, the
@@ -874,12 +874,23 @@ private fun EndsSection(s: HomeState) {
             .replaceFirstChar { it.titlecase(locale) } +
             " " + hhmm(ctx, alarm.hour, alarm.minute)
     }
-    val supporting =
-        if (tonights) res.getString(R.string.row_alarm_next)
-        else res.getString(R.string.row_alarm_fallback, fallback)
-    // The app the chip opens, by its own name - the alarm's own app where its
+    // The app the body opens, by its own name - the alarm's own app where its
     // showIntent names one, so asked as often as the alarm is.
     val app = remember(s.tick) { Doors.alarmsApp(ctx) }
+    // What the second line is FOR differs per face. Under tonight's alarm it
+    // says which alarm; under another morning's it says what tonight ends
+    // at instead, because the row names a time the dial does not. Under "No
+    // alarm set" there is no contradiction to resolve - the dial, the
+    // sentence and the bar already say when bedtime ends - so it says the
+    // one thing the empty state needs: what the body does. Nothing at all
+    // where there is no app to open.
+    val supporting = when {
+        alarm == null -> if (!hasDoor) null
+            else if (app != null) res.getString(R.string.row_alarm_set, app)
+            else res.getString(R.string.row_alarm_set_any)
+        tonights -> res.getString(R.string.row_alarm_next)
+        else -> res.getString(R.string.row_alarm_fallback, fallback)
+    }
 
     val openLabel = if (app != null) res.getString(R.string.chip_open_app, app)
     else res.getString(R.string.chip_open_alarms)
@@ -998,7 +1009,13 @@ private fun DaysSection(s: HomeState) {
                         s.commit()
                     }
                 )
-                .padding(vertical = 6.dp),
+                // No padding ABOVE. Every other section opens with a card
+                // edge 18dp under its label; this row has no card, so the
+                // eye measures to the ink, and 6dp of padding plus the
+                // title's own leading put that ink 27dp down - reported as a
+                // gap. The touch box keeps its 48dp through heightIn.
+                .heightIn(min = 48.dp)
+                .padding(bottom = 6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(Modifier.weight(1f).padding(end = 12.dp)) {

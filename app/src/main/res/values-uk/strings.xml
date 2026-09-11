@@ -95,6 +95,8 @@
     <string name="row_alarm_next">Ваш будильник</string>
     <string name="chip_open_app">Відкрити %1$s</string>
     <string name="chip_open_alarms">Відкрити будильники</string>
+    <string name="row_alarm_set">Додати в %1$s</string>
+    <string name="row_alarm_set_any">Додайте в годиннику</string>
     <!-- BUDGET: these four share one row, 311dp wide, and at 14sp English fills
          it with 17dp of slack between chips. Longer than ~11 characters each and
          the row overflows - see the day-row note in CLAUDE.md. -->

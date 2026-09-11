@@ -1292,6 +1292,15 @@ Verified on the Honor: the body opens `AlarmsMainActivity`, the rule is
 untouched by it. A gear was considered and rejected - it promises settings
 this feature does not have.
 
+Two smaller verdicts the same evening. "Ends at 07:30" under "No alarm set"
+repeated what the numeral, the sentence and the bar already said; the line
+now names what the row's body does - "Set one in Clock" - and nothing where
+no clock app resolves. And the Repeat row sat 27dp under WHICH DAYS where
+every card sits 18 under its label: the row has no card, so the eye measures
+to the ink, and its 6dp of top padding plus the title's leading showed. The
+top padding is gone and `heightIn(48)` keeps the touch box; measured 21dp to
+the ink now, against a card edge's 18.
+
 The first build of the drag jumped. The handle sits on the alarm while tonight
 follows it, and the dial drew the grabbed wake handle from `end` - the
 setting - from the instant of the grab, so a finger resting on 10:00 watched

@@ -173,6 +173,12 @@
          the fallback where no name can be read. Not drawn. -->
     <string name="chip_open_app">Open %1$s</string>
     <string name="chip_open_alarms">Open alarms</string>
+    <!-- Under "No alarm set", where the phone has a clock app to open: what
+         the row's body does, which is the one thing the empty state needs to
+         say. "Ends at 07:30" stood here and repeated the dial three times.
+         Same budget as row_alarm_fallback. -->
+    <string name="row_alarm_set">Set one in %1$s</string>
+    <string name="row_alarm_set_any">Set one in your clock app</string>
     <!-- A row's supporting line must not WRAP. Past one line the row becomes a
          three-line ListItem, and M3 then top-aligns the trailing content, so the
          switch stops being level with its own row. Reported as exactly that.
@@ -183,7 +189,7 @@
          25-character English one did not - so these are set for the widest
          script, and were checked by RENDERING the app in Ukrainian, which is
          where two of them were caught.
-         BUDGET-EACH 22 fx_grayscale_sub fx_dim_sub fx_dark_sub fx_ambient_sub fx_dim_dark_sub settings_language_why diagnostics_why reset_why row_alarm_fallback row_alarm_next
+         BUDGET-EACH 22 fx_grayscale_sub fx_dim_sub fx_dark_sub fx_ambient_sub fx_dim_dark_sub settings_language_why diagnostics_why reset_why row_alarm_fallback row_alarm_next row_alarm_set
          A budget is ONE line: the parser's key list is [a-z0-9_ ]+, which does
          not cross a newline, so keys wrapped onto a second line are silently in
          no budget at all. These two sat there unmeasured until RowFitTest was

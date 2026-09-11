@@ -1025,7 +1025,9 @@ class ScreensTest {
         assertFalse("no alarm, no rule", p.exitAtAlarm)
         compose.onNode(hasContentDescription(ctx().getString(R.string.row_end_at_alarm, ctx().getString(R.string.row_no_alarm))) and isToggleable())
             .assertIsOff().assertIsNotEnabled()
-        compose.onNodeWithText(ctx().getString(R.string.row_alarm_fallback, t(wake))).assertExists()
+        // "Ends at" is not repeated here: the dial already says it, and with
+        // no clock app there is nothing for a second line to say.
+        compose.onNodeWithText(ctx().getString(R.string.row_alarm_fallback, t(wake))).assertDoesNotExist()
     }
 
     @Test
@@ -1081,6 +1083,8 @@ class ScreensTest {
         p.exitAtAlarm = true
         home()
 
+        // With no alarm the second line says what the body does.
+        compose.onNodeWithText(ctx().getString(R.string.row_alarm_set, "Clock")).assertExists()
         // The row's BODY is the door, named after the app it opens; the
         // switch beside it is a separate node.
         compose.onNode(hasContentDescription(ctx().getString(R.string.chip_open_app, "Clock"), substring = true), useUnmergedTree = true)

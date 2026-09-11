@@ -92,7 +92,12 @@ def shoot(lang, theme):
     time.sleep(1)
     shell(f"am force-stop {PKG}")
     shell(f"am start -n {PKG}/.MainActivity")
-    time.sleep(4)
+    # Long enough for the first composition's re-arm and the resume's
+    # reconcile to settle. At 4s the swipe below landed during a recomposition
+    # that moved the page under the finger, and the UP became a TAP on
+    # whatever row had slid beneath it - "What is allowed" - so effects.png
+    # was the allowlist, in every language, on 11 Sep 2026.
+    time.sleep(7)
 
     d = OUT / lang / theme
     grab(d / "home.png")
@@ -111,10 +116,15 @@ def shoot(lang, theme):
         if not p:
             print("    !! could not find the effects heading"); break
         delta = p[1] - EFFECTS_HEADING_Y
-        if abs(delta) <= 24:
+        if abs(delta) <= 48:
             break
         # ~150px/s, under the fling threshold on this panel; never off-screen.
-        end = max(300, min(2600, 1500 - delta))
+        # And never SHORTER than 60px: a slow drag inside touch slop is a tap
+        # on whatever row sits under y=1500, which was "What is allowed" -
+        # every effects.png was the allowlist for an afternoon. Overshooting
+        # by up to 12px lands inside the 48 above.
+        move = max(60, abs(delta)) * (1 if delta > 0 else -1)
+        end = max(300, min(2600, 1500 - move))
         shell(f"input swipe 628 1500 628 {end} {max(600, int(abs(1500 - end) / 0.15))}")
         time.sleep(2)
     grab(d / "effects.png")
@@ -133,10 +143,14 @@ def shoot(lang, theme):
 
 if __name__ == "__main__":
     only = sys.argv[1:] or list(LANGS)
+    # No heads-up notifications over the shot: a Gmail banner sat across the
+    # top of home.png once. Restored below.
+    shell("settings put global heads_up_notifications_enabled 0")
     for lang in only:
         for theme in THEMES:
             shoot(lang, theme)
     # Leave the phone as a person would want it.
+    shell("settings put global heads_up_notifications_enabled 1")
     shell("cmd uimode night yes")
     shell(f"cmd locale set-app-locales {PKG} --user 0 --locales en")
     print("done")

@@ -224,12 +224,13 @@ class Prefs(ctx: Context) {
      * alarm can only shorten; here it moves the end either way, see
      * [Scheduler.endAt]. The key keeps AOSP's name. Off by default, as it is
      * there - silently moving when bedtime ends is not something to spring on
-     * someone. A STANDING rule, kept on through mornings with no alarm: the
-     * platform cannot tell a deleted alarm from a one-time one that has rung.
+     * someone. And off by ITSELF once the phone has no alarm at all
+     * ([Scheduler.rescheduleAll] writes it), which the screen has to notice
+     * from over the top of a resumed Home - hence [KEY_EXIT_AT_ALARM].
      */
     var exitAtAlarm: Boolean
-        get() = sp.getBoolean("exitAtAlarm", false)
-        set(v) = sp.edit { putBoolean("exitAtAlarm", v) }
+        get() = sp.getBoolean(KEY_EXIT_AT_ALARM, false)
+        set(v) = sp.edit { putBoolean(KEY_EXIT_AT_ALARM, v) }
 
     /**
      * The one-time launch-setup tip has been answered, either way.
@@ -269,6 +270,8 @@ class Prefs(ctx: Context) {
          * about them.
          */
         const val KEY_ENABLED = "enabled"
+        /** The one other key written from outside the screen: the receiver switches it off. */
+        const val KEY_EXIT_AT_ALARM = "exitAtAlarm"
         const val NO_BOOT = Long.MIN_VALUE
         const val NO_DUE = Long.MIN_VALUE
         const val NO_DAY = Long.MIN_VALUE

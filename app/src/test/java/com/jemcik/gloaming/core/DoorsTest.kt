@@ -64,6 +64,35 @@ class DoorsTest {
     }
 
     @Test
+    fun `a door that resolves and is then refused says so, in the journal`() {
+        // The shape of the bug the phone caught: the list resolved, the
+        // launch was refused for a permission the manifest lacked, and the
+        // refusal was swallowed. Robolectric refuses an unresolvable launch
+        // only when asked to; the assertion is that the refusal is spoken.
+        shadowOf(RuntimeEnvironment.getApplication()).checkActivities(true)
+        assertFalse(Doors.openAlarms(ctx()))
+        assertTrue(
+            "a refused door must be journaled, never swallowed",
+            Journal.read(ctx()).any { it.contains("alarm list refused") }
+        )
+    }
+
+    @Test
+    fun `the alarm's own app is named where it says how to show itself`() {
+        // The showIntent's creator is the app that set the alarm - here this
+        // very app, whose label the chip would then wear.
+        val show = PendingIntent.getActivity(
+            ctx(), 0, Intent("test.show"), PendingIntent.FLAG_IMMUTABLE
+        )
+        ctx().getSystemService(AlarmManager::class.java).setAlarmClock(
+            AlarmManager.AlarmClockInfo(System.currentTimeMillis() + 3_600_000, show),
+            PendingIntent.getBroadcast(ctx(), 1, Intent("test.alarm"), PendingIntent.FLAG_IMMUTABLE)
+        )
+        val own = ctx().applicationInfo.loadLabel(ctx().packageManager).toString()
+        assertEquals(own, Doors.alarmsApp(ctx()))
+    }
+
+    @Test
     fun `a clock app that lists alarms is a door, and the list is what opens`() {
         installClock()
         assertTrue(Doors.hasAlarms(ctx()))

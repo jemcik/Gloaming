@@ -1226,7 +1226,13 @@ on by itself when an alarm appears. The section is always drawn. The cost he
 accepted, having seen the alternative: the platform reports "no alarm"
 identically for a deleted alarm and a one-time one that has just rung, so a
 one-time alarm leaves the rule off the next evening until it is switched on
-again. `NextAlarmTest` and `ScreensTest` pin the new shape.
+again. `NextAlarmTest` and `ScreensTest` pin the new shape. The review pass
+before the PR moved the auto-off ABOVE `rescheduleAll`'s bedtime-off return:
+placed after it, a phone with bedtime off and no alarm kept the switch
+on-but-disabled, the very look being removed; and the open screen now watches
+the key the receiver writes (`Prefs.KEY_EXIT_AT_ALARM`), because a one-time
+alarm ringing at 06:30 under a resumed Home would otherwise leave the switch
+drawn on with the rule already off.
 
 The door was a second row first - alarm icon, "Your alarms", a chevron - under
 a row with the same icon and a switch, and the owner's verdict was that the

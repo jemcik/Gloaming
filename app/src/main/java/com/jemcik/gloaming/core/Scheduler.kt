@@ -473,6 +473,22 @@ object Scheduler {
         }
         cancelAll(ctx)
 
+        // NO ALARM ON THE PHONE, NO RULE. The switch means "linked to an
+        // alarm", and with nothing to link to it goes off - here, because every
+        // path that learns the alarm has gone passes through here: the clock
+        // app's broadcast, a resume, a boot. BEFORE the bedtime-off return
+        // below: the rule is about the alarm, not about bedtime, and placed
+        // after it the switch sat on-but-disabled whenever bedtime was off,
+        // which is the look the owner rejected. His decision, taken after
+        // seeing the standing version, which sat ON over "No alarm set" and
+        // read as on-but-doing-nothing. The cost is a one-time alarm: rung, it
+        // reads as no alarm, and the rule is off the next evening until it is
+        // switched on again. Nothing switches it on by itself.
+        if (p.exitAtAlarm && nextAlarm(ctx) == null) {
+            p.exitAtAlarm = false
+            Journal.write(ctx, "no alarm on the phone - end at alarm switched off")
+        }
+
         if (!p.enabled) {
             p.activeDay = Prefs.NO_DAY
             // Nothing armed, so nothing can be owed - otherwise the END we just
@@ -487,18 +503,6 @@ object Scheduler {
         // Read once and used for both branches, so the window we open and the
         // END we arm cannot disagree about when the morning is.
         val alarm = if (p.exitAtAlarm) nextAlarm(ctx) else null
-        // NO ALARM ON THE PHONE, NO RULE. The switch means "linked to an
-        // alarm", and with nothing to link to it goes off - here, because every
-        // path that learns the alarm has gone passes through here: the clock
-        // app's broadcast, a resume, a boot. The owner's decision, taken after
-        // seeing the standing version, which sat ON over "No alarm set" and
-        // read as on-but-doing-nothing. The cost is a one-time alarm: rung, it
-        // reads as no alarm, and the rule is off the next evening until it is
-        // switched on again. Nothing switches it on by itself.
-        if (p.exitAtAlarm && alarm == null) {
-            p.exitAtAlarm = false
-            Journal.write(ctx, "no alarm on the phone - end at alarm switched off")
-        }
         val open = liveWindow(p, p.startTime, p.endTime, p.days, now, alarm)
 
         if (open != null) {

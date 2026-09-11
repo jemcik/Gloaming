@@ -136,6 +136,33 @@ class NextAlarmTest {
     }
 
     @Test
+    fun `no alarm switches the rule off even while bedtime itself is off`() {
+        // The rule is about the alarm, not about bedtime. Placed after the
+        // bedtime-off return the first time, so a phone with bedtime off kept
+        // the switch on-but-disabled - the look this whole change removes.
+        ShadowAlarmManager.setCanScheduleExactAlarms(true)
+        val p = prefs().apply { enabled = false }
+        Scheduler.rescheduleAll(ctx(), p, from = LocalDateTime.of(2026, 9, 11, 12, 0))
+        assertEquals(false, p.exitAtAlarm)
+    }
+
+    @Test
+    fun `the clock app's broadcast re-arms the END at the moved alarm`() {
+        // NEXT_ALARM_CLOCK_CHANGED through the receiver: the alarm moves from
+        // 09:00 to 08:00 while the app is closed, and the END follows.
+        ShadowAlarmManager.setCanScheduleExactAlarms(true)
+        val p = prefs()
+        setAlarm(LocalDateTime.of(2026, 9, 12, 9, 0))
+        Scheduler.rescheduleAll(ctx(), p, from = LocalDateTime.of(2026, 9, 11, 12, 0))
+        assertEquals(LocalDateTime.of(2026, 9, 12, 9, 0), armed(Scheduler.ACTION_END))
+        setAlarm(LocalDateTime.of(2026, 9, 12, 8, 0))
+        BedtimeReceiver().onReceive(
+            ctx(), Intent(android.app.AlarmManager.ACTION_NEXT_ALARM_CLOCK_CHANGED)
+        )
+        assertEquals(LocalDateTime.of(2026, 9, 12, 8, 0), armed(Scheduler.ACTION_END))
+    }
+
+    @Test
     fun `no alarm on the phone switches the rule off, and an alarm appearing does not switch it back`() {
         ShadowAlarmManager.setCanScheduleExactAlarms(true)
         val p = prefs()

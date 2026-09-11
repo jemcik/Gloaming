@@ -170,14 +170,15 @@ class HomeState(
      * was still on. The end returned is the scheduled one regardless; the
      * alarm is applied by the callers, each in its own way.
      */
-    private fun scheduledTonight(): Scheduler.Window? {
+    private fun scheduledTonight(alarm: LocalDateTime?): Scheduler.Window? {
         val dur = Scheduler.duration(start, end)
-        val running = Scheduler.liveWindow(
-            prefs, start, end, days, alarm = Scheduler.endingAlarm(ctx, endAtAlarm)
-        )
+        val running = Scheduler.liveWindow(prefs, start, end, days, alarm = alarm)
         val began = running?.began ?: Scheduler.nextStart(start, end, days) ?: return null
         return Scheduler.Window(began, began.plus(dur))
     }
+
+    /** The next alarm where the switch lets it act; null otherwise. One read per question. */
+    private fun endingAlarm(): LocalDateTime? = Scheduler.endingAlarm(ctx, endAtAlarm)
 
     /**
      * WHAT TONIGHT ACTUALLY ENDS AT, which is not always the wake handle.
@@ -190,8 +191,9 @@ class HomeState(
      * tonight ends, which is what was reported, twice. Derived HERE, once, and
      * called from wherever the answer is drawn.
      */
-    fun endsTonight(): LocalDateTime? = scheduledTonight()?.let {
-        Scheduler.endAt(it.began, it.ends, Scheduler.endingAlarm(ctx, endAtAlarm), endAtAlarm)
+    fun endsTonight(): LocalDateTime? {
+        val alarm = endingAlarm()
+        return scheduledTonight(alarm)?.let { Scheduler.endAt(it.began, it.ends, alarm, endAtAlarm) }
     }
 
     /**
@@ -199,9 +201,10 @@ class HomeState(
      * on? Asked with the switch forced on, deliberately: the row shows the
      * alarm's day whenever it is not tonight's, whatever the switch says.
      */
-    fun alarmIsTonights(alarm: LocalDateTime): Boolean = scheduledTonight()?.let {
-        Scheduler.endAt(it.began, it.ends, alarm, exitAtAlarm = true) == alarm
-    } ?: false
+    fun alarmIsTonights(alarm: LocalDateTime): Boolean =
+        scheduledTonight(if (endAtAlarm) alarm else null)?.let {
+            Scheduler.endAt(it.began, it.ends, alarm, exitAtAlarm = true) == alarm
+        } ?: false
 
     /**
      * Tonight ends at the next alarm: the switch is on and the alarm is
@@ -395,7 +398,7 @@ class HomeState(
     }
 
     /**
-     * The switch's whole action: a standing rule, on or off. Nothing moves.
+     * The switch's whole action: the rule, on or off. Nothing moves.
      *
      * It used to COPY the alarm into the wake handle, so that "on" meant "the
      * handle equals the alarm" and the two could not disagree. They could,
@@ -517,11 +520,12 @@ class HomeState(
      * pauses what is underneath it. [onResume] therefore never runs, and the
      * switch keeps whatever it last drew.
      *
-     * ONLY [enabled] is re-read, deliberately. Calling [onResume] here instead
-     * would reconcile the rule and re-check the probe on every write this
-     * screen makes of its own - the dial commits on every drag - and would
-     * re-read the wake handle out from under a finger that is still moving it.
-     * The tile changes one value, so one value is what this follows.
+     * ONLY [enabled] and the alarm rule are re-read, deliberately. Calling
+     * [onResume] here instead would reconcile the rule and re-check the probe
+     * on every write this screen makes of its own - the dial commits on every
+     * drag - and would re-read the wake handle out from under a finger that is
+     * still moving it. The tile changes one value and the receiver another, so
+     * those two are what this follows.
      *
      * The caller owns the returned handle and must close it; see [Prefs.watch]
      * for why letting go of it silently stops the callbacks.
@@ -529,6 +533,10 @@ class HomeState(
     fun watchStore(): AutoCloseable = prefs.watch { key ->
         // Null is a cleared store, which is Reset - "everything changed".
         if (key == null || key == Prefs.KEY_ENABLED) enabled = prefs.enabled
+        // The receiver switches the alarm rule off when the last alarm goes -
+        // a one-time alarm ringing at 06:30 under an open Home is enough -
+        // and nothing else would tell the switch.
+        if (key == null || key == Prefs.KEY_EXIT_AT_ALARM) endAtAlarm = prefs.exitAtAlarm
     }
 
     /**

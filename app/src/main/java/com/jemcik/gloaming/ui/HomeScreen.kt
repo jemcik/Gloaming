@@ -858,7 +858,7 @@ private fun EndsSection(s: HomeState) {
     val alarm = remember(s.tick) { Scheduler.nextAlarm(ctx) }
     // A capability of the phone, not of the moment: asked once.
     val hasDoor = remember { Doors.hasAlarms(ctx) }
-    val tonights = remember(s.tick, s.start, s.end, s.days, s.enabled) {
+    val tonights = remember(s.tick, s.start, s.end, s.days, s.endAtAlarm, s.enabled) {
         alarm != null && s.alarmIsTonights(alarm)
     }
     val fallback = remember(s.tick, s.end) { hhmm(ctx, s.end.hour, s.end.minute) }
@@ -893,8 +893,12 @@ private fun EndsSection(s: HomeState) {
                 // must be in the semantics; this is that rule from the
                 // other side.
                 modifier = Modifier.semantics {
+                    // With no alarm the switch is disabled, and "End bedtime
+                    // at your alarm, No alarm set" is a sentence at odds with
+                    // itself; the row's own two lines say what there is.
                     contentDescription =
-                        res.getString(R.string.row_end_at_alarm, headline) + ". " + supporting
+                        if (alarm == null) "$headline. $supporting"
+                        else res.getString(R.string.row_end_at_alarm, headline) + ". " + supporting
                 },
                 checked = s.endAtAlarm,
                 // Nothing to link to, nothing to switch on. The chip beneath

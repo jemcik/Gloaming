@@ -762,7 +762,7 @@ in a method — they were in an assumption.
 Coverage: **81% of instructions, 68% of branches**. The shape is the point — what
 is covered is what can be reasoned about without a phone; what is not is what
 talks to the platform (`BedtimeTile` 0%, `AmbientControl` 36%,
-`BedtimeReceiver` 53% - its END and next-alarm branches are driven directly
+`BedtimeReceiver` 56% - its END and next-alarm branches are driven directly
 now, see `NextAlarmTest` - `Journal` 63%, `Doors` 87%). That gap is what the
 journal is for.
 

@@ -747,12 +747,12 @@ in a method — they were in an assumption.
                           distinct from a deleted rule, and does the system's
                           account stay ahead of - and apart from - our own
 
-Coverage: **81% of instructions, 67% of branches**. The shape is the point — what
+Coverage: **81% of instructions, 68% of branches**. The shape is the point — what
 is covered is what can be reasoned about without a phone; what is not is what
 talks to the platform (`BedtimeTile` 0%, `AmbientControl` 36%,
-`BedtimeReceiver` 50% - its END branch is driven directly now, see
-`NextAlarmTest` - `Journal` 63%, `Doors` 87%). That gap is what the journal is
-for.
+`BedtimeReceiver` 53% - its END and next-alarm branches are driven directly
+now, see `NextAlarmTest` - `Journal` 63%, `Doors` 87%). That gap is what the
+journal is for.
 
 Three things worth knowing before adding tests:
 

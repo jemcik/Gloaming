@@ -375,6 +375,41 @@ object Scheduler {
         alarm: LocalDateTime? = null
     ): LocalDateTime? = liveWindow(p, start, end, days, from, alarm)?.ends
 
+    /**
+     * WHAT TONIGHT ACTUALLY ENDS AT: the window running now, or else the next,
+     * with the alarm's say applied. The one derivation every screen that names
+     * tonight's end must use - Home's numeral and arc, the allowlist's "waits
+     * until", the missed-END card. The allowlist read the wake handle straight
+     * from prefs and said "until 8:30 AM" under a 9:00 alarm, reported as the
+     * screen lying; a second copy of this rule is how that happens.
+     *
+     * The running window is found WITH the alarm, because the alarm can extend
+     * a night past the handle: asked without it at 08:45 under a 09:00 alarm
+     * this would answer "over" and hand back tomorrow's.
+     */
+    fun endsTonight(
+        enabled: Boolean,
+        activeDay: Long,
+        start: LocalTime,
+        end: LocalTime,
+        days: Set<DayOfWeek>,
+        alarm: LocalDateTime?,
+        exitAtAlarm: Boolean,
+        endedAt: LocalDateTime?,
+        from: LocalDateTime = LocalDateTime.now()
+    ): LocalDateTime? {
+        val dur = duration(start, end)
+        val running = liveWindow(enabled, activeDay, start, end, days, from, alarm, exitAtAlarm, endedAt)
+        val began = running?.began ?: nextStart(start, end, days, from) ?: return null
+        return endAt(began, began.plus(dur), alarm, exitAtAlarm)
+    }
+
+    fun endsTonight(ctx: Context, p: Prefs, from: LocalDateTime = LocalDateTime.now()): LocalDateTime? =
+        endsTonight(
+            p.enabled, p.activeDay, p.startTime, p.endTime, p.days,
+            endingAlarm(ctx, p.exitAtAlarm), p.exitAtAlarm, endedAt(p), from
+        )
+
     /** [Prefs.endedAt] as a time, or null while no END has ever fired. */
     fun endedAt(p: Prefs): LocalDateTime? =
         p.endedAt.takeIf { it != Prefs.NO_DUE }?.let {

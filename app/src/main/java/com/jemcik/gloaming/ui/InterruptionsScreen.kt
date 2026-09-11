@@ -22,6 +22,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.jemcik.gloaming.R
 import com.jemcik.gloaming.core.Bedtime
+import com.jemcik.gloaming.core.Scheduler
 import com.jemcik.gloaming.core.Clock
 import com.jemcik.gloaming.core.Interruptions
 import com.jemcik.gloaming.core.Prefs
@@ -174,7 +175,9 @@ fun InterruptionsScreen(onBack: () -> Unit, onChanged: () -> Unit) {
         if (Bedtime.runningNow(ctx, prefs)) { dirty = true; pending++ } else onChanged()
     }
 
-    val wake: LocalTime = prefs.endTime
+    // Tonight's end as the alarm sets it, not the wake handle: this line said
+    // "waits until 8:30 AM" under a night following a 9:00 alarm.
+    val wake: LocalTime = Scheduler.endsTonight(ctx, prefs)?.toLocalTime() ?: prefs.endTime
     val res = LocalResources.current
     val allowed = Interruptions.allowed(
         res, calls, messages, conversations, repeatCallers, reminders, events, media

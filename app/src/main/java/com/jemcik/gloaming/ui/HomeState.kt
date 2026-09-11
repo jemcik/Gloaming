@@ -191,10 +191,9 @@ class HomeState(
      * tonight ends, which is what was reported, twice. Derived HERE, once, and
      * called from wherever the answer is drawn.
      */
-    fun endsTonight(): LocalDateTime? {
-        val alarm = endingAlarm()
-        return scheduledTonight(alarm)?.let { Scheduler.endAt(it.began, it.ends, alarm, endAtAlarm) }
-    }
+    fun endsTonight(): LocalDateTime? = Scheduler.endsTonight(
+        enabled, prefs.activeDay, start, end, days, endingAlarm(), endAtAlarm, Scheduler.endedAt(prefs)
+    )
 
     /**
      * Is [alarm] THIS NIGHT'S - the one tonight would end at, were the switch

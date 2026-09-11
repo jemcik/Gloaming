@@ -952,6 +952,26 @@ class ScreensTest {
     }
 
     @Test
+    fun `the allowlist's "waits until" names tonight's end, not the handle`() {
+        // Reported: "until 8:30 AM" at the top of What is allowed while the
+        // night followed a 9:00 alarm and every reading on Home said 9:00.
+        val p = armed()
+        val wake = minutesFromNow(60)
+        val alarm = minutesFromNow(90)
+        p.endTime = wake
+        p.exitAtAlarm = true
+        setAlarm(alarm)
+        // Same date for the two, or the handle stands and so should the test.
+        val expected = if (LocalDateTime.now().plusMinutes(90).toLocalDate() ==
+            LocalDateTime.now().plusMinutes(60).toLocalDate()) alarm else wake
+        compose.setContent {
+            GloamingTheme(dark = false) { InterruptionsScreen(onBack = {}, onChanged = {}) }
+        }
+        compose.onNode(hasText(t(expected), substring = true)).assertExists()
+        if (expected == alarm) compose.onNode(hasText(t(wake), substring = true)).assertDoesNotExist()
+    }
+
+    @Test
     fun `switching it off leaves the wake time where it is`() {
         // Off restores nothing, and must not: the handle was never moved.
         val p = armed()

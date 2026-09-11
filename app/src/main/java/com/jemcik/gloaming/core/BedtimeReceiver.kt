@@ -5,6 +5,9 @@ import android.content.Context
 import android.app.AlarmManager
 import android.content.Intent
 import com.jemcik.gloaming.ui.BedtimeTile
+import java.time.Instant
+import java.time.LocalDateTime
+import java.time.ZoneId
 
 class BedtimeReceiver : BroadcastReceiver() {
     override fun onReceive(ctx: Context, intent: Intent) {
@@ -14,9 +17,17 @@ class BedtimeReceiver : BroadcastReceiver() {
         // STATE_TRUE while zen_mode is reset to 0, so believing it loses the
         // window. START and END force for their own reasons, below.
         var force = false
+        // The instant the schedule is judged at. Now, except for an alarm that
+        // landed a little EARLY, which is judged at the instant it was armed
+        // for - the Honor delivers on a five-minute grid of its own, and an END
+        // forty seconds early otherwise ends the night and walks straight back
+        // into it. See Delivery.asOf.
+        var asOf = System.currentTimeMillis()
         when (intent.action) {
             Scheduler.ACTION_START -> {
-                Journal.write(ctx, "START fired")
+                val due = intent.getLongExtra(Scheduler.EXTRA_DUE, Prefs.NO_DUE)
+                Journal.write(ctx, "START fired" + offset(due, asOf))
+                asOf = Delivery.asOf(due, asOf)
                 ZenController.setActive(ctx, p, true, force = true)
             }
             Scheduler.ACTION_END -> {
@@ -24,13 +35,14 @@ class BedtimeReceiver : BroadcastReceiver() {
                 // scheduled second, measured in forced light and deep idle - so a
                 // number here at all is the interesting case.
                 val endNow = System.currentTimeMillis()
-                val late = (endNow - p.endDue) / 1000
-                Journal.write(
-                    ctx,
-                    if (p.endDue != Prefs.NO_DUE && late > 2) "END fired ${late}s late"
-                    else "END fired"
-                )
-                AlarmWatch.handled(p, endNow)
+                // The instant THIS alarm was armed for. Not p.endDue, which the
+                // resume's reschedule may already have moved to tomorrow by the
+                // time a parked END lands; see AlarmWatch.handled.
+                val due = intent.getLongExtra(Scheduler.EXTRA_DUE, p.endDue)
+                val open = AlarmWatch.appOpen()
+                Journal.write(ctx, "END fired" + offset(due, endNow) + (if (open) ", app on screen" else ""))
+                AlarmWatch.handled(p, due, endNow, open)
+                asOf = Delivery.asOf(due, endNow)
                 // Drop the pin first: if the alarm lands a hair early, a live
                 // pin would reopen the window and rearm END for the same
                 // instant, over and over.
@@ -91,10 +103,28 @@ class BedtimeReceiver : BroadcastReceiver() {
             else -> return
         }
         // Always rearm: exact alarms are one-shot.
-        Scheduler.rescheduleAll(ctx, p, force)
+        Scheduler.rescheduleAll(
+            ctx, p, force,
+            from = LocalDateTime.ofInstant(Instant.ofEpochMilli(asOf), ZoneId.systemDefault())
+        )
         // The shade cannot see any of this happen. Ask the tile to re-read, or
         // it keeps showing the face it had when it was last looked at - a tick
         // through the whole night that should have been a moon.
         BedtimeTile.refresh(ctx)
+    }
+
+    /**
+     * " 257s late", " 40s early", or nothing - the journal's one number for an
+     * alarm. Early is worth a word too now: it is how the Honor's grid was read
+     * off the phone.
+     */
+    private fun offset(due: Long, now: Long): String {
+        if (due == Prefs.NO_DUE) return ""
+        val s = (now - due) / 1000
+        return when {
+            s > 2 -> " ${s}s late"
+            s < -2 -> " ${-s}s early"
+            else -> ""
+        }
     }
 }

@@ -56,7 +56,11 @@
     <string name="bg_blocked_why">Дозволяє режиму сну починатися й завершуватися, поки застосунок закрито. Без цього нічого не станеться, доки ви знову не відкриєте Gloaming. На деяких телефонах цей перемикач з’являється лише після вибору «Керувати вручну» для Gloaming</string>
     <string name="missed_alarm_title">Режим сну завершився не вчасно</string>
     <string name="missed_alarm_row">Дозвольте Gloaming працювати у фоні</string>
-    <string name="missed_alarm_why">Телефон зупинив Gloaming, поки застосунок був закритий, тому режим сну не вимкнувся, доки ви його не відкрили</string>
+    <string name="missed_alarm_why">Телефон розбудив Gloaming із запізненням, тому режим сну завершився пізніше</string>
+    <string name="missed_alarm_late">Телефон розбудив Gloaming із запізненням, тому режим сну завершився о %1$s замість %2$s</string>
+    <string name="missed_alarm_held">Телефон утримував Gloaming, доки ви не відкрили застосунок, тому режим сну завершився о %1$s замість %2$s</string>
+    <string name="missed_alarm_check">Gloaming не може прочитати цей перемикач сам. Він дізнається, коли режим сну завершиться наступного разу, о %1$s</string>
+    <string name="notice_got_it">Зрозуміло</string>
     <string name="launch_setup_title">Цьому телефону потрібні ще два перемикачі</string>
     <string name="launch_setup_row">Запуск застосунків</string>
     <string name="launch_setup_why">Знайдіть Gloaming через пошук, виберіть «Керувати вручну», потім увімкніть автозапуск і роботу у фоні</string>

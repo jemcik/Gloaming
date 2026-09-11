@@ -31,4 +31,23 @@ internal object Delivery {
     /** Came due, nothing arrived, and the tolerance has run out. */
     fun missed(due: Long, seen: Long, now: Long): Boolean =
         seen != due && late(due, now)
+
+    /**
+     * The instant to judge the schedule by when an alarm lands a little EARLY.
+     *
+     * The Honor delivers exact alarms on its own five-minute grid: measured
+     * 11 Sep 2026, an END due 08:30:00 landed at 08:29:20. Judged at the moment
+     * it landed, the night still had forty seconds to run, so the handler
+     * switched zen off, the reschedule walked straight back in and switched it
+     * on, and armed a second END - which the phone held to the NEXT grid
+     * point, 08:34:20. A forty-second-early alarm became a visible blink and a
+     * four-minute-late end.
+     *
+     * Inside the tolerance the alarm IS the scheduled instant, and the schedule
+     * is judged there. Outside it - an alarm ten minutes early would be a
+     * different fault - now is now, which is the old behaviour: the window
+     * re-opens and a fresh END is armed for the real end.
+     */
+    fun asOf(due: Long, now: Long): Long =
+        if (due != Prefs.NO_DUE && now < due && due - now <= TOLERANCE_MS) due else now
 }

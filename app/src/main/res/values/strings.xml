@@ -99,7 +99,21 @@
     <string name="bg_blocked_why">Lets bedtime start and end while the app is closed. Without it nothing happens until you next open Gloaming. On some phones the switch appears only after setting Gloaming to &#8220;Manage manually&#8221;</string>
     <string name="missed_alarm_title">Bedtime did not end on time</string>
     <string name="missed_alarm_row">Let Gloaming run in the background</string>
-    <string name="missed_alarm_why">The phone stopped Gloaming while it was closed, so bedtime stayed on until you opened the app</string>
+    <!-- The measured card, in the words of its record. %1$s is when bedtime
+         actually ended, %2$s when it should have. "Held ... until you opened
+         the app" is said only when the END arrived with the app on screen,
+         which is how a parked alarm is released - never for every late END:
+         the Honor delivered one by itself, four minutes late, with the app
+         closed, and the old sentence claimed otherwise. _why is the fallback
+         for a miss latched before the record existed. -->
+    <string name="missed_alarm_why">The phone woke Gloaming late, so bedtime ended late</string>
+    <string name="missed_alarm_late">The phone woke Gloaming late, so bedtime ended at %1$s instead of %2$s</string>
+    <string name="missed_alarm_held">The phone held Gloaming until you opened the app, so bedtime ended at %1$s instead of %2$s</string>
+    <!-- The second face, after Allow: the switch cannot be read, so say when
+         it will be known. %1$s is the next end. No day word on purpose - a
+         weekday there needs a case ru/uk cannot take from java.time. -->
+    <string name="missed_alarm_check">Gloaming cannot read that switch. It will know the next time bedtime ends, at %1$s</string>
+    <string name="notice_got_it">Got it</string>
     <string name="launch_setup_title">This phone needs two more switches</string>
     <string name="launch_setup_row">App launch</string>
     <string name="launch_setup_why">Search for Gloaming, set it to &#8220;Manage manually&#8221;, then turn on Auto-launch and Run in background</string>

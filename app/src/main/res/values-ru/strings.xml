@@ -56,7 +56,11 @@
     <string name="bg_blocked_why">Позволяет режиму сна начинаться и заканчиваться, пока приложение закрыто. Без этого ничего не произойдёт, пока вы снова не откроете Gloaming. На некоторых телефонах этот переключатель появляется только после выбора «Управлять вручную» для Gloaming</string>
     <string name="missed_alarm_title">Режим сна закончился не вовремя</string>
     <string name="missed_alarm_row">Разрешите Gloaming работать в фоне</string>
-    <string name="missed_alarm_why">Телефон остановил Gloaming, пока приложение было закрыто, поэтому режим сна не выключился, пока вы его не открыли</string>
+    <string name="missed_alarm_why">Телефон разбудил Gloaming с опозданием, поэтому режим сна закончился позже</string>
+    <string name="missed_alarm_late">Телефон разбудил Gloaming с опозданием, поэтому режим сна закончился в %1$s вместо %2$s</string>
+    <string name="missed_alarm_held">Телефон удерживал Gloaming, пока вы не открыли приложение, поэтому режим сна закончился в %1$s вместо %2$s</string>
+    <string name="missed_alarm_check">Gloaming не может прочитать этот переключатель сам. Он узнает, когда режим сна закончится в следующий раз, в %1$s</string>
+    <string name="notice_got_it">Понятно</string>
     <string name="launch_setup_title">Этому телефону нужны ещё два переключателя</string>
     <string name="launch_setup_row">Запуск приложений</string>
     <string name="launch_setup_why">Найдите Gloaming через поиск, выберите «Управлять вручную», затем включите автозапуск и работу в фоне</string>

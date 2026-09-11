@@ -101,7 +101,14 @@ indefinitely is background restriction — see `core/BackgroundLimit.kt`.
     core/AlarmWatch.kt           did our own END actually arrive? The backstop
                                  for every cause BackgroundLimit cannot see - a
                                  frozen app misses its alarm with the appop still
-                                 reading `allow`
+                                 reading `allow`. A miss is a RECORD, not a flag:
+                                 when bedtime actually ended, and whether the
+                                 app was on screen as the END arrived - which is
+                                 how a parked alarm is released, and the only
+                                 evidence for "until you opened the app". The
+                                 card has two faces (after Allow it says when it
+                                 will know; the switch cannot be read) and a Got
+                                 it per incident, keyed on the END's due instant
     core/BackgroundLimit.kt      the one vendor restriction that can be READ:
                                  isBackgroundRestricted. Off, the phone parks
                                  our alarms until the app is next opened
@@ -257,6 +264,16 @@ is in DECISIONS.md.
   the screen with nothing on screen to explain it.
 - `Prefs.activeDay` pins only the DATE a night began on. Pinning an instant
   breaks a handle; this was got wrong twice, in opposite directions.
+- **An alarm can land EARLY, and an early END re-enters the night.** The Honor
+  delivers exact alarms on its own five-minute grid: measured 11 Sep 2026, the
+  END due 08:30:00 landed at 08:29:20, and judged at that moment the window
+  still had forty seconds to run - zen off, straight back on, a second END armed
+  and held by the phone to 08:34:20. `Delivery.asOf` judges an alarm inside the
+  tolerance at the instant it was ARMED for, and that instant rides in the alarm
+  as `EXTRA_DUE`, not in prefs: a parked END released by the app being opened
+  can land after the resume's reschedule has already re-armed `endDue` for
+  tomorrow, and judged against tomorrow it read as punctual and un-latched the
+  miss. `AlarmWatchTest` pins both.
 - Log what a call **answered**, not that it did not throw.
   `removeAutomaticZenRule` returns a boolean.
 
@@ -344,6 +361,11 @@ is in DECISIONS.md.
   weak evidence; it is none. The rule in `dumpsys notification` is the answer.
 - `am broadcast` cannot reach `BedtimeReceiver` — it is `exported="false"`,
   correctly. Test through real alarms.
+- **`dumpsys batterystats --history` is the alarm log that works on a RELEASE
+  build.** Every delivery is a `+tmpwhitelist=… com.jemcik.gloaming.END/u0` line
+  with a wall-clock stamp, every foreground session a `+top=`, and the screen
+  state is there too; it reaches back about a week. It is how the Honor's grid
+  was read on 11 Sep 2026 with `run-as` refused and the journal unreadable.
 - **Samsung's Modes and Routines can be driven, and only from the APP.** Its
   external provider (`Routines.kt`) sits behind `READ_ROUTINE_INFO`, which is
   `protectionLevel normal` - but the shell does not hold it, so `content query`
@@ -555,6 +577,9 @@ is in DECISIONS.md.
                          README uses are copies of the en set
 
     adb shell run-as com.jemcik.gloaming cat files/journal.log
+    adb shell dumpsys batterystats --history | grep gloaming    the same on a
+                         release build: every alarm delivery and every
+                         foreground session, stamped
 
 Unit tests run on **JDK 21**, pinned in `app/build.gradle.kts`. The reason —
 Robolectric's ASM choking on Java 25 class files — is probably obsolete since
@@ -580,7 +605,7 @@ compileSdk 37, targetSdk 36, minSdk 35.
 
 ## Tests
 
-`app/src/test/`, 261 cases, no device. They are written as the QUESTION the code
+`app/src/test/`, 273 cases, no device. They are written as the QUESTION the code
 answers rather than as coverage of a method, because none of the bugs were ever
 in a method — they were in an assumption.
 
@@ -622,7 +647,11 @@ in a method — they were in an assumption.
                           and the dial following a moved alarm rather than the
                           handle left behind
     AlarmWatchTest        did our own END arrive, and ON TIME - the case the
-                          notice exists for, which it could not report
+                          notice exists for, which it could not report; what a
+                          miss RECORDS; an alarm judged by its own due instant
+                          across the resume-versus-release race; Got it and
+                          Allow per incident; and the forty-second-early END
+                          that must end the night rather than re-enter it
     BootWatchTest         the withheld-boot detection
     BackgroundProbeTest   the delivery probe: lateness rather than arrival is
                           the verdict, and the latch that stops its own retest

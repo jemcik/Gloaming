@@ -469,6 +469,31 @@ internal fun PermissionCard(
     onRequest: () -> Unit
 ) {
     val g = gloam
+    NoticeCard(title, why, icon, tint) {
+        if (granted) Text(
+            stringResource(R.string.perm_allowed),
+            style = MaterialTheme.typography.labelLarge, color = g.stateOn
+        ) else FilledAction(stringResource(R.string.perm_allow), onRequest)
+    }
+}
+
+/**
+ * The shape every measured notice on Home shares - icon and headline, the
+ * supporting text at full width, the actions beneath - with the action row as
+ * a slot, because the missed-END card needs two faces on one shape: a filled
+ * Allow beside a text Got it, and then a lone Got it once Allow has been
+ * pressed. See [PermissionCard] for why the actions sit under the text and
+ * not beside it.
+ */
+@Composable
+internal fun NoticeCard(
+    title: String,
+    why: String,
+    @DrawableRes icon: Int,
+    tint: IconTint,
+    actions: @Composable RowScope.() -> Unit
+) {
+    val g = gloam
     Column(
         Modifier
             .fillMaxWidth()
@@ -484,31 +509,42 @@ internal fun PermissionCard(
             )
         }
         Text(why, style = MaterialTheme.typography.bodySmall, color = g.onSurfaceLow)
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-            if (granted) Text(
-                stringResource(R.string.perm_allowed),
-                style = MaterialTheme.typography.labelLarge, color = g.stateOn
-            ) else Button(
-                onClick = onRequest,
-                shape = CircleShape
-                // NO colour override. M3's own buttonColors resolve to the
-                // scheme's primary/onPrimary, which this app wires to
-                // stateOn/onState - so the button is the accent and flips the
-                // right way per theme for free: dark fill with white text in
-                // Dawn, light fill with dark text in Dusk.
-                //
-                // It used to name `cta`, the arc's WARM end. That survived the
-                // accent moving to the arc's COOL end and left a chroma-46
-                // burnt orange 154 degrees from everything else, on a screen
-                // whose card is chroma 3. Reported, fairly, as ugly. The fix is
-                // less code than the bug was.
-            ) {
-                Text(
-                    stringResource(R.string.perm_allow),
-                    style = MaterialTheme.typography.labelLarge
-                )
-            }
-        }
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.End,
+            verticalAlignment = Alignment.CenterVertically,
+            content = actions
+        )
+    }
+}
+
+/** A notice's one filled button: the app asking for something. */
+@Composable
+internal fun FilledAction(label: String, onClick: () -> Unit) {
+    Button(
+        onClick = onClick,
+        shape = CircleShape
+        // NO colour override. M3's own buttonColors resolve to the
+        // scheme's primary/onPrimary, which this app wires to
+        // stateOn/onState - so the button is the accent and flips the
+        // right way per theme for free: dark fill with white text in
+        // Dawn, light fill with dark text in Dusk.
+        //
+        // It used to name `cta`, the arc's WARM end. That survived the
+        // accent moving to the arc's COOL end and left a chroma-46
+        // burnt orange 154 degrees from everything else, on a screen
+        // whose card is chroma 3. Reported, fairly, as ugly. The fix is
+        // less code than the bug was.
+    ) {
+        Text(label, style = MaterialTheme.typography.labelLarge)
+    }
+}
+
+/** A notice's quiet button: the user answering, not the app asking. */
+@Composable
+internal fun TextAction(label: String, onClick: () -> Unit) {
+    TextButton(onClick = onClick, shape = CircleShape) {
+        Text(label, color = gloam.onSurfaceLow)
     }
 }
 

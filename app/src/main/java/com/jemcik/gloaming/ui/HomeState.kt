@@ -228,13 +228,13 @@ class HomeState(
      * advice is worth anything - the just-in-time rule, applied to a setting
      * rather than a permission.
      *
-     * Silent when either measured notice is up. Both of those report something
-     * that IS wrong and carry the same instruction; a suggestion stacked on top
-     * would be a third card saying a version of the same thing, and the weakest
-     * of the three.
+     * Silent when any measured notice is up - the probe's, the appop's, or a
+     * late END's. Each of those reports something that IS wrong and carries the
+     * same instruction; a suggestion stacked on top would be one more card
+     * saying a version of the same thing, and the weakest of them.
      */
     fun showLaunchTip(): Boolean =
-        hasLaunchManager && enabled && !tipSeen && !blocked && !restricted
+        hasLaunchManager && enabled && !tipSeen && !blocked && !restricted && !showMissedAlarm()
 
     /**
      * They have gone to look. The card cannot verify what happened there - the

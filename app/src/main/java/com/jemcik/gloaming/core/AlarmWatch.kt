@@ -1,7 +1,5 @@
 package com.jemcik.gloaming.core
 
-import android.app.ActivityManager
-
 /**
  * Whether the phone ate an alarm we were counting on.
  *
@@ -72,11 +70,11 @@ object AlarmWatch {
      * screen - the resume that just looked - or a receiver running with nobody
      * watching, which is the next night's START finding last night's END lost.
      */
-    fun check(p: Prefs, now: Long = System.currentTimeMillis(), atOpen: Boolean = appOpen()) {
-        if (overdue(p, now)) {
-            p.alarmMissed = true
-            record(p, p.endDue, now, atOpen)
-        }
+    fun check(p: Prefs, now: Long = System.currentTimeMillis(), atOpen: Boolean = appOpen()): Boolean {
+        if (!overdue(p, now)) return false
+        p.alarmMissed = true
+        record(p, p.endDue, now, atOpen)
+        return true
     }
 
     /** Nothing is armed, so nothing can be owed. */
@@ -139,16 +137,22 @@ object AlarmWatch {
     /**
      * Is the app on screen right now? Asked as an END arrives and as a miss is
      * found, because a parked alarm is released by exactly this - the uid going
-     * foreground - so it is the evidence for "until you opened the app". A
-     * receiver started for the alarm alone reports itself as a service; an
-     * activity on top, or one just behind a system dialog, as foreground or
-     * visible. No Context needed: it asks about this process.
+     * foreground - so it is the evidence for "until you opened the app".
+     *
+     * Answered by MainActivity, which sets [onScreen] between onStart and
+     * onStop, and NOT by `ActivityManager.getMyMemoryState`. That was the first
+     * version, and on the Honor it answered "not foreground" from inside the
+     * resume that had just opened the app: the reschedule ran in ON_RESUME, the
+     * card read "the phone woke Gloaming late" about an END the open itself had
+     * released. The process state the system reports lags the activity the
+     * process is drawing; the activity knows first. A receiver started for an
+     * alarm alone has no activity, so the flag is false there - which is the
+     * right answer, and the default.
      */
-    fun appOpen(): Boolean = runCatching {
-        val info = ActivityManager.RunningAppProcessInfo()
-        ActivityManager.getMyMemoryState(info)
-        info.importance <= ActivityManager.RunningAppProcessInfo.IMPORTANCE_VISIBLE
-    }.getOrDefault(false)
+    @Volatile
+    var onScreen: Boolean = false
+
+    fun appOpen(): Boolean = onScreen
 
     private fun record(p: Prefs, due: Long, endedAt: Long, atOpen: Boolean) {
         p.missedDue = due

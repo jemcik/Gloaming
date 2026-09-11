@@ -39,8 +39,9 @@ class BedtimeReceiver : BroadcastReceiver() {
                 // resume's reschedule may already have moved to tomorrow by the
                 // time a parked END lands; see AlarmWatch.handled.
                 val due = intent.getLongExtra(Scheduler.EXTRA_DUE, p.endDue)
-                Journal.write(ctx, "END fired" + offset(due, endNow))
-                AlarmWatch.handled(p, due, endNow, AlarmWatch.appOpen())
+                val open = AlarmWatch.appOpen()
+                Journal.write(ctx, "END fired" + offset(due, endNow) + (if (open) ", app on screen" else ""))
+                AlarmWatch.handled(p, due, endNow, open)
                 asOf = Delivery.asOf(due, endNow)
                 // Drop the pin first: if the alarm lands a hair early, a live
                 // pin would reopen the window and rearm END for the same

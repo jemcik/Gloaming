@@ -23,6 +23,13 @@ import com.jemcik.gloaming.ui.SettingsScreen
 
 
 class MainActivity : ComponentActivity() {
+    // The one fact the receiver cannot find out for itself: is the app on
+    // screen? A parked END is released by the app being opened, and the
+    // missed-END card says "until you opened the app" on this and nothing else.
+    // The system's own process state lags the activity; see AlarmWatch.appOpen.
+    override fun onStart() { super.onStart(); AlarmWatch.onScreen = true }
+    override fun onStop() { AlarmWatch.onScreen = false; super.onStop() }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         // Let the sky run behind the status and gesture bars. Light icons are

@@ -1114,10 +1114,15 @@ bug. It was one, three times over:
   resume had just recorded.
 - *One sentence for every miss.* A four-minute vendor delay and a twelve-hour
   park are different reports. A miss now records when bedtime actually ended
-  and whether the app was on screen as the END arrived (`AlarmWatch.appOpen`,
-  `getMyMemoryState`) — which is how a parked alarm is released, and the only
-  evidence there is for "until you opened the app". The card names the two
-  times, and claims the opening only on that evidence.
+  and whether the app was on screen as the END arrived (`AlarmWatch.appOpen`)
+  — which is how a parked alarm is released, and the only evidence there is
+  for "until you opened the app". The card names the two times, and claims the
+  opening only on that evidence. "On screen" is MainActivity's onStart/onStop,
+  not `ActivityManager.getMyMemoryState`: that was tried first and, reproduced
+  on the Honor with a parked END released by the open, answered "not
+  foreground" from inside the resume that had just opened the app, so the
+  card blamed a slow phone for an END the open itself had released. The
+  process state the system reports lags the activity the process is drawing.
 - *No way out.* The card cleared itself only on the next punctual END: a day
   away here, a week on a weekend-only schedule, never if the grid persists — and
   a fault card that cannot be cleared by fixing anything is the failure the

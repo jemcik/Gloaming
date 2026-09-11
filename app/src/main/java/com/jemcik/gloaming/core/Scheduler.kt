@@ -363,8 +363,15 @@ object Scheduler {
         from: LocalDateTime = LocalDateTime.now()
     ) {
         // BEFORE anything is armed: arming overwrites the due instant, so this is
-        // the last moment the previous one can still be judged.
-        AlarmWatch.check(p)
+        // the last moment the previous one can still be judged. Logged as what
+        // it answered: this line is the only trace of an END that never came.
+        if (AlarmWatch.check(p)) AlarmWatch.report(p)?.let {
+            Journal.write(
+                ctx,
+                "END never arrived - ended here " + (it.endedAt - it.due) / 1000 + "s late" +
+                    (if (it.atOpen) ", app on screen" else "")
+            )
+        }
         cancelAll(ctx)
 
         if (!p.enabled) {

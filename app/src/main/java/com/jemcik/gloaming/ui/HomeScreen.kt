@@ -886,7 +886,8 @@ private fun EndsSection(s: HomeState) {
     // where there is no app to open.
     val supporting = when {
         alarm == null -> if (!hasDoor) null
-            else if (app != null) res.getString(R.string.row_alarm_set, app)
+            else if (app != null && res.getBoolean(R.bool.alarm_set_names_app))
+                res.getString(R.string.row_alarm_set, app)
             else res.getString(R.string.row_alarm_set_any)
         tonights -> res.getString(R.string.row_alarm_next)
         else -> res.getString(R.string.row_alarm_fallback, fallback)

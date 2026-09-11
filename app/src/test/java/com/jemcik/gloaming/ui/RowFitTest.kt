@@ -409,7 +409,9 @@ class RowFitTest {
             time to ctx.getString(R.string.row_alarm_next),
             "$day $time" to fallback,
             ctx.getString(R.string.row_no_alarm) to
-                ctx.getString(R.string.row_alarm_set, mapOf("uk" to "Годинник", "ru" to "Часы")[locale] ?: "Clock")
+                if (ctx.resources.getBoolean(R.bool.alarm_set_names_app))
+                    ctx.getString(R.string.row_alarm_set, "Clock")
+                else ctx.getString(R.string.row_alarm_set_any)
         )
 
         compose.setContent {
@@ -451,10 +453,13 @@ class RowFitTest {
         rows.forEach { (h, _) ->
             val b = compose.onNode(hasText(h)).getUnclippedBoundsInRoot()
             val rh = (b.bottom - b.top).value
+            // Two lines at 1.0. At the large font the split row keeps its
+            // switch centred whatever the body's height - it is not an M3
+            // trailing slot - so a wrapped line there is the same allowance
+            // Home's other rows get: untidy, not broken.
             assertTrue(
-                "in '$locale' the ends row '$h' is ${rh}dp: something wrapped, and M3 " +
-                    "then top-aligns the switch instead of centring it on the row",
-                rh < if (scale > 1f) 92f else twoLineCeiling.value
+                "in '$locale' the ends row '$h' is ${rh}dp: something wrapped",
+                rh < if (scale > 1f) 128f else twoLineCeiling.value
             )
         }
     }

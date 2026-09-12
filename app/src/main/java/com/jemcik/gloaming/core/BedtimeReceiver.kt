@@ -12,10 +12,17 @@ import java.time.ZoneId
 class BedtimeReceiver : BroadcastReceiver() {
     override fun onReceive(ctx: Context, intent: Intent) {
         val p = Prefs(ctx)
-        // Boot and upgrade re-assert the zen state rather than trusting what the
-        // rule claims: across a reboot the rule's condition survives as
-        // STATE_TRUE while zen_mode is reset to 0, so believing it loses the
-        // window. START and END force for their own reasons, below.
+        // Everything but the clock app's broadcast re-asserts the zen state
+        // rather than trusting what the rule claims: across a reboot the
+        // rule's condition survives as STATE_TRUE while zen_mode is reset to
+        // 0, so believing it loses the window; and an alarm is the moment the
+        // state is meant to change, so "the system already says so" is not a
+        // reason to skip. The reschedule at the foot does the asserting, ONCE,
+        // after it has decided what the state should be. START used to switch
+        // zen on here and reschedule after, and a START landing early beyond
+        // the tolerance was then on for a moment and off again when the
+        // reschedule found the window not yet begun - a blink, and a posted
+        // "Do Not Disturb is on" at a bedtime that had not started.
         var force = false
         // Boot and upgrade: the clock app may not have re-registered its
         // alarms yet, so "no alarm" is not yet a fact. See rescheduleAll.
@@ -31,7 +38,7 @@ class BedtimeReceiver : BroadcastReceiver() {
                 val due = intent.getLongExtra(Scheduler.EXTRA_DUE, Prefs.NO_DUE)
                 Journal.write(ctx, "START fired" + offset(due, asOf))
                 asOf = Delivery.asOf(due, asOf)
-                ZenController.setActive(ctx, p, true, force = true)
+                force = true
             }
             Scheduler.ACTION_END -> {
                 // How late, not just that it happened. Punctual is the norm - the
@@ -70,7 +77,7 @@ class BedtimeReceiver : BroadcastReceiver() {
                     p.enabled = false
                     Journal.write(ctx, "one-off finished - switching off")
                 }
-                ZenController.setActive(ctx, p, false, force = true)
+                force = true
             }
             AlarmManager.ACTION_NEXT_ALARM_CLOCK_CHANGED -> {
                 // Only interesting when the alarm is allowed to end the night.

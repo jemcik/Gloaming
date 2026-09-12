@@ -171,16 +171,6 @@ class Prefs(ctx: Context) {
         set(v) = sp.edit { putLong("missVisitedFor", v) }
 
     /**
-     * The user has been sent to the vendor's launch screen at least once.
-     *
-     * Set when they tap the card, not when they finish - because whether they
-     * finished is not knowable. Toggling both of Honor's switches off and on
-     * again changes NOTHING readable: no key in secure, system or global, no
-     * appop recorded, nothing in the package dump. Measured by doing exactly
-     * that, twice. So the card is told once and then trusts the person, and the
-     * missed-alarm notice catches it if the trust was misplaced.
-     */
-    /**
      * The probe: when a throwaway alarm was due, and when one was last handled.
      *
      * [NO_DUE] on both means no probe has ever been armed. Same shape as
@@ -233,6 +223,23 @@ class Prefs(ctx: Context) {
         set(v) = sp.edit { putBoolean(KEY_EXIT_AT_ALARM, v) }
 
     /**
+     * Has the user gone to LOOK at the vendor's switches? Not whether they set
+     * them - nothing here can read that, which is the whole problem. It only
+     * changes what the card asks: before, an offer; after, the question the app
+     * cannot answer itself.
+     *
+     * Set when they tap the card, not when they finish - because whether they
+     * finished is not knowable. Toggling both of Honor's switches off and on
+     * again changes NOTHING readable: no key in secure, system or global, no
+     * appop recorded, nothing in the package dump. Measured by doing exactly
+     * that, twice. So the card asks once and then trusts the person, and the
+     * missed-alarm notice catches it if the trust was misplaced.
+     */
+    var launchTipVisited: Boolean
+        get() = sp.getBoolean("launchTipVisited", false)
+        set(v) = sp.edit { putBoolean("launchTipVisited", v) }
+
+    /**
      * The one-time launch-setup tip has been answered, either way.
      *
      * Not a verdict and not a measurement - just "we have offered this once".
@@ -240,16 +247,6 @@ class Prefs(ctx: Context) {
      * reads as a demand, and this one cannot be confirmed, so it can never
      * dismiss itself the way a readable setting does.
      */
-    /**
-     * Has the user gone to LOOK at the vendor's switches? Not whether they set
-     * them - nothing here can read that, which is the whole problem. It only
-     * changes what the card asks: before, an offer; after, the question the app
-     * cannot answer itself.
-     */
-    var launchTipVisited: Boolean
-        get() = sp.getBoolean("launchTipVisited", false)
-        set(v) = sp.edit { putBoolean("launchTipVisited", v) }
-
     var launchTipSeen: Boolean
         get() = sp.getBoolean("launchTipSeen", false)
         set(v) = sp.edit { putBoolean("launchTipSeen", v) }
@@ -422,7 +419,7 @@ class Prefs(ctx: Context) {
      * refused end on the books until it succeeds. See [Routines.sync].
      */
     var routinesStarted: Set<Long>
-        get() = sp.getString("routinesStarted", "")!!.split(',').mapNotNull { it.toLongOrNull() }.toSet()
+        get() = sp.getString("routinesStarted", "").orEmpty().split(',').mapNotNull { it.toLongOrNull() }.toSet()
         set(v) = sp.edit { putString("routinesStarted", v.joinToString(",")) }
 
     /**

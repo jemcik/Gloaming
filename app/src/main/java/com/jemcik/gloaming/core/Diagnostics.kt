@@ -156,19 +156,23 @@ object Diagnostics {
         row("last END due", Scheduler.endedAt(p)?.toString() ?: "-")
         // Samsung's routines, as ITS app sees them now - looked up, never
         // recalled, for the same reason the rule is: what we last wrote is a
-        // belief. One line per effect that has a routine here.
-        for (e in RoutineEffect.entries) {
-            val id = p.routineUuid(e)
-            if (id == 0L) continue
-            row("routine " + e.key, ask {
-                val r = Routines.list(ctx).firstOrNull { it.uuid == id }
-                id.toString() + " " + when {
-                    r == null -> "NOT FOUND in Modes and Routines"
-                    !r.enabled -> "'" + r.name + "' SWITCHED OFF there"
-                    r.running -> "'" + r.name + "' running"
-                    else -> "'" + r.name + "' idle"
-                }
-            })
+        // belief. One line per effect that has a routine here, from ONE read
+        // of Samsung's app rather than one per line.
+        val ours = RoutineEffect.entries.filter { p.routineUuid(it) != 0L }
+        if (ours.isNotEmpty()) {
+            val listed = runCatching { Routines.list(ctx) }
+            for (e in ours) {
+                val id = p.routineUuid(e)
+                row("routine " + e.key, ask {
+                    val r = listed.getOrThrow().firstOrNull { it.uuid == id }
+                    id.toString() + " " + when {
+                        r == null -> "NOT FOUND in Modes and Routines"
+                        !r.enabled -> "'" + r.name + "' SWITCHED OFF there"
+                        r.running -> "'" + r.name + "' running"
+                        else -> "'" + r.name + "' idle"
+                    }
+                })
+            }
         }
         row("routines started", p.routinesStarted.joinToString(" ").ifEmpty { "-" })
         row("routine offered", p.routineOffered?.let { it + " as '" + p.routineOfferedName + "'" } ?: "-")

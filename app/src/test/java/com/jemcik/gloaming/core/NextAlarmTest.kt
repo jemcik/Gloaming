@@ -148,18 +148,28 @@ class NextAlarmTest {
 
     @Test
     fun `the clock app's broadcast re-arms the END at the moved alarm`() {
-        // NEXT_ALARM_CLOCK_CHANGED through the receiver: the alarm moves from
-        // 09:00 to 08:00 while the app is closed, and the END follows.
+        // NEXT_ALARM_CLOCK_CHANGED through the receiver: the alarm moves
+        // earlier while the app is closed, and the END follows.
+        //
+        // Built around NOW, not the fixed calendar above: the receiver judges
+        // at the wall clock, and this test was first written against a window
+        // beginning "tonight" on 11 Sep 2026 - which passed that day and
+        // failed the next, when the alarm it moved to was already in the past.
         ShadowAlarmManager.setCanScheduleExactAlarms(true)
-        val p = prefs()
-        setAlarm(LocalDateTime.of(2026, 9, 12, 9, 0))
-        Scheduler.rescheduleAll(ctx(), p, from = LocalDateTime.of(2026, 9, 11, 12, 0))
-        assertEquals(LocalDateTime.of(2026, 9, 12, 9, 0), armed(Scheduler.ACTION_END))
-        setAlarm(LocalDateTime.of(2026, 9, 12, 8, 0))
+        val now = LocalDateTime.now().withSecond(0).withNano(0)
+        val begins = now.plusHours(1)
+        val p = prefs().apply {
+            startTime = begins.toLocalTime()
+            endTime = begins.plusHours(8).toLocalTime()
+        }
+        setAlarm(begins.plusHours(3))
+        Scheduler.rescheduleAll(ctx(), p, from = now)
+        assertEquals(begins.plusHours(3), armed(Scheduler.ACTION_END))
+        setAlarm(begins.plusHours(2))
         BedtimeReceiver().onReceive(
             ctx(), Intent(android.app.AlarmManager.ACTION_NEXT_ALARM_CLOCK_CHANGED)
         )
-        assertEquals(LocalDateTime.of(2026, 9, 12, 8, 0), armed(Scheduler.ACTION_END))
+        assertEquals(begins.plusHours(2), armed(Scheduler.ACTION_END))
     }
 
     @Test

@@ -2,8 +2,12 @@ package com.jemcik.gloaming.core
 
 import android.app.NotificationManager
 import android.content.Context
+import android.content.Intent
 import androidx.test.core.app.ApplicationProvider
+import com.jemcik.gloaming.R
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -179,5 +183,28 @@ class DiagnosticsTest {
         // accident. The app never reads accounts and this pins that it stays so.
         val text = Diagnostics.report(ctx())
         assertFalse("an email address reached the report", text.contains("@"))
+    }
+
+    @Test
+    fun `Send hands the whole report to the share sheet as plain text`() {
+        // The one tap the privacy policy describes: the report goes to
+        // Android's chooser and nowhere else, as text the person can read
+        // before choosing where it goes. From an ACTIVITY, as Settings calls
+        // it: the framework refuses a chooser started from a bare application
+        // context, and the app never does that.
+        val activity = org.robolectric.Robolectric.buildActivity(android.app.Activity::class.java).create().get()
+        Diagnostics.share(activity)
+        val chooser = shadowOf(org.robolectric.RuntimeEnvironment.getApplication()).nextStartedActivity
+        assertNotNull("nothing was offered to share", chooser)
+        assertEquals(Intent.ACTION_CHOOSER, chooser.action)
+        val send = chooser.getParcelableExtra(Intent.EXTRA_INTENT, Intent::class.java)!!
+        assertEquals("text/plain", send.type)
+        assertEquals(
+            ctx().getString(R.string.diagnostics_subject),
+            send.getStringExtra(Intent.EXTRA_SUBJECT)
+        )
+        val text = send.getStringExtra(Intent.EXTRA_TEXT)!!
+        assertTrue("the text is the report", text.startsWith("GLOAMING DIAGNOSTICS"))
+        assertTrue(text.contains("JOURNAL"))
     }
 }

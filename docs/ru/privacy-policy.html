@@ -48,6 +48,8 @@
     <li><strong>Запуск при старте</strong> (<code>RECEIVE_BOOT_COMPLETED</code>) — позволяет восстановить ваше расписание после перезагрузки, чтобы перезапуск в два часа ночи не завершил режим сна молча.</li>
     <li><strong>Изменение системных настроек</strong> (<code>WRITE_SETTINGS</code>) — необязательное, запрашивается только если вы пользуетесь управлением always-on дисплеем на телефоне, где эта настройка достижима. Используется исключительно для записи этого одного ключа.</li>
     <li><code>WRITE_SECURE_SETTINGS</code> — объявлено, но его нельзя выдать при обычной установке; его выдают только через adb, осознанно, те, кто хочет вендорский путь к always-on. Без этого разрешения код остаётся неактивным.</li>
+    <li><strong>Установка будильников</strong> (<code>com.android.alarm.permission.SET_ALARM</code>) — позволяет строке будильника открывать список будильников в вашем приложении «Часы», который некоторые приложения держат за этим разрешением. Gloaming никогда не создаёт и не меняет будильники, а лишь читает, какой будильник прозвонит следующим — это Android показывает каждому приложению.</li>
+    <li><strong>Чтение сценариев</strong> (<code>READ_ROUTINE_INFO</code> от Samsung) — на Galaxy позволяет приложению видеть сценарии, сохранённые в «Режимах и сценариях», и запускать или останавливать те, что оно создало для экранных эффектов, пока идёт режим сна. Выдаётся при установке и ничего не делает на других телефонах.</li>
     </ul>
     <p>Gloaming не запрашивает доступа к контактам, местоположению, камере, микрофону, хранилищу или содержимому ваших сообщений и уведомлений.</p>
   </section>
@@ -59,7 +61,7 @@
   </section>
 </main>
 
-<footer>Действует с 4 September 2026. Код: <a href="https://github.com/jemcik/Gloaming">github.com/jemcik/Gloaming</a> · Apache License 2.0</footer>
+<footer>Действует с 12 сентября 2026 года. Код: <a href="https://github.com/jemcik/Gloaming">github.com/jemcik/Gloaming</a> · Apache License 2.0</footer>
 <div class="viewer" hidden tabindex="-1" role="dialog" aria-modal="true" aria-label="Снимки экрана">
   <button class="vnav prev" type="button" aria-label="Предыдущий снимок"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg></button>
   <img alt="">

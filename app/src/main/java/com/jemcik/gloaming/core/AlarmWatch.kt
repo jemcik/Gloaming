@@ -77,10 +77,9 @@ object AlarmWatch {
         return true
     }
 
-    /** Nothing is armed, so nothing can be owed. */
     /**
-     * Nothing is scheduled, so nothing can be late - and the verdict goes with
-     * it, deliberately.
+     * Nothing is armed, so nothing can be owed and nothing can be late - and
+     * the verdict goes with it, deliberately.
      *
      * Only the two branches that mean "there is no END pending" call this:
      * bedtime switched off, and a schedule with nothing to run. Leaving the

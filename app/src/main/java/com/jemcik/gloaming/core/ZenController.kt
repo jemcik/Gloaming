@@ -170,8 +170,8 @@ object ZenController {
         val existing = p.ruleId
         val sig = signature(ctx, p)
         return try {
-            val current = if (existing != null) n.getAutomaticZenRule(existing) else null
-            if (current != null) {
+            val current = existing?.let { n.getAutomaticZenRule(it) }
+            if (existing != null && current != null) {
                 val was = p.ruleSignature
                 // A live rule is rewritten only for something it acts on. Every
                 // rewrite nulls the rule's condition, so the system drops Do Not
@@ -195,7 +195,7 @@ object ZenController {
                         // zen was still on, so bedtime looked dead when it was
                         // running.
                         current != buildRule(ctx, p)
-                    else if (ruleState(ctx, existing!!) == Condition.STATE_TRUE)
+                    else if (ruleState(ctx, existing) == Condition.STATE_TRUE)
                         was.substringBefore(COSMETIC) != liveSignature(ctx, p)
                     else was != sig
                 if (changed) {
@@ -222,10 +222,8 @@ object ZenController {
         }
     }
 
-    fun ensureRule(ctx: Context, p: Prefs): String? = syncRule(ctx, p)
-
     /**
-     * Delete rules we own but no longer track.
+     * Remove every rule of ours that is not the one we are holding.
      *
      * [Prefs.ruleId] is the app's ONLY handle on its rule, so losing it strands
      * the rule the system still holds - "Clear storage" does it, and so does any
@@ -238,9 +236,6 @@ object ZenController {
      * app's rule cannot be reached from here. The conditionId is checked anyway:
      * this is a vendor Android, and "the API returns exactly what it documents"
      * has not been a safe assumption anywhere else in this file.
-     */
-    /**
-     * Remove every rule of ours that is not the one we are holding.
      *
      * `keep` is deliberately NULLABLE and this deliberately does not return
      * early when it is null. With no ruleId there is nothing to preserve, so
@@ -290,19 +285,6 @@ object ZenController {
         }
 
     /**
-     * [force] asserts the state even when the system already reports it. Alarms
-     * and boot do that, because the world may have moved underneath us. The UI
-     * does not: re-asserting STATE_TRUE on an already-active rule re-applies its
-     * device effects, and the screen visibly blinks.
-     *
-     * Whether to skip is decided by asking the system, never by what we last
-     * wrote. Trusting our own memory silently cost a whole night of Do Not
-     * Disturb: updateAutomaticZenRule clears the rule's condition, so every
-     * rewrite mid-window - an app upgrade, a dragged handle, an edited
-     * allowlist - switched the rule off, and we then declined to re-arm it
-     * because we still believed it was on.
-     */
-    /**
      * Does the phone disagree with a rule we believe is ON?
      *
      * "Nothing is being filtered while we want zen on" is a real contradiction
@@ -327,6 +309,19 @@ object ZenController {
     internal fun looksStuck(active: Boolean, wantsDnd: Boolean, filter: Int): Boolean =
         active && wantsDnd && filter == NotificationManager.INTERRUPTION_FILTER_ALL
 
+    /**
+     * [force] asserts the state even when the system already reports it. Alarms
+     * and boot do that, because the world may have moved underneath us. The UI
+     * does not: re-asserting STATE_TRUE on an already-active rule re-applies its
+     * device effects, and the screen visibly blinks.
+     *
+     * Whether to skip is decided by asking the system, never by what we last
+     * wrote. Trusting our own memory silently cost a whole night of Do Not
+     * Disturb: updateAutomaticZenRule clears the rule's condition, so every
+     * rewrite mid-window - an app upgrade, a dragged handle, an edited
+     * allowlist - switched the rule off, and we then declined to re-arm it
+     * because we still believed it was on.
+     */
     fun setActive(
         ctx: Context,
         p: Prefs,

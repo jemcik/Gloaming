@@ -15,7 +15,7 @@ time you choose — and it fires with the app closed.
 [![Android](https://img.shields.io/badge/Android-15%2B%20(API%2035)-3DDC84)](#requirements)
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.3.21-7F52FF)](https://kotlinlang.org)
 [![Compose](https://img.shields.io/badge/Jetpack%20Compose-Material%203-4285F4)](https://developer.android.com/jetpack/compose)
-[![Tests](https://img.shields.io/badge/tests-201-success)](#tests)
+[![Tests](https://img.shields.io/badge/tests-335-success)](#tests)
 
 <img src="docs/screenshots/home.png" width="19%" alt="Home, mid-window">
 <img src="docs/screenshots/home-dark.png" width="19%" alt="Home, dark, mid-window">
@@ -161,9 +161,9 @@ into working:
   the zen rule's screen effects at all — it cannot be read back, since the
   platform's own getters are `@hide` — and it expires by itself the moment the
   effects are observed working.
-- The one device list is an **exclusion** list, consulted only when the AOSP key
-  it would otherwise read is absent — so an unrecognized phone is treated as
-  capable rather than as broken.
+- The always-on capability's device list is an **exclusion** list, consulted
+  only when the AOSP key it would otherwise read is absent — so an unrecognized
+  phone is treated as capable rather than as broken.
 - The only writes to `Settings.*` in the whole app are the always-on routes
   below, and each is gated on a permission the app does not hold by default. On
   Honor and Huawei the keys live in `Settings.Secure`, which needs an adb grant,
@@ -333,10 +333,23 @@ answer, and the journal — which you can read before it goes anywhere.
     ./tools/check.sh      what the phone thinks: zen state, the rule, the app's
                           own view, the next alarms and the journal. Read-only.
     ./gradlew lint        0 errors
+    ./tools/battery_bench.py
+                          is anything happening that should not be? Every
+                          combination of the four switches against a live
+                          window with the phone untouched: CPU, rule pushes and
+                          effect flicker per row. Zero pushes is the pass mark.
+                          Debug build only
     python3 tools/build_site.py
                           the site into docs/ for GitHub Pages — six pages, a
                           landing page and a privacy policy, in en/uk/ru, from
                           one template each
+    python3 tools/play_assets.py
+                          the Play store assets into docs/play/ — icon, feature
+                          graphics and screenshots at Play's exact 9:16, per
+                          language
+    python3 tools/shoot.py
+                          re-shoot the screenshots on the attached phone: three
+                          languages, two themes, four screens
     python3 tools/render_icon.py
                           re-render docs/icon.png from the adaptive icon's own
                           numbers — cropped to the 72dp a launcher shows and
@@ -345,7 +358,7 @@ answer, and the journal — which you can read before it goes anywhere.
 
 ## Tests
 
-    ./gradlew test        201 tests, JVM only, seconds
+    ./gradlew test        335 tests, JVM only, seconds
     ./gradlew coverage    JaCoCo HTML at app/build/reports/jacoco/coverage
 
 They cover the scheduling core (pure functions of times, days and an injected
@@ -360,7 +373,12 @@ teardown — no rule survives it, not even one whose id was already lost — and
 dial's own gesture, where a vertical swipe across the ring must scroll the page
 rather than move the schedule, and the schedule line the system's own Do Not
 Disturb screen shows, which is deliberately not pushed while a window is live and
-must therefore still be owed once it ends. Some of them measure real text
+must therefore still be owed once it ends. The newest drive the alarm-set end
+through the real receiver path — the clock app's broadcast, an END landing on
+the Honor's grid, a boot before the clock app has re-registered — every
+broadcast the receiver takes, the repair when the rule is deleted or switched
+off from the phone's own screen, and Samsung's routines against a fake of the
+provider's contract. Some of them measure real text
 layout at each locale's own widths, because a row that fits in English and wraps
 in Ukrainian is a bug you cannot see from the source — at the width the row
 actually has on the screen, which is not the width of the screen. They run at a
@@ -412,7 +430,7 @@ account by definition. Both artefacts come from one Gradle invocation and
 therefore one `versionCode`, and both are signed with the same key — verified
 on a real run, identical certificate.
 
-Published releases start at **0.7**, and **0.12** is current; the tags before
+Published releases start at **0.7**, and **0.15** is current; the tags before
 that have no downloadable build behind them. If a pre-0.7 Gloaming is still on a
 phone, uninstall it rather than expecting an upgrade — 0.1 and 0.2 went out as
 debug builds, and a CI runner generates a fresh debug key per run, so they were

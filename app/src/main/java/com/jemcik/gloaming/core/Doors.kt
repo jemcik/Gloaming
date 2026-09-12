@@ -31,8 +31,7 @@ object Doors {
      * StartupNormalAppListActivity is exported with no permission attribute,
      * read from HnSystemManager.apk's manifest - unlike its AOD screens, which
      * are all locked. Everywhere else, app details is the closest we can get.
-     */
-    /**
+     *
      * `internal` rather than private so a TEST can arrange the phone from the
      * same list the app resolves against. Both suites used to hardcode this
      * component, which is a copy that must move in step with this one or the

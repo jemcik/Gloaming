@@ -8,9 +8,12 @@ import android.content.Context
  *
  * The app bar's switch and the Quick Settings tile are the same control shown
  * twice, and the tile is the one that runs with no Activity, no Compose state
- * and no `HomeState` to lean on. Duplicating the sequence there would have been
- * three lines and a latent bug: the order matters - cancel the alarms and drop
- * zen BEFORE rescheduling, or `rescheduleAll` re-arms what was just cancelled.
+ * and no `HomeState` to lean on. Both flip the same value and take the same
+ * path through [Scheduler.rescheduleAll], whose switched-off branch is the
+ * whole of "off": drop the pin, forget the END that can no longer be owed,
+ * drop zen - and arm nothing. This used to cancel the alarms and drop zen
+ * itself before calling it, which did the same work twice for the sake of an
+ * ordering the reschedule already keeps.
  *
  * Switching OFF mid-window is deliberately cheap and needs no confirmation.
  * Measured on the phone: off gives `zen_mode` 0 with `activeDay` cleared, and
@@ -23,10 +26,6 @@ object Bedtime {
 
     fun set(ctx: Context, p: Prefs, on: Boolean) {
         p.enabled = on
-        if (!on) {
-            Scheduler.cancelAll(ctx)
-            ZenController.setActive(ctx, p, false)
-        }
         Scheduler.rescheduleAll(ctx, p)
     }
 

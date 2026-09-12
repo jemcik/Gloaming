@@ -190,10 +190,20 @@ class NextAlarmTest {
     @Test
     fun `the receiver records the END by its DUE instant, not its landing`() {
         // A parked END released hours later by opening the app must not end
-        // the night that began at 22:30 tonight - see Scheduler.over. Due in
-        // the past, so the receiver judges it late and it counts.
-        val p = prefs()
-        val due = LocalDateTime.of(2026, 9, 11, 8, 30)
+        // the night that begins tonight - see Scheduler.over. Due in the
+        // past, so the receiver judges it late and it counts.
+        //
+        // A one-hour window that ended two hours ago, built around NOW: the
+        // receiver reschedules at the wall clock, and with the fixed
+        // 22:30-08:30 schedule this used to pass only outside those hours.
+        // CI runs in UTC and hit it at 08:01, when the night was still
+        // running and the reschedule re-pinned it.
+        val now = LocalDateTime.now().withSecond(0).withNano(0)
+        val due = now.minusHours(2)
+        val p = prefs().apply {
+            startTime = due.minusHours(1).toLocalTime()
+            endTime = due.toLocalTime()
+        }
         AlarmWatch.arming(p, ms(due))
         BedtimeReceiver().onReceive(ctx(), endIntent(due))
         assertEquals(ms(due), p.endedAt)

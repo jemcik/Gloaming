@@ -48,6 +48,8 @@
     <li><strong>Run at startup</strong> (<code>RECEIVE_BOOT_COMPLETED</code>) — lets it restore your schedule after a restart, so a reboot at 2am does not silently end bedtime.</li>
     <li><strong>Modify system settings</strong> (<code>WRITE_SETTINGS</code>) — optional, and requested only if you use the always-on display control on a phone where that setting is reachable. Used solely to write that one display key.</li>
     <li><code>WRITE_SECURE_SETTINGS</code> — declared but not grantable by an ordinary install; it can only be granted over adb, deliberately, by someone who wants the vendor always-on route. Without that grant the code path is inert.</li>
+    <li><strong>Set alarms</strong> (<code>com.android.alarm.permission.SET_ALARM</code>) — lets the alarm row open your clock app’s list of alarms, which some clock apps keep behind this permission. Gloaming never creates or changes an alarm; it only reads which alarm rings next, which Android shows to every app.</li>
+    <li><strong>Read routines</strong> (Samsung’s <code>READ_ROUTINE_INFO</code>) — on a Galaxy, lets the app list the routines you saved in Modes and Routines and start or end the ones it made for the screen effects while bedtime runs. Granted at install, and inert on every other phone.</li>
     </ul>
     <p>Gloaming requests no access to contacts, location, camera, microphone, storage, or the content of your messages or notifications.</p>
   </section>
@@ -59,7 +61,7 @@
   </section>
 </main>
 
-<footer>Effective 4 September 2026. Source: <a href="https://github.com/jemcik/Gloaming">github.com/jemcik/Gloaming</a> · Apache License 2.0</footer>
+<footer>Effective 12 September 2026. Source: <a href="https://github.com/jemcik/Gloaming">github.com/jemcik/Gloaming</a> · Apache License 2.0</footer>
 <div class="viewer" hidden tabindex="-1" role="dialog" aria-modal="true" aria-label="Screenshots">
   <button class="vnav prev" type="button" aria-label="Previous screenshot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg></button>
   <img alt="">

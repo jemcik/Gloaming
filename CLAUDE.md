@@ -49,15 +49,27 @@ indefinitely is background restriction — see `core/BackgroundLimit.kt`.
                                  but only where the switch lets it act. It is
                                  one line and it has a name because six callers
                                  were writing it out and two forgot; a seventh,
-                                 `insideWindow`, forgot the alarm itself
+                                 `insideWindow`, forgot the alarm itself.
+                                 `tonight` is the running-or-next window as the
+                                 schedule describes it, which `endsTonight`,
+                                 Home's state and the sentence under the dial
+                                 all derive from rather than each finding it
     core/Bedtime.kt              the master switch, as one function. The tile
                                  has no HomeState to borrow, so `set` and
                                  `runningNow` live here and both callers share
-                                 them rather than agreeing by coincidence
+                                 them rather than agreeing by coincidence. Off
+                                 is `rescheduleAll`'s own switched-off branch
     core/ZenController.kt        owns the AutomaticZenRule: policy + device
                                  effects, plus reconcile and the orphan sweep
     core/BedtimeReceiver.kt      START / END / BOOT_COMPLETED /
-                                 MY_PACKAGE_REPLACED
+                                 MY_PACKAGE_REPLACED. None of them asserts the
+                                 zen state itself: each decides what it knows
+                                 and the reschedule at the foot asserts once,
+                                 FORCED for everything but the clock app's
+                                 broadcast. START used to switch zen on before
+                                 the reschedule had judged the window, so a
+                                 START landing early beyond the tolerance was
+                                 on, then off
     core/ZenStatusReceiver.kt    the platform's hint that our rule changed; a
                                  hint only, we decide from getAutomaticZenRule
     core/BootWatch.kt            detects a reboot whose broadcast never arrived
@@ -676,7 +688,7 @@ compileSdk 37, targetSdk 36, minSdk 35.
 
 ## Tests
 
-`app/src/test/`, 300 cases, no device. They are written as the QUESTION the code
+`app/src/test/`, 335 cases, no device. They are written as the QUESTION the code
 answers rather than as coverage of a method, because none of the bugs were ever
 in a method — they were in an assumption.
 
@@ -697,6 +709,19 @@ in a method — they were in an assumption.
                           getNextAlarmClock, the END armed at a later alarm,
                           the pin on the night's own evening, the receiver
                           recording the END by its due instant
+    BedtimeReceiverTest   every other broadcast the receiver takes, as the
+                          phone delivers it: a START on time, forty seconds
+                          early (the grid), and early beyond the tolerance -
+                          which must NOT open the night, and used to blink it;
+                          a one-off's END; a boot recording itself, keeping
+                          the alarm rule and voiding the probe; an upgrade
+                          that is not a boot; the probe on time and late; a
+                          broadcast that is not ours. Windows built around
+                          now, because the receiver reads the wall clock
+    ReconcileTest         the rule deleted or switched off from the phone's
+                          own screen: rebuilt, or bedtime follows it off; an
+                          orphan swept even with bedtime off; and nothing
+                          rewritten when nothing is wrong
     DoorsTest             the clock app's alarm list is a door only where it
                           resolves, and the alarm's own showIntent wins
     SentencesTest         the sentence builders, driven directly
@@ -764,15 +789,16 @@ in a method — they were in an assumption.
                           the upgrade one, and the journal outlives it
     DiagnosticsTest       the report a user sends: does it still speak when the
                           phone answers nothing, is a refused lookup kept
-                          distinct from a deleted rule, and does the system's
-                          account stay ahead of - and apart from - our own
+                          distinct from a deleted rule, does the system's
+                          account stay ahead of - and apart from - our own,
+                          and does Send hand it to the share sheet as text
 
-Coverage: **81% of instructions, 68% of branches**. The shape is the point — what
+Coverage: **82% of instructions, 69% of branches**. The shape is the point — what
 is covered is what can be reasoned about without a phone; what is not is what
-talks to the platform (`BedtimeTile` 0%, `AmbientControl` 36%,
-`BedtimeReceiver` 56% - its END and next-alarm branches are driven directly
-now, see `NextAlarmTest` - `Journal` 63%, `Doors` 87%). That gap is what the
-journal is for.
+talks to the platform (`BedtimeTile` 12%, `AmbientControl` 40%, `Diagnostics`
+68% - the rows a bare Robolectric phone cannot answer - `Journal` 78%, `Doors`
+87%). `BedtimeReceiver` is at 98% now that every broadcast it takes is driven
+through it, see `BedtimeReceiverTest`. That gap is what the journal is for.
 
 Three things worth knowing before adding tests:
 

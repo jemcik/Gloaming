@@ -78,16 +78,6 @@ private const val R_CENTRE_WELL = 88.5f
    numeral (~65dp half-width) and still leaves a 30dp annulus inside the ring
    for a loose handle grab. */
 private const val R_WELL_TOUCH = 75f
-/**
- * How near a handle a touch has to START to count as grabbing it.
- *
- * 24 gives a 48dp target around a 31dp handle, which is Material's minimum and
- * which the handles did not previously meet. It replaces "anywhere outside the
- * centre well", which took the whole 260dp canvas - corners included, where
- * nothing is drawn - and handed it to whichever handle was angularly nearest.
- * That is ~14x the area, and it is why the dial moved while the page was being
- * scrolled: every one of those touches was a grab.
- */
 /** So a test can swipe exactly where a finger scrolling the page would. */
 internal const val DIAL_TAG = "bedtimeDial"
 
@@ -104,6 +94,16 @@ internal const val DIAL_TAG = "bedtimeDial"
 private const val GRAB_SCALE = 1.32f
 private const val HALO = 2.2f
 
+/**
+ * How near a handle a touch has to START to count as grabbing it.
+ *
+ * 24 gives a 48dp target around a 31dp handle, which is Material's minimum and
+ * which the handles did not previously meet. It replaces "anywhere outside the
+ * centre well", which took the whole 260dp canvas - corners included, where
+ * nothing is drawn - and handed it to whichever handle was angularly nearest.
+ * That is ~14x the area, and it is why the dial moved while the page was being
+ * scrolled: every one of those touches was a grab.
+ */
 private const val GRAB = 24f
 private const val HANDLE = 31f
 private const val HANDLE_RING = 2.6f
@@ -158,8 +158,8 @@ fun BedtimeDial(
     onCentreCycle: ((Int) -> Unit)? = null,
     onStartChange: (LocalTime) -> Unit,
     onEndChange: (LocalTime) -> Unit,
-    /** True when it was the WAKE handle that was held. Home no longer needs it; the drag itself reports through onEndChange. */
-    onDragFinished: (endMoved: Boolean) -> Unit,
+    /** The finger has lifted. Which handle it held has already been reported through onStartChange or onEndChange. */
+    onDragFinished: () -> Unit,
     /**
      * Is the page moving under us? A touch that lands mid-fling is how you stop
      * a scroll, not how you set a bedtime, and it arrives exactly where the
@@ -350,7 +350,7 @@ fun BedtimeDial(
                         }
 
                         haptics.release()
-                        onDragFinished(target == 2)
+                        onDragFinished()
                         target = 0
                         moved = false
                     }

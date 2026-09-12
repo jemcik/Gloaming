@@ -23,9 +23,8 @@ object Journal {
         }
     }
 
+    /** Newest first. Nothing clears it: a reset keeps it on purpose, see [Reset]. */
     fun read(ctx: Context): List<String> = runCatching {
         File(ctx.filesDir, "journal.log").readLines().reversed()
     }.getOrDefault(emptyList())
-
-    fun clear(ctx: Context) { runCatching { File(ctx.filesDir, "journal.log").delete() } }
 }

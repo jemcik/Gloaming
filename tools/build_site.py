@@ -31,7 +31,9 @@ ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)),
 DOCS = os.path.join(ROOT, 'docs')
 
 GITHUB = 'https://github.com/jemcik/Gloaming'
-EFFECTIVE = '4 September 2026'
+# One date, in each page's own language: the uk and ru footers used to carry
+# the English month name inside a Ukrainian or Russian sentence.
+EFFECTIVE = {'en': '12 September 2026', 'uk': '12 вересня 2026 року', 'ru': '12 сентября 2026 года'}
 
 # ── the shared stylesheet ──────────────────────────────────────────────────
 # Tokens are Theme.kt's Dawn and Dusk. They were copy-pasted into two pages
@@ -669,6 +671,14 @@ T['en'] = dict(
         '<code>WRITE_SECURE_SETTINGS</code> — declared but not grantable by an ordinary '
         'install; it can only be granted over adb, deliberately, by someone who wants the '
         'vendor always-on route. Without that grant the code path is inert.',
+        '<strong>Set alarms</strong> (<code>com.android.alarm.permission.SET_ALARM</code>) — '
+        'lets the alarm row open your clock app’s list of alarms, which some clock apps keep '
+        'behind this permission. Gloaming never creates or changes an alarm; it only reads '
+        'which alarm rings next, which Android shows to every app.',
+        '<strong>Read routines</strong> (Samsung’s <code>READ_ROUTINE_INFO</code>) — on a '
+        'Galaxy, lets the app list the routines you saved in Modes and Routines and start or '
+        'end the ones it made for the screen effects while bedtime runs. Granted at install, '
+        'and inert on every other phone.',
     ],
     p_4b='Gloaming requests no access to contacts, location, camera, microphone, storage, '
          'or the content of your messages or notifications.',
@@ -681,7 +691,7 @@ T['en'] = dict(
         'commit history.',
     p_h7='Contact',
     p_7='Questions, or a report that something here is inaccurate: open an issue at',
-    p_eff='Effective ' + EFFECTIVE + '. Source: ',
+    p_eff='Effective ' + EFFECTIVE['en'] + '. Source: ',
 )
 
 T['uk'] = dict(
@@ -799,6 +809,15 @@ T['uk'] = dict(
         '<code>WRITE_SECURE_SETTINGS</code> — оголошений, але його неможливо надати при '
         'звичайному встановленні; його видають лише через adb, свідомо, ті, хто хоче '
         'вендорський шлях до always-on. Без цього дозволу код лишається неактивним.',
+        '<strong>Встановлення будильників</strong> '
+        '(<code>com.android.alarm.permission.SET_ALARM</code>) — дозволяє рядку будильника '
+        'відкривати список будильників у вашому застосунку «Годинник», який деякі застосунки '
+        'тримають за цим дозволом. Gloaming ніколи не створює і не змінює будильники, а лише '
+        'читає, який будильник задзвонить наступним — це Android показує кожному застосунку.',
+        '<strong>Читання сценаріїв</strong> (<code>READ_ROUTINE_INFO</code> від Samsung) — на '
+        'Galaxy дозволяє застосунку бачити сценарії, збережені в «Режимах та сценаріях», і '
+        'запускати чи зупиняти ті, що він створив для екранних ефектів, поки триває режим сну. '
+        'Надається при встановленні і нічого не робить на інших телефонах.',
     ],
     p_4b='Gloaming не запитує доступу до контактів, місцезнаходження, камери, мікрофона, '
          'сховища або вмісту ваших повідомлень чи сповіщень.',
@@ -811,7 +830,7 @@ T['uk'] = dict(
         'видима в історії комітів.',
     p_h7='Контакти',
     p_7='Питання або повідомлення про неточність тут: створіть issue за адресою',
-    p_eff='Чинна з ' + EFFECTIVE + '. Код: ',
+    p_eff='Чинна з ' + EFFECTIVE['uk'] + '. Код: ',
 )
 
 T['ru'] = dict(
@@ -931,6 +950,16 @@ T['ru'] = dict(
         '<code>WRITE_SECURE_SETTINGS</code> — объявлено, но его нельзя выдать при обычной '
         'установке; его выдают только через adb, осознанно, те, кто хочет вендорский путь к '
         'always-on. Без этого разрешения код остаётся неактивным.',
+        '<strong>Установка будильников</strong> '
+        '(<code>com.android.alarm.permission.SET_ALARM</code>) — позволяет строке будильника '
+        'открывать список будильников в вашем приложении «Часы», который некоторые приложения '
+        'держат за этим разрешением. Gloaming никогда не создаёт и не меняет будильники, а лишь '
+        'читает, какой будильник прозвонит следующим — это Android показывает каждому '
+        'приложению.',
+        '<strong>Чтение сценариев</strong> (<code>READ_ROUTINE_INFO</code> от Samsung) — на '
+        'Galaxy позволяет приложению видеть сценарии, сохранённые в «Режимах и сценариях», и '
+        'запускать или останавливать те, что оно создало для экранных эффектов, пока идёт режим '
+        'сна. Выдаётся при установке и ничего не делает на других телефонах.',
     ],
     p_4b='Gloaming не запрашивает доступа к контактам, местоположению, камере, микрофону, '
          'хранилищу или содержимому ваших сообщений и уведомлений.',
@@ -943,7 +972,7 @@ T['ru'] = dict(
         'деле делает, видно в истории коммитов.',
     p_h7='Контакты',
     p_7='Вопросы или сообщение о неточности здесь: создайте issue по адресу',
-    p_eff='Действует с ' + EFFECTIVE + '. Код: ',
+    p_eff='Действует с ' + EFFECTIVE['ru'] + '. Код: ',
 )
 
 

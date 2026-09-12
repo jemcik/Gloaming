@@ -37,19 +37,13 @@ import java.util.Locale
  */
 
 /**
- * The window in plain language: "From 11:05 PM today to 7:15 AM tomorrow".
- *
- * The dial says this spatially and the centre says it as a duration. Neither
- * answers the question a circle is worst at - WHICH morning - and a window that
- * crosses midnight is only obvious on a clock face to someone who already reads
- * clock faces. This is the same fact in the register the screen was missing, and
- * it is the only part of the block a screen reader can make sense of at all.
+ * The window's two ends, as instants. Null with nothing scheduled.
  *
  * Built from the ACTUAL next or current window rather than from the two handles,
- * so the day words cannot drift from what is scheduled: a one-off, a window five
- * days out and a window running right now each name their own days.
+ * so the day words the sentences put on it cannot drift from what is scheduled:
+ * a one-off, a window five days out and a window running right now each name
+ * their own days.
  */
-/** The window's two ends, as instants. Null with nothing scheduled. */
 @Composable
 internal fun windowSpan(
     ctx: Context,
@@ -74,37 +68,41 @@ internal fun windowSpan(
     //
     // Asked WITH the alarm, because it can extend a night past the handle:
     // asked without it at 08:45 under a 09:00 alarm this said the night was
-    // over and named tomorrow's. The window now says where it began directly.
+    // over and named tomorrow's. Scheduler.tonight is that rule.
     val alarm = Scheduler.endingAlarm(ctx, exitAtAlarm)
-    val running = Scheduler.liveWindow(
+    val w = Scheduler.tonight(
         enabled = true, activeDay = prefs.activeDay,
-        start = start, end = end, days = days, from = now,
-        alarm = alarm, exitAtAlarm = exitAtAlarm, endedAt = Scheduler.endedAt(prefs)
-    )
-    val from = (running?.began ?: Scheduler.nextStart(start, end, days, now)) ?: return null
+        start = start, end = end, days = days,
+        alarm = alarm, exitAtAlarm = exitAtAlarm, endedAt = Scheduler.endedAt(prefs), from = now
+    ) ?: return null
     // The alarm belongs on the OTHER end. Without it this said "to 8:30 AM
     // today" while the app bar said 7:30 - the same screen answering "when
     // does tonight end" two ways. endAt is the rule itself.
-    val to = Scheduler.endAt(from, from.plus(Scheduler.duration(start, end)), alarm, exitAtAlarm)
-    return from to to
+    return w.began to Scheduler.endAt(w.began, w.ends, alarm, exitAtAlarm)
 }
 
 /**
- * The window as ONE sentence - "From 11:05 PM today to 7:15 AM tomorrow".
- * What a screen reader gets for the pill, and what the tests read.
+ * The window in plain language: "From 11:05 PM today to 7:15 AM tomorrow".
+ * What a screen reader gets for the pill, and what the tests read - off the
+ * screen, so Home's own call is the one exercised.
+ *
+ * The dial says this spatially and the centre says it as a duration. Neither
+ * answers the question a circle is worst at - WHICH morning - and a window that
+ * crosses midnight is only obvious on a clock face to someone who already reads
+ * clock faces. This is the same fact in the register the screen was missing, and
+ * it is the only part of the block a screen reader can make sense of at all.
+ *
+ * Takes the span [windowSpan] found rather than finding its own: Home finds it
+ * once and says it twice, as the pill and as this sentence, so the two cannot
+ * name different mornings.
  */
-@Composable
 internal fun windowSentence(
     ctx: Context,
-    prefs: Prefs,
-    start: LocalTime,
-    end: LocalTime,
-    days: Set<DayOfWeek>,
-    exitAtAlarm: Boolean = prefs.exitAtAlarm
-): String? {
+    span: Pair<LocalDateTime, LocalDateTime>,
+    now: LocalDateTime = LocalDateTime.now()
+): String {
     val res = ctx.resources
-    val now = LocalDateTime.now()
-    val (from, to) = windowSpan(ctx, prefs, start, end, days, exitAtAlarm) ?: return null
+    val (from, to) = span
     fun day(at: LocalDateTime): String = dayWord(ctx, at, now, DaySlot.SPAN)
     // One day word when both ends fall on it. "From 2:40 AM tomorrow to 8:40 AM
     // tomorrow" is correct and says it twice.
@@ -125,18 +123,13 @@ internal fun windowSentence(
  * NOTE form, the one with its preposition inside ("у понеділок"), not the
  * genitive the sentence uses after "до".
  */
-@Composable
 internal fun windowHalves(
     ctx: Context,
-    prefs: Prefs,
-    start: LocalTime,
-    end: LocalTime,
-    days: Set<DayOfWeek>,
-    exitAtAlarm: Boolean = prefs.exitAtAlarm
-): Pair<String, String>? {
+    span: Pair<LocalDateTime, LocalDateTime>,
+    now: LocalDateTime = LocalDateTime.now()
+): Pair<String, String> {
     val res = ctx.resources
-    val now = LocalDateTime.now()
-    val (from, to) = windowSpan(ctx, prefs, start, end, days, exitAtAlarm) ?: return null
+    val (from, to) = span
     fun half(at: LocalDateTime) = res.getString(
         R.string.window_half, hhmm(ctx, at.hour, at.minute), dayWord(ctx, at, now, DaySlot.NOTE)
     )
@@ -179,15 +172,6 @@ internal fun planNote(
     )
 }
 
-/**
- * "today", "tomorrow", or the weekday - the app's one rule for naming the day
- * something falls on, shared by the window sentence and the plan note so the
- * two cannot disagree on the same screen.
- *
- * Past a day the relative words stop helping and start lying by omission -
- * "tomorrow" for something five days out. The weekday is localised by
- * java.time, so it needs no string of ours.
- */
 /** Which sentence is asking; the two need different grammar, see strings.xml. */
 internal enum class DaySlot { SPAN, NOTE }
 
@@ -202,6 +186,15 @@ internal val DAY_NOTE = intArrayOf(
     R.string.day_note_sunday
 )
 
+/**
+ * "today", "tomorrow", or the weekday - the app's one rule for naming the day
+ * something falls on, shared by the window sentence and the plan note so the
+ * two cannot disagree on the same screen.
+ *
+ * Past a day the relative words stop helping and start lying by omission -
+ * "tomorrow" for something five days out. The weekday comes from strings.xml
+ * rather than java.time, see below.
+ */
 internal fun dayWord(
     ctx: Context,
     at: LocalDateTime,

@@ -1232,4 +1232,29 @@ class ScreensTest {
         compose.onNode(hasText(dim) and isToggleable()).assertIsOn()
         compose.onNodeWithText(ctx.getString(R.string.fx_routine_retry)).assertExists()
     }
+
+    @Test
+    fun `a flip to the state a Galaxy gives by itself needs no routine, and moves at once`() {
+        // The other half of the row above: the phone dims in dark mode by
+        // itself, the OFF routine is holding it off tonight, and asking for
+        // dimming again is asking for what the phone does unaided - a plain
+        // flip, no offer, no trip through Samsung's editor.
+        val ctx = ctx()
+        val fake = ctx.asGalaxyWithRoutines()
+        fake.rows += FakeRoutines.Row(11, "d")
+        fake.rows += FakeRoutines.Row(12, "off")
+        val prefs = Prefs(ctx)
+        prefs.setRoutineUuid(RoutineEffect.DARK, 11)
+        prefs.setRoutineUuid(RoutineEffect.DIM_OFF, 12)
+        prefs.fxDarkTheme = true
+        android.provider.Settings.System.putInt(ctx.contentResolver, com.jemcik.gloaming.core.Routines.DIM_KEY, 1)
+        prefs.fxDimWallpaper = false
+        home()
+
+        val dim = ctx.getString(R.string.fx_dim)
+        compose.onNode(hasText(dim) and isToggleable()).performScrollTo().assertIsOff().performClick()
+        assertTrue("dimming is what the phone gives: flipped, not offered", prefs.fxDimWallpaper)
+        assertNull(prefs.routineOffered)
+        compose.onNode(hasText(dim) and isToggleable()).assertIsOn()
+    }
 }

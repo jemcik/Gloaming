@@ -132,7 +132,7 @@ fun Home(
     LaunchedEffect(Unit) {
         while (true) { delay(60_000); s.bump() }
     }
-    val insideWindow = remember(s.tick, s.enabled, s.start, s.end, s.days) {
+    val insideWindow = remember(s.tick, s.enabled, s.start, s.end, s.days, s.endAtAlarm) {
         s.insideWindow()
     }
     val runningNow = s.enabled && insideWindow
@@ -780,16 +780,14 @@ private fun WindowBlock(
             onDragFinished = { s.commit() }
         )
 
-        // The window in words, under the dial. The dial says this
-        // spatially and the centre as a duration; neither answers which
-        // morning. See windowSentence.
         // The window in words, under the dial: the arc's two ends as a
-        // two-tone pill. The dial says this spatially and the centre as a
-        // duration; neither answers which morning. See windowHalves.
-        windowHalves(ctx, prefs, s.start, s.end, s.days, exitAtAlarm = s.endAtAlarm)?.let { halves ->
-            val sentence = windowSentence(ctx, prefs, s.start, s.end, s.days, exitAtAlarm = s.endAtAlarm) ?: ""
+        // two-tone pill, and the same span as one sentence for a screen
+        // reader. The dial says this spatially and the centre as a duration;
+        // neither answers which morning. Found ONCE and said twice, so the
+        // pill and its description cannot name different mornings.
+        windowSpan(ctx, prefs, s.start, s.end, s.days, exitAtAlarm = s.endAtAlarm)?.let { span ->
             Spacer(Modifier.height(TIGHT))
-            WindowPill(halves, sentence)
+            WindowPill(windowHalves(ctx, span), windowSentence(ctx, span))
         }
     }
 }
@@ -1641,7 +1639,7 @@ private fun HomeBar(
     val prefs = s.prefs
     val card = g.raise
 
-    val status = remember(s.tick, s.enabled, runningNow, s.start, s.end, s.days) {
+    val status = remember(s.tick, s.enabled, runningNow, s.start, s.end, s.days, s.endAtAlarm) {
         // Said in Sentences, because the Quick Settings tile has to say exactly
         // the same three things with no Compose around it.
         statusLine(

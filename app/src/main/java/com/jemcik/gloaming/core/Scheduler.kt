@@ -144,7 +144,11 @@ object Scheduler {
      * it.
      */
     fun endingAlarm(ctx: Context, exitAtAlarm: Boolean): LocalDateTime? =
-        if (exitAtAlarm) nextAlarm(ctx) else null
+        endingAlarm(nextAlarm(ctx), exitAtAlarm)
+
+    /** The same gate on an alarm already read - [rescheduleAll] reads it once and asks twice. */
+    private fun endingAlarm(next: LocalDateTime?, exitAtAlarm: Boolean): LocalDateTime? =
+        if (exitAtAlarm) next else null
 
     /**
      * The next alarm clock the USER can see - the one that puts the icon in the
@@ -302,13 +306,12 @@ object Scheduler {
     ): LocalDateTime? = currentWindow(start, end, days, from, alarm, exitAtAlarm, endedAt)?.ends
 
     /**
-     * The end of the window actually running, which is not always the one the
-     * current settings describe. Editing days or dragging a handle mid-window
-     * used to make [currentWindowEnd] return null, and the next reschedule
-     * dropped Do Not Disturb on the spot. A window that has begun is pinned to
-     * its own end until that instant passes.
-     */
-    /**
+     * The window actually running, which is not always the one the current
+     * settings describe. Editing days or dragging a handle mid-window used to
+     * make [currentWindowEnd] return null, and the next reschedule dropped Do
+     * Not Disturb on the spot. A window that has begun is pinned to its own
+     * end until that instant passes.
+     *
      * Takes the two values it reads rather than a whole [Prefs], so the entire
      * scheduling core is a pure function of (times, days, now) and can be tested
      * without a device, a Context or a clock. The [Prefs] overload below is the
@@ -376,16 +379,42 @@ object Scheduler {
     ): LocalDateTime? = liveWindow(p, start, end, days, from, alarm)?.ends
 
     /**
-     * WHAT TONIGHT ACTUALLY ENDS AT: the window running now, or else the next,
-     * with the alarm's say applied. The one derivation every screen that names
-     * tonight's end must use - Home's numeral and arc, the allowlist's "waits
-     * until", the missed-END card. The allowlist read the wake handle straight
-     * from prefs and said "until 8:30 AM" under a 9:00 alarm, reported as the
-     * screen lying; a second copy of this rule is how that happens.
+     * TONIGHT, as the SCHEDULE describes it: the window running now, or else
+     * the next, ending where the handles say. Null with nothing to run. The
+     * alarm's say is applied on top - by [endsTonight], and by Home when it
+     * asks whether an alarm is this night's - so this is the one place the
+     * "running, or else next" question is answered; it was written out three
+     * times, in Home's state, under the dial and here, and three copies of a
+     * rule is how a screen comes to give two answers.
      *
      * The running window is found WITH the alarm, because the alarm can extend
      * a night past the handle: asked without it at 08:45 under a 09:00 alarm
-     * this would answer "over" and hand back tomorrow's.
+     * this would answer "over" and hand back tomorrow's. The end returned is
+     * the scheduled one regardless.
+     */
+    fun tonight(
+        enabled: Boolean,
+        activeDay: Long,
+        start: LocalTime,
+        end: LocalTime,
+        days: Set<DayOfWeek>,
+        alarm: LocalDateTime?,
+        exitAtAlarm: Boolean,
+        endedAt: LocalDateTime?,
+        from: LocalDateTime = LocalDateTime.now()
+    ): Window? {
+        val running = liveWindow(enabled, activeDay, start, end, days, from, alarm, exitAtAlarm, endedAt)
+        val began = running?.began ?: nextStart(start, end, days, from) ?: return null
+        return Window(began, began.plus(duration(start, end)))
+    }
+
+    /**
+     * WHAT TONIGHT ACTUALLY ENDS AT: [tonight], with the alarm's say applied.
+     * The one derivation every screen that names tonight's end must use -
+     * Home's numeral and arc, the allowlist's "waits until", the missed-END
+     * card. The allowlist read the wake handle straight from prefs and said
+     * "until 8:30 AM" under a 9:00 alarm, reported as the screen lying; a
+     * second copy of this rule is how that happens.
      */
     fun endsTonight(
         enabled: Boolean,
@@ -397,12 +426,9 @@ object Scheduler {
         exitAtAlarm: Boolean,
         endedAt: LocalDateTime?,
         from: LocalDateTime = LocalDateTime.now()
-    ): LocalDateTime? {
-        val dur = duration(start, end)
-        val running = liveWindow(enabled, activeDay, start, end, days, from, alarm, exitAtAlarm, endedAt)
-        val began = running?.began ?: nextStart(start, end, days, from) ?: return null
-        return endAt(began, began.plus(dur), alarm, exitAtAlarm)
-    }
+    ): LocalDateTime? =
+        tonight(enabled, activeDay, start, end, days, alarm, exitAtAlarm, endedAt, from)
+            ?.let { endAt(it.began, it.ends, alarm, exitAtAlarm) }
 
     fun endsTonight(ctx: Context, p: Prefs, from: LocalDateTime = LocalDateTime.now()): LocalDateTime? =
         endsTonight(
@@ -467,15 +493,6 @@ object Scheduler {
     }
 
     /**
-     * Rebuilds both alarms and brings the zen rule in line with the present moment.
-     * Safe to call repeatedly; it is idempotent.
-     *
-     * [force] re-asserts the zen state even when the system already claims it.
-     * Boot and upgrade pass it, because the world moved underneath us while we
-     * were not running - see the reboot note in ZenController.setActive. The UI
-     * does NOT, since re-asserting on a live rule re-applies its device effects.
-     */
-    /**
      * Arm the background probe if this phone has never answered.
      *
      * Deliberately NOT cancelled by [cancelAll]: it is not part of the window,
@@ -505,11 +522,21 @@ object Scheduler {
     }
 
     /**
+     * Rebuilds both alarms and brings the zen rule in line with the present moment.
+     * Safe to call repeatedly; it is idempotent.
+     *
+     * [force] re-asserts the zen state even when the system already claims it.
+     * Boot, upgrade and the two alarms pass it, because the world moved
+     * underneath us while we were not running - see the reboot note in
+     * ZenController.setActive. The UI does NOT, since re-asserting on a live
+     * rule re-applies its device effects.
+     *
      * [from] is the instant the schedule is judged at - now, for everyone but
      * the receiver, which passes the alarm's own due instant when the alarm
      * landed a little before it. See [Delivery.asOf]: judged at the moment it
      * landed, a forty-second-early END found the night still running and
-     * walked straight back into it.
+     * walked straight back into it. Everything here judges by [from], the
+     * END watch included, so the whole call is a function of it.
      */
     fun rescheduleAll(
         ctx: Context,
@@ -524,10 +551,11 @@ object Scheduler {
          */
         alarmsKnown: Boolean = true
     ) {
+        val nowMs = from.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
         // BEFORE anything is armed: arming overwrites the due instant, so this is
         // the last moment the previous one can still be judged. Logged as what
         // it answered: this line is the only trace of an END that never came.
-        if (AlarmWatch.check(p)) AlarmWatch.report(p)?.let {
+        if (AlarmWatch.check(p, nowMs)) AlarmWatch.report(p)?.let {
             Journal.write(
                 ctx,
                 "END never arrived - ended here " + (it.endedAt - it.due) / 1000 + "s late" +
@@ -540,7 +568,6 @@ object Scheduler {
         // clock app's broadcast beats our held END to the receiver, and an END
         // the app never saw (eaten while frozen, then the app opened) must end
         // the night at the open rather than let the reschedule extend it.
-        val nowMs = from.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
         if (p.endDue != Prefs.NO_DUE && p.endDue <= nowMs && p.endedAt < p.endDue) {
             p.endedAt = p.endDue
             Journal.write(ctx, "END due has passed - night closed")
@@ -558,7 +585,12 @@ object Scheduler {
         // read as on-but-doing-nothing. The cost is a one-time alarm: rung, it
         // reads as no alarm, and the rule is off the next evening until it is
         // switched on again. Nothing switches it on by itself.
-        if (alarmsKnown && p.exitAtAlarm && nextAlarm(ctx) == null) {
+        //
+        // The alarm is read ONCE, here, for everything below - this rule, the
+        // window we open and the END we arm - so none of them can disagree
+        // about which alarm the phone has, or whether it has one.
+        val next = nextAlarm(ctx)
+        if (alarmsKnown && p.exitAtAlarm && next == null) {
             p.exitAtAlarm = false
             Journal.write(ctx, "no alarm on the phone - end at alarm switched off")
         }
@@ -574,9 +606,8 @@ object Scheduler {
         }
 
         val now = from
-        // Read once and used for both branches, so the window we open and the
-        // END we arm cannot disagree about when the morning is.
-        val alarm = if (p.exitAtAlarm) nextAlarm(ctx) else null
+        // After the switch-off above, so a rule just switched off passes nothing.
+        val alarm = endingAlarm(next, p.exitAtAlarm)
         val open = liveWindow(p, p.startTime, p.endTime, p.days, now, alarm)
 
         if (open != null) {

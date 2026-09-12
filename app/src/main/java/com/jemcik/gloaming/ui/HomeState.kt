@@ -162,20 +162,12 @@ class HomeState(
 
     /**
      * Tonight's window as the SCHEDULE describes it - the one running, or else
-     * the next - before the alarm has its say. Null with nothing to run.
-     *
-     * The running one is found WITH the alarm, because the alarm can now
-     * extend a night past the handle: asked without it at 08:45 under a 09:00
-     * alarm this would answer "over" and hand back tomorrow's window while zen
-     * was still on. The end returned is the scheduled one regardless; the
-     * alarm is applied by the callers, each in its own way.
+     * the next - before the alarm has its say. Null with nothing to run. The
+     * rule is [Scheduler.tonight]'s; this only feeds it the screen's state.
      */
-    private fun scheduledTonight(alarm: LocalDateTime?): Scheduler.Window? {
-        val dur = Scheduler.duration(start, end)
-        val running = Scheduler.liveWindow(prefs, start, end, days, alarm = alarm)
-        val began = running?.began ?: Scheduler.nextStart(start, end, days) ?: return null
-        return Scheduler.Window(began, began.plus(dur))
-    }
+    private fun scheduledTonight(alarm: LocalDateTime?): Scheduler.Window? = Scheduler.tonight(
+        enabled, prefs.activeDay, start, end, days, alarm, endAtAlarm, Scheduler.endedAt(prefs)
+    )
 
     /** The next alarm where the switch lets it act; null otherwise. One read per question. */
     private fun endingAlarm(): LocalDateTime? = Scheduler.endingAlarm(ctx, endAtAlarm)
@@ -198,10 +190,12 @@ class HomeState(
     /**
      * Is [alarm] THIS NIGHT'S - the one tonight would end at, were the switch
      * on? Asked with the switch forced on, deliberately: the row shows the
-     * alarm's day whenever it is not tonight's, whatever the switch says.
+     * alarm's day whenever it is not tonight's, whatever the switch says. The
+     * window itself is found under the real switch, so with it off the alarm
+     * is judged against the night the handles describe.
      */
     fun alarmIsTonights(alarm: LocalDateTime): Boolean =
-        scheduledTonight(if (endAtAlarm) alarm else null)?.let {
+        scheduledTonight(alarm)?.let {
             Scheduler.endAt(it.began, it.ends, alarm, exitAtAlarm = true) == alarm
         } ?: false
 

@@ -48,6 +48,8 @@
     <li><strong>Запуск при старті</strong> (<code>RECEIVE_BOOT_COMPLETED</code>) — дозволяє відновити ваш розклад після перезавантаження, щоб перезапуск о другій ночі не завершив режим сну мовчки.</li>
     <li><strong>Зміна системних налаштувань</strong> (<code>WRITE_SETTINGS</code>) — необов’язковий, запитується лише якщо ви користуєтеся керуванням always-on дисплеєм на телефоні, де це налаштування доступне. Використовується винятково для запису цього одного ключа.</li>
     <li><code>WRITE_SECURE_SETTINGS</code> — оголошений, але його неможливо надати при звичайному встановленні; його видають лише через adb, свідомо, ті, хто хоче вендорський шлях до always-on. Без цього дозволу код лишається неактивним.</li>
+    <li><strong>Встановлення будильників</strong> (<code>com.android.alarm.permission.SET_ALARM</code>) — дозволяє рядку будильника відкривати список будильників у вашому застосунку «Годинник», який деякі застосунки тримають за цим дозволом. Gloaming ніколи не створює і не змінює будильники, а лише читає, який будильник задзвонить наступним — це Android показує кожному застосунку.</li>
+    <li><strong>Читання сценаріїв</strong> (<code>READ_ROUTINE_INFO</code> від Samsung) — на Galaxy дозволяє застосунку бачити сценарії, збережені в «Режимах та сценаріях», і запускати чи зупиняти ті, що він створив для екранних ефектів, поки триває режим сну. Надається при встановленні і нічого не робить на інших телефонах.</li>
     </ul>
     <p>Gloaming не запитує доступу до контактів, місцезнаходження, камери, мікрофона, сховища або вмісту ваших повідомлень чи сповіщень.</p>
   </section>
@@ -59,7 +61,7 @@
   </section>
 </main>
 
-<footer>Чинна з 4 September 2026. Код: <a href="https://github.com/jemcik/Gloaming">github.com/jemcik/Gloaming</a> · Apache License 2.0</footer>
+<footer>Чинна з 12 вересня 2026 року. Код: <a href="https://github.com/jemcik/Gloaming">github.com/jemcik/Gloaming</a> · Apache License 2.0</footer>
 <div class="viewer" hidden tabindex="-1" role="dialog" aria-modal="true" aria-label="Знімки екрана">
   <button class="vnav prev" type="button" aria-label="Попередній знімок"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg></button>
   <img alt="">

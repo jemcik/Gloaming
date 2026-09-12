@@ -160,7 +160,15 @@ tasks.register<JacocoReport>("coverage") {
         ) { exclude(filter) }
     )
     sourceDirectories.setFrom(files("src/main/java"))
+    // The coverage directory, not the whole build directory. A file tree over
+    // all of `build/` made Gradle read this task as consuming every other
+    // task's output too, so `./gradlew coverage lint` in one invocation
+    // failed its configuration check ("property has implicit dependency" on
+    // lint's model directory) before running anything. AGP 9 writes the exec
+    // file under outputs/unit_test_code_coverage.
     executionData.setFrom(
-        fileTree(layout.buildDirectory) { include("**/testDebugUnitTest.exec") }
+        fileTree(layout.buildDirectory.dir("outputs/unit_test_code_coverage")) {
+            include("**/testDebugUnitTest.exec")
+        }
     )
 }

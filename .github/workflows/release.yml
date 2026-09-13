@@ -160,11 +160,15 @@ jobs:
           echo "AAB=$AAB" >> "$GITHUB_ENV"
 
       # Named from VERSION rather than the raw tag, so "0.2" and "v0.2" produce
-      # the same asset name.
+      # the same asset name. The bundle too: it used to go into its artefact
+      # as app-release.aab, the build's own name, so every release's bundle
+      # landed in Downloads called the same thing and had to be renamed by
+      # hand before the next one overwrote it.
       - name: Name it after the version
         run: |
           mkdir -p dist
           cp "$APK" "dist/gloaming-${VERSION}.apk"
+          cp "$AAB" "dist/gloaming-${VERSION}.aab"
 
       - name: Publish the release
         env:
@@ -192,6 +196,6 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: gloaming-${{ env.VERSION }}-play-bundle
-          path: ${{ env.AAB }}
+          path: dist/gloaming-${{ env.VERSION }}.aab
           if-no-files-found: error
           retention-days: 90

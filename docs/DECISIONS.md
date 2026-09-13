@@ -1231,10 +1231,20 @@ bundle, the same tap on the same phone the same evening:
     ... from uid 10147 (com.android.deskclock) (realCallingUid=10248)
     (BAL_ALLOW_VISIBLE_WINDOW [realCaller]) result code=0
 
-and `DeskClock` is the resumed activity. Reproducing it meant putting the debug
-build over the Play build the OnePlus carried, which the release key refuses
-until the Play build is uninstalled; the Do Not Disturb grant outlived that
-uninstall, as the Honor's had.
+and `DeskClock` is the resumed activity. And on the Galaxy, One UI 8, the same
+evening, after switching an alarm on in Samsung's own Clock list the way the
+report did:
+
+    START u0 {act=com.samsung.sec.android.clockpackage.alarm.ALARM_VIEWALARM
+    cmp=com.sec.android.app.clockpackage/.alarm.ui.activity.AlarmHandleActivity}
+    ... from uid 10284 (realCallingUid=10255) (BAL_ALLOW_VISIBLE_WINDOW [realCaller]) result code=0
+
+Samsung's `showIntent` is its own VIEWALARM action, answered by a handler that
+forwards to the Clock's main screen; it opens the Clock, not an editor.
+Reproducing either meant putting the debug build over the Play build both
+phones carried, which the release key refuses until the Play build is
+uninstalled; the Do Not Disturb grant outlived that uninstall on both, as the
+Honor's had.
 
 The survey that followed - every place the app hands control to the platform,
 fourteen of them - turned up two more rows built the way this one was, and

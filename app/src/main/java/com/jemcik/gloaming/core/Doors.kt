@@ -126,7 +126,9 @@ object Doors {
      * sender's visible window would have carried it had the sender said so,
      * `resultIfPiSenderAllowsBal: BAL_ALLOW_VISIBLE_WINDOW`. With the ask in
      * the bundle the same tap reads `BAL_ALLOW_VISIBLE_WINDOW [realCaller]`,
-     * result code 0, and the Clock is in front.
+     * result code 0, and the Clock is in front - on the OnePlus and, the same
+     * evening, on the Galaxy, whose Clock answers with its own VIEWALARM
+     * handler and lands on its main screen.
      * Since Android 14 a sender lends its own standing only by asking; this
      * is the ask. A bare `send()` was the whole bug: it does not REPORT the
      * block - the start's result code comes back through a hidden overload

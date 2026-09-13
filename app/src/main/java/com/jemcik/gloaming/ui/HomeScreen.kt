@@ -10,7 +10,6 @@ package com.jemcik.gloaming.ui
  */
 
 import android.app.NotificationManager
-import android.content.Intent
 import android.content.res.Resources
 import android.provider.Settings
 import androidx.compose.animation.AnimatedVisibility
@@ -288,22 +287,14 @@ private fun PermissionSection(dnd: Boolean, exact: Boolean) {
                         stringResource(R.string.perm_dnd_title),
                         stringResource(R.string.perm_dnd_why), dnd,
                         R.drawable.ic_dnd, IconTint.Dnd
-                    ) {
-                        ctx.startActivity(
-                            Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS)
-                        )
-                    }
+                    ) { Doors.openDndAccess(ctx) }
                 }
                 add {
                     PermissionCard(
                         stringResource(R.string.perm_alarms_title),
                         stringResource(R.string.perm_alarms_why), exact,
                         R.drawable.ic_alarm, IconTint.Alarm
-                    ) {
-                        ctx.startActivity(
-                            Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
-                        )
-                    }
+                    ) { Doors.openExactAlarms(ctx) }
                 }
             })
         }

@@ -2,6 +2,9 @@ package com.jemcik.gloaming.ui
 
 import android.content.ComponentName
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.provider.Settings
 import com.jemcik.gloaming.core.Doors
 import com.jemcik.gloaming.core.FakeRoutines
 import com.jemcik.gloaming.core.RoutineEffect
@@ -24,6 +27,28 @@ import org.robolectric.Shadows.shadowOf
 internal fun Context.withLaunchManager() {
     val pm = shadowOf(packageManager)
     Doors.VENDOR_SCREENS.forEach { pm.addActivityIfNotPresent(it) }
+}
+
+/**
+ * Give this phone the system's per-app language picker, the way Settings
+ * declares it: the action, with `package:` data. Since 13 Sep 2026 the row is
+ * a door like the others - drawn only where this resolves - so a test that
+ * wants to see the row has to arrange it, and RowFitTest, which fails on an
+ * absent row, is what notices when one forgets.
+ */
+internal fun Context.withLanguagePicker() {
+    val picker = ComponentName(
+        "com.android.settings", "com.android.settings.localepicker.AppLocalePickerActivity"
+    )
+    val pm = shadowOf(packageManager)
+    pm.addActivityIfNotPresent(picker)
+    pm.addIntentFilterForActivity(
+        picker,
+        IntentFilter(Settings.ACTION_APP_LOCALE_SETTINGS).apply {
+            addCategory(Intent.CATEGORY_DEFAULT)
+            addDataScheme("package")
+        }
+    )
 }
 
 /**

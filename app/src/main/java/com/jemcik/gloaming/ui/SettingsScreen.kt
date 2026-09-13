@@ -3,9 +3,6 @@ package com.jemcik.gloaming.ui
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
-import android.content.Intent
-import android.net.Uri
-import android.provider.Settings
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
@@ -89,7 +86,10 @@ fun SettingsScreen(themeMode: Int, onThemeMode: (Int) -> Unit, onBack: () -> Uni
             }
         }
 
-        Section(stringResource(R.string.section_language)) {
+        // Drawn only where the phone has the picker to open - the probe every
+        // door in Doors is drawn on. This row used to catch the refusal and
+        // open nothing, which is a door onto nothing with a nicer face.
+        if (Doors.hasLanguagePicker(ctx)) Section(stringResource(R.string.section_language)) {
             SettingsCard {
                 LinkRow(
                     stringResource(R.string.settings_language),
@@ -98,15 +98,7 @@ fun SettingsScreen(themeMode: Int, onThemeMode: (Int) -> Unit, onBack: () -> Uni
                     // rows above start at 80 - the same ragged left edge "what
                     // can wake you" had.
                     leading = rowIcon(R.drawable.ic_language)
-                ) {
-                    haptics.open()
-                    runCatching {
-                        ctx.startActivity(
-                            Intent(Settings.ACTION_APP_LOCALE_SETTINGS)
-                                .setData(Uri.fromParts("package", ctx.packageName, null))
-                        )
-                    }
-                }
+                ) { haptics.open(); Doors.openLanguagePicker(ctx) }
             }
         }
 

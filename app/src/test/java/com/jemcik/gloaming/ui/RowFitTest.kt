@@ -198,6 +198,10 @@ class RowFitTest {
      */
     private fun withVendorDoors(ctx: android.content.Context) {
         ctx.withLaunchManager()
+        // The language row is a door too now, drawn only where the system's
+        // picker resolves - and this test fails on an absent row, which is
+        // the point.
+        ctx.withLanguagePicker()
         // And Samsung's routines - with one ADOPTED, because the door is drawn
         // only once a routine exists to open it on.
         ctx.asGalaxyWithRoutines()

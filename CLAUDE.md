@@ -81,7 +81,23 @@ indefinitely is background restriction — see `core/BackgroundLimit.kt`.
                                  prefilled editor, which Honor's Clock answers
                                  with someone else's alarm and Google's by
                                  creating one; the alarm's own `showIntent`
-                                 where the clock fills it (Honor's does not).
+                                 where the clock fills it (Honor's does not),
+                                 SENT WITH THIS APP'S LEAVE TO LAUNCH: a
+                                 PendingIntent starts as the app that made
+                                 it, which is in the background the moment
+                                 we are in front, and a bare `send()` is
+                                 blocked without a word - `send` cannot
+                                 report a blocked start, so the list never
+                                 got its turn and the row went dead once an
+                                 alarm existed. Measured on both phones
+                                 whose clock fills it, 13 Sep 2026. Also the
+                                 two permission screens - never hidden, since
+                                 without them nothing works, but a refusal is
+                                 journaled and answered with app details
+                                 rather than a crash - and the per-app
+                                 language picker, probed with the `package:`
+                                 data its filter matches on and a <queries>
+                                 entry to see it
                                  The list's activity is behind the NORMAL
                                  SET_ALARM permission, declared, and the app
                                  that answers is named to TalkBack
@@ -688,7 +704,7 @@ compileSdk 37, targetSdk 36, minSdk 35.
 
 ## Tests
 
-`app/src/test/`, 335 cases, no device. They are written as the QUESTION the code
+`app/src/test/`, 342 cases, no device. They are written as the QUESTION the code
 answers rather than as coverage of a method, because none of the bugs were ever
 in a method — they were in an assumption.
 
@@ -723,7 +739,16 @@ in a method — they were in an assumption.
                           orphan swept even with bedtime off; and nothing
                           rewritten when nothing is wrong
     DoorsTest             the clock app's alarm list is a door only where it
-                          resolves, and the alarm's own showIntent wins
+                          resolves, the alarm's own showIntent wins, and it
+                          is sent with this app's leave to launch - read back
+                          off the bundle the started activity carried; the
+                          language picker probed with its package data; a
+                          permission screen the phone does not answer
+                          journaled and answered with app details, never a
+                          crash. The settings doors are driven from a built
+                          Activity, because the framework refuses a launch
+                          from an application context without NEW_TASK and
+                          Robolectric lets that code run
     SentencesTest         the sentence builders, driven directly
     WindowSentenceTest    the window in words, per locale, through Home, plus
                           the alarm-set end - earlier, later, another morning -
@@ -752,8 +777,9 @@ in a method — they were in an assumption.
                           alarm switch leaving the handle alone, NEXT ALARM
                           over the numeral while tonight ends at the alarm,
                           the picker letting go of it, the section's faces
-                          with no alarm and with another morning's, and the
-                          door into the clock app
+                          with no alarm and with another morning's, the
+                          door into the clock app, and the language row
+                          drawn only where the picker resolves
     AlarmWatchTest        did our own END arrive, and ON TIME - the case the
                           notice exists for, which it could not report; what a
                           miss RECORDS; an alarm judged by its own due instant

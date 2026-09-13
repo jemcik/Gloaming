@@ -1190,6 +1190,52 @@ which is how a door that resolves and then does nothing would have been found
 in a report instead of on the bench. Robolectric enforces no activity
 permissions, so no test could have caught this; the phone did.
 
+The same door died a SECOND way two days later, on the two phones whose clock
+DOES fill the `showIntent` - the Galaxy and the OnePlus on LineageOS - and the
+journal said nothing, because nothing had been refused. The steps, 13 Sep
+2026, the owner's, reproduced on both: no alarm on the phone, tap "No alarm
+set", the list opens; switch an alarm on there, come back, tap the alarm -
+nothing. The first tap went through the list, `startActivity` from our own
+visible window, allowed. The second preferred the alarm's own `showIntent`,
+and a PendingIntent starts its activity AS THE APP THAT CREATED IT - the clock
+app, which is in the background the moment we are in front.
+`ActivityTaskManager`, readable on LineageOS, where the block was read:
+
+    Background activity launch blocked! goo.gle/android-bal [callingPackage:
+    com.android.deskclock; callingUidProcState: CACHED_RECENT; ...
+    isPendingIntent: true; realCallingPackage: com.jemcik.gloaming;
+    realCallingUidHasVisibleActivity: true; balAllowedByPiSender: BSP.ALLOW_FGS;
+    resultIfPiSenderAllowsBal: BAL_ALLOW_VISIBLE_WINDOW;
+    realCallerStartMode: MODE_BACKGROUND_ACTIVITY_START_SYSTEM_DEFINED ...]
+    START u0 {... cmp=com.android.deskclock/.DeskClock} ... (BAL_BLOCK) result code=102
+
+The line names the fix: the SENDER's visible window would have carried the
+launch had the sender lent it. Since Android 14 a sender's own standing goes
+with a PendingIntent only by request -
+`ActivityOptions.setPendingIntentBackgroundActivityStartMode` in the bundle
+`send` takes - and a bare `send()` lends nothing. Android 16 adds the exact
+mode, `ALLOW_IF_VISIBLE`, and deprecates the broader `ALLOWED`, which is all 15
+has; `Doors.openAlarms` sends the one the OS knows. Two things made this
+invisible from inside the app. `send()` does not REPORT a block: result code
+102 is `START_ABORTED`, returned through `sendAndReturnResult`, which is
+`@hide`; the public overloads return normally, so `runCatching` saw success,
+the list never ran and the row simply did nothing. And it never showed on the
+Honor, where the whole door was built and measured, because Honor's Clock
+leaves `showIntent` null and every tap there goes through the list. "AOSP and
+Samsung fill it" was read from `dumpsys alarm` and taken as "and it opens";
+filled and sendable are two measurements. `DoorsTest` now reads the options
+bundle back off the started activity and pins the mode. With the ask in the
+bundle, the same tap on the same phone the same evening:
+
+    START u0 {dat=content://com.android.deskclock/... cmp=com.android.deskclock/.DeskClock}
+    ... from uid 10147 (com.android.deskclock) (realCallingUid=10248)
+    (BAL_ALLOW_VISIBLE_WINDOW [realCaller]) result code=0
+
+and `DeskClock` is the resumed activity. Reproducing it meant putting the debug
+build over the Play build the OnePlus carried, which the release key refuses
+until the Play build is uninstalled; the Do Not Disturb grant outlived that
+uninstall, as the Honor's had.
+
 The rule now (`Scheduler.endAt`): with the switch on, the night ends at the
 next alarm when it is THIS NIGHT'S - after the night began, and inside the
 window or later on the calendar day the scheduled end falls on - earlier than

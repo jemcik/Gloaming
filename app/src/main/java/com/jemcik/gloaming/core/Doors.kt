@@ -1,9 +1,11 @@
 package com.jemcik.gloaming.core
 
+import android.app.ActivityOptions
 import android.app.AlarmManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.provider.AlarmClock
 import android.provider.Settings
 import androidx.core.net.toUri
@@ -111,10 +113,43 @@ object Doors {
             ?.activityInfo?.applicationInfo?.loadLabel(pm)?.toString()
     }.getOrNull()?.takeIf { it.isNotBlank() }
 
+    /**
+     * The next alarm in the app that set it, else the list.
+     *
+     * The showIntent is sent WITH THIS APP'S LEAVE TO LAUNCH. A PendingIntent
+     * starts its activity as the app that CREATED it, and the clock app is in
+     * the background the moment we are in front, so on its own it may start
+     * nothing. Reproduced 13 Sep 2026 on the Galaxy and the OnePlus, and read
+     * on the OnePlus (LineageOS, Android 16), where logcat is plain:
+     * `ActivityTaskManager` blocked the start - `callingUidProcState:
+     * CACHED_RECENT ... BAL_BLOCK` - and said in the same line that the
+     * sender's visible window would have carried it had the sender said so,
+     * `resultIfPiSenderAllowsBal: BAL_ALLOW_VISIBLE_WINDOW`. With the ask in
+     * the bundle the same tap reads `BAL_ALLOW_VISIBLE_WINDOW [realCaller]`,
+     * result code 0, and the Clock is in front.
+     * Since Android 14 a sender lends its own standing only by asking; this
+     * is the ask. A bare `send()` was the whole bug: it does not REPORT the
+     * block - the start's result code comes back through a hidden overload
+     * and the public one returns normally - so `onSuccess` ran, the list
+     * never did, and the row opened the clock app once, through the list,
+     * and never again once an alarm existed to prefer. Honor's Clock leaves
+     * the showIntent null, which is why the Honor never showed it.
+     *
+     * What is lent is VISIBILITY and nothing more: Android 16 names that mode
+     * exactly and deprecates the older "whatever standing the sender has",
+     * which is all Android 15 offers. A tap is a visible window; nothing
+     * here ever sends from anywhere else.
+     */
     fun openAlarms(ctx: Context): Boolean {
         val show = ctx.getSystemService(AlarmManager::class.java)?.nextAlarmClock?.showIntent
         if (show != null) {
-            runCatching { show.send() }
+            val mode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA)
+                ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOW_IF_VISIBLE
+            else @Suppress("DEPRECATION") ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED
+            val leave = ActivityOptions.makeBasic()
+                .setPendingIntentBackgroundActivityStartMode(mode)
+                .toBundle()
+            runCatching { show.send(ctx, 0, null, null, null, null, leave) }
                 .onSuccess { return true }
                 .onFailure { Journal.write(ctx, "alarm's showIntent refused: " + it) }
         }

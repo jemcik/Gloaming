@@ -1,11 +1,13 @@
 package com.jemcik.gloaming.core
 
+import android.app.ActivityOptions
 import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.os.Build
 import android.provider.AlarmClock
 import androidx.test.core.app.ApplicationProvider
 import org.junit.Assert.assertEquals
@@ -116,5 +118,47 @@ class DoorsTest {
         assertTrue(Doors.hasAlarms(ctx()))
         assertTrue(Doors.openAlarms(ctx()))
         assertEquals("the alarm's own screen, not the list", "test.show", started()?.action)
+    }
+
+    @Test
+    fun `the alarm's own screen is opened with this app's leave to launch it`() {
+        // The bug as two phones showed it, 13 Sep 2026: tap "No alarm set",
+        // the list opens; set an alarm there, come back, tap the alarm - and
+        // nothing. A PendingIntent starts its activity AS THE CLOCK APP,
+        // which is in the background the moment we are in front, and since
+        // Android 14 a sender lends its own standing only by asking for it.
+        // A bare send() was silently blocked, reported nothing, and the code
+        // filed it as success. The send must carry the ask.
+        installClock()
+        val show = PendingIntent.getActivity(
+            ctx(), 0, Intent("test.show"), PendingIntent.FLAG_IMMUTABLE
+        )
+        ctx().getSystemService(AlarmManager::class.java).setAlarmClock(
+            AlarmManager.AlarmClockInfo(System.currentTimeMillis() + 3_600_000, show),
+            PendingIntent.getBroadcast(ctx(), 1, Intent("test.alarm"), PendingIntent.FLAG_IMMUTABLE)
+        )
+        assertTrue(Doors.openAlarms(ctx()))
+        val launch = shadowOf(RuntimeEnvironment.getApplication()).nextStartedActivityForResult
+        assertEquals("test.show", launch?.intent?.action)
+        // Visibility, in the words the OS under test has for it: Android 16
+        // names it, Android 15 has only the broader "whatever the sender
+        // holds", which at a tap is the same window.
+        val visible = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA)
+            ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOW_IF_VISIBLE
+        else @Suppress("DEPRECATION") ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED
+        // The platform hides both the getter and fromBundle, so the
+        // expectation is written with the same public setter and the bundle
+        // the launch carried is compared to it key by key.
+        val expected = ActivityOptions.makeBasic()
+            .setPendingIntentBackgroundActivityStartMode(visible)
+            .toBundle()
+        assertFalse("the setter must write something to compare", expected.isEmpty)
+        val sent = launch?.options
+        @Suppress("DEPRECATION")
+        for (key in expected.keySet()) assertEquals(
+            "sent without the sender's leave, the clock app may not launch from the background ($key)",
+            expected.get(key),
+            sent?.get(key)
+        )
     }
 }

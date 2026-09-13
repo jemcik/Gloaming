@@ -1236,6 +1236,38 @@ build over the Play build the OnePlus carried, which the release key refuses
 until the Play build is uninstalled; the Do Not Disturb grant outlived that
 uninstall, as the Honor's had.
 
+The survey that followed - every place the app hands control to the platform,
+fourteen of them - turned up two more rows built the way this one was, and
+they were hardened the same afternoon rather than waiting for a phone to show
+them:
+
+- The two PERMISSION CARDS opened their Settings screens with no catch at all,
+  the only two launches in the app that would have CRASHED it rather than
+  opened nothing had a vendor's Settings not answered. They cannot be probed
+  and hidden - without either permission the app cannot work, and a card that
+  vanished would leave nothing on screen to act on - so a refusal is journaled
+  and answered with app details, the closest screen there is and the fallback
+  the launch manager already took. `Doors.openDndAccess`, `Doors.openExactAlarms`.
+- The LANGUAGE row caught its refusal and opened nothing - a door onto nothing
+  with a nicer face, on the one row that had not been asked in Doors. It is
+  probed now, `Doors.hasLanguagePicker`, and not drawn where the picker does
+  not resolve; some Oppo and Xiaomi builds are reported to ship without the
+  per-app language screen. Two things the probe needs that the row did not:
+  the `package:` data on the intent, because Settings' filter for the picker
+  matches on that scheme, and a `<queries>` entry carrying the same scheme,
+  or package visibility hides the answer. RowFitTest arranges the picker the
+  way it arranges the launch manager, and fails on the absent row - which is
+  what would catch a probe that quietly hid the row everywhere.
+
+One trap in testing them, worth the line: the framework's own `ContextImpl`
+refuses a `startActivity` from an application context without
+`FLAG_ACTIVITY_NEW_TASK`, and Robolectric runs that code unshadowed, so a
+settings door driven from `ApplicationProvider.getApplicationContext()`
+reports a refusal the app never sees - every screen hands Doors an Activity.
+The alarm list carries the flag and could be driven from either; the settings
+screens deliberately do not, so Back from them lands where it did. `DoorsTest`
+launches those from a built Activity.
+
 The rule now (`Scheduler.endAt`): with the switch on, the night ends at the
 next alarm when it is THIS NIGHT'S - after the night began, and inside the
 window or later on the calendar day the scheduled end falls on - earlier than

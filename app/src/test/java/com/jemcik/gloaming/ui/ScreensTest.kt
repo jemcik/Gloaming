@@ -570,6 +570,33 @@ class ScreensTest {
     }
 
     @Test
+    fun `the language row is a door, drawn where the picker resolves`() {
+        ctx().withLanguagePicker()
+        compose.setContent {
+            GloamingTheme(dark = false) {
+                SettingsScreen(Prefs.THEME_SYSTEM, onThemeMode = {}, onBack = {})
+            }
+        }
+        compose.onNodeWithText(ctx().getString(R.string.settings_language))
+            .performScrollTo()
+            .assertHasClickAction()
+    }
+
+    @Test
+    fun `no language row onto a phone without the picker`() {
+        // Some skins ship without the per-app language screen. The row used
+        // to catch the refusal and open nothing; a door onto nothing is not
+        // drawn, on the same probe as every other door.
+        compose.setContent {
+            GloamingTheme(dark = false) {
+                SettingsScreen(Prefs.THEME_SYSTEM, onThemeMode = {}, onBack = {})
+            }
+        }
+        compose.onNodeWithText(ctx().getString(R.string.settings_language))
+            .assertDoesNotExist()
+    }
+
+    @Test
     fun `the chosen theme is the one shown as chosen`() {
         compose.setContent {
             GloamingTheme(dark = false) {

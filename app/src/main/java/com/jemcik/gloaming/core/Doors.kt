@@ -173,13 +173,58 @@ object Doors {
                 if (runCatching { ctx.startActivity(i) }.isSuccess) return
             }
         }
-        runCatching {
-            ctx.startActivity(
-                Intent(
-                    Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                    ("package:" + ctx.packageName).toUri()
-                )
-            )
-        }
+        runCatching { ctx.startActivity(appDetails(ctx)) }
     }
+
+    /**
+     * The system's own per-app language picker, for this app.
+     *
+     * Android 13 added it, and Settings answers it on every phone here; some
+     * skins are reported to ship without the screen, and until 13 Sep 2026
+     * the row caught the refusal and opened nothing - the door onto nothing
+     * this file exists to prevent, on the one row that was not asked here.
+     * The package rides as `package:` data because Settings' filter matches
+     * on that scheme: a probe without it resolves nothing where the screen
+     * exists, and the manifest's <queries> carries the scheme for the same
+     * reason.
+     */
+    private fun languagePicker(ctx: Context) =
+        Intent(Settings.ACTION_APP_LOCALE_SETTINGS, ("package:" + ctx.packageName).toUri())
+
+    fun hasLanguagePicker(ctx: Context): Boolean =
+        ctx.packageManager.resolveActivity(languagePicker(ctx), 0) != null
+
+    fun openLanguagePicker(ctx: Context): Boolean =
+        runCatching { ctx.startActivity(languagePicker(ctx)) }
+            .onFailure { Journal.write(ctx, "language picker refused: " + it) }
+            .isSuccess
+
+    /**
+     * The two permission screens Home's cards open. Never probed and never
+     * hidden: without either permission the app cannot work, so a card that
+     * vanished would leave nothing on screen to act on. What a refusal gets
+     * instead is a journal line and app details, the closest screen there is
+     * - the same fallback the launch manager takes. These were the only two
+     * launches in the app with no catch around them, found in the survey
+     * after the alarm door's showIntent died silently (13 Sep 2026): a
+     * Settings that did not answer would have crashed the app at the tap,
+     * which is the one failure worse than a door onto nothing.
+     */
+    fun openDndAccess(ctx: Context) =
+        openOrDetails(ctx, Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS), "DND access screen")
+
+    fun openExactAlarms(ctx: Context) =
+        openOrDetails(ctx, Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM), "exact alarm screen")
+
+    private fun openOrDetails(ctx: Context, screen: Intent, name: String) {
+        val opened = runCatching { ctx.startActivity(screen) }
+            .onFailure { Journal.write(ctx, "$name refused: $it") }
+            .isSuccess
+        if (!opened) runCatching { ctx.startActivity(appDetails(ctx)) }
+    }
+
+    private fun appDetails(ctx: Context) = Intent(
+        Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+        ("package:" + ctx.packageName).toUri()
+    )
 }

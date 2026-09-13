@@ -1,5 +1,6 @@
 package com.jemcik.gloaming.core
 
+import android.app.Activity
 import android.app.ActivityOptions
 import android.app.AlarmManager
 import android.app.PendingIntent
@@ -9,12 +10,14 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.os.Build
 import android.provider.AlarmClock
+import android.provider.Settings
 import androidx.test.core.app.ApplicationProvider
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.Shadows.shadowOf
@@ -50,6 +53,17 @@ class DoorsTest {
     }
 
     private fun started(): Intent? = shadowOf(RuntimeEnvironment.getApplication()).nextStartedActivity
+
+    /**
+     * An Activity to launch from, which is what every screen hands Doors. The
+     * framework's own ContextImpl refuses a launch from an application
+     * context without FLAG_ACTIVITY_NEW_TASK, and Robolectric runs that code
+     * unshadowed - so a door tested from the application context reports a
+     * refusal the app never sees. The alarm list carries the flag and can be
+     * driven from either; the settings screens do not, deliberately, so the
+     * Back from them lands where it did.
+     */
+    private fun activity(): Context = Robolectric.buildActivity(Activity::class.java).setup().get()
 
     @Test
     fun `no clock app, no door`() {
@@ -118,6 +132,66 @@ class DoorsTest {
         assertTrue(Doors.hasAlarms(ctx()))
         assertTrue(Doors.openAlarms(ctx()))
         assertEquals("the alarm's own screen, not the list", "test.show", started()?.action)
+    }
+
+    /** Settings answering an action, with or without `package:` data. */
+    private fun installSettings(action: String, packageData: Boolean) {
+        val screen = ComponentName("com.android.settings", "com.android.settings.$action")
+        shadowOf(ctx().packageManager).apply {
+            addActivityIfNotPresent(screen)
+            addIntentFilterForActivity(
+                screen,
+                IntentFilter(action).apply {
+                    addCategory(Intent.CATEGORY_DEFAULT)
+                    if (packageData) addDataScheme("package")
+                }
+            )
+        }
+    }
+
+    @Test
+    fun `no language picker, no door`() {
+        // Some skins ship without the per-app language screen; the row is
+        // not drawn there rather than opening nothing.
+        assertFalse(Doors.hasLanguagePicker(ctx()))
+    }
+
+    @Test
+    fun `the language picker is probed with the package as data, and opens`() {
+        // Settings' filter for the picker takes package: data, so a probe
+        // without it resolves nothing on a phone that has the screen.
+        installSettings(Settings.ACTION_APP_LOCALE_SETTINGS, packageData = true)
+        assertTrue(Doors.hasLanguagePicker(ctx()))
+        assertTrue(Doors.openLanguagePicker(activity()))
+        val opened = started()
+        assertEquals(Settings.ACTION_APP_LOCALE_SETTINGS, opened?.action)
+        assertEquals("package:" + ctx().packageName, opened?.dataString)
+    }
+
+    @Test
+    fun `a permission screen the phone does not answer is journaled and answered with app details`() {
+        // The two permission cards were the only launches in the app with no
+        // catch: a Settings that did not answer crashed the app at the tap.
+        // The card cannot be hidden - without the permission the app cannot
+        // work - so a refusal is spoken and app details, the closest screen
+        // there is, opens instead.
+        shadowOf(RuntimeEnvironment.getApplication()).checkActivities(true)
+        installSettings(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, packageData = true)
+        val from = activity()
+        Doors.openDndAccess(from)
+        assertEquals(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, started()?.action)
+        Doors.openExactAlarms(from)
+        assertEquals(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, started()?.action)
+        val journal = Journal.read(ctx())
+        assertTrue(journal.any { it.contains("DND access screen refused") })
+        assertTrue(journal.any { it.contains("exact alarm screen refused") })
+    }
+
+    @Test
+    fun `a permission screen the phone answers is what opens`() {
+        installSettings(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS, packageData = false)
+        Doors.openDndAccess(activity())
+        assertEquals(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS, started()?.action)
     }
 
     @Test

@@ -182,6 +182,26 @@ Android 15 или новее. Два разрешения, оба выдаютс
 
 ---
 
+# What’s new — 0.18 (500 max each)
+
+en-US
+
+```
+Gloaming is now about a tenth of its previous size: library code the app never uses is left out of the build, so it downloads faster and takes up less space on your phone. Features are unchanged, and your schedule and settings carry over.
+```
+
+uk-UA
+
+```
+Gloaming став приблизно вдесятеро меншим: код бібліотек, яким застосунок не користується, більше не потрапляє в збірку, тож Gloaming швидше завантажується й займає менше місця на телефоні. Можливості ті самі, а ваш розклад і налаштування зберігаються.
+```
+
+ru-RU
+
+```
+Gloaming стал примерно в десять раз меньше: код библиотек, которым приложение не пользуется, больше не попадает в сборку, поэтому Gloaming быстрее скачивается и занимает меньше места на телефоне. Возможности те же, а ваше расписание и настройки сохраняются.
+```
+
 # What’s new — 0.15 (500 max each)
 
 en-US

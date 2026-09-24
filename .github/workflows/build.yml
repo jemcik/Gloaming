@@ -62,6 +62,12 @@ jobs:
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
 
+      # R8 runs on the release build and nowhere else - every step above works
+      # on unminified code - so without this a class R8 cannot resolve would
+      # first fail at the tag. Unsigned here: the keystore is release.yml's.
+      - name: Build release APK (R8)
+        run: ./gradlew assembleRelease
+
       - name: Upload reports when something fails
         if: failure()
         uses: actions/upload-artifact@v7

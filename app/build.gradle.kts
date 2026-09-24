@@ -58,10 +58,24 @@ android {
 
     buildTypes {
         release {
-            // Minification stays OFF. Turning it on is a real change to an app
-            // that runs unattended overnight, and it belongs in its own pass
-            // with its own testing rather than riding along with signing.
-            isMinifyEnabled = false
+            // R8: shrinking, optimisation and renaming, and the resources
+            // nothing references. It waited for a pass of its own because the
+            // app runs unattended overnight and R8 rewrites code no test sees:
+            // the tests, lint and the debug APK all run the code unminified.
+            // It needs no keep rule today because nothing is reached by NAME
+            // at runtime: no reflection, no class name in prefs, and the
+            // exceptions the journal names are thrown by the platform, whose
+            // classes R8 does not rename. Every receiver, service and provider
+            // is named in the manifest, which keeps it, so an alarm armed by
+            // an unminified build still finds its receiver after the upgrade.
+            // The day any of that stops being true, the rule goes in
+            // proguard-rules.pro. DECISIONS has the before and after.
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
             // With no keystore configured the APK is left UNSIGNED rather than
             // falling back to the debug key. A fallback would produce something
             // that looks releasable and cannot be upgraded - the exact bug this
@@ -77,6 +91,13 @@ android {
     }
 
     buildFeatures { compose = true }
+
+    // The three languages the app speaks, and no others. Without this the
+    // bundle carried 85 - every translation AndroidX ships - and since each
+    // library resolves its strings on its own, a phone set to a language the
+    // app lacks got the app in English and Material's own strings in the
+    // phone's language. Keep it in step with res/xml/locales_config.xml.
+    androidResources { localeFilters += listOf("en", "ru", "uk") }
 
     // Robolectric needs the app's resources: Interruptions builds its sentences
     // out of them, and the point of testing it is the wording per locale.

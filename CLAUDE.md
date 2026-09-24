@@ -424,6 +424,14 @@ is in DECISIONS.md.
 - minSdk is **35** because `ZenDeviceEffects`, `AutomaticZenRule.Builder` and
   `getAutomaticZenRuleState` are all API 35, and a missing method raises `Error`,
   which none of the `runCatching` here would catch.
+- **The release build is minified by R8, and nothing else is.** The tests, lint
+  and the debug APK all run the code as written, so anything reached by NAME at
+  runtime - reflection, a class name stored or compared - works everywhere
+  except in the build people install. Nothing does that today, which is why
+  `proguard-rules.pro` holds no keep rule; add one the day something does, and
+  know that only a release build on a phone will show it missing. The four
+  manifest components keep their names, and alarms armed by an older build
+  are addressed to them.
 - **Never decide against a reading your own action changes.** The dim
   routines flip One UI's own "apply dark mode to wallpaper" key, and the
   choice of which polarity the night needs was read off that very key - twice,
@@ -627,6 +635,11 @@ is in DECISIONS.md.
                          DELIBERATE and both now carry the reason at the line
                          lint points at, so neither reads as an oversight to
                          whoever runs it next
+    ./gradlew assembleRelease  the R8 build, unsigned without the keystore,
+                         which only CI holds. `build.yml` runs it on every pull
+                         request, because nothing else touches minified code.
+                         The mapping is app/build/outputs/mapping/release/
+                         mapping.txt, and the bundle carries it for Play
     python3 tools/check_translation.py app/src/main/res/values-ru/strings.xml ru
     python3 tools/render_icon.py        re-render docs/icon.png from the drawable
     python3 tools/play_assets.py        the Play store assets into docs/play/.

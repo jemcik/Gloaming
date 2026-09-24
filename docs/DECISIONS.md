@@ -2797,6 +2797,8 @@ history does not un-publish it.
 Minification stays OFF through all of this. Turning it on is a real change to an
 app that runs unattended overnight and belongs in its own pass with its own
 testing, not riding along with signing.
+*(Superseded 24 Sep 2026: that pass is "R8, 24 Sep 2026" at the end of this
+section.)*
 
 The derivation reads `BASH_REMATCH`, so the step declares `shell: bash`. Testing
 it in the local shell first gave versionCode 0 for every tag, because zsh sets
@@ -2822,6 +2824,60 @@ then died the first time it built a rule — and not recoverably: a missing clas
 or method raises `NoSuchMethodError` / `NoClassDefFoundError`, which are `Error`,
 not `Exception`, so none of the `runCatching` / `catch (e: Exception)` around the
 zen calls would have caught it.
+
+**R8, 24 Sep 2026: on, with resource shrinking and three languages.** Play's
+page for the 0.17 bundle, read while applying for production, marked DEX
+optimisation "Low", obfuscation 1% and the R8 configuration missing. Those are
+advice, not a gate, and the production review does not read them - but the
+number under them was not advice: 22.5 MB of DEX for an app this size is
+almost all library code it never calls, and Compose is built to be run
+through R8. Measured on the same machine, 0.17's source against this pass:
+
+| | unminified | R8 |
+|---|---|---|
+| DEX, uncompressed | 21.5 MiB (Play's "22.5 MB" is the same, in decimal) | 1.85 MiB |
+| release APK | 23.5 MB | 2.4 MB |
+| bundle | 8.4 MB | 3.5 MB |
+| locales in the resource table | 86 | 3 |
+
+It needs no keep rule, and the reasons were checked rather than assumed:
+nothing calls into reflection; no class name is stored, compared or built
+into a string - the alarm actions and extras are literals, and so is every
+key in the routine file; the journal prints exceptions whole, but they are
+thrown by platform calls, and R8 renames only what ships inside the APK; and the
+four components are named in the manifest, so AAPT's generated rules keep
+them. `mapping.txt` confirms it - MainActivity, BedtimeReceiver,
+ZenStatusReceiver and BedtimeTile keep their names and the other 132 classes
+do not. That last one is what an upgrade leans on: 0.17's pending alarms name
+`com.jemcik.gloaming.core.BedtimeReceiver`, and a renamed receiver would have
+left the night's END addressed to nothing. The two `ComponentName`s the rule
+and the tile build point at kept classes too, and the rest name other
+packages' activities by string.
+
+`proguard-rules.pro` keeps `SourceFile,LineNumberTable`, and the bundle
+carries the mapping (`BUNDLE-METADATA/com.android.tools.build.obfuscation/
+proguard.map`) and `r8.json`, which is the "R8 metadata" the Console said was
+missing - so a trace in Android vitals comes back with names and lines.
+
+The locale filter is `en`, `ru`, `uk`, matching `locales_config.xml`. It was
+85 languages plus the default, every translation AndroidX ships, and since each
+library resolves its strings on its own, a phone set to a language the app
+lacks got the app in English and Material's strings in the phone's language.
+`en` keeps no regional variant - the libraries' en-GB, en-AU and so on go too -
+because English is the DEFAULT configuration here, not a qualified one, so
+the table lists `--_--`, `ru`, `uk` and English is served from the first.
+
+What this pass could NOT establish is the one thing that matters: that the
+minified app does its job overnight. The tests run the debug variant, lint
+reads source, and no phone was attached, with no emulator image installed,
+so the first minified build to RUN will be 0.18 on the closed track. What it
+has to show, on the Honor, the Galaxy and the OnePlus, before production is
+promoted: START and END on time (`dumpsys batterystats --history`, since
+`run-as` refuses a release build), the rule live in `dumpsys notification`,
+the tile, the routines on the Galaxy, the clock and permission doors, and
+Diagnostics' share. `build.yml` now assembles the release too, so a class R8
+cannot resolve fails the pull request rather than the tag - which catches
+what R8 can see at build time, and nothing a phone has to show.
 
 ## Portability
 

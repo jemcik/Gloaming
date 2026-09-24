@@ -424,6 +424,14 @@ is in DECISIONS.md.
 - minSdk is **35** because `ZenDeviceEffects`, `AutomaticZenRule.Builder` and
   `getAutomaticZenRuleState` are all API 35, and a missing method raises `Error`,
   which none of the `runCatching` here would catch.
+- **The release build is minified by R8, and nothing else is.** The tests, lint
+  and the debug APK all run the code as written, so anything reached by NAME at
+  runtime - reflection, a class name stored or compared - works everywhere
+  except in the build people install. Nothing does that today, which is why
+  `proguard-rules.pro` holds no keep rule; add one the day something does, and
+  know that only a release build on a phone will show it missing. The four
+  manifest components keep their names, and alarms armed by an older build
+  are addressed to them.
 - **Never decide against a reading your own action changes.** The dim
   routines flip One UI's own "apply dark mode to wallpaper" key, and the
   choice of which polarity the night needs was read off that very key - twice,
@@ -627,6 +635,11 @@ is in DECISIONS.md.
                          DELIBERATE and both now carry the reason at the line
                          lint points at, so neither reads as an oversight to
                          whoever runs it next
+    ./gradlew assembleRelease  the R8 build, unsigned without the keystore,
+                         which only CI holds. `build.yml` runs it on every pull
+                         request, because nothing else touches minified code.
+                         The mapping is app/build/outputs/mapping/release/
+                         mapping.txt, and the bundle carries it for Play
     python3 tools/check_translation.py app/src/main/res/values-ru/strings.xml ru
     python3 tools/render_icon.py        re-render docs/icon.png from the drawable
     python3 tools/play_assets.py        the Play store assets into docs/play/.
@@ -681,10 +694,12 @@ is in DECISIONS.md.
                          foreground session, stamped
 
 Unit tests run on **JDK 21**, pinned in `app/build.gradle.kts`. The reason —
-Robolectric's ASM choking on Java 25 class files — is probably obsolete since
-4.16.1 ships ASM 9.8, which reads them. The pin stays because it cannot be
-disproved here: this machine has only a 21 JDK, so removing it passes for the
-wrong reason, and both CI workflows pin 21 explicitly.
+Robolectric's ASM choking on Java 25 class files — is GONE, measured on 24 Sep
+2026: on Robolectric 4.17 the whole suite passes on JDK 25. This machine has
+one, contrary to what this paragraph used to say - Gradle provisioned it for
+its own daemon, in `~/.gradle/jdks`. The pin guards nothing now; removing it is
+a change of its own, together with the `java-version: '21'` both CI workflows
+carry.
 
 A pre-push hook runs tests, lint and both translation checkers. A fresh clone
 opts in once:
@@ -699,7 +714,7 @@ publish an APK it cannot verify. A stable signing identity is half of an
 upgradable APK — 0.1 and 0.2 shipped under throwaway debug keys and are
 permanently stranded.
 
-Toolchain: AGP 9.4.0, Gradle 9.7.1, Compose compiler 2.3.21, BOM 2026.08.00,
+Toolchain: AGP 9.4.0, Gradle 9.7.1, Compose compiler 2.3.21, BOM 2026.09.00,
 compileSdk 37, targetSdk 36, minSdk 35.
 
 ## Tests

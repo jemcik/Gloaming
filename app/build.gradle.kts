@@ -58,10 +58,24 @@ android {
 
     buildTypes {
         release {
-            // Minification stays OFF. Turning it on is a real change to an app
-            // that runs unattended overnight, and it belongs in its own pass
-            // with its own testing rather than riding along with signing.
-            isMinifyEnabled = false
+            // R8: shrinking, optimisation and renaming, and the resources
+            // nothing references. It waited for a pass of its own because the
+            // app runs unattended overnight and R8 rewrites code no test sees:
+            // the tests, lint and the debug APK all run the code unminified.
+            // It needs no keep rule today because nothing is reached by NAME
+            // at runtime: no reflection, no class name in prefs, and the
+            // exceptions the journal names are thrown by the platform, whose
+            // classes R8 does not rename. Every receiver, service and provider
+            // is named in the manifest, which keeps it, so an alarm armed by
+            // an unminified build still finds its receiver after the upgrade.
+            // The day any of that stops being true, the rule goes in
+            // proguard-rules.pro. DECISIONS has the before and after.
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
             // With no keystore configured the APK is left UNSIGNED rather than
             // falling back to the debug key. A fallback would produce something
             // that looks releasable and cannot be upgraded - the exact bug this
@@ -78,6 +92,13 @@ android {
 
     buildFeatures { compose = true }
 
+    // The three languages the app speaks, and no others. Without this the
+    // bundle carried 85 - every translation AndroidX ships - and since each
+    // library resolves its strings on its own, a phone set to a language the
+    // app lacks got the app in English and Material's own strings in the
+    // phone's language. Keep it in step with res/xml/locales_config.xml.
+    androidResources { localeFilters += listOf("en", "ru", "uk") }
+
     // Robolectric needs the app's resources: Interruptions builds its sentences
     // out of them, and the point of testing it is the wording per locale.
     testOptions { unitTests.isIncludeAndroidResources = true }
@@ -89,19 +110,19 @@ android {
 
 dependencies {
     testImplementation("junit:junit:4.13.2")
-    testImplementation("org.robolectric:robolectric:4.16.1")
+    testImplementation("org.robolectric:robolectric:4.17")
     testImplementation("androidx.test:core:1.7.0")
     testImplementation("androidx.compose.ui:ui-test-junit4")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 
-    implementation(platform("androidx.compose:compose-bom:2026.08.00"))
+    implementation(platform("androidx.compose:compose-bom:2026.09.00"))
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.ui:ui")
     debugImplementation("androidx.compose.ui:ui-tooling")
     implementation("androidx.activity:activity-compose:1.13.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.11.0")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.11.0")
-    implementation("androidx.core:core-ktx:1.19.0")
+    implementation("androidx.core:core-ktx:1.19.1")
 }
 
 kotlin {
@@ -113,16 +134,16 @@ kotlin {
 //
 // The original reason was that Robolectric's ASM could not read Java 25 class
 // files ("Unsupported class file major version 69") while Gradle auto-
-// provisioned a 25 JDK here. THAT REASON IS PROBABLY GONE: Robolectric 4.16.1
-// declares ASM 9.8, and 9.8 is the release that added Java 25 support.
+// provisioned a 25 JDK here. THAT REASON IS GONE, and measured rather than
+// inferred: on 24 Sep 2026, with Robolectric 4.17 (ASM 9.10.1), all 342 tests
+// passed with this launcher set to 25, which resolved to the JDK Gradle
+// provisions for its own daemon (~/.gradle/jdks, Adoptium 25.0.3). This note
+// used to say the machine had only a 21 and so could not settle it; that 25
+// had been there all along.
 //
-// It stays because nothing here can prove it. This machine now has only a 21
-// JDK installed, so removing the pin "passes" for the wrong reason - the tests
-// run on 21 either way - and both CI workflows pin java-version: '21'
-// explicitly, so CI would never exercise the difference. Deleting it on that
-// evidence would be deleting a guard because the thing it guards against
-// cannot currently happen. Anyone with a 25 JDK can drop these five lines and
-// find out.
+// So the pin guards nothing now. It has not been removed because that is a
+// change of its own: both CI workflows carry java-version: '21' as well, and
+// the three should go together.
 val testJvm = extensions.getByType<JavaToolchainService>().launcherFor {
     languageVersion.set(JavaLanguageVersion.of(21))
 }

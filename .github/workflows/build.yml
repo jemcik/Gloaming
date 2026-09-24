@@ -2,8 +2,9 @@
 #
 # Two JDKs are in play and it is worth knowing why. gradle-daemon-jvm.properties
 # pins the DAEMON to 25 and carries foojay URLs, so Gradle downloads that itself;
-# the unit tests are pinned to 21 in app/build.gradle.kts because Robolectric's
-# bytecode instrumentation cannot read Java 25 class files. So this only has to
+# the unit tests are pinned to 21 in app/build.gradle.kts, a pin that guards
+# nothing since Robolectric 4.17 reads Java 25 class files (the comment there
+# has the measurement) and goes when this 21 does. So this only has to
 # install 21 - Gradle finds it via JAVA_HOME and fetches 25 on its own.
 name: build
 

@@ -110,7 +110,7 @@ android {
 
 dependencies {
     testImplementation("junit:junit:4.13.2")
-    testImplementation("org.robolectric:robolectric:4.16.1")
+    testImplementation("org.robolectric:robolectric:4.17")
     testImplementation("androidx.test:core:1.7.0")
     testImplementation("androidx.compose.ui:ui-test-junit4")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
@@ -134,16 +134,16 @@ kotlin {
 //
 // The original reason was that Robolectric's ASM could not read Java 25 class
 // files ("Unsupported class file major version 69") while Gradle auto-
-// provisioned a 25 JDK here. THAT REASON IS PROBABLY GONE: Robolectric 4.16.1
-// declares ASM 9.8, and 9.8 is the release that added Java 25 support.
+// provisioned a 25 JDK here. THAT REASON IS GONE, and measured rather than
+// inferred: on 24 Sep 2026, with Robolectric 4.17 (ASM 9.10.1), all 342 tests
+// passed with this launcher set to 25, which resolved to the JDK Gradle
+// provisions for its own daemon (~/.gradle/jdks, Adoptium 25.0.3). This note
+// used to say the machine had only a 21 and so could not settle it; that 25
+// had been there all along.
 //
-// It stays because nothing here can prove it. This machine now has only a 21
-// JDK installed, so removing the pin "passes" for the wrong reason - the tests
-// run on 21 either way - and both CI workflows pin java-version: '21'
-// explicitly, so CI would never exercise the difference. Deleting it on that
-// evidence would be deleting a guard because the thing it guards against
-// cannot currently happen. Anyone with a 25 JDK can drop these five lines and
-// find out.
+// So the pin guards nothing now. It has not been removed because that is a
+// change of its own: both CI workflows carry java-version: '21' as well, and
+// the three should go together.
 val testJvm = extensions.getByType<JavaToolchainService>().launcherFor {
     languageVersion.set(JavaLanguageVersion.of(21))
 }

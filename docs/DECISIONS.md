@@ -3161,6 +3161,14 @@ Note the unit tests run on **JDK 21**, pinned in `app/build.gradle.kts`.
 Robolectric's bytecode instrumentation cannot read Java 25 class files
 ("Unsupported class file major version 69") and Gradle auto-provisions a 25 JDK
 here. Only the test JVM is pinned; the app compiles against the toolchain above.
+*(Superseded 24 Sep 2026: it can now. With Robolectric 4.17, which brings ASM
+9.10.1, all 342 tests pass on JDK 25 - measured by setting the test launcher
+to 25 for one run, which resolved to the Adoptium 25.0.3 Gradle provisions for
+its own daemon. That also corrects the note in `app/build.gradle.kts`, which
+had kept the pin because "this machine has only a 21 JDK" and so could not
+settle it: the 25 was in `~/.gradle/jdks` the whole time. The pin guards
+nothing now and stays only until it is removed together with the
+`java-version: '21'` both CI workflows carry.)*
 
 `ScreensTest` covers interactions, never appearance - no test checks a colour or
 a spacing, because those are judgement and the phone is the instrument. It checks

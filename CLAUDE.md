@@ -694,10 +694,12 @@ is in DECISIONS.md.
                          foreground session, stamped
 
 Unit tests run on **JDK 21**, pinned in `app/build.gradle.kts`. The reason —
-Robolectric's ASM choking on Java 25 class files — is probably obsolete since
-4.16.1 ships ASM 9.8, which reads them. The pin stays because it cannot be
-disproved here: this machine has only a 21 JDK, so removing it passes for the
-wrong reason, and both CI workflows pin 21 explicitly.
+Robolectric's ASM choking on Java 25 class files — is GONE, measured on 24 Sep
+2026: on Robolectric 4.17 the whole suite passes on JDK 25. This machine has
+one, contrary to what this paragraph used to say - Gradle provisioned it for
+its own daemon, in `~/.gradle/jdks`. The pin guards nothing now; removing it is
+a change of its own, together with the `java-version: '21'` both CI workflows
+carry.
 
 A pre-push hook runs tests, lint and both translation checkers. A fresh clone
 opts in once:

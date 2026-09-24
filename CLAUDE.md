@@ -712,7 +712,7 @@ publish an APK it cannot verify. A stable signing identity is half of an
 upgradable APK — 0.1 and 0.2 shipped under throwaway debug keys and are
 permanently stranded.
 
-Toolchain: AGP 9.4.0, Gradle 9.7.1, Compose compiler 2.3.21, BOM 2026.08.00,
+Toolchain: AGP 9.4.0, Gradle 9.7.1, Compose compiler 2.3.21, BOM 2026.09.00,
 compileSdk 37, targetSdk 36, minSdk 35.
 
 ## Tests

@@ -182,6 +182,30 @@ Android 15 или новее. Два разрешения, оба выдаютс
 
 ---
 
+# What’s new — 1.0 (500 max each)
+
+The first production release. Its code is 0.18's, so the 0.18 notes below
+would tell a first-time installer the app shrank and their settings carried
+over; this says only what is true for everyone who sees it.
+
+en-US
+
+```
+First public release.
+```
+
+uk-UA
+
+```
+Перший публічний випуск.
+```
+
+ru-RU
+
+```
+Первый публичный выпуск.
+```
+
 # What’s new — 0.18 (500 max each)
 
 en-US

@@ -628,8 +628,7 @@ T['en'] = dict(
           'notification policy access (for Do Not Disturb) and Alarms and reminders.',
     req_apk='No Google Play? The APK on GitHub is the same app, built from the same source, '
             'but it does not update itself. Google Play signs its copy with a different key, '
-            'so one copy cannot update the other: to switch, uninstall first, and your '
-            'schedule and settings go with it.',
+            'so one copy cannot update the other: to switch, uninstall first.',
     foot='Apache License 2.0 · ',
     foot_src='Source', foot_rel='Releases', foot_priv='Privacy policy', foot_iss='Report an issue',
     # privacy policy
@@ -768,8 +767,7 @@ T['uk'] = dict(
           'доступ до політики сповіщень (для «Не турбувати») і «Будильники та нагадування».',
     req_apk='Немає Google Play? APK на GitHub — той самий застосунок, зібраний з того самого '
             'коду, але сам він не оновлюється. Google Play підписує свою копію іншим ключем, '
-            'тож одна копія не оновить іншу: щоб перейти, спершу видаліть застосунок, а з ним '
-            'зникнуть розклад і налаштування.',
+            'тож одна копія не оновить іншу: щоб перейти, спершу видаліть застосунок.',
     foot='Ліцензія Apache 2.0 · ',
     foot_src='Код', foot_rel='Релізи', foot_priv='Політика приватності',
     foot_iss='Повідомити про проблему',
@@ -911,8 +909,7 @@ T['ru'] = dict(
           'к политике уведомлений (для «Не беспокоить») и «Будильники и напоминания».',
     req_apk='Нет Google Play? APK на GitHub — то же приложение, собранное из того же кода, но '
             'само оно не обновляется. Google Play подписывает свою копию другим ключом, поэтому '
-            'одна копия не обновит другую: чтобы перейти, сначала удалите приложение, а вместе '
-            'с ним исчезнут расписание и настройки.',
+            'одна копия не обновит другую: чтобы перейти, сначала удалите приложение.',
     foot='Лицензия Apache 2.0 · ',
     foot_src='Код', foot_rel='Релизы', foot_priv='Политика конфиденциальности',
     foot_iss='Сообщить о проблеме',

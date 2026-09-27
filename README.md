@@ -39,8 +39,7 @@ and signed with the project key. It does not update itself.
 > [!IMPORTANT]
 > The two are **not updates of each other.** Google Play signs what it delivers
 > with its own key, so Android refuses to install a Play copy over a GitHub one,
-> or the other way round. To switch, uninstall first — and the schedule and
-> settings go with it, since they live only on the phone.
+> or the other way round. To switch, uninstall first.
 
 ## Why another bedtime app
 

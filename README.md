@@ -9,6 +9,8 @@
 Do Not Disturb and the screen effects that go with it, for whatever stretch of
 time you choose — and it fires with the app closed.
 
+<a href="https://play.google.com/store/apps/details?id=com.jemcik.gloaming"><img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" height="80" alt="Get it on Google Play"></a>
+
 [**Website**](https://jemcik.github.io/Gloaming/) · [Privacy policy](https://jemcik.github.io/Gloaming/privacy-policy.html)
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue)](LICENSE)
@@ -25,16 +27,20 @@ time you choose — and it fires with the app closed.
 
 </div>
 
+## Install
+
+From **[Google Play](https://play.google.com/store/apps/details?id=com.jemcik.gloaming)**,
+which keeps it up to date. Android 15 or newer; see [Requirements](#requirements).
+
+No Google Play on the phone, or rather not use it? Every release's APK is on
+[Releases](https://github.com/jemcik/Gloaming/releases), built from the same tag
+and signed with the project key. It does not update itself.
+
 > [!IMPORTANT]
-> **Here for the Google Play closed test?** Install from the Play link you were
-> sent — **not** from [Releases](https://github.com/jemcik/Gloaming/releases). A
-> hand-installed copy makes Play offer *Open* rather than *Install*, so you never
-> join the test through Play and it does not count; and if the GitHub build's
-> `versionCode` is at or above the tested one, Play has no update path at all.
-> Already sideloaded it? Uninstall first, then use the link.
->
-> **Everyone else:** Releases is the right place and the APK there is the real
-> one, signed with the project key.
+> The two are **not updates of each other.** Google Play signs what it delivers
+> with its own key, so Android refuses to install a Play copy over a GitHub one,
+> or the other way round. To switch, uninstall first — and the schedule and
+> settings go with it, since they live only on the phone.
 
 ## Why another bedtime app
 
@@ -430,6 +436,12 @@ account by definition. Both artefacts come from one Gradle invocation and
 therefore one `versionCode`, and both are signed with the same key — verified
 on a real run, identical certificate.
 
+To Play that key is only the **upload key**. Play App Signing re-signs every
+install it delivers with an app signing key Google generated and holds, so the
+Play copy and the APK here carry different certificates and neither installs
+over the other. That is why the release APK is not a way to update a Play
+install, and why [Install](#install) says to uninstall before switching.
+
 Published releases start at **0.7**, and **1.0** is current; the tags before
 that have no downloadable build behind them. If a pre-0.7 Gloaming is still on a
 phone, uninstall it rather than expecting an upgrade — 0.1 and 0.2 went out as
@@ -443,6 +455,8 @@ Apache License 2.0 — see [LICENSE](LICENSE).
 The repository also redistributes two SIL Open Font License fonts and a set of
 Material Design icon paths; [NOTICE.md](NOTICE.md) lists them with their
 licenses.
+
+Google Play and the Google Play logo are trademarks of Google LLC.
 
 ## CLAUDE.md and docs/DECISIONS.md
 

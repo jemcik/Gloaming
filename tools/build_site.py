@@ -31,6 +31,7 @@ ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)),
 DOCS = os.path.join(ROOT, 'docs')
 
 GITHUB = 'https://github.com/jemcik/Gloaming'
+PLAY = 'https://play.google.com/store/apps/details?id=com.jemcik.gloaming'
 # One date, in each page's own language: the uk and ru footers used to carry
 # the English month name inside a Ukrainian or Russian sentence.
 EFFECTIVE = {'en': '12 September 2026', 'uk': '12 вересня 2026 року', 'ru': '12 сентября 2026 года'}
@@ -567,7 +568,7 @@ T['en'] = dict(
          'because it uses the Alarms and reminders permission you grant in the app. That '
          'guarantees it fires at exactly the time you set, and it never goes through the '
          'background job scheduler.',
-    cta_get='Download the APK', cta_src='Source on GitHub',
+    cta_play='Get it on Google Play', cta_get='Download the APK', cta_src='Source on GitHub',
     theme_system='System', theme_dawn='Dawn', theme_dusk='Dusk',
     viewer_label='Screenshots', viewer_prev='Previous screenshot',
     viewer_next='Next screenshot',
@@ -625,6 +626,10 @@ T['en'] = dict(
     req_h='Requirements',
     req_p='Android 15 or newer. Two permissions, both granted from inside the app: '
           'notification policy access (for Do Not Disturb) and Alarms and reminders.',
+    req_apk='No Google Play? The APK on GitHub is the same app, built from the same source, '
+            'but it does not update itself. Google Play signs its copy with a different key, '
+            'so one copy cannot update the other: to switch, uninstall first, and your '
+            'schedule and settings go with it.',
     foot='Apache License 2.0 · ',
     foot_src='Source', foot_rel='Releases', foot_priv='Privacy policy', foot_iss='Report an issue',
     # privacy policy
@@ -702,7 +707,7 @@ T['uk'] = dict(
          'закритий: він користується дозволом «Будильники та нагадування», який ви надаєте '
          'в застосунку. Це дає гарантію спрацювання точно в заданий час і не проходить '
          'через планувальник фонових завдань.',
-    cta_get='Завантажити APK', cta_src='Код на GitHub',
+    cta_play='Встановити з Google Play', cta_get='Завантажити APK', cta_src='Код на GitHub',
     theme_system='Як у системі', theme_dawn='Світла', theme_dusk='Темна',
     viewer_label='Знімки екрана', viewer_prev='Попередній знімок',
     viewer_next='Наступний знімок',
@@ -761,6 +766,10 @@ T['uk'] = dict(
     req_h='Вимоги',
     req_p='Android 15 або новіший. Два дозволи, обидва надаються з самого застосунку: '
           'доступ до політики сповіщень (для «Не турбувати») і «Будильники та нагадування».',
+    req_apk='Немає Google Play? APK на GitHub — той самий застосунок, зібраний з того самого '
+            'коду, але сам він не оновлюється. Google Play підписує свою копію іншим ключем, '
+            'тож одна копія не оновить іншу: щоб перейти, спершу видаліть застосунок, а з ним '
+            'зникнуть розклад і налаштування.',
     foot='Ліцензія Apache 2.0 · ',
     foot_src='Код', foot_rel='Релізи', foot_priv='Політика приватності',
     foot_iss='Повідомити про проблему',
@@ -841,7 +850,7 @@ T['ru'] = dict(
          'закрыто: оно пользуется разрешением «Будильники и напоминания», которое вы '
          'выдаёте в приложении. Это даёт гарантию срабатывания точно в заданное время и не '
          'проходит через планировщик фоновых задач.',
-    cta_get='Скачать APK', cta_src='Код на GitHub',
+    cta_play='Установить из Google Play', cta_get='Скачать APK', cta_src='Код на GitHub',
     theme_system='Как в системе', theme_dawn='Светлая', theme_dusk='Тёмная',
     viewer_label='Снимки экрана', viewer_prev='Предыдущий снимок',
     viewer_next='Следующий снимок',
@@ -900,6 +909,10 @@ T['ru'] = dict(
     req_h='Требования',
     req_p='Android 15 или новее. Два разрешения, оба выдаются из самого приложения: доступ '
           'к политике уведомлений (для «Не беспокоить») и «Будильники и напоминания».',
+    req_apk='Нет Google Play? APK на GitHub — то же приложение, собранное из того же кода, но '
+            'само оно не обновляется. Google Play подписывает свою копию другим ключом, поэтому '
+            'одна копия не обновит другую: чтобы перейти, сначала удалите приложение, а вместе '
+            'с ним исчезнут расписание и настройки.',
     foot='Лицензия Apache 2.0 · ',
     foot_src='Код', foot_rel='Релизы', foot_priv='Политика конфиденциальности',
     foot_iss='Сообщить о проблеме',
@@ -1043,13 +1056,17 @@ def page_index(lang, up):
             f'loading="lazy"></button>'
             for theme in THEMES)
         for name, alt in zip(SHOTS, t['shot_alts']))
+    # The Play listing in the page's own language. The Play APP on a phone
+    # ignores hl and uses the phone's; only the web listing reads it.
+    play = PLAY if lang == 'en' else f'{PLAY}&amp;hl={lang}'
     body = f'''<main>
   <div class="hero">
     <h1>{t['tagline']}</h1>
     <p class="lead">{t['lead']}</p>
     <div class="sweep"></div>
     <div class="cta">
-      <a class="btn" href="{GITHUB}/releases">{t['cta_get']}</a>
+      <a class="btn" href="{play}">{t['cta_play']}</a>
+      <a class="btn ghost" href="{GITHUB}/releases">{t['cta_get']}</a>
       <a class="btn ghost" href="{GITHUB}">{t['cta_src']}</a>
     </div>
   </div>
@@ -1080,11 +1097,13 @@ def page_index(lang, up):
   <section>
     <h2>{t['req_h']}</h2>
     <p>{t['req_p']}</p>
+    <p>{t['req_apk']}</p>
   </section>
 </main>
 
 <footer>
-  {t['foot']}<a href="{GITHUB}">{t['foot_src']}</a> ·
+  {t['foot']}<a href="{play}">Google Play</a> ·
+  <a href="{GITHUB}">{t['foot_src']}</a> ·
   <a href="{GITHUB}/releases">{t['foot_rel']}</a> ·
   <a href="privacy-policy.html">{t['foot_priv']}</a> ·
   <a href="{GITHUB}/issues">{t['foot_iss']}</a>
